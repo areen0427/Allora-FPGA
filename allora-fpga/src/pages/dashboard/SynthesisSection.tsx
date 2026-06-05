@@ -77,6 +77,7 @@ export default function SynthesisSection({
         </p>
 
         <button
+          className="primary-action"
           type="button"
           onClick={runSynthesisCheck}
           style={{

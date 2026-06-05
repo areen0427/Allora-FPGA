@@ -1,19 +1,26 @@
 import { useState } from "react";
 import type { BoardDefinition } from "../data/boards";
+import type { AppSettings } from "../data/settings";
 
 type ProjectSetupProps = {
   board: BoardDefinition;
+  settings: AppSettings;
   onBack: () => void;
   onCreateProject: (projectName: string, language: string) => void;
 };
 
 export default function ProjectSetup({
   board,
+  settings,
   onBack,
   onCreateProject,
 }: ProjectSetupProps) {
-  const [projectName, setProjectName] = useState("");
-  const [language, setLanguage] = useState("Verilog");
+  const defaultProjectName =
+    settings.defaultProjectNamePattern === "{board}_project"
+      ? `${board.id.replace(/-/g, "_")}_project`
+      : "my_fpga_project";
+  const [projectName, setProjectName] = useState(defaultProjectName);
+  const [language, setLanguage] = useState(settings.defaultLanguage);
 
   return (
     <div
@@ -97,7 +104,9 @@ export default function ProjectSetup({
 
         <select
           value={language}
-          onChange={(e) => setLanguage(e.target.value)}
+          onChange={(e) =>
+            setLanguage(e.target.value as "Verilog" | "SystemVerilog" | "VHDL")
+          }
           style={{
             width: "100%",
             marginTop: "10px",

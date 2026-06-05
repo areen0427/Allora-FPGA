@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
@@ -10,28 +10,68 @@ import PlaceholderSection from "./dashboard/PlaceholderSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
 import { Cpu } from "lucide-react";
+import { saveProject } from "../data/projects";
+import type { SavedProject } from "../data/projects";
+import type { AppSettings } from "../data/settings";
 
 type DashboardProps = {
   board: BoardDefinition;
-  projectName: string;
+  project: SavedProject | null;
+  settings: AppSettings;
   onBack: () => void;
   onHome: () => void;
 };
 
 export default function Dashboard({
   board,
-  projectName,
+  project,
+  settings,
   onBack,
   onHome,
 }: DashboardProps) {
   const [activeSection, setActiveSection] =
     useState<DashboardSection>("editor");
 
-  const [files, setFiles] = useState<ProjectFile[]>([]);
-  const [activeFileName, setActiveFileName] = useState<string | null>(null);
+  const [files, setFiles] = useState<ProjectFile[]>(project?.files ?? []);
+  const [activeFileName, setActiveFileName] = useState<string | null>(
+    project?.activeFileName ?? null
+  );
   const [sidebarWidth, setSidebarWidth] = useState(215);
+  const [lastSavedAt, setLastSavedAt] = useState(project?.updatedAt ?? "");
 
   const activeFile = files.find((file) => file.name === activeFileName);
+  const projectName = project?.name ?? "Untitled Project";
+
+  useEffect(() => {
+    if (!project || !settings.autoSave) return;
+
+    const delay =
+      settings.autoSaveInterval === "5s"
+        ? 5000
+        : settings.autoSaveInterval === "30s"
+          ? 30000
+          : 0;
+
+    const saveCurrentProject = () => {
+      const now = new Date().toISOString();
+      saveProject({
+        ...project,
+        boardId: board.id,
+        files,
+        activeFileName,
+        updatedAt: now,
+      });
+      setLastSavedAt(now);
+    };
+
+    if (delay === 0) {
+      saveCurrentProject();
+      return;
+    }
+
+    const timeout = window.setTimeout(saveCurrentProject, delay);
+    return () => window.clearTimeout(timeout);
+  }, [activeFileName, board.id, files, project, settings.autoSave, settings.autoSaveInterval]);
 
   function startSidebarResize(event: React.MouseEvent<HTMLDivElement>) {
     event.preventDefault();
@@ -105,6 +145,13 @@ function updateActiveFile(content: string) {
 }
 
 function deleteFile(fileName: string) {
+  if (
+    settings.confirmBeforeDelete &&
+    !window.confirm(`Delete ${fileName}?`)
+  ) {
+    return;
+  }
+
   setFiles((currentFiles) => {
     const nextFiles = currentFiles.filter((file) => file.name !== fileName);
 
@@ -248,6 +295,16 @@ function deleteFile(fileName: string) {
       }}
     >
       FPGA Project
+    </div>
+    <div
+      style={{
+        marginTop: "4px",
+        fontSize: "11px",
+        color: "#94a3b8",
+        fontWeight: 700,
+      }}
+    >
+      {lastSavedAt ? "Saved" : "Not saved"}
     </div>
   </div>
 </div>
@@ -476,6 +533,7 @@ function deleteFile(fileName: string) {
             createNewFile={() => createNewFile()}
             deleteFile={deleteFile}
             renameFile={renameFile}
+            settings={settings}
         />
         )}
 
@@ -492,6 +550,7 @@ function deleteFile(fileName: string) {
           <PinMappingSection
             board={board}
             files={files}
+            defaultMode={settings.defaultPinMappingMode}
           />
         )}
         {activeSection === "bitstream" && (

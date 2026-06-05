@@ -20,6 +20,159 @@ body {
     sans-serif;
 }
 
+html[data-theme="dark"] {
+  background: #111827;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] #root > div {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] aside,
+html[data-theme="dark"] main {
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] aside {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%) !important;
+  border-color: rgba(55, 65, 81, 0.75) !important;
+}
+
+html[data-theme="dark"] [style*="#f8fafc"],
+html[data-theme="dark"] [style*="#f1f5f9"],
+html[data-theme="dark"] [style*="#eef2f7"],
+html[data-theme="dark"] [style*="rgb(248, 250, 252)"],
+html[data-theme="dark"] [style*="rgb(241, 245, 249)"],
+html[data-theme="dark"] [style*="rgb(238, 242, 247)"] {
+  background: #111827 !important;
+}
+
+html[data-theme="dark"] [style*="#ffffff"],
+html[data-theme="dark"] [style*="white"],
+html[data-theme="dark"] [style*="rgb(255, 255, 255)"] {
+  background: #1f2937 !important;
+}
+
+html[data-theme="dark"] .variant-modal {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] .variant-modal h2,
+html[data-theme="dark"] .variant-modal-header h2 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] [style*="linear-gradient(180deg, #ffffff"],
+html[data-theme="dark"] [style*="linear-gradient(180deg, #f8fafc"],
+html[data-theme="dark"] [style*="linear-gradient(rgb(255, 255, 255)"],
+html[data-theme="dark"] [style*="linear-gradient(rgb(248, 250, 252)"],
+html[data-theme="dark"] [style*="linear-gradient(180deg, rgb(255, 255, 255)"],
+html[data-theme="dark"] [style*="linear-gradient(180deg, rgb(248, 250, 252)"] {
+  background: linear-gradient(180deg, #1f2937 0%, #182231 100%) !important;
+}
+
+html[data-theme="dark"] [style*="#0f172a"],
+html[data-theme="dark"] [style*="#334155"],
+html[data-theme="dark"] [style*="#475569"],
+html[data-theme="dark"] [style*="rgb(15, 23, 42)"],
+html[data-theme="dark"] [style*="rgb(51, 65, 85)"],
+html[data-theme="dark"] [style*="rgb(71, 85, 105)"] {
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] [style*="#64748b"],
+html[data-theme="dark"] [style*="#94a3b8"],
+html[data-theme="dark"] [style*="rgb(100, 116, 139)"],
+html[data-theme="dark"] [style*="rgb(148, 163, 184)"] {
+  color: #9ca3af !important;
+}
+
+html[data-theme="dark"] [style*="#e2e8f0"],
+html[data-theme="dark"] [style*="#dbe4f0"],
+html[data-theme="dark"] [style*="#cbd5e1"],
+html[data-theme="dark"] [style*="rgb(226, 232, 240)"],
+html[data-theme="dark"] [style*="rgb(219, 228, 240)"],
+html[data-theme="dark"] [style*="rgb(203, 213, 225)"] {
+  border-color: #374151 !important;
+}
+
+html[data-theme="dark"] [style*="#eef2ff"],
+html[data-theme="dark"] [style*="#eff6ff"],
+html[data-theme="dark"] [style*="rgb(238, 242, 255)"],
+html[data-theme="dark"] [style*="rgb(239, 246, 255)"] {
+  background: rgba(37, 99, 235, 0.16) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #111827 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] button {
+  color: inherit;
+}
+
+html[data-theme="dark"] button[style*="transparent"],
+html[data-theme="dark"] [style*="background: transparent"] {
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .primary-action {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .primary-action[style*="rgb(203, 213, 225)"],
+html[data-theme="dark"] .primary-action[style*="#cbd5e1"] {
+  background: #475569 !important;
+}
+
+html[data-theme="dark"] .variant-modal,
+html[data-theme="dark"] .board-card,
+html[data-theme="dark"] [style*="box-shadow"] {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 12px 28px rgba(37, 99, 235, 0.045) !important;
+}
+
+html[data-theme="dark"] .variant-modal-header button {
+  color: #e5e7eb !important;
+  background: #111827 !important;
+}
+
+html[data-theme="dark"] .fileClose,
+html[data-theme="dark"] .variant-modal-header button,
+html[data-theme="dark"] [aria-label*="close" i],
+html[data-theme="dark"] [title*="close" i] {
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] .modal-backdrop {
+  background: rgba(3, 7, 18, 0.62);
+}
+
+html[data-theme="dark"] .board-card:hover {
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.08) !important;
+}
+
+html[data-theme="dark"] button.primary-action {
+  background-color: #2563eb !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+
 .board-card {
   transition:
     transform 0.2s ease,

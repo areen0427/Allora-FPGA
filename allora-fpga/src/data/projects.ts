@@ -1,0 +1,75 @@
+import type { ProjectFile } from "../pages/dashboard/types";
+
+const STORAGE_KEY = "allora-fpga-projects";
+
+export type SavedProject = {
+  id: string;
+  name: string;
+  boardId: string;
+  files: ProjectFile[];
+  activeFileName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function getSavedProjects(): SavedProject[] {
+  try {
+    const rawProjects = window.localStorage.getItem(STORAGE_KEY);
+    if (!rawProjects) return [];
+
+    const projects = JSON.parse(rawProjects);
+    if (!Array.isArray(projects)) return [];
+
+    return projects;
+  } catch {
+    return [];
+  }
+}
+
+export function getSavedProject(projectId: string) {
+  return getSavedProjects().find((project) => project.id === projectId);
+}
+
+export function saveProject(project: SavedProject) {
+  const projects = getSavedProjects();
+  const nextProjects = [
+    project,
+    ...projects.filter((currentProject) => currentProject.id !== project.id),
+  ];
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
+}
+
+export function createProject({
+  name,
+  boardId,
+}: {
+  name: string;
+  boardId: string;
+}) {
+  const now = new Date().toISOString();
+  const project: SavedProject = {
+    id: window.crypto?.randomUUID?.() ?? `${Date.now()}`,
+    name: name.trim() || "Untitled Project",
+    boardId,
+    files: [],
+    activeFileName: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  saveProject(project);
+  return project;
+}
+
+export function formatProjectTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}

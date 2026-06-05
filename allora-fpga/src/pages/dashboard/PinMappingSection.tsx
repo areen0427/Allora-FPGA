@@ -13,13 +13,15 @@ type HdlPort = {
 type PinMappingSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
+  defaultMode: "simple" | "advanced";
 };
 
 export default function PinMappingSection({
   board,
   files,
+  defaultMode,
 }: PinMappingSectionProps) {
-  const [mode, setMode] = useState<"simple" | "advanced">("advanced");
+  const [mode, setMode] = useState<"simple" | "advanced">(defaultMode);
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
   const ports = useMemo(() => findPorts(files), [files]);
   const suggestedMappings = useMemo(

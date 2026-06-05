@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
 import type { ProjectFile } from "./types";
+import type { AppSettings } from "../../data/settings";
 
 type EditorSectionProps = {
   files: ProjectFile[];
@@ -11,6 +12,7 @@ type EditorSectionProps = {
   createNewFile: () => void;
   deleteFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => void;
+  settings: AppSettings;
 };
 
 export default function EditorSection({
@@ -22,6 +24,7 @@ export default function EditorSection({
   createNewFile,
   deleteFile,
   renameFile,
+  settings,
 }: EditorSectionProps) {
 
     const [editingFile, setEditingFile] = useState<string | null>(null);
@@ -146,7 +149,7 @@ export default function EditorSection({
           height="100%"
           value={activeFile?.content ?? ""}
           language={getMonacoLanguage(activeFile?.name)}
-          theme="allora"
+          theme={settings.theme === "dark" ? "allora-dark" : "allora"}
           onMount={(_, monaco) => {
             registerHdlLanguages(monaco);
 
@@ -167,16 +170,33 @@ export default function EditorSection({
               },
             });
 
-            monaco.editor.setTheme("allora");
+            monaco.editor.defineTheme("allora-dark", {
+              base: "vs-dark",
+              inherit: true,
+              rules: [
+                { token: "keyword", foreground: "93c5fd", fontStyle: "bold" },
+                { token: "comment", foreground: "94a3b8", fontStyle: "italic" },
+                { token: "number", foreground: "c4b5fd" },
+                { token: "string", foreground: "86efac" },
+              ],
+              colors: {
+                "editor.background": "#111827",
+                "editorGutter.background": "#111827",
+                "editorOverviewRuler.border": "#111827",
+                "editor.lineHighlightBackground": "#1f2937",
+              },
+            });
+
+            monaco.editor.setTheme(settings.theme === "dark" ? "allora-dark" : "allora");
           }}
           onChange={(value) => updateActiveFile(value ?? "")}
           options={{
-            fontSize: 15,
+            fontSize: settings.editorFontSize,
             fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
             minimap: { enabled: false },
             lineNumbers: "on",
-            wordWrap: "on",
-            tabSize: 2,
+            wordWrap: settings.editorWordWrap ? "on" : "off",
+            tabSize: settings.editorTabSize,
             automaticLayout: true,
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
