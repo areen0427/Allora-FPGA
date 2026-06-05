@@ -27,6 +27,6 @@ body {
 }
 
 .board-card:hover {
-  transform: scale(1.06);
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
 }

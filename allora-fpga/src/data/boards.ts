@@ -1,5 +1,6 @@
 import type { BoardDefinition } from "./boardTypes";
 import { icebreaker } from "./boards/icebreaker";
+import { orangecrab } from "./boards/orangecrab";
 import { ULX3S_BOARDS } from "./boards/ulx3s";
 
 export type {
@@ -14,6 +15,7 @@ export type {
 
 export const BOARDS = [
   icebreaker,
+  orangecrab,
   {
     id: "ulx3s",
     name: "ULX3S",
@@ -30,6 +32,7 @@ export const BOARDS = [
 
 export function getBoardById(id: string): BoardDefinition | undefined {
   if (id === icebreaker.id) return icebreaker;
+  if (id === orangecrab.id) return orangecrab;
 
   return ULX3S_BOARDS.find((board) => board.id === id);
 }

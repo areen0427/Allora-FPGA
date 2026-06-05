@@ -11,7 +11,6 @@ type EditorSectionProps = {
   createNewFile: () => void;
   deleteFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => void;
-  language: string;
 };
 
 export default function EditorSection({
@@ -23,7 +22,6 @@ export default function EditorSection({
   createNewFile,
   deleteFile,
   renameFile,
-  language,
 }: EditorSectionProps) {
 
     const [editingFile, setEditingFile] = useState<string | null>(null);

@@ -12,15 +12,15 @@ import { Cpu } from "lucide-react";
 type DashboardProps = {
   board: BoardDefinition;
   projectName: string;
-  language: string;
   onBack: () => void;
+  onHome: () => void;
 };
 
 export default function Dashboard({
   board,
   projectName,
-  language,
   onBack,
+  onHome,
 }: DashboardProps) {
   const [activeSection, setActiveSection] =
     useState<DashboardSection>("editor");
@@ -198,11 +198,16 @@ function deleteFile(fileName: string) {
     marginBottom: "18px",
   }}
 >
-  <div
+  <button
+    type="button"
+    aria-label="Go to home page"
+    title="Home"
+    onClick={onHome}
     style={{
       width: "34px",
       height: "34px",
       borderRadius: "10px",
+      border: "none",
       background:
         "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
       display: "flex",
@@ -210,10 +215,12 @@ function deleteFile(fileName: string) {
       justifyContent: "center",
       boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
       flexShrink: 0,
+      cursor: "pointer",
+      padding: 0,
     }}
   >
     <Cpu size={18} color="white" strokeWidth={2.2} />
-  </div>
+  </button>
 
   <div style={{ minWidth: 0 }}>
     <div
@@ -441,7 +448,6 @@ function deleteFile(fileName: string) {
             createNewFile={() => createNewFile()}
             deleteFile={deleteFile}
             renameFile={renameFile}
-            language={language}
         />
         )}
 

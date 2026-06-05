@@ -11,7 +11,12 @@ function App() {
   const [stage, setStage] = useState<AppStage>("board-select");
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [projectName, setProjectName] = useState("");
-  const [language, setLanguage] = useState("Verilog");
+
+  function goHome() {
+    setStage("board-select");
+    setSelectedBoardId(null);
+    setProjectName("");
+  }
 
   const selectedBoard = selectedBoardId
   ? getBoardById(selectedBoardId)
@@ -33,9 +38,8 @@ function App() {
       <ProjectSetup
         board={selectedBoard}
         onBack={() => setStage("board-select")}
-        onCreateProject={(name, selectedLanguage) => {
+        onCreateProject={(name) => {
           setProjectName(name);
-          setLanguage(selectedLanguage);
           setStage("dashboard");
         }}
       />
@@ -47,8 +51,8 @@ function App() {
       <Dashboard
         board={selectedBoard}
         projectName={projectName}
-        language={language}
         onBack={() => setStage("project-setup")}
+        onHome={goHome}
       />
     );
   }
