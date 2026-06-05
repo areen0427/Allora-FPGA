@@ -1,11 +1,12 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type InfoCardProps = {
   title: string;
   children: ReactNode;
+  style?: CSSProperties;
 };
 
-export default function InfoCard({ title, children }: InfoCardProps) {
+export default function InfoCard({ title, children, style }: InfoCardProps) {
   return (
     <div
       style={{
@@ -14,6 +15,7 @@ export default function InfoCard({ title, children }: InfoCardProps) {
         borderRadius: "24px",
         padding: "28px",
         boxShadow: "0 14px 34px rgba(15,23,42,0.06)",
+        ...style,
       }}
     >
       <h2
@@ -53,6 +55,7 @@ export function InfoRow({ label, value }: { label: string; value: string }) {
           fontSize: "19px",
           fontWeight: 750,
           color: "#0f172a",
+          overflowWrap: "anywhere",
         }}
       >
         {value}

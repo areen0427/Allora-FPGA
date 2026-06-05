@@ -1,8 +1,9 @@
 export type DashboardSection =
   | "editor"
   | "board"
-  | "constraints"
   | "synthesis"
+  | "pin-mapping"
+  | "constraints"
   | "bitstream";
 
 export type ProjectFile = {

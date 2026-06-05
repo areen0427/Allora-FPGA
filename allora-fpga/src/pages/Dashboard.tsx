@@ -4,6 +4,8 @@ import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
 import BoardSection from "./dashboard/BoardSection";
 import ConstraintsSection from "./dashboard/ConstraintsSection";
+import SynthesisSection from "./dashboard/SynthesisSection";
+import PinMappingSection from "./dashboard/PinMappingSection";
 import PlaceholderSection from "./dashboard/PlaceholderSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
@@ -252,8 +254,9 @@ function deleteFile(fileName: string) {
         <nav style={{ display: "grid", gap: "8px" }}>
           <SidebarButton label="Editor" active={activeSection === "editor"} onClick={() => setActiveSection("editor")} />
           <SidebarButton label="Board" active={activeSection === "board"} onClick={() => setActiveSection("board")} />
-          <SidebarButton label="Constraints" active={activeSection === "constraints"} onClick={() => setActiveSection("constraints")} />
           <SidebarButton label="Synthesis" active={activeSection === "synthesis"} onClick={() => setActiveSection("synthesis")} />
+          <SidebarButton label="Pin Mapping" active={activeSection === "pin-mapping"} onClick={() => setActiveSection("pin-mapping")} />
+          <SidebarButton label="Constraints" active={activeSection === "constraints"} onClick={() => setActiveSection("constraints")} />
           <SidebarButton label="Bitstream" active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
         </nav>
 
@@ -434,7 +437,7 @@ function deleteFile(fileName: string) {
       <main
         style={{
           flex: 1,
-          padding: activeSection === "editor" ? "0" : "16px",
+          padding: "0",
           overflowY: "auto",
         }}
       >
@@ -454,9 +457,16 @@ function deleteFile(fileName: string) {
         {activeSection === "board" && <BoardSection board={board} />}
         {activeSection === "constraints" && <ConstraintsSection board={board} />}
         {activeSection === "synthesis" && (
-          <PlaceholderSection
-            title="Synthesis"
-            description="This will run the selected synthesis flow for this board."
+          <SynthesisSection
+            board={board}
+            files={files}
+            projectName={projectName}
+          />
+        )}
+        {activeSection === "pin-mapping" && (
+          <PinMappingSection
+            board={board}
+            files={files}
           />
         )}
         {activeSection === "bitstream" && (
