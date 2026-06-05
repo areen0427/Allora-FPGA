@@ -1,4 +1,13 @@
+import { useState } from "react";
 import type { BoardDefinition } from "../data/boards";
+
+type DashboardSection =
+  | "overview"
+  | "board"
+  | "files"
+  | "constraints"
+  | "synthesis"
+  | "bitstream";
 
 type DashboardProps = {
   board: BoardDefinition;
@@ -13,6 +22,9 @@ export default function Dashboard({
   language,
   onBack,
 }: DashboardProps) {
+  const [activeSection, setActiveSection] =
+    useState<DashboardSection>("overview");
+
   return (
     <div
       style={{
@@ -21,100 +33,355 @@ export default function Dashboard({
         color: "#0f172a",
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-        padding: "40px",
+        display: "flex",
       }}
     >
-      <button
-        onClick={onBack}
+      <aside
         style={{
-          border: "none",
-          background: "transparent",
-          color: "#2563eb",
-          fontSize: "16px",
-          fontWeight: 700,
-          cursor: "pointer",
-          marginBottom: "32px",
+          width: "280px",
+          background: "#ffffff",
+          borderRight: "1px solid #e2e8f0",
+          padding: "28px 20px",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        ← Back to setup
-      </button>
-
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "56px",
-            fontWeight: 800,
-            letterSpacing: "-0.05em",
-          }}
-        >
-          {projectName || "Untitled Project"}
-        </h1>
-
-        <p
-          style={{
-            marginTop: "12px",
-            fontSize: "20px",
-            color: "#64748b",
-          }}
-        >
-          {board.name} · {board.vendor} {board.device}
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "24px",
-            marginTop: "42px",
-          }}
-        >
-          <div style={cardStyle}>
-            <h2 style={cardTitleStyle}>Project</h2>
-
-            <p style={labelStyle}>Name</p>
-            <p style={valueStyle}>{projectName || "Untitled Project"}</p>
-
-            <p style={labelStyle}>Language</p>
-            <p style={valueStyle}>{language}</p>
+        <div style={{ marginBottom: "32px" }}>
+          <div
+            style={{
+              fontSize: "22px",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+            }}
+          >
+            Allora FPGA
           </div>
 
-          <div style={cardStyle}>
-            <h2 style={cardTitleStyle}>Board Information</h2>
-
-            <p style={labelStyle}>Board</p>
-            <p style={valueStyle}>{board.name}</p>
-
-            <p style={labelStyle}>Vendor</p>
-            <p style={valueStyle}>{board.vendor}</p>
-
-            <p style={labelStyle}>Family</p>
-            <p style={valueStyle}>{board.family}</p>
-
-            <p style={labelStyle}>Device</p>
-            <p style={valueStyle}>{board.device}</p>
-
-            <p style={labelStyle}>Package</p>
-            <p style={valueStyle}>{board.package}</p>
-
-            <p style={labelStyle}>Constraint Format</p>
-            <p style={valueStyle}>{board.constraintsFile.toUpperCase()}</p>
-
-            <p style={labelStyle}>Synthesis Flow</p>
-            <p style={valueStyle}>{formatSynthesisFlow(board.synthesisFlow)}</p>
+          <div
+            style={{
+              marginTop: "6px",
+              color: "#64748b",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            {projectName || "Untitled Project"}
           </div>
         </div>
 
-        <div style={{ ...cardStyle, marginTop: "24px" }}>
-          <h2 style={cardTitleStyle}>Files</h2>
+        <nav style={{ display: "grid", gap: "8px" }}>
+          <SidebarButton
+            label="Overview"
+            active={activeSection === "overview"}
+            onClick={() => setActiveSection("overview")}
+          />
+          <SidebarButton
+            label="Board"
+            active={activeSection === "board"}
+            onClick={() => setActiveSection("board")}
+          />
+          <SidebarButton
+            label="Files"
+            active={activeSection === "files"}
+            onClick={() => setActiveSection("files")}
+          />
+          <SidebarButton
+            label="Constraints"
+            active={activeSection === "constraints"}
+            onClick={() => setActiveSection("constraints")}
+          />
+          <SidebarButton
+            label="Synthesis"
+            active={activeSection === "synthesis"}
+            onClick={() => setActiveSection("synthesis")}
+          />
+          <SidebarButton
+            label="Bitstream"
+            active={activeSection === "bitstream"}
+            onClick={() => setActiveSection("bitstream")}
+          />
+        </nav>
 
-          <div style={fileRowStyle}>top.v</div>
-          <div style={fileRowStyle}>constraints.{board.constraintsFile}</div>
-          <div style={fileRowStyle}>README.md</div>
+        <button
+          onClick={onBack}
+          style={{
+            marginTop: "auto",
+            border: "1px solid #e2e8f0",
+            background: "#ffffff",
+            color: "#475569",
+            borderRadius: "14px",
+            padding: "13px 14px",
+            fontSize: "15px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          ← Back to setup
+        </button>
+      </aside>
+
+      <main
+        style={{
+          flex: 1,
+          padding: "40px",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ maxWidth: "1100px" }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "48px",
+              fontWeight: 850,
+              letterSpacing: "-0.05em",
+            }}
+          >
+            {getSectionTitle(activeSection)}
+          </h1>
+
+          <p
+            style={{
+              marginTop: "10px",
+              fontSize: "18px",
+              color: "#64748b",
+            }}
+          >
+            {board.name} · {board.vendor} {board.device}
+          </p>
+
+          <div style={{ marginTop: "34px" }}>
+            {activeSection === "overview" && (
+              <OverviewSection
+                board={board}
+                projectName={projectName}
+                language={language}
+              />
+            )}
+
+            {activeSection === "board" && <BoardSection board={board} />}
+
+            {activeSection === "files" && <FilesSection board={board} />}
+
+            {activeSection === "constraints" && (
+              <PlaceholderSection
+                title="Constraint Generator"
+                description="This will auto-generate pin constraint files based on the selected board."
+              />
+            )}
+
+            {activeSection === "synthesis" && (
+              <PlaceholderSection
+                title="Synthesis"
+                description="This will run the selected synthesis flow for this board."
+              />
+            )}
+
+            {activeSection === "bitstream" && (
+              <PlaceholderSection
+                title="Bitstream"
+                description="This will generate a programming bitstream for the target FPGA."
+              />
+            )}
+          </div>
         </div>
+      </main>
+    </div>
+  );
+}
+
+function SidebarButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: "none",
+        borderRadius: "14px",
+        padding: "13px 14px",
+        textAlign: "left",
+        fontSize: "15px",
+        fontWeight: 800,
+        cursor: "pointer",
+        background: active ? "#eef2ff" : "transparent",
+        color: active ? "#2563eb" : "#475569",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function OverviewSection({
+  board,
+  projectName,
+  language,
+}: {
+  board: BoardDefinition;
+  projectName: string;
+  language: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: "22px",
+      }}
+    >
+      <InfoCard title="Project">
+        <InfoRow label="Name" value={projectName || "Untitled Project"} />
+        <InfoRow label="Language" value={language} />
+      </InfoCard>
+
+      <InfoCard title="Target Board">
+        <InfoRow label="Board" value={board.name} />
+        <InfoRow label="Device" value={board.device} />
+        <InfoRow label="Flow" value={formatSynthesisFlow(board.synthesisFlow)} />
+      </InfoCard>
+    </div>
+  );
+}
+
+function BoardSection({ board }: { board: BoardDefinition }) {
+  return (
+    <InfoCard title="Board Information">
+      <InfoRow label="Vendor" value={board.vendor} />
+      <InfoRow label="Family" value={board.family} />
+      <InfoRow label="Device" value={board.device} />
+      <InfoRow label="Package" value={board.package} />
+      <InfoRow label="Constraint Format" value={board.constraintsFile.toUpperCase()} />
+      <InfoRow label="Synthesis Flow" value={formatSynthesisFlow(board.synthesisFlow)} />
+    </InfoCard>
+  );
+}
+
+function FilesSection({ board }: { board: BoardDefinition }) {
+  return (
+    <InfoCard title="Project Files">
+      <FileRow name="top.v" />
+      <FileRow name={`constraints.${board.constraintsFile}`} />
+      <FileRow name="README.md" />
+    </InfoCard>
+  );
+}
+
+function PlaceholderSection({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <InfoCard title={title}>
+      <p
+        style={{
+          margin: 0,
+          color: "#64748b",
+          fontSize: "17px",
+          lineHeight: 1.6,
+        }}
+      >
+        {description}
+      </p>
+    </InfoCard>
+  );
+}
+
+function InfoCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
+        borderRadius: "24px",
+        padding: "28px",
+        boxShadow: "0 14px 34px rgba(15,23,42,0.06)",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          marginBottom: "22px",
+          fontSize: "24px",
+          letterSpacing: "-0.03em",
+        }}
+      >
+        {title}
+      </h2>
+
+      {children}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ marginTop: "18px" }}>
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 800,
+          color: "#64748b",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: "5px",
+          fontSize: "19px",
+          fontWeight: 750,
+          color: "#0f172a",
+        }}
+      >
+        {value}
       </div>
     </div>
   );
+}
+
+function FileRow({ name }: { name: string }) {
+  return (
+    <div
+      style={{
+        padding: "15px 16px",
+        borderRadius: "14px",
+        background: "#f8fafc",
+        border: "1px solid #e2e8f0",
+        fontSize: "16px",
+        fontWeight: 700,
+        marginTop: "12px",
+      }}
+    >
+      {name}
+    </div>
+  );
+}
+
+function getSectionTitle(section: DashboardSection) {
+  if (section === "overview") return "Overview";
+  if (section === "board") return "Board";
+  if (section === "files") return "Files";
+  if (section === "constraints") return "Constraints";
+  if (section === "synthesis") return "Synthesis";
+  if (section === "bitstream") return "Bitstream";
+  return "Dashboard";
 }
 
 function formatSynthesisFlow(flow: string) {
@@ -124,43 +391,3 @@ function formatSynthesisFlow(flow: string) {
   if (flow === "quartus") return "Quartus";
   return flow;
 }
-
-const cardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "24px",
-  padding: "30px",
-  boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  margin: 0,
-  marginBottom: "24px",
-  fontSize: "26px",
-};
-
-const labelStyle: React.CSSProperties = {
-  margin: 0,
-  marginTop: "18px",
-  fontSize: "14px",
-  fontWeight: 700,
-  color: "#64748b",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-};
-
-const valueStyle: React.CSSProperties = {
-  margin: "6px 0 0",
-  fontSize: "20px",
-  fontWeight: 700,
-};
-
-const fileRowStyle: React.CSSProperties = {
-  padding: "16px 18px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "14px",
-  marginTop: "12px",
-  fontSize: "17px",
-  fontWeight: 600,
-  background: "#f8fafc",
-};
