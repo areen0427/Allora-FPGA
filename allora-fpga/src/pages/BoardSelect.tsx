@@ -1,10 +1,12 @@
 import { BOARDS } from "../data/boards";
+import { useState } from "react";
 
 type BoardSelectProps = {
   onSelectBoard: (boardId: string) => void;
 };
 
 export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
+  const [selectedVariantBoard, setSelectedVariantBoard] = useState(null);
   return (
     <div
       style={{
@@ -90,7 +92,13 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
         <button
             className="board-card"
             key={board.id}
-            onClick={() => onSelectBoard(board.id)}
+            onClick={() => {
+            if ((board as any).variants) {
+              setSelectedVariantBoard(board);
+            } else {
+              onSelectBoard(board.id);
+            }
+          }}
             style={{
                 border: "1px solid #e2e8f0",
                 borderRadius: "24px",
@@ -126,6 +134,62 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
           ))}
         </div>
       </div>
+
+      {selectedVariantBoard && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setSelectedVariantBoard(null)}
+        >
+          <div
+            className="variant-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="variant-modal-header">
+              <h2>Select ULX3S Variant</h2>
+
+              <button
+                onClick={() => setSelectedVariantBoard(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="variant-grid">
+              <button
+                className="variant-card"
+                onClick={() => onSelectBoard("ulx3s-12f")}
+              >
+                <h3>ULX3S 12F</h3>
+                <p>LFE5U-12F</p>
+              </button>
+
+              <button
+                className="variant-card"
+                onClick={() => onSelectBoard("ulx3s-25f")}
+              >
+                <h3>ULX3S 25F</h3>
+                <p>LFE5U-25F</p>
+              </button>
+
+              <button
+                className="variant-card"
+                onClick={() => onSelectBoard("ulx3s-45f")}
+              >
+                <h3>ULX3S 45F</h3>
+                <p>LFE5U-45F</p>
+              </button>
+
+              <button
+                className="variant-card"
+                onClick={() => onSelectBoard("ulx3s-85f")}
+              >
+                <h3>ULX3S 85F</h3>
+                <p>LFE5U-85F</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,72 @@
+import type { BoardDefinition } from "../boardTypes";
+
+export const icebreaker: BoardDefinition = {
+  id: "icebreaker",
+  name: "iCEBreaker",
+  vendor: "Lattice",
+  family: "iCE40 UltraPlus",
+  device: "iCE40UP5K",
+  package: "SG48",
+  fpgaId: "ice40up5k-sg48",
+  constraintsFile: "pcf",
+  synthesisFlow: "yosys-nextpnr",
+  toolchain: {
+    synth: "yosys",
+    placeRoute: "nextpnr-ice40",
+    pack: "icepack",
+    program: "iceprog",
+  },
+
+  clocks: [
+    {
+      name: "clk12",
+      pin: "35",
+      frequency: 12000000,
+      verified: true,
+    },
+  ],
+
+  pins: [
+    { name: "iCEBreaker_TX", signal: "tx", pin: "9", type: "uart", group: "UART", verified: true },
+    { name: "iCEBreaker_RX", signal: "rx", pin: "6", type: "uart", group: "UART", verified: true },
+
+    { name: "iCEBreaker_FLASH_SDO", signal: "flash_sdo", pin: "14", type: "flash", group: "SPI on-board flash", verified: true },
+    { name: "iCEBreaker_FLASH_SCK", signal: "flash_sck", pin: "15", type: "flash", group: "SPI on-board flash", verified: true },
+    { name: "iCEBreaker_FLASH_CSN", signal: "flash_csn", pin: "16", type: "flash", group: "SPI on-board flash", verified: true },
+    { name: "iCEBreaker_FLASH_SDI", signal: "flash_sdi", pin: "17", type: "flash", group: "SPI on-board flash", verified: true },
+
+    { name: "iCEBreaker_SPI_SDO", signal: "spi_sdo", pin: "43", type: "spi", group: "SPI user port", verified: true },
+    { name: "iCEBreaker_SPI_SCK", signal: "spi_sck", pin: "38", type: "spi", group: "SPI user port", verified: true },
+    { name: "iCEBreaker_SPI_CSN", signal: "spi_csn", pin: "34", type: "spi", group: "SPI user port", verified: true },
+    { name: "iCEBreaker_SPI_SDI", signal: "spi_sdi", pin: "31", type: "spi", group: "SPI user port", verified: true },
+
+    { name: "iCEBreaker_TWI_SDA", signal: "i2c_sda", pin: "2", type: "i2c", group: "TWI", verified: true },
+    { name: "iCEBreaker_TWI_SCL", signal: "i2c_scl", pin: "4", type: "i2c", group: "TWI", verified: true },
+
+    { name: "iCEBreaker_GPIO_I[0]", signal: "gpio_i0", pin: "18", type: "gpio", group: "GPIO input", verified: true },
+    { name: "iCEBreaker_GPIO_I[1]", signal: "gpio_i1", pin: "19", type: "gpio", group: "GPIO input", verified: true },
+    { name: "iCEBreaker_GPIO_I[2]", signal: "gpio_i2", pin: "20", type: "gpio", group: "GPIO input", verified: true },
+    { name: "iCEBreaker_GPIO_I[3]", signal: "gpio_i3", pin: "28", type: "gpio", group: "GPIO input", verified: true },
+
+    { name: "iCEBreaker_GPIO_O[0]", signal: "gpio_o0", pin: "25", type: "gpio", group: "GPIO output", verified: true },
+    { name: "iCEBreaker_GPIO_O[1]", signal: "gpio_o1", pin: "26", type: "gpio", group: "GPIO output", verified: true },
+    { name: "iCEBreaker_GPIO_O[2]", signal: "gpio_o2", pin: "27", type: "gpio", group: "GPIO output", verified: true },
+    { name: "iCEBreaker_GPIO_O[3]", signal: "gpio_o3", pin: "23", type: "gpio", group: "GPIO output", verified: true },
+
+    { name: "iCEBreaker_LED_R", signal: "rgb_red", pin: "39", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+    { name: "iCEBreaker_LED_G", signal: "rgb_green", pin: "40", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+    { name: "iCEBreaker_LED_B", signal: "rgb_blue", pin: "41", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+
+    { name: "iCEBreaker_USR_RST_BTN", signal: "usr_rst_btn", pin: "10", type: "button", group: "User Reset Button", activeLow: true, verified: true },
+  ],
+
+  leds: [
+    { name: "rgb_red", signal: "rgb_red", pin: "39", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+    { name: "rgb_green", signal: "rgb_green", pin: "40", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+    { name: "rgb_blue", signal: "rgb_blue", pin: "41", type: "led", group: "RGB power LED", activeLow: true, verified: true },
+  ],
+
+  buttons: [
+    { name: "usr_rst_btn", signal: "usr_rst_btn", pin: "10", type: "button", group: "User Reset Button", activeLow: true, verified: true },
+  ],
+};
