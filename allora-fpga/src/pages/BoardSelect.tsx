@@ -5,47 +5,59 @@ export default function BoardSelect() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%)",
+        background: "#f8fafc",
         color: "#0f172a",
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
         display: "flex",
-        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
+        padding: "40px",
+        boxSizing: "border-box",
       }}
     >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1100px",
+        }}
+      >
+        {/* Logo */}
         <div
             style={{
-                width: "100%",
-                maxWidth: "1400px",
-                margin: "0 auto",
-                padding: "0 40px",
+                height: "100px",
+                overflow: "hidden",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "10px",
             }}
-        >
-        <div style={{ textAlign: "center", marginBottom: "56px" }}>
-          <div
-            style={{
-              display: "inline-block",
-              padding: "8px 14px",
-              borderRadius: "999px",
-              background: "#e0f2fe",
-              color: "#0369a1",
-              fontSize: "14px",
-              fontWeight: 600,
-              marginBottom: "18px",
-            }}
-          >
-            Allora FPGA
-          </div>
+            >
+            <img
+                src="/logo.png"
+                alt="Allora FPGA"
+                style={{
+                height: "220px",
+                width: "auto",
+                }}
+            />
+        </div>
 
+        {/* Header */}
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "50px",
+          }}
+        >
           <h1
             style={{
-              fontSize: "56px",
-              lineHeight: 1,
-              margin: 0,
-              letterSpacing: "-0.05em",
+              fontSize: "64px",
               fontWeight: 800,
+              letterSpacing: "-0.05em",
+              margin: 0,
+              lineHeight: 1,
+              color: "#0f172a",
             }}
           >
             Choose your FPGA board
@@ -53,19 +65,20 @@ export default function BoardSelect() {
 
           <p
             style={{
-              color: "#64748b",
               marginTop: "18px",
-              fontSize: "20px",
+              fontSize: "22px",
+              color: "#64748b",
             }}
           >
             Select a board to start a new hardware project.
           </p>
         </div>
 
+        {/* Board Grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(280px, 1fr))",
+            gridTemplateColumns: "repeat(2, 1fr)",
             gap: "24px",
           }}
         >
@@ -76,21 +89,20 @@ export default function BoardSelect() {
               style={{
                 border: "1px solid #e2e8f0",
                 borderRadius: "24px",
-                padding: "30px",
-                background: "rgba(255, 255, 255, 0.85)",
+                padding: "28px",
+                background: "#ffffff",
                 cursor: "pointer",
                 textAlign: "left",
-                boxShadow: "0 20px 40px rgba(15, 23, 42, 0.06)",
-                minHeight: "160px",
+                boxShadow: "0 8px 20px rgba(15,23,42,0.05)",
+                height: "170px",
               }}
             >
               <h2
                 style={{
                   margin: 0,
-                  marginBottom: "12px",
                   fontSize: "28px",
                   color: "#0f172a",
-                  letterSpacing: "-0.03em",
+                  fontWeight: 700,
                 }}
               >
                 {board.name}
@@ -98,9 +110,9 @@ export default function BoardSelect() {
 
               <p
                 style={{
-                  margin: 0,
+                  marginTop: "12px",
+                  fontSize: "18px",
                   color: "#64748b",
-                  fontSize: "17px",
                 }}
               >
                 {board.fpga}
@@ -108,10 +120,10 @@ export default function BoardSelect() {
 
               <p
                 style={{
-                  marginTop: "28px",
+                  marginTop: "30px",
                   color: "#2563eb",
-                  fontSize: "15px",
                   fontWeight: 600,
+                  fontSize: "16px",
                 }}
               >
                 Select board →
