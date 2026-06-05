@@ -1,6 +1,10 @@
 import { boards } from "../data/boards";
 
-export default function BoardSelect() {
+type BoardSelectProps = {
+  onSelectBoard: (boardId: string) => void;
+};
+
+export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
   return (
     <div
       style={{
@@ -82,17 +86,18 @@ export default function BoardSelect() {
             gap: "24px",
           }}
         >
-          {boards.map((board) => (
-            <button
-              key={board.id}
-              onClick={() => console.log(board.id)}
-              style={{
+        {boards.map((board) => (
+        <button
+            className="board-card"
+            key={board.id}
+            onClick={() => onSelectBoard(board.id)}
+            style={{
                 border: "1px solid #e2e8f0",
                 borderRadius: "24px",
                 padding: "28px",
                 background: "#ffffff",
                 cursor: "pointer",
-                textAlign: "left",
+                textAlign: "center",
                 boxShadow: "0 8px 20px rgba(15,23,42,0.05)",
                 height: "170px",
               }}
@@ -116,17 +121,6 @@ export default function BoardSelect() {
                 }}
               >
                 {board.fpga}
-              </p>
-
-              <p
-                style={{
-                  marginTop: "30px",
-                  color: "#2563eb",
-                  fontWeight: 600,
-                  fontSize: "16px",
-                }}
-              >
-                Select board →
               </p>
             </button>
           ))}

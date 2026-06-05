@@ -19,3 +19,14 @@ body {
     BlinkMacSystemFont,
     sans-serif;
 }
+
+.board-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.board-card:hover {
+  transform: scale(1.06);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
