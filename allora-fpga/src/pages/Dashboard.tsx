@@ -1,11 +1,7 @@
-type Board = {
-  id: string;
-  name: string;
-  fpga: string;
-};
+import type { BoardDefinition } from "../data/boards";
 
 type DashboardProps = {
-  board: Board;
+  board: BoardDefinition;
   projectName: string;
   language: string;
   onBack: () => void;
@@ -62,7 +58,7 @@ export default function Dashboard({
             color: "#64748b",
           }}
         >
-          {board.name} · {board.fpga}
+          {board.name} · {board.vendor} {board.device}
         </p>
 
         <div
@@ -75,6 +71,7 @@ export default function Dashboard({
         >
           <div style={cardStyle}>
             <h2 style={cardTitleStyle}>Project</h2>
+
             <p style={labelStyle}>Name</p>
             <p style={valueStyle}>{projectName || "Untitled Project"}</p>
 
@@ -83,12 +80,28 @@ export default function Dashboard({
           </div>
 
           <div style={cardStyle}>
-            <h2 style={cardTitleStyle}>Board</h2>
-            <p style={labelStyle}>Board Name</p>
+            <h2 style={cardTitleStyle}>Board Information</h2>
+
+            <p style={labelStyle}>Board</p>
             <p style={valueStyle}>{board.name}</p>
 
-            <p style={labelStyle}>FPGA Device</p>
-            <p style={valueStyle}>{board.fpga}</p>
+            <p style={labelStyle}>Vendor</p>
+            <p style={valueStyle}>{board.vendor}</p>
+
+            <p style={labelStyle}>Family</p>
+            <p style={valueStyle}>{board.family}</p>
+
+            <p style={labelStyle}>Device</p>
+            <p style={valueStyle}>{board.device}</p>
+
+            <p style={labelStyle}>Package</p>
+            <p style={valueStyle}>{board.package}</p>
+
+            <p style={labelStyle}>Constraint Format</p>
+            <p style={valueStyle}>{board.constraintsFile.toUpperCase()}</p>
+
+            <p style={labelStyle}>Synthesis Flow</p>
+            <p style={valueStyle}>{formatSynthesisFlow(board.synthesisFlow)}</p>
           </div>
         </div>
 
@@ -96,12 +109,20 @@ export default function Dashboard({
           <h2 style={cardTitleStyle}>Files</h2>
 
           <div style={fileRowStyle}>top.v</div>
-          <div style={fileRowStyle}>constraints.pcf</div>
+          <div style={fileRowStyle}>constraints.{board.constraintsFile}</div>
           <div style={fileRowStyle}>README.md</div>
         </div>
       </div>
     </div>
   );
+}
+
+function formatSynthesisFlow(flow: string) {
+  if (flow === "yosys-nextpnr") return "Yosys + NextPNR";
+  if (flow === "gowin") return "Gowin";
+  if (flow === "vivado") return "Vivado";
+  if (flow === "quartus") return "Quartus";
+  return flow;
 }
 
 const cardStyle: React.CSSProperties = {

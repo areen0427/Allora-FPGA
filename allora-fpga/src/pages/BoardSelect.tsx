@@ -1,4 +1,4 @@
-import { boards } from "../data/boards";
+import { BOARDS } from "../data/boards";
 
 type BoardSelectProps = {
   onSelectBoard: (boardId: string) => void;
@@ -86,7 +86,7 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
             gap: "24px",
           }}
         >
-        {boards.map((board) => (
+        {BOARDS.map((board) => (
         <button
             className="board-card"
             key={board.id}
@@ -120,7 +120,7 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
                   color: "#64748b",
                 }}
               >
-                {board.fpga}
+                {board.vendor} {board.device}
               </p>
             </button>
           ))}

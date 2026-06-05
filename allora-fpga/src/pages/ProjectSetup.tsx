@@ -1,18 +1,10 @@
 import { useState } from "react";
-
-type Board = {
-  id: string;
-  name: string;
-  fpga: string;
-};
+import type { BoardDefinition } from "../data/boards";
 
 type ProjectSetupProps = {
-  board: Board;
+  board: BoardDefinition;
   onBack: () => void;
-  onCreateProject: (
-    projectName: string,
-    language: string
-  ) => void;
+  onCreateProject: (projectName: string, language: string) => void;
 };
 
 export default function ProjectSetup({
@@ -78,7 +70,7 @@ export default function ProjectSetup({
             color: "#64748b",
           }}
         >
-          {board.name} · {board.fpga}
+          {board.name} · {board.vendor} {board.device}
         </p>
 
         <label style={{ display: "block", marginTop: "36px", fontWeight: 700 }}>
@@ -122,12 +114,7 @@ export default function ProjectSetup({
         </select>
 
         <button
-          onClick={() =>
-            onCreateProject(
-                projectName,
-                language
-            )
-        }
+          onClick={() => onCreateProject(projectName, language)}
           style={{
             width: "100%",
             marginTop: "36px",

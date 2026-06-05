@@ -2,7 +2,7 @@ import { useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import Dashboard from "./pages/Dashboard";
-import { boards } from "./data/boards";
+import { BOARDS } from "./data/boards";
 
 type AppStage = "board-select" | "project-setup" | "dashboard";
 
@@ -12,7 +12,7 @@ function App() {
   const [projectName, setProjectName] = useState("");
   const [language, setLanguage] = useState("Verilog");
 
-  const selectedBoard = boards.find((board) => board.id === selectedBoardId);
+  const selectedBoard = BOARDS.find((board) => board.id === selectedBoardId);
 
   if (stage === "board-select") {
     return (
