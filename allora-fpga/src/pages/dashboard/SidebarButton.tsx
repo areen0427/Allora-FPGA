@@ -20,7 +20,9 @@ export default function SidebarButton({
         fontSize: "14px",
         fontWeight: 700,
         cursor: "pointer",
-        background: active ? "#eef2ff" : "transparent",
+        background: active
+          ? "linear-gradient(90deg, #dbeafe 0%, rgba(219,234,254,0.55) 56%, rgba(219,234,254,0) 100%)"
+          : "transparent",
         color: active ? "#2563eb" : "#475569",
         transition: "all 0.15s ease",
       }}

@@ -11,6 +11,10 @@ type BoardSelectProps = {
 
 function getBoardSummary(board: (typeof BOARDS)[number]) {
   if ("variants" in board) {
+    if (board.id === "tinyfpga") {
+      return [board.vendor, "iCE40 LP", board.device, "CM81"];
+    }
+
     return [
       board.vendor,
       board.device,
@@ -404,7 +408,7 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="variant-modal-header">
-              <h2>Select ULX3S Variant</h2>
+              <h2>Select {selectedVariantBoard.name} Variant</h2>
 
               <button
                 onClick={() => setSelectedVariantBoard(null)}
@@ -414,37 +418,19 @@ export default function BoardSelect({ onSelectBoard }: BoardSelectProps) {
             </div>
 
             <div className="variant-grid">
-              <button
-                className="variant-card"
-                onClick={() => onSelectBoard("ulx3s-12f")}
-              >
-                <h3>ULX3S 12F</h3>
-                <p>LFE5U-12F</p>
-              </button>
-
-              <button
-                className="variant-card"
-                onClick={() => onSelectBoard("ulx3s-25f")}
-              >
-                <h3>ULX3S 25F</h3>
-                <p>LFE5U-25F</p>
-              </button>
-
-              <button
-                className="variant-card"
-                onClick={() => onSelectBoard("ulx3s-45f")}
-              >
-                <h3>ULX3S 45F</h3>
-                <p>LFE5U-45F</p>
-              </button>
-
-              <button
-                className="variant-card"
-                onClick={() => onSelectBoard("ulx3s-85f")}
-              >
-                <h3>ULX3S 85F</h3>
-                <p>LFE5U-85F</p>
-              </button>
+              {selectedVariantBoard.variants.map((variant) => (
+                <button
+                  className="variant-card"
+                  key={variant.id}
+                  onClick={() => {
+                    setSelectedVariantBoard(null);
+                    onSelectBoard(variant.id);
+                  }}
+                >
+                  <h3>{variant.name}</h3>
+                  <p>{variant.fpga}</p>
+                </button>
+              ))}
             </div>
           </div>
         </div>

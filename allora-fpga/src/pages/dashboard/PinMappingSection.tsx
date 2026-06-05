@@ -19,7 +19,7 @@ export default function PinMappingSection({
   board,
   files,
 }: PinMappingSectionProps) {
-  const [mode, setMode] = useState<"simple" | "advanced">("simple");
+  const [mode, setMode] = useState<"simple" | "advanced">("advanced");
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
   const ports = useMemo(() => findPorts(files), [files]);
   const suggestedMappings = useMemo(
@@ -50,53 +50,89 @@ export default function PinMappingSection({
         gridTemplateColumns: "minmax(0, 1fr) 260px",
         gap: "22px",
         alignItems: "start",
+        height: "calc(100vh - 48px)",
+        minHeight: 0,
+        overflow: "hidden",
       }}
     >
-      <InfoCard title="Pin Mapping">
+      <InfoCard
+        title="Pin Mapping"
+        style={{
+          height: "100%",
+          overflow: mode === "simple" ? "auto" : "hidden",
+          minHeight: 0,
+        }}
+      >
         <div
           style={{
-            display: "inline-flex",
-            gap: "4px",
-            padding: "4px",
-            borderRadius: "14px",
-            background: "#f1f5f9",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
             marginBottom: "18px",
           }}
         >
-          {(["simple", "advanced"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setMode(option)}
-              style={{
-                border: "none",
-                borderRadius: "10px",
-                background: mode === option ? "#ffffff" : "transparent",
-                color: mode === option ? "#2563eb" : "#64748b",
-                padding: "8px 12px",
-                fontSize: "13px",
-                fontWeight: 850,
-                cursor: "pointer",
-                textTransform: "capitalize",
-                boxShadow:
-                  mode === option ? "0 1px 3px rgba(15,23,42,0.08)" : "none",
-              }}
-            >
-              {option}
-            </button>
-          ))}
+          <div
+            style={{
+              display: "inline-flex",
+              gap: "4px",
+              padding: "4px",
+              borderRadius: "14px",
+              background: "#f1f5f9",
+            }}
+          >
+            {(["simple", "advanced"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setMode(option)}
+                style={{
+                  border: "none",
+                  borderRadius: "10px",
+                  background: mode === option ? "#ffffff" : "transparent",
+                  color: mode === option ? "#2563eb" : "#64748b",
+                  padding: "8px 12px",
+                  fontSize: "13px",
+                  fontWeight: 850,
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                  boxShadow:
+                    mode === option ? "0 1px 3px rgba(15,23,42,0.08)" : "none",
+                }}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOverrides({})}
+            disabled={Object.keys(overrides).length === 0}
+            style={{
+              border: "1px solid #dbe4f0",
+              borderRadius: "11px",
+              background: "#ffffff",
+              color: Object.keys(overrides).length === 0 ? "#94a3b8" : "#475569",
+              padding: "8px 11px",
+              fontSize: "13px",
+              fontWeight: 850,
+              cursor: Object.keys(overrides).length === 0 ? "not-allowed" : "pointer",
+            }}
+          >
+            Reset
+          </button>
         </div>
 
         <p
           style={{
             margin: 0,
             color: "#64748b",
-            fontSize: "16px",
-            lineHeight: 1.55,
+            fontSize: "14px",
+            lineHeight: 1.4,
           }}
         >
-          Suggested mappings are based on matching HDL port names to known board
-          signals. Override any port with the selector.
+          Select a signal, then choose where it lands on the package.
         </p>
 
         {mode === "simple" ? (
@@ -119,7 +155,10 @@ export default function PinMappingSection({
         )}
       </InfoCard>
 
-      <InfoCard title="Summary" style={{ padding: "20px", borderRadius: "20px" }}>
+      <InfoCard
+        title="Summary"
+        style={{ padding: "20px", borderRadius: "20px", maxHeight: "100%" }}
+      >
         <InfoRow label="Detected Ports" value={String(ports.length)} />
         <InfoRow label="Mapped Ports" value={String(mappedCount)} />
         <InfoRow label="Board Pins" value={String(board.pins.length)} />
@@ -272,7 +311,8 @@ function AdvancedPinMapper({
   setPortMapping: (portName: string, pinKey: string) => void;
 }) {
   const pinOptions = getPinOptions(board);
-  const selectedPort = ports.find((port) => port.name === selectedPortName) ?? null;
+  const selectedPort =
+    ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
   const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
   const leftPins = pinOptions.slice(0, Math.ceil(pinOptions.length / 2));
   const rightPins = pinOptions.slice(Math.ceil(pinOptions.length / 2));
@@ -283,55 +323,65 @@ function AdvancedPinMapper({
   }
 
   return (
-    <div style={{ marginTop: "24px", display: "grid", gap: "18px" }}>
+    <div style={{ marginTop: "18px", display: "grid", gap: "14px" }}>
       {ports.length === 0 ? (
         <EmptyPortState />
       ) : (
         <>
           <div
             style={{
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-              padding: "14px",
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) auto",
+              gap: "12px",
+              alignItems: "center",
+              padding: "12px",
               border: "1px solid #e2e8f0",
               borderRadius: "16px",
               background: "#f8fafc",
             }}
           >
-            {ports.map((port) => {
-              const isSelected = port.name === selectedPortName;
-              const mapped = Boolean(getSelectedPin(port.name));
+            <select
+              value={selectedPort?.name ?? ""}
+              onChange={(event) => setSelectedPortName(event.target.value)}
+              style={{
+                width: "100%",
+                minWidth: 0,
+                border: "1px solid #cbd5e1",
+                borderRadius: "12px",
+                background: "#ffffff",
+                color: "#0f172a",
+                padding: "10px 12px",
+                fontSize: "14px",
+                fontWeight: 800,
+              }}
+            >
+              {ports.map((port) => (
+                <option key={port.name} value={port.name}>
+                  {port.name} - {port.direction}
+                </option>
+              ))}
+            </select>
 
-              return (
-                <button
-                  key={port.name}
-                  type="button"
-                  onClick={() => setSelectedPortName(isSelected ? null : port.name)}
-                  style={{
-                    border: `1px solid ${isSelected ? "#2563eb" : "#dbe4f0"}`,
-                    borderRadius: "999px",
-                    background: isSelected ? "#eff6ff" : "#ffffff",
-                    color: isSelected ? "#2563eb" : "#475569",
-                    padding: "8px 11px",
-                    fontSize: "13px",
-                    fontWeight: 850,
-                    cursor: "pointer",
-                    boxShadow: mapped ? "inset 0 -2px 0 #bfdbfe" : "none",
-                  }}
-                >
-                  {port.name}
-                </button>
-              );
-            })}
+            <div
+              style={{
+                color: "#64748b",
+                fontSize: "12px",
+                fontWeight: 850,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {ports.filter((port) => getSelectedPin(port.name)).length}/{ports.length} mapped
+            </div>
           </div>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "minmax(120px, 180px) minmax(260px, 1fr) minmax(120px, 180px)",
-              gap: "16px",
-              alignItems: "stretch",
+              gridTemplateColumns: "auto minmax(240px, 360px) auto",
+              gap: "22px",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "360px",
             }}
           >
             <PinRail
@@ -343,25 +393,20 @@ function AdvancedPinMapper({
 
             <div
               style={{
-                minHeight: "420px",
-                border: "1px solid #dbe4f0",
-                borderRadius: "22px",
-                background:
-                  "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+                height: "360px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                position: "relative",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
               }}
             >
               <div
                 style={{
-                  width: "62%",
+                  width: "min(320px, 82%)",
                   aspectRatio: "1 / 1",
-                  border: "1px solid #94a3b8",
+                  border: "1px solid #cbd5e1",
                   borderRadius: "18px",
-                  background: "#f1f5f9",
+                  background:
+                    "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -369,11 +414,13 @@ function AdvancedPinMapper({
                   color: "#334155",
                   textAlign: "center",
                   padding: "20px",
+                  boxShadow:
+                    "0 12px 28px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
                 <div
                   style={{
-                    fontSize: "28px",
+                    fontSize: "24px",
                     fontWeight: 900,
                     letterSpacing: "-0.04em",
                   }}
@@ -384,7 +431,7 @@ function AdvancedPinMapper({
                   style={{
                     marginTop: "8px",
                     color: "#64748b",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 800,
                   }}
                 >
@@ -398,13 +445,13 @@ function AdvancedPinMapper({
                     border: "1px solid #dbe4f0",
                     color: selectedPort ? "#2563eb" : "#64748b",
                     padding: "9px 12px",
-                    fontSize: "13px",
+                    fontSize: "12px",
                     fontWeight: 850,
                   }}
                 >
                   {selectedPort
-                    ? `Assigning ${selectedPort.name}`
-                    : "Select a signal chip"}
+                    ? selectedPort.name
+                    : "Select signal"}
                 </div>
               </div>
             </div>
@@ -416,6 +463,8 @@ function AdvancedPinMapper({
               onAssignPin={assignPin}
             />
           </div>
+
+          <PinLegend />
         </>
       )}
     </div>
@@ -433,15 +482,16 @@ function PinRail({
   selectedPort: HdlPort | null;
   onAssignPin: (pinKey: string) => void;
 }) {
+  const rail = getRailLayout(pins.length);
+
   return (
     <div
       style={{
         display: "grid",
-        alignContent: "start",
-        gap: "6px",
-        maxHeight: "420px",
-        overflowY: "auto",
-        paddingRight: "2px",
+        alignContent: "center",
+        justifyContent: "center",
+        gridTemplateColumns: `repeat(${rail.columns}, ${rail.size}px)`,
+        gap: `${rail.gap}px`,
       }}
     >
       {pins.map((pin) => {
@@ -456,21 +506,97 @@ function PinRail({
             title={pin.label}
             style={{
               border: `1px solid ${active ? "#2563eb" : "#dbe4f0"}`,
-              borderRadius: "10px",
-              background: active ? "#eff6ff" : "#ffffff",
-              color: active ? "#2563eb" : selectedPort ? "#334155" : "#94a3b8",
-              padding: "8px 9px",
-              textAlign: "left",
-              fontSize: "12px",
-              fontWeight: 800,
+              borderRadius: "999px",
+              background: active ? "#eff6ff" : getPinTypeColor(pin.type).background,
+              color: active ? "#2563eb" : selectedPort ? getPinTypeColor(pin.type).color : "#94a3b8",
+              width: `${rail.dot}px`,
+              height: `${rail.dot}px`,
+              padding: 0,
+              textAlign: "center",
+              fontSize: `${rail.fontSize}px`,
+              fontWeight: 900,
               cursor: selectedPort ? "pointer" : "not-allowed",
               overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
             }}
           >
-            {pin.shortLabel}
+            {pin.symbol}
           </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function getRailLayout(pinCount: number) {
+  if (pinCount > 42) {
+    return { columns: 5, size: 31, dot: 30, gap: 5, fontSize: 8 };
+  }
+
+  if (pinCount > 28) {
+    return { columns: 4, size: 35, dot: 34, gap: 6, fontSize: 9 };
+  }
+
+  if (pinCount > 16) {
+    return { columns: 3, size: 39, dot: 38, gap: 7, fontSize: 10 };
+  }
+
+  return { columns: 2, size: 44, dot: 42, gap: 9, fontSize: 12 };
+}
+
+function PinLegend() {
+  const items = [
+    { label: "Clock", symbol: "CLK", type: "clock" },
+    { label: "GPIO", symbol: "IO", type: "gpio" },
+    { label: "LED", symbol: "LED", type: "led" },
+    { label: "Button/Reset", symbol: "BTN", type: "button" },
+    { label: "Bus", symbol: "BUS", type: "spi" },
+    { label: "USB/Other", symbol: "USB", type: "unknown" },
+  ];
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "8px",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        paddingTop: "2px",
+      }}
+    >
+      {items.map((item) => {
+        const color = getPinTypeColor(item.type);
+
+        return (
+          <div
+            key={item.label}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "#64748b",
+              fontSize: "12px",
+              fontWeight: 800,
+            }}
+          >
+            <span
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "999px",
+                background: color.background,
+                color: color.color,
+                border: "1px solid #dbe4f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "8px",
+                fontWeight: 900,
+              }}
+            >
+              {item.symbol}
+            </span>
+            {item.label}
+          </div>
         );
       })}
     </div>
@@ -751,15 +877,46 @@ function getPinOptions(board: BoardDefinition) {
         key: `clock:${clock.name}`,
         label: `${clock.name} (${clock.pin}) - Clock`,
         shortLabel: `${clock.name} ${clock.pin}`,
+        pin: clock.pin ?? "",
+        type: "clock",
+        symbol: "CLK",
       })),
     ...board.pins.map((pin) => ({
       key: `pin:${pin.name}:${pin.pin}`,
       label: `${pin.name} (${pin.pin})${pin.group ? ` - ${pin.group}` : ""}`,
       shortLabel: `${pin.name} ${pin.pin}`,
+      pin: pin.pin,
+      type: pin.type,
+      symbol: getPinSymbol(pin),
     })),
   ];
 }
 
 function normalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function getPinSymbol(pin: BoardPin) {
+  if (pin.type === "clock") return "CLK";
+  if (pin.type === "led") return "LED";
+  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
+  if (pin.type === "uart") return "URT";
+  if (pin.type === "spi" || pin.type === "flash") return "SPI";
+  if (pin.type === "i2c") return "I2C";
+  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+    return "USB";
+  }
+  if (pin.type === "gpio") return "IO";
+  return "PIN";
+}
+
+function getPinTypeColor(type: string) {
+  if (type === "clock") return { background: "#eff6ff", color: "#2563eb" };
+  if (type === "led") return { background: "#fef3c7", color: "#b45309" };
+  if (type === "button") return { background: "#fee2e2", color: "#b91c1c" };
+  if (type === "uart" || type === "spi" || type === "flash" || type === "i2c") {
+    return { background: "#f0fdf4", color: "#15803d" };
+  }
+  if (type === "unknown") return { background: "#f5f3ff", color: "#6d28d9" };
+  return { background: "#f8fafc", color: "#475569" };
 }

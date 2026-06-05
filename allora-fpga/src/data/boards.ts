@@ -1,6 +1,7 @@
 import type { BoardDefinition } from "./boardTypes";
 import { icebreaker } from "./boards/icebreaker";
 import { orangecrab } from "./boards/orangecrab";
+import { TINYFPGA_BOARDS } from "./boards/tinyfpga";
 import { ULX3S_BOARDS } from "./boards/ulx3s";
 
 export type {
@@ -28,11 +29,21 @@ export const BOARDS = [
       { id: "ulx3s-85f", name: "ULX3S 85F", fpga: "LFE5U-85F" },
     ],
   },
+  {
+    id: "tinyfpga",
+    name: "TinyFPGA",
+    vendor: "TinyFPGA",
+    device: "iCE40-LP8K",
+    variants: [
+      { id: "tinyfpga-b2", name: "TinyFPGA B2", fpga: "iCE40-LP8K" },
+      { id: "tinyfpga-bx", name: "TinyFPGA BX", fpga: "iCE40-LP8K" },
+    ],
+  },
 ];
 
 export function getBoardById(id: string): BoardDefinition | undefined {
   if (id === icebreaker.id) return icebreaker;
   if (id === orangecrab.id) return orangecrab;
 
-  return ULX3S_BOARDS.find((board) => board.id === id);
+  return [...ULX3S_BOARDS, ...TINYFPGA_BOARDS].find((board) => board.id === id);
 }

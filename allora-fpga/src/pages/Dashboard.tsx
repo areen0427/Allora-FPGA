@@ -166,6 +166,7 @@ function deleteFile(fileName: string) {
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
         display: "flex",
+        alignItems: "flex-start",
       }}
     >
       <aside
@@ -186,7 +187,8 @@ function deleteFile(fileName: string) {
         "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08)",
 
         padding: "18px 14px",
-          position: "relative",
+          position: "sticky",
+          top: "24px",
           display: "flex",
           flexDirection: "column",
         }}
@@ -277,57 +279,76 @@ function deleteFile(fileName: string) {
           <div
             style={{
               marginBottom: "12px",
-              color: "#64748b",
-              fontSize: "12px",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
             }}
           >
-            Files
+            <div
+              style={{
+                color: "#64748b",
+                fontSize: "12px",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Files
+            </div>
+
+            <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+              <button
+                type="button"
+                title="New file"
+                aria-label="New file"
+                onClick={() => createNewFile()}
+                style={{
+                  height: "28px",
+                  borderRadius: "9px",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#0f172a",
+                  fontWeight: 850,
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  lineHeight: 1,
+                  padding: "0 9px",
+                }}
+              >
+                Add
+              </button>
+
+              <label
+                title="Import HDL"
+                aria-label="Import HDL"
+                style={{
+                  height: "28px",
+                  borderRadius: "9px",
+                  border: "1px solid #dbe4f0",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  fontWeight: 850,
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                  padding: "0 9px",
+                }}
+              >
+                Import
+                <input
+                  type="file"
+                  multiple
+                  accept=".v,.sv,.vhd,.vhdl"
+                  onChange={importFiles}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
           </div>
-
-          <button
-            onClick={() => createNewFile()}
-            style={{
-              width: "100%",
-              marginBottom: "10px",
-              padding: "12px 14px",
-              borderRadius: "14px",
-              border: "1px solid #e2e8f0",
-              background: "#ffffff",
-              color: "#0f172a",
-              fontWeight: 800,
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
-          >
-            + New File
-          </button>
-
-          <label
-            style={{
-              display: "block",
-              marginBottom: "12px",
-              padding: "12px 14px",
-              borderRadius: "14px",
-              background: "#2563eb",
-              color: "#ffffff",
-              fontWeight: 800,
-              textAlign: "center",
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
-          >
-            Import HDL
-            <input
-              type="file"
-              multiple
-              accept=".v,.sv,.vhd,.vhdl"
-              onChange={importFiles}
-              style={{ display: "none" }}
-            />
-          </label>
             <div
                 style={{
                     overflowY: "auto",
@@ -438,7 +459,11 @@ function deleteFile(fileName: string) {
         style={{
           flex: 1,
           padding: "0",
-          overflowY: "auto",
+          overflowY:
+            activeSection === "editor" || activeSection === "pin-mapping"
+              ? "hidden"
+              : "visible",
+          minHeight: 0,
         }}
       >
         {activeSection === "editor" && (
