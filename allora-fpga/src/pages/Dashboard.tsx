@@ -6,7 +6,7 @@ import BoardSection from "./dashboard/BoardSection";
 import ConstraintsSection from "./dashboard/ConstraintsSection";
 import SynthesisSection from "./dashboard/SynthesisSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
-import PlaceholderSection from "./dashboard/PlaceholderSection";
+import BitstreamSection from "./dashboard/BitstreamSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
 import { Cpu } from "lucide-react";
@@ -38,6 +38,7 @@ export default function Dashboard({
   );
   const [sidebarWidth, setSidebarWidth] = useState(215);
   const [lastSavedAt, setLastSavedAt] = useState(project?.updatedAt ?? "");
+  const [confirmingDeleteFileName, setConfirmingDeleteFileName] = useState<string | null>(null);
 
   const activeFile = files.find((file) => file.name === activeFileName);
   const projectName = project?.name ?? "Untitled Project";
@@ -145,13 +146,6 @@ function updateActiveFile(content: string) {
 }
 
 function deleteFile(fileName: string) {
-  if (
-    settings.confirmBeforeDelete &&
-    !window.confirm(`Delete ${fileName}?`)
-  ) {
-    return;
-  }
-
   setFiles((currentFiles) => {
     const nextFiles = currentFiles.filter((file) => file.name !== fileName);
 
@@ -161,6 +155,15 @@ function deleteFile(fileName: string) {
 
     return nextFiles;
   });
+}
+
+function requestCloseFile(fileName: string) {
+  if (settings.confirmBeforeDelete) {
+    setConfirmingDeleteFileName(fileName);
+    return;
+  }
+
+  deleteFile(fileName);
 }
 
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -467,15 +470,24 @@ function deleteFile(fileName: string) {
                     {file.name}
                 </span>
 
-                <span
+                <button
+                    type="button"
                     className="fileClose"
+                    aria-label={`Close ${file.name}`}
+                    title={`Close ${file.name}`}
                     onClick={(e) => {
                     e.stopPropagation();
-                    deleteFile(file.name);
+                    requestCloseFile(file.name);
+                    }}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      cursor: "pointer",
                     }}
                 >
                     ×
-                </span>
+                </button>
                 </button>
             </div>
             ))}
@@ -531,10 +543,10 @@ function deleteFile(fileName: string) {
             activeFile={activeFile}
             updateActiveFile={updateActiveFile}
             createNewFile={() => createNewFile()}
-            deleteFile={deleteFile}
+            requestCloseFile={requestCloseFile}
             renameFile={renameFile}
             settings={settings}
-        />
+          />
         )}
 
         {activeSection === "board" && <BoardSection board={board} />}
@@ -554,12 +566,123 @@ function deleteFile(fileName: string) {
           />
         )}
         {activeSection === "bitstream" && (
-          <PlaceholderSection
-            title="Bitstream"
-            description="This will generate a programming bitstream for the target FPGA."
+          <BitstreamSection
+            board={board}
+            files={files}
+            projectName={projectName}
           />
         )}
       </main>
+
+      {confirmingDeleteFileName ? (
+        <div
+          className="modal-backdrop"
+          onClick={() => setConfirmingDeleteFileName(null)}
+        >
+          <div
+            className="variant-modal"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              maxWidth: "420px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                marginBottom: "14px",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "22px",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                }}
+              >
+                Close File
+              </h2>
+
+              <button
+                type="button"
+                aria-label="Close dialog"
+                onClick={() => setConfirmingDeleteFileName(null)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  fontSize: "24px",
+                  lineHeight: 1,
+                  color: "#64748b",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#475569",
+                fontSize: "15px",
+                lineHeight: 1.6,
+              }}
+            >
+              Remove <strong>{confirmingDeleteFileName}</strong> from this project?
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+                marginTop: "24px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setConfirmingDeleteFileName(null)}
+                style={{
+                  border: "1px solid #dbe4f0",
+                  background: "#ffffff",
+                  color: "#475569",
+                  borderRadius: "12px",
+                  padding: "10px 14px",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  deleteFile(confirmingDeleteFileName);
+                  setConfirmingDeleteFileName(null);
+                }}
+                style={{
+                  border: "none",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  borderRadius: "12px",
+                  padding: "10px 14px",
+                  fontSize: "14px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Remove File
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

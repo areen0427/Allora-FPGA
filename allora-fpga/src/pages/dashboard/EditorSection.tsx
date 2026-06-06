@@ -10,7 +10,7 @@ type EditorSectionProps = {
   activeFile: ProjectFile | undefined;
   updateActiveFile: (content: string) => void;
   createNewFile: () => void;
-  deleteFile: (fileName: string) => void;
+  requestCloseFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => void;
   settings: AppSettings;
 };
@@ -22,7 +22,7 @@ export default function EditorSection({
   activeFile,
   updateActiveFile,
   createNewFile,
-  deleteFile,
+  requestCloseFile,
   renameFile,
   settings,
 }: EditorSectionProps) {
@@ -109,19 +109,28 @@ export default function EditorSection({
     <span>{file.name}</span>
   )}
 
-  <span
+  <button
+    type="button"
+    aria-label={`Close ${file.name}`}
+    title={`Close ${file.name}`}
     onClick={(event) => {
       event.stopPropagation();
-      deleteFile(file.name);
+      requestCloseFile(file.name);
     }}
     style={{
+      border: "none",
+      background: "transparent",
       color: "#94a3b8",
       fontWeight: 900,
       fontSize: "15px",
+      lineHeight: 1,
+      padding: 0,
+      cursor: "pointer",
+      flexShrink: 0,
     }}
   >
     ×
-  </span>
+  </button>
 </button>
         ))}
 

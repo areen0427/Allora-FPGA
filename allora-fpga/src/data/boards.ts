@@ -1,4 +1,6 @@
 import type { BoardDefinition } from "./boardTypes";
+import { ac701 } from "./boards/ac701";
+import { ARTY_A7_BOARDS } from "./boards/artya7";
 import { icebreaker } from "./boards/icebreaker";
 import { orangecrab } from "./boards/orangecrab";
 import { TINYFPGA_BOARDS } from "./boards/tinyfpga";
@@ -15,8 +17,19 @@ export type {
 } from "./boardTypes";
 
 export const BOARDS = [
+  ac701,
   icebreaker,
   orangecrab,
+  {
+    id: "arty-a7",
+    name: "Arty A7",
+    vendor: "Digilent",
+    device: "Artix-7",
+    variants: [
+      { id: "arty-a7-35t", name: "Arty A7-35T", fpga: "XC7A35T" },
+      { id: "arty-a7-100t", name: "Arty A7-100T", fpga: "XC7A100T" },
+    ],
+  },
   {
     id: "ulx3s",
     name: "ULX3S",
@@ -42,8 +55,9 @@ export const BOARDS = [
 ];
 
 export function getBoardById(id: string): BoardDefinition | undefined {
+  if (id === ac701.id) return ac701;
   if (id === icebreaker.id) return icebreaker;
   if (id === orangecrab.id) return orangecrab;
 
-  return [...ULX3S_BOARDS, ...TINYFPGA_BOARDS].find((board) => board.id === id);
+  return [...ARTY_A7_BOARDS, ...ULX3S_BOARDS, ...TINYFPGA_BOARDS].find((board) => board.id === id);
 }

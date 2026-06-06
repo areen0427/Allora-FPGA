@@ -16,6 +16,10 @@ type BoardSelectProps = {
 
 function getBoardSummary(board: (typeof BOARDS)[number]) {
   if ("variants" in board) {
+    if (board.id === "arty-a7") {
+      return [board.vendor, "Artix-7", "XC7AxxT", "CSG324-1L"];
+    }
+
     if (board.id === "tinyfpga") {
       return [board.vendor, "iCE40 LP", board.device, "CM81"];
     }
@@ -125,122 +129,129 @@ export default function BoardSelect({
           flex: 1,
           minWidth: 0,
           padding: "28px 36px 36px",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "34px",
+            width: "100%",
+            maxWidth: "1280px",
           }}
         >
-          <div>
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#64748b",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              Allora FPGA
-            </div>
-
-            <h1
-              style={{
-                margin: "6px 0 0",
-                fontSize: "40px",
-                fontWeight: 850,
-                letterSpacing: "-0.04em",
-                lineHeight: 1.05,
-              }}
-            >
-              Welcome
-            </h1>
-          </div>
-
           <div
-            onClick={(event) => event.stopPropagation()}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              position: "relative",
+              justifyContent: "space-between",
+              marginBottom: "34px",
             }}
           >
-            <button
-              type="button"
-              onClick={() => setShowAvailableBoards((visible) => !visible)}
-              style={{
-                padding: "8px 12px",
-                border: "1px solid #dbe4f0",
-                borderRadius: "999px",
-                background: "#ffffff",
-                color: "#475569",
-                fontSize: "13px",
-                fontWeight: 800,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "7px",
-              }}
-            >
-              {boardCount} boards available
-              <ChevronDown size={14} />
-            </button>
-
-            {showAvailableBoards && (
+            <div>
               <div
                 style={{
-                  position: "absolute",
-                  top: "42px",
-                  right: 0,
-                  width: "280px",
-                  border: "1px solid #dbe4f0",
-                  borderRadius: "14px",
-                  background: "#ffffff",
-                  boxShadow: "0 18px 40px rgba(15,23,42,0.14)",
-                  padding: "8px",
-                  zIndex: 10,
+                  fontSize: "13px",
+                  color: "#64748b",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
                 }}
               >
-                {BOARDS.map((board) => (
-                  <button
-                    key={board.id}
-                    type="button"
-                    onClick={() => selectBoard(board)}
-                    style={{
-                      width: "100%",
-                      border: "none",
-                      borderRadius: "10px",
-                      background: "transparent",
-                      padding: "11px 12px",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      color: "#0f172a",
-                      fontSize: "14px",
-                      fontWeight: 850,
-                    }}
-                  >
-                    {board.name}
-                  </button>
-                ))}
+                Allora FPGA
               </div>
-            )}
-          </div>
-        </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 320px",
-            gap: "24px",
-            alignItems: "start",
-            maxWidth: "1180px",
-          }}
-        >
+              <h1
+                style={{
+                  margin: "6px 0 0",
+                  fontSize: "40px",
+                  fontWeight: 850,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1.05,
+                }}
+              >
+                Welcome
+              </h1>
+            </div>
+
+            <div
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                position: "relative",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowAvailableBoards((visible) => !visible)}
+                style={{
+                  padding: "8px 12px",
+                  border: "1px solid #dbe4f0",
+                  borderRadius: "999px",
+                  background: "#ffffff",
+                  color: "#475569",
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "7px",
+                }}
+              >
+                {boardCount} boards available
+                <ChevronDown size={14} />
+              </button>
+
+              {showAvailableBoards && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "42px",
+                    right: 0,
+                    width: "280px",
+                    border: "1px solid #dbe4f0",
+                    borderRadius: "14px",
+                    background: "#ffffff",
+                    boxShadow: "0 18px 40px rgba(15,23,42,0.14)",
+                    padding: "8px",
+                    zIndex: 10,
+                  }}
+                >
+                  {BOARDS.map((board) => (
+                    <button
+                      key={board.id}
+                      type="button"
+                      onClick={() => selectBoard(board)}
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        borderRadius: "10px",
+                        background: "transparent",
+                        padding: "11px 12px",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        color: "#0f172a",
+                        fontSize: "14px",
+                        fontWeight: 850,
+                      }}
+                    >
+                      {board.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) 320px",
+              gap: "24px",
+              alignItems: "start",
+            }}
+          >
           <section ref={newProjectRef}>
             <div
               style={{
@@ -350,7 +361,7 @@ export default function BoardSelect({
               background: "#ffffff",
               boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
               overflow: "hidden",
-              marginTop: "82px",
+              marginTop: "78px",
             }}
           >
             <div
@@ -462,6 +473,7 @@ export default function BoardSelect({
               </div>
             )}
           </aside>
+          </div>
         </div>
       </div>
 
