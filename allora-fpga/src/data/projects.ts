@@ -7,6 +7,8 @@ export type SavedProject = {
   name: string;
   boardId: string;
   files: ProjectFile[];
+  projectPath?: string;
+  language?: string;
   activeFileName: string | null;
   createdAt: string;
   updatedAt: string;
@@ -41,19 +43,31 @@ export function saveProject(project: SavedProject) {
 }
 
 export function createProject({
+  id,
   name,
   boardId,
+  files,
+  projectPath,
+  language,
+  activeFileName,
 }: {
+  id?: string;
   name: string;
   boardId: string;
+  files?: ProjectFile[];
+  projectPath?: string;
+  language?: string;
+  activeFileName?: string | null;
 }) {
   const now = new Date().toISOString();
   const project: SavedProject = {
-    id: window.crypto?.randomUUID?.() ?? `${Date.now()}`,
+    id: id ?? window.crypto?.randomUUID?.() ?? `${Date.now()}`,
     name: name.trim() || "Untitled Project",
     boardId,
-    files: [],
-    activeFileName: null,
+    files: files ?? [],
+    projectPath,
+    language,
+    activeFileName: activeFileName ?? null,
     createdAt: now,
     updatedAt: now,
   };

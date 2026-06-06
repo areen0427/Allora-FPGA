@@ -198,6 +198,497 @@
   width: 16px;
 }
 
+.sidebarNavButton {
+  min-width: 0;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 4px;
+  color: #475569;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.sidebarNavButton span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.sidebarNavButton.active {
+  color: #2563eb;
+  background: linear-gradient(
+    90deg,
+    rgba(219, 234, 254, 0.98) 0%,
+    rgba(219, 234, 254, 0.5) 30%,
+    rgba(219, 234, 254, 0) 64%
+  );
+}
+
+.sidebarNavButton:hover {
+  color: #2563eb;
+  background: rgba(219, 234, 254, 0.45);
+}
+
+html[data-theme="dark"] .sidebarNavButton {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .sidebarNavButton.active {
+  color: #93c5fd !important;
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.38) 0%,
+    rgba(37, 99, 235, 0.22) 30%,
+    rgba(37, 99, 235, 0) 64%
+  ) !important;
+}
+
+html[data-theme="dark"] .sidebarNavButton:hover {
+  color: #bfdbfe !important;
+  background: rgba(37, 99, 235, 0.18) !important;
+}
+
+.liquid-board-menu {
+  isolation: isolate;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    rgba(248, 250, 252, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -18px 38px rgba(255, 255, 255, 0.26),
+    0 18px 44px rgba(15, 23, 42, 0.16),
+    0 6px 18px rgba(37, 99, 235, 0.08);
+  backdrop-filter: blur(26px) saturate(1.45);
+  -webkit-backdrop-filter: blur(26px) saturate(1.45);
+  overflow: hidden;
+}
+
+.glass-page {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.7), transparent 34%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(226, 232, 240, 0.76)) !important;
+}
+
+.home-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(248, 250, 252, 0.3)),
+    rgba(255, 255, 255, 0.32) !important;
+  border-right-color: rgba(255, 255, 255, 0.48) !important;
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.42),
+    6px 0 28px rgba(15, 23, 42, 0.055);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+.liquid-board-menu::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.88), transparent 32%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.16), transparent 38%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.14), transparent 44%);
+  pointer-events: none;
+}
+
+.liquid-board-option {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: transparent;
+  padding: 9px 12px;
+  text-align: left;
+  cursor: pointer;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.liquid-board-option:hover {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 8px 20px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.liquid-board-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.liquid-board-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.liquid-board-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+html[data-theme="dark"] .liquid-board-menu {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  background:
+    linear-gradient(145deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.38)),
+    rgba(15, 23, 42, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -18px 38px rgba(15, 23, 42, 0.26),
+    0 18px 44px rgba(0, 0, 0, 0.34),
+    0 6px 18px rgba(37, 99, 235, 0.12) !important;
+}
+
+html[data-theme="dark"] .liquid-board-menu::before {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.16), transparent 30%),
+    linear-gradient(120deg, rgba(37, 99, 235, 0.14), transparent 38%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.1), transparent 44%) !important;
+}
+
+html[data-theme="dark"] .liquid-board-option {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .liquid-board-option:hover {
+  background: rgba(51, 65, 85, 0.58) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+html[data-theme="dark"] .liquid-board-meta {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .glass-page {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.07), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.94)) !important;
+}
+
+html[data-theme="dark"] .home-rail {
+  background:
+    linear-gradient(180deg, rgba(31, 41, 55, 0.54), rgba(17, 24, 39, 0.36)),
+    rgba(17, 24, 39, 0.34) !important;
+  border-right-color: rgba(75, 85, 99, 0.5) !important;
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.035),
+    6px 0 28px rgba(0, 0, 0, 0.16);
+}
+
+.liquid-home-card,
+.board-card,
+.recent-project-empty,
+.variant-modal,
+.variant-card {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.52) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.28)),
+    rgba(248, 250, 252, 0.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    inset 0 -22px 42px rgba(255, 255, 255, 0.18),
+    0 12px 30px rgba(15, 23, 42, 0.085),
+    0 4px 16px rgba(37, 99, 235, 0.045) !important;
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.dashboard-glass-card {
+  position: relative;
+  isolation: isolate;
+  border-color: rgba(226, 232, 240, 0.72) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.5)),
+    rgba(255, 255, 255, 0.56) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 10px 26px rgba(15, 23, 42, 0.055) !important;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+
+.dashboard-workspace {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.56), transparent 32%),
+    linear-gradient(135deg, rgba(248, 250, 252, 0.92), rgba(226, 232, 240, 0.7)) !important;
+}
+
+.dashboard-sidebar {
+  overflow: hidden;
+}
+
+.editor-shell {
+  overflow: hidden;
+}
+
+.editor-tab-bar {
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.72), rgba(241, 245, 249, 0.46)),
+    rgba(255, 255, 255, 0.22) !important;
+  border-bottom-color: rgba(226, 232, 240, 0.66) !important;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+
+.editor-file-tab,
+.editor-add-tab {
+  background: transparent !important;
+  border-right-color: rgba(226, 232, 240, 0.58) !important;
+}
+
+.editor-file-tab.active {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.46)),
+    rgba(255, 255, 255, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.editor-shell .monaco-editor,
+.editor-shell .monaco-editor-background,
+.editor-shell .monaco-editor .inputarea.ime-input,
+.editor-shell .monaco-editor .margin {
+  background-color: rgba(248, 250, 252, 0.82) !important;
+}
+
+.editor-shell .monaco-editor .line-numbers {
+  color: #94a3b8 !important;
+}
+
+.board-card,
+.variant-card {
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.board-card::before,
+.recent-projects-card::before,
+.recent-project-empty::before,
+.project-setup-card::before,
+.variant-modal::before,
+.variant-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.58), transparent 30%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.085), transparent 38%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.07), transparent 44%);
+  pointer-events: none;
+}
+
+.dashboard-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.04), transparent 36%);
+  pointer-events: none;
+}
+
+.board-card:hover,
+.variant-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.68) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    rgba(248, 250, 252, 0.5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -22px 42px rgba(255, 255, 255, 0.22),
+    0 18px 38px rgba(15, 23, 42, 0.11),
+    0 7px 18px rgba(37, 99, 235, 0.07) !important;
+}
+
+.recent-projects-card {
+  overflow: hidden;
+}
+
+.recent-project-empty {
+  overflow: hidden;
+  margin: 10px;
+  border-radius: 14px;
+}
+
+.recent-project-row {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.recent-project-row:hover {
+  background: rgba(255, 255, 255, 0.34) !important;
+  transform: translateY(-1px);
+  box-shadow: none !important;
+}
+
+.recent-project-title {
+  color: #0f172a;
+  background: transparent !important;
+}
+
+.recent-project-meta {
+  color: #64748b;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .liquid-home-card,
+html[data-theme="dark"] .board-card,
+html[data-theme="dark"] .recent-project-empty,
+html[data-theme="dark"] .variant-modal,
+html[data-theme="dark"] .variant-card {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  background:
+    linear-gradient(145deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.34)),
+    rgba(15, 23, 42, 0.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    inset 0 -22px 42px rgba(15, 23, 42, 0.2),
+    0 14px 34px rgba(0, 0, 0, 0.24),
+    0 5px 18px rgba(37, 99, 235, 0.045) !important;
+}
+
+html[data-theme="dark"] .dashboard-glass-card {
+  border-color: rgba(75, 85, 99, 0.62) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 41, 55, 0.74), rgba(17, 24, 39, 0.64)),
+    rgba(17, 24, 39, 0.5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 10px 26px rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="dark"] .dashboard-workspace {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.08), transparent 32%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.92)) !important;
+}
+
+html[data-theme="dark"] .editor-tab-bar {
+  background:
+    linear-gradient(180deg, rgba(31, 41, 55, 0.58), rgba(17, 24, 39, 0.42)),
+    rgba(17, 24, 39, 0.28) !important;
+  border-bottom-color: rgba(75, 85, 99, 0.58) !important;
+}
+
+html[data-theme="dark"] .editor-file-tab,
+html[data-theme="dark"] .editor-add-tab {
+  background: transparent !important;
+  border-right-color: rgba(75, 85, 99, 0.58) !important;
+}
+
+html[data-theme="dark"] .editor-file-tab.active {
+  background:
+    linear-gradient(145deg, rgba(31, 41, 55, 0.74), rgba(17, 24, 39, 0.5)),
+    rgba(17, 24, 39, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+html[data-theme="dark"] .editor-shell .monaco-editor,
+html[data-theme="dark"] .editor-shell .monaco-editor-background,
+html[data-theme="dark"] .editor-shell .monaco-editor .inputarea.ime-input,
+html[data-theme="dark"] .editor-shell .monaco-editor .margin {
+  background-color: rgba(17, 24, 39, 0.86) !important;
+}
+
+html[data-theme="dark"] .editor-shell .monaco-editor .line-numbers {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .board-card::before,
+html[data-theme="dark"] .recent-projects-card::before,
+html[data-theme="dark"] .recent-project-empty::before,
+html[data-theme="dark"] .project-setup-card::before,
+html[data-theme="dark"] .variant-modal::before,
+html[data-theme="dark"] .variant-card::before {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.08), transparent 30%),
+    linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 38%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.05), transparent 44%) !important;
+}
+
+html[data-theme="dark"] .dashboard-glass-card::before {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.045), transparent 28%),
+    linear-gradient(120deg, rgba(37, 99, 235, 0.035), transparent 36%) !important;
+}
+
+html[data-theme="dark"] .board-card:hover,
+html[data-theme="dark"] .variant-card:hover {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background:
+    linear-gradient(145deg, rgba(51, 65, 85, 0.56), rgba(15, 23, 42, 0.4)),
+    rgba(15, 23, 42, 0.5) !important;
+}
+
+html[data-theme="dark"] .recent-project-row {
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .recent-project-row:hover {
+  background: rgba(51, 65, 85, 0.32) !important;
+}
+
+html[data-theme="dark"] .recent-project-title {
+  color: #f8fafc !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .recent-project-meta {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

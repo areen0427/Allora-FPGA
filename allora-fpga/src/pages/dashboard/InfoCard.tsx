@@ -9,6 +9,7 @@ type InfoCardProps = {
 export default function InfoCard({ title, children, style }: InfoCardProps) {
   return (
     <div
+      className="dashboard-glass-card"
       style={{
         background: "#ffffff",
         border: "1px solid #e2e8f0",

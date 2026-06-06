@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
@@ -39,12 +39,16 @@ type SynthesisSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
   projectName: string;
+  topLevelFileName: string | null;
+  onTopLevelFileNameChange: (fileName: string | null) => void;
 };
 
 export default function SynthesisSection({
   board,
   files,
   projectName,
+  topLevelFileName,
+  onTopLevelFileNameChange,
 }: SynthesisSectionProps) {
   const [log, setLog] = useState<string[]>([]);
   const [diagram, setDiagram] = useState<SynthesisDiagramResponse | null>(null);
@@ -52,10 +56,28 @@ export default function SynthesisSection({
   const [showAdvancedLog, setShowAdvancedLog] = useState(false);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
-  const topModule = useMemo(() => findTopModule(hdlFiles), [hdlFiles]);
+  const selectedTopLevelFile =
+    topLevelFileName
+      ? hdlFiles.find((file) => file.name === topLevelFileName) ?? null
+      : null;
+  const topModule = useMemo(
+    () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
+    [selectedTopLevelFile]
+  );
   const status: SynthesisStatus = hdlFiles.length > 0 ? "ready" : "blocked";
   const outputName = sanitizeName(projectName || "allora_project");
   const logSummary = log.find((line) => line.trim().length > 0) ?? "";
+
+  useEffect(() => {
+    if (hdlFiles.length === 0) {
+      onTopLevelFileNameChange(null);
+      return;
+    }
+
+    if (!topLevelFileName || !hdlFiles.some((file) => file.name === topLevelFileName)) {
+      onTopLevelFileNameChange(hdlFiles[0]?.name ?? null);
+    }
+  }, [hdlFiles, onTopLevelFileNameChange, topLevelFileName]);
 
   async function runSynthesis() {
     if (status === "blocked") {
@@ -138,6 +160,7 @@ export default function SynthesisSection({
         </p>
 
         <div
+          className="dashboard-glass-card"
           style={{
             marginTop: "24px",
             display: "flex",
@@ -146,6 +169,40 @@ export default function SynthesisSection({
             flexWrap: "wrap",
           }}
         >
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: "#475569",
+              fontSize: "14px",
+              fontWeight: 700,
+            }}
+          >
+            Top level
+            <select
+              value={topLevelFileName ?? ""}
+              onChange={(event) => onTopLevelFileNameChange(event.target.value || null)}
+              style={{
+                minHeight: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                border: "1px solid #dbe4f0",
+                background: "#ffffff",
+                color: "#0f172a",
+                padding: "0 12px",
+                fontSize: "14px",
+                fontWeight: 700,
+              }}
+            >
+              {hdlFiles.map((file) => (
+                <option key={file.name} value={file.name}>
+                  {file.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <button
             className="primary-action"
             type="button"
@@ -279,7 +336,14 @@ export default function SynthesisSection({
 
         <InfoCard title="Inputs" style={{ padding: "20px", borderRadius: "20px" }}>
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} />
-          <InfoRow label="Top Module" value={diagram?.topModule ?? topModule ?? "Auto detect"} />
+          <InfoRow
+            label="Top Module"
+            value={
+              diagram?.topModule ??
+              topModule ??
+              "Not found"
+            }
+          />
           <InfoRow label="Output Netlist" value={`${diagram?.outputName ?? outputName}.json`} />
         </InfoCard>
       </div>
@@ -343,6 +407,7 @@ function HardwareDiagram({ diagram }: { diagram: SynthesisDiagramResponse }) {
       </div>
 
       <div
+        className="dashboard-glass-card"
         style={{
           borderRadius: "16px",
           border: "1px solid #dbe4f0",
@@ -909,8 +974,8 @@ function isHdlFile(fileName: string) {
 
 function findTopModule(files: ProjectFile[]) {
   for (const file of files) {
-    const match = file.content.match(/\bmodule\s+([a-zA-Z_][a-zA-Z0-9_$]*)/);
-    if (match) return match[1];
+    const match = file.content.match(/\b(module|entity)\s+([a-zA-Z_][a-zA-Z0-9_$]*)/i);
+    if (match) return match[2];
   }
 
   return null;

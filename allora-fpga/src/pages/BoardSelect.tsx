@@ -67,6 +67,7 @@ export default function BoardSelect({
 
   return (
     <div
+      className="glass-page"
       onClick={() => setShowAvailableBoards(false)}
       style={{
         minHeight: "100vh",
@@ -79,6 +80,7 @@ export default function BoardSelect({
       }}
     >
       <aside
+        className="home-rail"
         style={{
           width: "68px",
           borderRight: "1px solid #e2e8f0",
@@ -205,38 +207,28 @@ export default function BoardSelect({
 
               {showAvailableBoards && (
                 <div
+                  className="liquid-board-menu"
                   style={{
                     position: "absolute",
                     top: "42px",
                     right: 0,
                     width: "280px",
-                    border: "1px solid #dbe4f0",
-                    borderRadius: "14px",
-                    background: "#ffffff",
-                    boxShadow: "0 18px 40px rgba(15,23,42,0.14)",
-                    padding: "8px",
                     zIndex: 10,
                   }}
                 >
                   {BOARDS.map((board) => (
                     <button
+                      className="liquid-board-option"
                       key={board.id}
                       type="button"
                       onClick={() => selectBoard(board)}
-                      style={{
-                        width: "100%",
-                        border: "none",
-                        borderRadius: "10px",
-                        background: "transparent",
-                        padding: "11px 12px",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        color: "#0f172a",
-                        fontSize: "14px",
-                        fontWeight: 850,
-                      }}
                     >
-                      {board.name}
+                      <span className="liquid-board-copy">
+                        <span className="liquid-board-name">{board.name}</span>
+                        <span className="liquid-board-meta">
+                          {getBoardSummary(board).slice(0, 2).join(" · ")}
+                        </span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -300,13 +292,10 @@ export default function BoardSelect({
                   key={board.id}
                   onClick={() => selectBoard(board)}
                   style={{
-                    border: "1px solid #dbe4f0",
                     borderRadius: "14px",
                     padding: "22px",
-                    background: "#ffffff",
                     cursor: "pointer",
                     textAlign: "left",
-                    boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
                     minHeight: "150px",
                   }}
                 >
@@ -355,11 +344,9 @@ export default function BoardSelect({
           </section>
 
           <aside
+            className="liquid-home-card recent-projects-card"
             style={{
-              border: "1px solid #dbe4f0",
               borderRadius: "16px",
-              background: "#ffffff",
-              boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
               overflow: "hidden",
               marginTop: "78px",
             }}
@@ -394,6 +381,7 @@ export default function BoardSelect({
 
             {recentProjects.length === 0 ? (
               <div
+                className="recent-project-empty"
                 style={{
                   padding: "26px 20px",
                   minHeight: "180px",
@@ -430,22 +418,21 @@ export default function BoardSelect({
               <div style={{ padding: "10px" }}>
                 {recentProjects.map((project) => (
                   <button
+                    className="recent-project-row"
                     key={project.id}
                     type="button"
                     onClick={() => onOpenProject(project.id)}
                     style={{
                       width: "100%",
-                      border: "none",
                       borderRadius: "12px",
-                      background: "transparent",
                       padding: "12px",
                       textAlign: "left",
                       cursor: "pointer",
                     }}
                   >
                     <div
+                      className="recent-project-title"
                       style={{
-                        color: "#0f172a",
                         fontSize: "14px",
                         fontWeight: 850,
                         overflow: "hidden",
@@ -456,9 +443,9 @@ export default function BoardSelect({
                       {project.name}
                     </div>
                     <div
+                      className="recent-project-meta"
                       style={{
                         marginTop: "4px",
-                        color: "#64748b",
                         fontSize: "12px",
                         fontWeight: 750,
                         lineHeight: 1.45,
@@ -592,7 +579,7 @@ function SettingsModal({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "dark"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
-          <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
+          <SettingSelect label="Default Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
           <SettingNumber label="Editor Font Size" value={settings.editorFontSize} min={11} max={24} onChange={(value) => updateSetting("editorFontSize", value)} />
           <SettingNumber label="Editor Tab Size" value={settings.editorTabSize} min={2} max={8} onChange={(value) => updateSetting("editorTabSize", value)} />
@@ -601,7 +588,6 @@ function SettingsModal({
           <SettingToggle label="Auto-save" checked={settings.autoSave} onChange={(value) => updateSetting("autoSave", value)} />
           <SettingToggle label="Editor Word Wrap" checked={settings.editorWordWrap} onChange={(value) => updateSetting("editorWordWrap", value)} />
           <SettingToggle label="Confirm Delete" checked={settings.confirmBeforeDelete} onChange={(value) => updateSetting("confirmBeforeDelete", value)} />
-          <SettingSelect label="Synthesis Flow" value={settings.defaultSynthesisFlow} onChange={() => updateSetting("defaultSynthesisFlow", "board-default")} options={["board-default"]} />
         </div>
       </div>
     </div>
@@ -674,9 +660,12 @@ const settingControlStyle = {
   borderRadius: "12px",
   background: "#ffffff",
   color: "#0f172a",
-  padding: "11px 12px",
+  minHeight: "48px",
+  height: "48px",
+  padding: "0 12px",
   fontSize: "14px",
   fontWeight: 750,
+  boxSizing: "border-box" as const,
 };
 
 function formatSettingOption(option: string) {

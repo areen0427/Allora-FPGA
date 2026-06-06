@@ -1,12 +1,30 @@
 import { useState } from "react";
 import type { BoardDefinition } from "../data/boards";
 import type { AppSettings } from "../data/settings";
+import { hasTauriInvoke } from "../lib/tauri";
+import { pickProjectParentDirectory } from "../lib/projectWorkspace";
+
+const formControlStyle = {
+  width: "100%",
+  marginTop: "10px",
+  minHeight: "56px",
+  height: "56px",
+  padding: "0 16px",
+  borderRadius: "14px",
+  border: "1px solid #cbd5e1",
+  fontSize: "16px",
+  boxSizing: "border-box" as const,
+};
 
 type ProjectSetupProps = {
   board: BoardDefinition;
   settings: AppSettings;
   onBack: () => void;
-  onCreateProject: (projectName: string, language: string) => void;
+  onCreateProject: (
+    projectName: string,
+    language: string,
+    parentDirectory: string | null
+  ) => Promise<void> | void;
 };
 
 export default function ProjectSetup({
@@ -21,9 +39,13 @@ export default function ProjectSetup({
       : "my_fpga_project";
   const [projectName, setProjectName] = useState(defaultProjectName);
   const [language, setLanguage] = useState(settings.defaultLanguage);
+  const [isCreating, setIsCreating] = useState(false);
+  const [parentDirectory, setParentDirectory] = useState<string | null>(null);
+  const [isChoosingLocation, setIsChoosingLocation] = useState(false);
 
   return (
     <div
+      className="glass-page"
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
@@ -50,6 +72,7 @@ export default function ProjectSetup({
       </button>
 
       <div
+        className="liquid-home-card project-setup-card"
         style={{
           maxWidth: "720px",
           margin: "0 auto",
@@ -86,16 +109,12 @@ export default function ProjectSetup({
 
         <input
           value={projectName}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           onChange={(e) => setProjectName(e.target.value)}
           placeholder="my_fpga_project"
-          style={{
-            width: "100%",
-            marginTop: "10px",
-            padding: "16px",
-            borderRadius: "14px",
-            border: "1px solid #cbd5e1",
-            fontSize: "16px",
-          }}
+          style={formControlStyle}
         />
 
         <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
@@ -108,13 +127,8 @@ export default function ProjectSetup({
             setLanguage(e.target.value as "Verilog" | "SystemVerilog" | "VHDL")
           }
           style={{
-            width: "100%",
-            marginTop: "10px",
-            padding: "16px",
-            borderRadius: "14px",
-            border: "1px solid #cbd5e1",
-            fontSize: "16px",
             background: "#ffffff",
+            ...formControlStyle,
           }}
         >
           <option>Verilog</option>
@@ -122,8 +136,83 @@ export default function ProjectSetup({
           <option>VHDL</option>
         </select>
 
+        <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
+          Project location
+        </label>
+
+        <div
+          style={{
+            marginTop: "10px",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              ...formControlStyle,
+              marginTop: 0,
+              display: "flex",
+              alignItems: "center",
+              color: parentDirectory ? "#0f172a" : "#64748b",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={parentDirectory ?? "Documents/Allora FPGA Projects"}
+          >
+            {parentDirectory ?? "Documents/Allora FPGA Projects"}
+          </div>
+
+          <button
+            type="button"
+            disabled={!hasTauriInvoke() || isChoosingLocation}
+            onClick={async () => {
+              if (!hasTauriInvoke() || isChoosingLocation) return;
+              setIsChoosingLocation(true);
+              try {
+                const nextDirectory = await pickProjectParentDirectory();
+                if (nextDirectory) {
+                  setParentDirectory(nextDirectory);
+                }
+              } finally {
+                setIsChoosingLocation(false);
+              }
+            }}
+            style={{
+              minHeight: "56px",
+              height: "56px",
+              padding: "0 16px",
+              borderRadius: "14px",
+              border: "1px solid #dbe4f0",
+              background: "#ffffff",
+              color: "#475569",
+              fontSize: "15px",
+              fontWeight: 700,
+              cursor:
+                !hasTauriInvoke() || isChoosingLocation ? "not-allowed" : "pointer",
+              opacity: !hasTauriInvoke() || isChoosingLocation ? 0.65 : 1,
+            }}
+          >
+            {isChoosingLocation ? "Choosing..." : "Choose Folder"}
+          </button>
+        </div>
+
         <button
-          onClick={() => onCreateProject(projectName, language)}
+          onClick={async () => {
+            if (isCreating) return;
+            setIsCreating(true);
+            try {
+              await onCreateProject(
+                projectName,
+                language,
+                parentDirectory
+              );
+            } finally {
+              setIsCreating(false);
+            }
+          }}
           style={{
             width: "100%",
             marginTop: "36px",
@@ -134,10 +223,11 @@ export default function ProjectSetup({
             color: "#ffffff",
             fontSize: "17px",
             fontWeight: 700,
-            cursor: "pointer",
+            cursor: isCreating ? "progress" : "pointer",
+            opacity: isCreating ? 0.8 : 1,
           }}
         >
-          Create Project
+          {isCreating ? "Creating Project..." : "Create Project"}
         </button>
       </div>
     </div>

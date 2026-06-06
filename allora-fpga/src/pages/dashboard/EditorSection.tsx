@@ -4,25 +4,25 @@ import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 
 type EditorSectionProps = {
-  files: ProjectFile[];
+  openFiles: ProjectFile[];
   activeFileName: string | null;
   setActiveFileName: (fileName: string) => void;
   activeFile: ProjectFile | undefined;
   updateActiveFile: (content: string) => void;
   createNewFile: () => void;
-  requestCloseFile: (fileName: string) => void;
-  renameFile: (oldName: string, newName: string) => void;
+  closeOpenFile: (fileName: string) => void;
+  renameFile: (oldName: string, newName: string) => Promise<void> | void;
   settings: AppSettings;
 };
 
 export default function EditorSection({
-  files,
+  openFiles,
   activeFileName,
   setActiveFileName,
   activeFile,
   updateActiveFile,
   createNewFile,
-  requestCloseFile,
+  closeOpenFile,
   renameFile,
   settings,
 }: EditorSectionProps) {
@@ -32,6 +32,7 @@ export default function EditorSection({
 
   return (
     <div
+      className="dashboard-glass-card editor-shell"
       style={{
         height: "calc(100vh - 48px)",
         background: "#ffffff",
@@ -44,6 +45,7 @@ export default function EditorSection({
       }}
     >
       <div
+        className="editor-tab-bar"
         style={{
             height: "44px",
             display: "flex",
@@ -54,8 +56,9 @@ export default function EditorSection({
             flexShrink: 0,
         }}
         >
-        {files.map((file) => (
+        {openFiles.map((file) => (
             <button
+  className={`editor-file-tab${file.name === activeFileName ? " active" : ""}`}
   key={file.name}
   onClick={() => setActiveFileName(file.name)}
   onDoubleClick={() => {
@@ -82,6 +85,9 @@ export default function EditorSection({
     <input
       value={editingName}
       autoFocus
+      autoCapitalize="off"
+      autoCorrect="off"
+      spellCheck={false}
       onChange={(e) => setEditingName(e.target.value)}
       onBlur={() => {
         renameFile(file.name, editingName);
@@ -115,7 +121,7 @@ export default function EditorSection({
     title={`Close ${file.name}`}
     onClick={(event) => {
       event.stopPropagation();
-      requestCloseFile(file.name);
+      closeOpenFile(file.name);
     }}
     style={{
       border: "none",
@@ -135,6 +141,7 @@ export default function EditorSection({
         ))}
 
         <button
+            className="editor-add-tab"
             onClick={createNewFile}
             style={{
             height: "36px",
@@ -172,10 +179,10 @@ export default function EditorSection({
                 { token: "string", foreground: "16a34a" },
               ],
               colors: {
-                "editor.background": "#ffffff",
-                "editorGutter.background": "#ffffff",
-                "editorOverviewRuler.border": "#ffffff",
-                "editor.lineHighlightBackground": "#f8fafc",
+                "editor.background": "#f8fafc",
+                "editorGutter.background": "#f8fafc",
+                "editorOverviewRuler.border": "#f8fafc",
+                "editor.lineHighlightBackground": "#eef4fb",
               },
             });
 
@@ -192,7 +199,7 @@ export default function EditorSection({
                 "editor.background": "#111827",
                 "editorGutter.background": "#111827",
                 "editorOverviewRuler.border": "#111827",
-                "editor.lineHighlightBackground": "#1f2937",
+                "editor.lineHighlightBackground": "#182231",
               },
             });
 

@@ -14,16 +14,21 @@ type PinMappingSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
   defaultMode: "simple" | "advanced";
+  topLevelFileName: string | null;
 };
 
 export default function PinMappingSection({
   board,
   files,
   defaultMode,
+  topLevelFileName,
 }: PinMappingSectionProps) {
   const [mode, setMode] = useState<"simple" | "advanced">(defaultMode);
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
-  const ports = useMemo(() => findPorts(files), [files]);
+  const ports = useMemo(
+    () => findPorts(topLevelFileName ? files.filter((file) => file.name === topLevelFileName) : []),
+    [files, topLevelFileName]
+  );
   const suggestedMappings = useMemo(
     () => createSuggestedMappings(ports, board.pins, board.clocks),
     [ports, board.pins, board.clocks]
@@ -616,7 +621,7 @@ function EmptyPortState() {
       }}
     >
       No top-level ports detected yet. Create or import HDL files with
-      module/entity ports to start mapping pins.
+      module/entity ports in the selected top-level file to start mapping pins.
     </div>
   );
 }

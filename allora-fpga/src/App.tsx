@@ -3,10 +3,11 @@ import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import Dashboard from "./pages/Dashboard";
 import { getBoardById } from "./data/boards";
-import { createProject, getSavedProject } from "./data/projects";
+import { createProject, getSavedProject, saveProject } from "./data/projects";
 import type { SavedProject } from "./data/projects";
 import { getSettings, saveSettings } from "./data/settings";
 import type { AppSettings } from "./data/settings";
+import { createProjectWorkspace, readProjectWorkspace } from "./lib/projectWorkspace";
 import "./App.css";
 
 type AppStage = "board-select" | "project-setup" | "dashboard";
@@ -28,12 +29,32 @@ function App() {
     setProject(null);
   }
 
-  function openProject(projectId: string) {
+  async function openProject(projectId: string) {
     const savedProject = getSavedProject(projectId);
     if (!savedProject) return;
 
-    setProject(savedProject);
-    setSelectedBoardId(savedProject.boardId);
+    let nextProject = savedProject;
+
+    if (savedProject.projectPath) {
+      try {
+        const files = await readProjectWorkspace(savedProject.projectPath);
+        nextProject = {
+          ...savedProject,
+          files,
+          activeFileName:
+            savedProject.activeFileName && files.some((file) => file.name === savedProject.activeFileName)
+              ? savedProject.activeFileName
+              : files[0]?.name ?? null,
+          updatedAt: new Date().toISOString(),
+        };
+        saveProject(nextProject);
+      } catch {
+        nextProject = savedProject;
+      }
+    }
+
+    setProject(nextProject);
+    setSelectedBoardId(nextProject.boardId);
     setStage("dashboard");
   }
 
@@ -61,10 +82,22 @@ function App() {
         board={selectedBoard}
         settings={settings}
         onBack={() => setStage("board-select")}
-        onCreateProject={(name) => {
+        onCreateProject={async (name, language, parentDirectory) => {
+          const workspace = await createProjectWorkspace({
+            projectName: name,
+            board: selectedBoard,
+            language: language as "Verilog" | "SystemVerilog" | "VHDL",
+            parentDirectory,
+          });
+
           const nextProject = createProject({
+            id: workspace.projectId,
             name,
             boardId: selectedBoard.id,
+            files: workspace.files,
+            projectPath: workspace.projectPath,
+            language,
+            activeFileName: workspace.activeFileName,
           });
 
           setProject(nextProject);
@@ -80,6 +113,7 @@ function App() {
         board={selectedBoard}
         project={project}
         settings={settings}
+        onSettingsChange={setSettings}
         onBack={() => setStage("project-setup")}
         onHome={goHome}
       />

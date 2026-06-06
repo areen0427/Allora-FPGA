@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
-import InfoCard, { InfoRow } from "./InfoCard";
 import { formatSynthesisFlow } from "./format";
+import InfoCard, { InfoRow } from "./InfoCard";
+import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
   projectName: string;
+  projectPath?: string;
+  topLevelFileName: string | null;
+  onAddArtifact?: (artifact: {
+    fileName: string;
+    content: string;
+    isBinary?: boolean;
+  }) => Promise<void> | void;
 };
 
 type BitstreamArtifact = {
@@ -18,36 +26,142 @@ type BitstreamArtifact = {
   preview: string;
   topModule: string | null;
   generatedAt: string;
+  artifactPath?: string | null;
+  logs: string[];
+};
+
+type GenerateBitstreamResponse = {
+  logs: string[];
+  topModule: string;
+  outputName: string;
+  artifactPath?: string | null;
+  bytes: number[];
 };
 
 export default function BitstreamSection({
   board,
   files,
   projectName,
+  projectPath,
+  topLevelFileName,
+  onAddArtifact,
 }: BitstreamSectionProps) {
   const [artifact, setArtifact] = useState<BitstreamArtifact | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
-  const topModule = findTopModule(hdlFiles);
+  const selectedTopLevelFile =
+    topLevelFileName
+      ? hdlFiles.find((file) => file.name === topLevelFileName) ?? null
+      : null;
+  const topModule = useMemo(
+    () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
+    [selectedTopLevelFile]
+  );
   const extension = getBitstreamExtension(board);
+  const constraintFile =
+    files.find((file) =>
+      file.name.toLowerCase() === `constraints.${board.constraintsFile}`
+    ) ??
+    files.find((file) =>
+      file.name.toLowerCase().endsWith(`.${board.constraintsFile}`)
+    ) ??
+    null;
 
   useEffect(() => {
     setArtifact(null);
-  }, [board.id, files, projectName]);
+    setErrorMessage(null);
+  }, [board.id, files, projectName, topLevelFileName]);
 
   async function handleGenerateBitstream() {
-    if (hdlFiles.length === 0) return;
+    if (hdlFiles.length === 0) {
+      setErrorMessage("No HDL files found. Create or import a top-level file first.");
+      setArtifact(null);
+      return;
+    }
+
+    if (!topModule) {
+      setErrorMessage("The selected top-level file does not contain a readable module declaration.");
+      setArtifact(null);
+      return;
+    }
+
+    if (!constraintFile) {
+      setErrorMessage(
+        `No constraints.${board.constraintsFile} file was found in the project.`
+      );
+      setArtifact(null);
+      return;
+    }
+
+    if (!hasTauriInvoke()) {
+      setErrorMessage(
+        "Launch the Tauri desktop app to generate a real bitstream."
+      );
+      setArtifact(null);
+      return;
+    }
 
     setIsGenerating(true);
+    setErrorMessage(null);
+
     try {
-      const nextArtifact = await generateBitstreamArtifact({
+      const result = await invokeTauri<GenerateBitstreamResponse>(
+        "generate_bitstream",
+        {
+          request: {
+            projectName,
+            boardName: board.name,
+            boardFamily: board.family,
+            boardPackage: board.package,
+            fpgaId: board.fpgaId,
+            synthesisFlow: board.synthesisFlow,
+            topModule,
+            sourceFiles: hdlFiles.map((file) => ({
+              name: file.name,
+              content: file.content,
+            })),
+            constraintFile: {
+              name: constraintFile.name,
+              content: constraintFile.content,
+            },
+            outputExtension: extension,
+            projectPath,
+          },
+        }
+      );
+
+      const bytes = new Uint8Array(result.bytes);
+      const preview = createHexPreview(bytes, {
         board,
+        topModule: result.topModule,
         files: hdlFiles,
-        projectName,
-        topModule,
+        fileStem: result.outputName,
+        extension,
       });
+      const generatedAt = new Date().toLocaleString();
+      const nextArtifact: BitstreamArtifact = {
+        fileName: `${result.outputName}.${extension}`,
+        extension,
+        byteLength: bytes.length,
+        bytes,
+        preview,
+        topModule: result.topModule,
+        generatedAt,
+        artifactPath: result.artifactPath,
+        logs: result.logs,
+      };
+
       setArtifact(nextArtifact);
+      await onAddArtifact?.({
+        fileName: nextArtifact.fileName,
+        content: `[binary ${extension.toUpperCase()} artifact generated at ${generatedAt}]`,
+        isBinary: true,
+      });
+    } catch (error) {
+      setArtifact(null);
+      setErrorMessage(getErrorMessage(error));
     } finally {
       setIsGenerating(false);
     }
@@ -109,11 +223,10 @@ export default function BitstreamSection({
             lineHeight: 1.55,
           }}
         >
-          Generate a downloadable bitstream artifact preview from the current
-          project state.
+          Generate a real programming artifact for supported local Yosys + NextPNR boards.
         </p>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "22px" }}>
+        <div style={{ display: "flex", gap: "10px", marginTop: "22px", flexWrap: "wrap" }}>
           <button
             className="primary-action"
             type="button"
@@ -159,18 +272,22 @@ export default function BitstreamSection({
             marginTop: "14px",
             padding: "12px 14px",
             borderRadius: "12px",
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
-            color: "#64748b",
+            background: errorMessage ? "#fef2f2" : "#f8fafc",
+            border: errorMessage ? "1px solid #fecaca" : "1px solid #e2e8f0",
+            color: errorMessage ? "#b91c1c" : "#64748b",
             fontSize: "13px",
             lineHeight: 1.45,
           }}
         >
-          Preview artifact only. Native toolchain integration for a true
-          programming bitstream is not wired into Tauri yet.
+          {errorMessage
+            ? errorMessage
+            : artifact
+              ? "Bitstream generated and added to the project build folder."
+              : "Ready to build a hardware artifact from the selected top-level file."}
         </div>
 
         <div
+          className="dashboard-glass-card"
           style={{
             marginTop: "22px",
             border: "1px solid #e2e8f0",
@@ -192,6 +309,28 @@ export default function BitstreamSection({
                 projectName || "allora_project"
               )}.${extension}`}
         </div>
+
+        {artifact?.logs.length ? (
+          <div
+            className="dashboard-glass-card"
+            style={{
+              marginTop: "18px",
+              border: "1px solid #e2e8f0",
+              borderRadius: "16px",
+              background: "#ffffff",
+              color: "#475569",
+              padding: "16px",
+              fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+              fontSize: "12px",
+              lineHeight: 1.55,
+              whiteSpace: "pre-wrap",
+              maxHeight: "220px",
+              overflow: "auto",
+            }}
+          >
+            {artifact.logs.join("\n")}
+          </div>
+        ) : null}
       </InfoCard>
 
       <div style={{ display: "grid", gap: "22px" }}>
@@ -211,68 +350,16 @@ export default function BitstreamSection({
         <InfoCard title="Source" style={{ padding: "20px", borderRadius: "20px" }}>
           <InfoRow label="Board" value={board.name} />
           <InfoRow label="Flow" value={formatSynthesisFlow(board.synthesisFlow)} />
-          <InfoRow label="Top Module" value={topModule ?? "Auto detect"} />
+          <InfoRow label="Top Module" value={topModule ?? "Not found"} />
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} />
+          <InfoRow
+            label="Constraints"
+            value={constraintFile?.name ?? `constraints.${board.constraintsFile}`}
+          />
         </InfoCard>
       </div>
     </div>
   );
-}
-
-async function generateBitstreamArtifact({
-  board,
-  files,
-  projectName,
-  topModule,
-}: {
-  board: BoardDefinition;
-  files: ProjectFile[];
-  projectName: string;
-  topModule: string | null;
-}) {
-  const extension = getBitstreamExtension(board);
-  const fileStem = sanitizeName(projectName || "allora_project");
-  const source = JSON.stringify({
-    boardId: board.id,
-    boardFamily: board.family,
-    projectName,
-    topModule,
-    files,
-  });
-
-  const bytes = await createPreviewBytes(source, 512);
-  const preview = createHexPreview(bytes, {
-    board,
-    topModule,
-    files,
-    fileStem,
-    extension,
-  });
-
-  return {
-    fileName: `${fileStem}.${extension}`,
-    extension,
-    byteLength: bytes.length,
-    bytes,
-    preview,
-    topModule,
-    generatedAt: new Date().toLocaleString(),
-  };
-}
-
-async function createPreviewBytes(source: string, targetLength: number) {
-  const encoder = new TextEncoder();
-  let seed = encoder.encode(source);
-  const chunks: number[] = [];
-
-  while (chunks.length < targetLength) {
-    const digest = await crypto.subtle.digest("SHA-256", seed);
-    const digestBytes = Array.from(new Uint8Array(digest));
-    chunks.push(...digestBytes);
-    seed = new Uint8Array(digest);
-  }
-
-  return new Uint8Array(chunks.slice(0, targetLength));
 }
 
 function createHexPreview(
@@ -293,11 +380,11 @@ function createHexPreview(
 ) {
   const lines = [];
 
-  lines.push(`# Bitstream Preview`);
+  lines.push(`# Bitstream`);
   lines.push(`file: ${fileStem}.${extension}`);
   lines.push(`board: ${board.name}`);
   lines.push(`device: ${board.fpgaId}`);
-  lines.push(`top: ${topModule ?? "auto"}`);
+  lines.push(`top: ${topModule ?? "unknown"}`);
   lines.push(`inputs: ${files.map((file) => file.name).join(", ")}`);
   lines.push("");
 
@@ -346,6 +433,15 @@ function getBitstreamExtension(board: BoardDefinition) {
   if (board.family.toLowerCase().includes("ice40")) return "bin";
   if (board.family.toLowerCase().includes("ecp5")) return "bit";
   return "bit";
+}
+
+function getErrorMessage(error: unknown) {
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error) {
+    const value = (error as { message?: unknown }).message;
+    if (typeof value === "string") return value;
+  }
+  return "Bitstream generation failed.";
 }
 
 declare global {

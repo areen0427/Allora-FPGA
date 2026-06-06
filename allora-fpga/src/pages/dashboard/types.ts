@@ -9,4 +9,6 @@ export type DashboardSection =
 export type ProjectFile = {
   name: string;
   content: string;
+  path?: string;
+  isBinary?: boolean;
 };

@@ -1,33 +1,28 @@
+import type { ReactNode } from "react";
+
 type SidebarButtonProps = {
   label: string;
+  icon: ReactNode;
   active: boolean;
   onClick: () => void;
 };
 
 export default function SidebarButton({
   label,
+  icon,
   active,
   onClick,
 }: SidebarButtonProps) {
   return (
     <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={`sidebarNavButton${active ? " active" : ""}`}
       onClick={onClick}
-      style={{
-        border: "none",
-        borderRadius: "12px",
-        padding: "10px 12px",
-        textAlign: "left",
-        fontSize: "14px",
-        fontWeight: 700,
-        cursor: "pointer",
-        background: active
-          ? "linear-gradient(90deg, #dbeafe 0%, rgba(219,234,254,0.55) 56%, rgba(219,234,254,0) 100%)"
-          : "transparent",
-        color: active ? "#2563eb" : "#475569",
-        transition: "all 0.15s ease",
-      }}
     >
-      {label}
+      {icon}
+      <span>{label}</span>
     </button>
   );
 }
