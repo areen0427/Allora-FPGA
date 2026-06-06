@@ -1,4 +1,4 @@
-# Allora FPGA
+# Allora FPGA IDE
 
 A modern FPGA development environment that automatically understands your board, FPGA, pins, clocks, and toolchain.
 
@@ -14,7 +14,8 @@ Choose your board first:
 ULX3S
 iCEBreaker
 OrangeCrab
-Arty A7
+TinyFPGA
+... and many others soon
 ```
 
 and Allora FPGA automatically provides:
