@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -149,6 +150,38 @@ fn pick_project_parent_directory() -> Result<Option<String>, ErrorPayload> {
       .args([
         "-e",
         "set chosenFolder to choose folder with prompt \"Choose where to create the project folder\"",
+        "-e",
+        "POSIX path of chosenFolder",
+      ])
+      .output()
+      .map_err(|err| error(&format!("Unable to open the folder picker: {err}")))?;
+
+    if !output.status.success() {
+      return Ok(None);
+    }
+
+    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if path.is_empty() {
+      Ok(None)
+    } else {
+      Ok(Some(path))
+    }
+  }
+
+  #[cfg(not(target_os = "macos"))]
+  {
+    Ok(None)
+  }
+}
+
+#[tauri::command]
+fn pick_existing_project_directory() -> Result<Option<String>, ErrorPayload> {
+  #[cfg(target_os = "macos")]
+  {
+    let output = Command::new("osascript")
+      .args([
+        "-e",
+        "set chosenFolder to choose folder with prompt \"Choose an Allora FPGA project folder\"",
         "-e",
         "POSIX path of chosenFolder",
       ])
@@ -355,13 +388,13 @@ fn generate_synthesis_diagram(
   fs::write(&script_path, &script)
     .map_err(|err| error(&format!("Unable to write synth.ys: {err}")))?;
 
-  let output = Command::new("yosys")
+  let output = Command::new(tool_command("yosys"))
     .arg("-q")
     .arg("-s")
     .arg(script_path.as_os_str())
     .current_dir(&temp_dir)
     .output()
-    .map_err(|err| error(&format!("Unable to launch yosys: {err}")))?;
+    .map_err(|err| command_launch_error("yosys", &err))?;
 
   let stdout = String::from_utf8_lossy(&output.stdout).to_string();
   let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -497,13 +530,13 @@ fn generate_bitstream(
     .unwrap_or_else(|| "top".to_string());
   logs.push(format!("[bitstream] Top module: {top_module}"));
 
-  let yosys_output = Command::new("yosys")
+  let yosys_output = Command::new(tool_command("yosys"))
     .arg("-q")
     .arg("-s")
     .arg(script_path.as_os_str())
     .current_dir(&temp_dir)
     .output()
-    .map_err(|err| error(&format!("Unable to launch yosys: {err}")))?;
+    .map_err(|err| command_launch_error("yosys", &err))?;
   logs.push(String::new());
   logs.push("[yosys] Command".to_string());
   logs.push("yosys -q -s bitstream.ys".to_string());
@@ -523,11 +556,11 @@ fn generate_bitstream(
     &pnr_path,
   )?;
 
-  let pnr_output = Command::new(&pnr_command)
+  let pnr_output = Command::new(tool_command(&pnr_command))
     .args(&pnr_args)
     .current_dir(&temp_dir)
     .output()
-    .map_err(|err| error(&format!("Unable to launch {pnr_command}: {err}")))?;
+    .map_err(|err| command_launch_error(&pnr_command, &err))?;
   logs.push(String::new());
   logs.push("[place-and-route] Command".to_string());
   logs.push(format!("{pnr_command} {}", pnr_args.join(" ")));
@@ -540,11 +573,11 @@ fn generate_bitstream(
 
   let (pack_command, pack_args) =
     build_pack_command(&request.board_family, &pnr_path, &artifact_path_tmp)?;
-  let pack_output = Command::new(&pack_command)
+  let pack_output = Command::new(tool_command(&pack_command))
     .args(&pack_args)
     .current_dir(&temp_dir)
     .output()
-    .map_err(|err| error(&format!("Unable to launch {pack_command}: {err}")))?;
+    .map_err(|err| command_launch_error(&pack_command, &err))?;
   logs.push(String::new());
   logs.push("[pack] Command".to_string());
   logs.push(format!("{pack_command} {}", pack_args.join(" ")));
@@ -1071,6 +1104,7 @@ fn build_nextpnr_command(
       .next()
       .map(|value| value.to_uppercase())
       .unwrap_or_else(|| board_package.to_uppercase());
+    let package = normalize_ecp5_package(&package);
 
     return Ok((
       "nextpnr-ecp5".to_string(),
@@ -1082,6 +1116,7 @@ fn build_nextpnr_command(
         json_path.display().to_string(),
         "--lpf".to_string(),
         constraint_path.display().to_string(),
+        "--lpf-allow-unconstrained".to_string(),
         "--textcfg".to_string(),
         output_path.display().to_string(),
       ],
@@ -1091,6 +1126,16 @@ fn build_nextpnr_command(
   Err(error(
     "Real bitstream generation is currently only wired up for iCE40 and ECP5 boards.",
   ))
+}
+
+fn normalize_ecp5_package(package: &str) -> String {
+  match package.to_uppercase().as_str() {
+    "BG256" | "BG256C" => "CABGA256".to_string(),
+    "BG381" | "BG381C" => "CABGA381".to_string(),
+    "BG554" | "BG554I" => "CABGA554".to_string(),
+    "BG756" | "BG756C" => "CABGA756".to_string(),
+    value => value.to_string(),
+  }
 }
 
 fn build_pack_command(
@@ -1142,6 +1187,32 @@ fn format_command_error(command: &str, stdout: &[u8], stderr: &[u8]) -> String {
     .unwrap_or_else(|| error_output.lines().next().unwrap_or("Unknown error"));
 
   format!("{} failed: {}", command, first_error_line)
+}
+
+fn command_launch_error(command: &str, err: &io::Error) -> ErrorPayload {
+  if err.kind() == io::ErrorKind::NotFound {
+    return error(&format!(
+      "{command} is not installed or is not available on PATH. This board has an app-supported flow, but synthesis and bitstream generation still require the local FPGA toolchain: yosys, nextpnr, and the board packer."
+    ));
+  }
+
+  error(&format!("Unable to launch {command}: {err}"))
+}
+
+fn tool_command(command: &str) -> PathBuf {
+  let path = PathBuf::from(command);
+  if path.components().count() > 1 {
+    return path;
+  }
+
+  for tool_dir in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] {
+    let candidate = Path::new(tool_dir).join(command);
+    if candidate.exists() {
+      return candidate;
+    }
+  }
+
+  PathBuf::from(command)
 }
 
 fn append_command_logs(logs: &mut Vec<String>, stdout: &[u8], stderr: &[u8]) {
@@ -1218,6 +1289,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       create_project_workspace,
       pick_project_parent_directory,
+      pick_existing_project_directory,
       read_project_workspace,
       write_project_file,
       rename_project_file,

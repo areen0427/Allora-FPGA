@@ -1073,6 +1073,14 @@ html[data-theme="black-ice"] .home-rail {
   background: transparent !important;
 }
 
+.open-project-card button:disabled {
+  opacity: 0.72;
+}
+
+.open-project-icon {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
 html[data-theme="black-ice"] .liquid-home-card,
 html[data-theme="black-ice"] .board-card,
 html[data-theme="black-ice"] .recent-project-empty,
@@ -1228,6 +1236,19 @@ html[data-theme="black-ice"] .board-filter-group button.active {
 
 html[data-theme="black-ice"] .board-card h3 {
   color: #f8fafc !important;
+}
+
+html[data-theme="black-ice"] .open-project-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="black-ice"] .open-project-subtitle {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="black-ice"] .open-project-icon {
+  background: rgba(37, 99, 235, 0.2) !important;
+  color: #bfdbfe !important;
 }
 
 html[data-theme="black-ice"] .board-card p,
@@ -1617,6 +1638,246 @@ html[data-theme="ice"] .synthesis-secondary-button {
     rgba(239, 246, 255, 0.58);
 }
 
+html[data-theme="solar"] .glass-page {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(254, 240, 138, 0.26), transparent 30%),
+    radial-gradient(circle at 92% 10%, rgba(252, 211, 77, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 253, 244, 0.98), rgba(254, 243, 199, 0.66)) !important;
+}
+
+html[data-theme="solar"] .home-rail,
+html[data-theme="solar"] .liquid-home-card,
+html[data-theme="solar"] .board-card,
+html[data-theme="solar"] .recent-project-empty,
+html[data-theme="solar"] .variant-modal,
+html[data-theme="solar"] .variant-card,
+html[data-theme="solar"] .liquid-board-menu {
+  border-color: rgba(251, 191, 36, 0.32) !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.82), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 243, 199, 0.34)),
+    rgba(255, 251, 235, 0.82) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -20px 34px rgba(253, 224, 71, 0.095),
+    0 16px 34px rgba(120, 53, 15, 0.065),
+    0 7px 20px rgba(217, 119, 6, 0.04) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="solar"] .board-card::before,
+html[data-theme="solar"] .recent-projects-card::before,
+html[data-theme="solar"] .recent-project-empty::before,
+html[data-theme="solar"] .project-setup-card::before,
+html[data-theme="solar"] .variant-modal::before,
+html[data-theme="solar"] .variant-card::before {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.58), transparent 28%),
+    linear-gradient(120deg, rgba(245, 158, 11, 0.07), transparent 38%),
+    linear-gradient(300deg, rgba(234, 179, 8, 0.06), transparent 44%) !important;
+}
+
+html[data-theme="solar"] .board-card:hover,
+html[data-theme="solar"] .variant-card:hover {
+  border-color: rgba(245, 158, 11, 0.30) !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.9), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.26)),
+    rgba(255, 251, 235, 0.88) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 18px 38px rgba(120, 53, 15, 0.085),
+    0 8px 22px rgba(217, 119, 6, 0.055) !important;
+}
+
+html[data-theme="solar"] .board-available-menu {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.86), transparent 34%),
+    linear-gradient(120deg, rgba(245, 158, 11, 0.10), transparent 42%),
+    linear-gradient(300deg, rgba(234, 179, 8, 0.08), transparent 50%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 243, 199, 0.36)),
+    rgba(255, 251, 235, 0.86) !important;
+}
+
+html[data-theme="solar"] .home-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(254, 240, 138, 0.22)),
+    rgba(255, 247, 237, 0.42) !important;
+  border-right-color: rgba(251, 191, 36, 0.34) !important;
+}
+
+html[data-theme="solar"] .board-search-field,
+html[data-theme="solar"] .board-filter-group,
+html[data-theme="solar"] .board-family-trigger,
+html[data-theme="solar"] .board-clear-filters,
+html[data-theme="solar"] .setting-control,
+html[data-theme="solar"] .setting-toggle {
+  border-color: rgba(251, 191, 36, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.22)),
+    rgba(255, 247, 237, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme="solar"] .board-count-pill,
+html[data-theme="solar"] .board-filter-group button.active {
+  border-color: rgba(234, 88, 12, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(253, 224, 71, 0.28)),
+    rgba(245, 158, 11, 0.10);
+  color: #a16207;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme="solar"] .dashboard-workspace {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(254, 240, 138, 0.34), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(253, 224, 71, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 253, 244, 0.96), rgba(254, 243, 199, 0.62)) !important;
+}
+
+html[data-theme="solar"] .dashboard-glass-card {
+  border-color: rgba(251, 191, 36, 0.34) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.72), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 240, 138, 0.24)),
+    rgba(255, 247, 237, 0.76) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -18px 38px rgba(253, 224, 71, 0.09),
+    0 14px 32px rgba(120, 53, 15, 0.06),
+    0 6px 18px rgba(217, 119, 6, 0.04) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="solar"] .dashboard-glass-card::before {
+  background:
+    radial-gradient(circle at 9% 0%, rgba(255, 255, 255, 0.42), transparent 30%),
+    linear-gradient(120deg, rgba(245, 158, 11, 0.06), transparent 40%),
+    linear-gradient(300deg, rgba(234, 179, 8, 0.055), transparent 48%) !important;
+}
+
+html[data-theme="solar"] .editor-tab-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 247, 237, 0.9), rgba(254, 240, 138, 0.22)),
+    rgba(255, 255, 255, 0.28) !important;
+  border-bottom-color: rgba(251, 191, 36, 0.42) !important;
+}
+
+html[data-theme="solar"] .editor-file-tab,
+html[data-theme="solar"] .editor-add-tab {
+  border-right-color: rgba(251, 191, 36, 0.32) !important;
+}
+
+html[data-theme="solar"] .editor-file-tab.active {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(254, 240, 138, 0.24)),
+    rgba(255, 247, 237, 0.56) !important;
+}
+
+html[data-theme="solar"] .editor-shell .monaco-editor,
+html[data-theme="solar"] .editor-shell .monaco-editor-background,
+html[data-theme="solar"] .editor-shell .monaco-editor .inputarea.ime-input,
+html[data-theme="solar"] .editor-shell .monaco-editor .margin {
+  background-color: #fff8ed !important;
+}
+
+html[data-theme="solar"] .synthesis-control-bar {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(254, 240, 138, 0.34), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 240, 138, 0.24)),
+    rgba(255, 251, 235, 0.74) !important;
+}
+
+html[data-theme="solar"] .synthesis-top-level-select,
+html[data-theme="solar"] .synthesis-secondary-button {
+  border-color: rgba(251, 191, 36, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.22)),
+    rgba(255, 251, 235, 0.74);
+}
+
+html[data-theme="solar"] .primary-action:not(:disabled),
+html[data-theme="solar"] .synthesis-generate-button:not(:disabled) {
+  background:
+    linear-gradient(180deg, hsl(35 78% 58%) 0%, hsl(27 72% 50%) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(217, 119, 6, 0.14) !important;
+}
+
+html[data-theme="solar"] .sidebarNavButton.active {
+  color: #a16207 !important;
+  background: linear-gradient(
+    90deg,
+    rgba(254, 243, 199, 0.96) 0%,
+    rgba(253, 224, 71, 0.24) 34%,
+    rgba(253, 186, 116, 0) 66%
+  ) !important;
+  box-shadow: inset 1px 0 0 rgba(245, 158, 11, 0.16) !important;
+}
+
+html[data-theme="solar"] .sidebarNavButton:hover {
+  background: rgba(245, 158, 11, 0.10) !important;
+  color: #a16207 !important;
+}
+
+html[data-theme="solar"] .project-file-import {
+  border-color: rgba(217, 119, 6, 0.24) !important;
+  background:
+    linear-gradient(180deg, hsl(43 72% 62%) 0%, hsl(27 72% 50%) 100%) !important;
+  box-shadow: 0 6px 14px rgba(217, 119, 6, 0.12);
+}
+
+html[data-theme="solar"] .project-tree-file {
+  color: #78350f !important;
+}
+
+html[data-theme="solar"] .project-tree-file:hover {
+  background: rgba(254, 243, 199, 0.46) !important;
+}
+
+html[data-theme="solar"] .project-tree-file.active {
+  background:
+    linear-gradient(90deg, rgba(254, 243, 199, 0.86), rgba(255, 251, 235, 0.42)) !important;
+  color: #a16207 !important;
+}
+
+html[data-theme="solar"] .project-tree-file.drag-target {
+  border-color: rgba(245, 158, 11, 0.24) !important;
+  background: rgba(254, 243, 199, 0.7) !important;
+}
+
+html[data-theme="solar"] .project-tree-open-indicator {
+  border-color: hsl(35 78% 56%) !important;
+}
+
+html[data-theme="solar"] .project-tree-file.active .project-tree-open-indicator,
+html[data-theme="solar"] .project-tree-file.drag-target .project-tree-open-indicator {
+  background: hsl(35 78% 56%) !important;
+  border-color: hsl(27 72% 50%) !important;
+}
+
+html[data-theme="solar"] .project-tree-dirty-indicator {
+  background: hsl(35 78% 56%) !important;
+}
+
+html[data-theme="solar"] .project-tree-top-badge {
+  border-color: rgba(245, 158, 11, 0.22) !important;
+  background: rgba(254, 243, 199, 0.88) !important;
+  color: #a16207 !important;
+}
+
+html[data-theme="solar"] .project-tree-file .project-tree-close:hover {
+  color: hsl(27 72% 50%) !important;
+}
+
+html[data-theme="solar"] .open-project-icon {
+  background: rgba(254, 243, 199, 0.92) !important;
+  color: #b45309 !important;
+}
+
 html[data-theme="dark"] .glass-page,
 html[data-theme="dark"] .dashboard-workspace {
   background: #0f172a !important;
@@ -1689,6 +1950,20 @@ html[data-theme="dark"] .board-filter-group button.active {
 
 html[data-theme="dark"] .board-card h3 {
   color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .open-project-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .open-project-subtitle {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .open-project-icon {
+  background: rgba(37, 99, 235, 0.16) !important;
+  color: #bfdbfe !important;
+  box-shadow: none;
 }
 
 html[data-theme="dark"] .board-card p,

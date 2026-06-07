@@ -83,6 +83,10 @@ export async function pickProjectParentDirectory() {
   return invokeTauri<string | null>("pick_project_parent_directory");
 }
 
+export async function pickExistingProjectDirectory() {
+  return invokeTauri<string | null>("pick_existing_project_directory");
+}
+
 export async function renameProjectFile(fromPath: string, toPath: string) {
   await invokeTauri("rename_project_file", {
     request: {
@@ -229,6 +233,7 @@ function createStarterSource({
 function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
   const clock = board.clocks[0];
   const led = board.leds[0];
+  const reset = findResetPin(board);
 
   if (board.constraintsFile === "xdc") {
     return [
@@ -245,6 +250,12 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
             `set_property IOSTANDARD LVCMOS33 [get_ports led]`,
           ]
         : []),
+      ...(reset?.pin
+        ? [
+            `set_property PACKAGE_PIN ${reset.pin} [get_ports rst]`,
+            `set_property IOSTANDARD LVCMOS33 [get_ports rst]`,
+          ]
+        : []),
       "",
     ].join("\n");
   }
@@ -254,6 +265,7 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
       `# ${board.name} starter constraints for ${topModule}`,
       ...(clock?.pin ? [`set_io clk ${clock.pin}`] : []),
       ...(led?.pin ? [`set_io led ${led.pin}`] : []),
+      ...(reset?.pin ? [`set_io rst ${reset.pin}`] : []),
       "",
     ].join("\n");
   }
@@ -263,11 +275,19 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
       `# ${board.name} starter constraints for ${topModule}`,
       ...(clock?.pin ? [`LOCATE COMP "clk" SITE "${clock.pin}";`] : []),
       ...(led?.pin ? [`LOCATE COMP "led" SITE "${led.pin}";`] : []),
+      ...(reset?.pin ? [`LOCATE COMP "rst" SITE "${reset.pin}";`] : []),
       "",
     ].join("\n");
   }
 
   return [`# ${board.name} starter constraints for ${topModule}`, ""].join("\n");
+}
+
+function findResetPin(board: BoardDefinition) {
+  return board.buttons.find((button) => {
+    const text = `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
+    return text.includes("rst") || text.includes("reset");
+  });
 }
 
 function sanitizeModuleName(name: string) {

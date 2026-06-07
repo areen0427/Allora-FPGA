@@ -3,7 +3,7 @@ import type { BoardDefinition, BoardPin } from "../../data/boards";
 import InfoCard, { InfoRow } from "./InfoCard";
 import type { ProjectFile } from "./types";
 
-type HdlPort = {
+export type HdlPort = {
   name: string;
   direction: "input" | "output" | "inout";
   baseName?: string;
@@ -627,7 +627,7 @@ function EmptyPortState() {
   );
 }
 
-function findPorts(files: ProjectFile[]) {
+export function findPorts(files: ProjectFile[]) {
   const ports: HdlPort[] = [];
   const seen = new Set<string>();
 
@@ -648,21 +648,43 @@ function findPorts(files: ProjectFile[]) {
 
 function findVerilogPorts(content: string) {
   const ports: HdlPort[] = [];
-  const portPattern =
-    /\b(input|output|inout)\b\s+(?:wire|reg|logic)?\s*(?:\[(\d+)\s*:\s*(\d+)\]\s*)?([a-zA-Z_][a-zA-Z0-9_$]*)/g;
+  const source = stripVerilogComments(content);
+  const portPattern = /\b(input|output|inout)\b\s+([\s\S]*?)(?=\binput\b|\boutput\b|\binout\b|\);|;)/g;
 
-  for (const match of content.matchAll(portPattern)) {
-    ports.push(
-      ...expandPort({
-        direction: match[1] as HdlPort["direction"],
-        name: match[4],
-        msb: match[2],
-        lsb: match[3],
-      })
-    );
+  for (const match of source.matchAll(portPattern)) {
+    const direction = match[1] as HdlPort["direction"];
+    const declaration = match[2]
+      .replace(/\b(?:wire|reg|logic|signed|unsigned)\b/g, " ")
+      .trim();
+    const rangeMatch = declaration.match(/\[(\d+)\s*:\s*(\d+)\]/);
+    const declarationWithoutRanges = declaration.replace(/\[[^\]]+\]/g, " ");
+
+    for (const rawName of declarationWithoutRanges.split(",")) {
+      const name = rawName
+        .replace(/=.*$/, "")
+        .trim()
+        .match(/[a-zA-Z_][a-zA-Z0-9_$]*$/)?.[0];
+
+      if (!name) continue;
+
+      ports.push(
+        ...expandPort({
+          direction,
+          name,
+          msb: rangeMatch?.[1],
+          lsb: rangeMatch?.[2],
+        })
+      );
+    }
   }
 
   return ports;
+}
+
+function stripVerilogComments(content: string) {
+  return content
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/.*$/gm, " ");
 }
 
 function findVhdlPorts(content: string) {
@@ -716,7 +738,7 @@ function expandPort({
   return ports;
 }
 
-function createSuggestedMappings(
+export function createSuggestedMappings(
   ports: HdlPort[],
   pins: BoardPin[],
   clocks: BoardDefinition["clocks"]
@@ -768,6 +790,10 @@ function findPinMatch(
 ) {
   const aliases = getPortAliases(port);
   const preferredTypes = getPreferredTypes(aliases, port.direction);
+  const isResetPort = aliases.some((alias) =>
+    ["rst", "reset", "rstn", "resetn"].includes(alias)
+  );
+  const hasSpecificAlias = aliases.some((alias) => alias.length > 1);
 
   for (const type of preferredTypes) {
     const candidates = pins.filter((pin) => pin.type === type && !usedPins.has(pin.name));
@@ -777,12 +803,23 @@ function findPinMatch(
     const aliasMatch = findAliasCandidate(aliases, candidates);
     if (aliasMatch) return aliasMatch;
 
+    if (isResetPort && type === "button") {
+      const resetCandidate =
+        candidates.find((pin) => pin.activeLow) ?? candidates[0] ?? null;
+      if (resetCandidate) return resetCandidate;
+    }
+
     if (candidates.length === 1) return candidates[0];
+
+    if (!hasSpecificAlias && candidates.length > 0) {
+      return candidates[0];
+    }
   }
 
   return findAliasCandidate(
     aliases,
-    pins.filter((pin) => !usedPins.has(pin.name))
+    pins.filter((pin) => !usedPins.has(pin.name)),
+    { allowShortAliases: false }
   );
 }
 
@@ -801,12 +838,22 @@ function findIndexedCandidate(port: HdlPort, candidates: BoardPin[]) {
   );
 }
 
-function findAliasCandidate(aliases: string[], candidates: BoardPin[]) {
+function findAliasCandidate(
+  aliases: string[],
+  candidates: BoardPin[],
+  options: { allowShortAliases?: boolean } = {}
+) {
+  const searchableAliases = options.allowShortAliases === false
+    ? aliases.filter((alias) => alias.length > 1)
+    : aliases;
+
+  if (searchableAliases.length === 0) return null;
+
   return (
     candidates.find((pin) =>
       getPinSearchTerms(pin).some((term) => {
         const normalizedPin = normalizeName(term);
-        return aliases.some(
+        return searchableAliases.some(
           (alias) =>
             normalizedPin === alias ||
             normalizedPin.includes(alias) ||
@@ -877,7 +924,7 @@ function getPinSearchTerms(pin: BoardPin) {
   return [pin.name, pin.signal, pin.group, pin.pin].filter(Boolean).map(String);
 }
 
-function getPinOptions(board: BoardDefinition) {
+export function getPinOptions(board: BoardDefinition) {
   return [
     ...board.clocks
       .filter((clock) => clock.pin)

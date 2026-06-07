@@ -4,6 +4,7 @@ import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
+import { createSuggestedMappings, findPorts, getPinOptions } from "./PinMappingSection";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -16,6 +17,7 @@ type BitstreamSectionProps = {
     content: string;
     isBinary?: boolean;
   }) => Promise<void> | void;
+  onUpdateConstraints?: (fileName: string, content: string) => Promise<void> | void;
 };
 
 type BitstreamArtifact = {
@@ -45,6 +47,7 @@ export default function BitstreamSection({
   projectPath,
   topLevelFileName,
   onAddArtifact,
+  onUpdateConstraints,
 }: BitstreamSectionProps) {
   const [artifact, setArtifact] = useState<BitstreamArtifact | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -60,6 +63,14 @@ export default function BitstreamSection({
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile]
   );
+  const topLevelPorts = useMemo(
+    () => findPorts(selectedTopLevelFile ? [selectedTopLevelFile] : []),
+    [selectedTopLevelFile]
+  );
+  const generatedConstraintContent = useMemo(
+    () => createGeneratedConstraints(board, topLevelPorts, projectName),
+    [board, topLevelPorts, projectName]
+  );
   const extension = getBitstreamExtension(board);
   const constraintFile =
     files.find((file) =>
@@ -69,11 +80,16 @@ export default function BitstreamSection({
       file.name.toLowerCase().endsWith(`.${board.constraintsFile}`)
     ) ??
     null;
+  const buildInputKey = [
+    hdlFiles.map((file) => `${file.name}:${file.content}`).join("\n---hdl---\n"),
+    constraintFile?.name ?? "",
+    generatedConstraintContent || (constraintFile?.content ?? ""),
+  ].join("\n---constraints---\n");
 
   useEffect(() => {
     setArtifact(null);
     setErrorMessage(null);
-  }, [board.id, files, projectName, topLevelFileName]);
+  }, [board.id, buildInputKey, projectName, topLevelFileName]);
 
   async function handleGenerateBitstream() {
     if (!capabilities.bitstream.supported) {
@@ -131,7 +147,7 @@ export default function BitstreamSection({
             })),
             constraintFile: {
               name: constraintFile.name,
-              content: constraintFile.content,
+              content: generatedConstraintContent || constraintFile.content,
             },
             outputExtension: extension,
             projectPath,
@@ -161,6 +177,9 @@ export default function BitstreamSection({
       };
 
       setArtifact(nextArtifact);
+      if (generatedConstraintContent) {
+        await onUpdateConstraints?.(constraintFile.name, generatedConstraintContent);
+      }
       await onAddArtifact?.({
         fileName: nextArtifact.fileName,
         content: `[binary ${extension.toUpperCase()} artifact generated at ${generatedAt}]`,
@@ -219,9 +238,21 @@ export default function BitstreamSection({
         gridTemplateColumns: "minmax(0, 1fr) 240px",
         gap: "22px",
         alignItems: "start",
+        height: "calc(100vh - 48px)",
+        minHeight: 0,
+        overflow: "hidden",
       }}
     >
-      <InfoCard title="Bitstream">
+      <InfoCard
+        title="Bitstream"
+        style={{
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <p
           style={{
             margin: 0,
@@ -296,53 +327,63 @@ export default function BitstreamSection({
         </div>
 
         <div
-          className="dashboard-glass-card"
           style={{
-            marginTop: "22px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "16px",
-            background: "#f8fafc",
-            color: "#334155",
-            minHeight: "320px",
-            padding: "18px",
-            fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-            fontSize: "13px",
-            lineHeight: 1.6,
-            whiteSpace: "pre-wrap",
-            overflow: "auto",
+            marginTop: "18px",
+            minHeight: 0,
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
           }}
         >
-          {artifact
-            ? artifact.preview
-            : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
-                projectName || "allora_project"
-              )}.${extension}`}
-        </div>
-
-        {artifact?.logs.length ? (
           <div
             className="dashboard-glass-card"
             style={{
-              marginTop: "18px",
               border: "1px solid #e2e8f0",
               borderRadius: "16px",
-              background: "#ffffff",
-              color: "#475569",
-              padding: "16px",
+              background: "#f8fafc",
+              color: "#334155",
+              minHeight: "150px",
+              flex: artifact?.logs.length ? "1 1 0" : "1 1 auto",
+              padding: "18px",
               fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-              fontSize: "12px",
-              lineHeight: 1.55,
+              fontSize: "13px",
+              lineHeight: 1.6,
               whiteSpace: "pre-wrap",
-              maxHeight: "220px",
               overflow: "auto",
             }}
           >
-            {artifact.logs.join("\n")}
+            {artifact
+              ? artifact.preview
+              : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
+                  projectName || "allora_project"
+                )}.${extension}`}
           </div>
-        ) : null}
+
+          {artifact?.logs.length ? (
+            <div
+              className="dashboard-glass-card"
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                background: "#ffffff",
+                color: "#475569",
+                padding: "16px",
+                fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+                fontSize: "12px",
+                lineHeight: 1.55,
+                whiteSpace: "pre-wrap",
+                flex: "0 0 150px",
+                overflow: "auto",
+              }}
+            >
+              {artifact.logs.join("\n")}
+            </div>
+          ) : null}
+        </div>
       </InfoCard>
 
-      <div style={{ display: "grid", gap: "22px" }}>
+      <div style={{ display: "grid", gap: "22px", maxHeight: "100%", overflow: "auto" }}>
         <InfoCard title="Output" style={{ padding: "20px", borderRadius: "20px" }} compact>
           <InfoRow
             label="Filename"
@@ -413,6 +454,42 @@ function createHexPreview(
     lines.push(`... ${bytes.length - 320} more bytes`);
   }
 
+  return lines.join("\n");
+}
+
+function createGeneratedConstraints(
+  board: BoardDefinition,
+  ports: ReturnType<typeof findPorts>,
+  projectName: string
+) {
+  if (ports.length === 0) return "";
+
+  const suggestions = createSuggestedMappings(ports, board.pins, board.clocks);
+  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+  const lines = [`# ${board.name} generated constraints for ${sanitizeName(projectName)}`];
+
+  for (const port of ports) {
+    const selectedPin = suggestions[port.name];
+    const pin = selectedPin ? pinOptions.get(selectedPin) : null;
+
+    if (!pin?.pin) {
+      lines.push(`# ${port.name} is unmapped`);
+      continue;
+    }
+
+    if (board.constraintsFile === "xdc") {
+      lines.push(`set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${port.name}]`);
+      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
+    } else if (board.constraintsFile === "pcf") {
+      lines.push(`set_io ${port.name} ${pin.pin}`);
+    } else if (board.constraintsFile === "lpf") {
+      lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
+    } else if (board.constraintsFile === "cst") {
+      lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
+    }
+  }
+
+  lines.push("");
   return lines.join("\n");
 }
 

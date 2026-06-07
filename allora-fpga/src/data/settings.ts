@@ -1,7 +1,7 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 
 export type AppSettings = {
-  theme: "light" | "ice" | "dark" | "black-ice";
+  theme: "light" | "ice" | "solar" | "dark" | "black-ice";
   defaultLanguage: "Verilog" | "SystemVerilog" | "VHDL";
   defaultProjectNamePattern: "my_fpga_project" | "{board}_project";
   autoSave: boolean;
@@ -37,6 +37,7 @@ export function getSettings(): AppSettings {
     const theme =
       parsedSettings.theme === "light" ||
       parsedSettings.theme === "ice" ||
+      parsedSettings.theme === "solar" ||
       parsedSettings.theme === "dark" ||
       parsedSettings.theme === "black-ice"
         ? parsedSettings.theme

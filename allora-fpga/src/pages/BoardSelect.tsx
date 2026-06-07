@@ -2,7 +2,7 @@ import { BOARDS, getBoardById } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDown, Cpu, FolderClock, Home, Search, Settings } from "lucide-react";
+import { ChevronDown, Cpu, FolderClock, FolderOpen, Home, Search, Settings } from "lucide-react";
 import { formatProjectTime, getSavedProjects, removeSavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
 
@@ -13,6 +13,7 @@ type BoardSelectProps = {
   onSettingsChange: (settings: AppSettings) => void;
   onSelectBoard: (boardId: string) => void;
   onOpenProject: (projectId: string) => void;
+  onOpenExistingProject: () => Promise<void>;
 };
 
 type BoardCardItem = (typeof BOARDS)[number];
@@ -131,7 +132,7 @@ function getBoardSupportGroup(board: BoardCardItem) {
 function getBoardGroupDetail(group: string) {
   return group === "Not Fully Supported"
     ? "Synth + bitstream generation not supported yet"
-    : "Synth + bitstream generation supported";
+    : "Synth + bitstream supported with local tools";
 }
 
 export default function BoardSelect({
@@ -139,6 +140,7 @@ export default function BoardSelect({
   onSettingsChange,
   onSelectBoard,
   onOpenProject,
+  onOpenExistingProject,
 }: BoardSelectProps) {
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoard | null>(null);
@@ -150,6 +152,8 @@ export default function BoardSelect({
   const [familyFilter, setFamilyFilter] = useState("all");
   const [showAllBoards, setShowAllBoards] = useState(false);
   const [showFamilyMenu, setShowFamilyMenu] = useState(false);
+  const [isOpeningExistingProject, setIsOpeningExistingProject] = useState(false);
+  const [openExistingProjectError, setOpenExistingProjectError] = useState("");
   const newProjectRef = useRef<HTMLElement | null>(null);
   const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
   const familyOptions = [...new Set(BOARDS.flatMap(getBoardFamilies))].sort();
@@ -207,6 +211,21 @@ export default function BoardSelect({
   function removeRecentProject(projectId: string) {
     removeSavedProject(projectId);
     setSavedProjects(getSavedProjects());
+  }
+
+  async function handleOpenExistingProject() {
+    setOpenExistingProjectError("");
+    setIsOpeningExistingProject(true);
+
+    try {
+      await onOpenExistingProject();
+    } catch (error) {
+      setOpenExistingProjectError(
+        error instanceof Error ? error.message : "Unable to open that project folder."
+      );
+    } finally {
+      setIsOpeningExistingProject(false);
+    }
   }
 
   return (
@@ -632,12 +651,102 @@ export default function BoardSelect({
             ) : null}
           </section>
 
+          <div
+            style={{
+              marginTop: "78px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+            }}
+          >
+            <section
+              className="liquid-home-card open-project-card"
+              style={{
+                borderRadius: "16px",
+                padding: "18px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => void handleOpenExistingProject()}
+                disabled={isOpeningExistingProject}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  color: "inherit",
+                  padding: 0,
+                  cursor: isOpeningExistingProject ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  textAlign: "left",
+                }}
+              >
+                <span
+                  className="open-project-icon"
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "12px",
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <FolderOpen size={19} />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span
+                    className="open-project-title"
+                    style={{
+                      display: "block",
+                      fontSize: "15px",
+                      fontWeight: 850,
+                      color: "#0f172a",
+                    }}
+                  >
+                    {isOpeningExistingProject ? "Opening Project" : "Open Existing Project"}
+                  </span>
+                  <span
+                    className="open-project-subtitle"
+                    style={{
+                      display: "block",
+                      marginTop: "4px",
+                      fontSize: "12px",
+                      fontWeight: 750,
+                      color: "#64748b",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Choose the project&apos;s top folder.
+                  </span>
+                </span>
+              </button>
+
+              {openExistingProjectError ? (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    color: "#dc2626",
+                    fontSize: "12px",
+                    fontWeight: 750,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {openExistingProjectError}
+                </div>
+              ) : null}
+            </section>
+
           <aside
             className="liquid-home-card recent-projects-card"
             style={{
               borderRadius: "16px",
               overflow: "hidden",
-              marginTop: "78px",
             }}
           >
             <div
@@ -776,6 +885,7 @@ export default function BoardSelect({
             )}
           </aside>
           </div>
+          </div>
         </div>
       </div>
 
@@ -892,7 +1002,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "dark", "black-ice"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Default Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -973,6 +1083,7 @@ function SettingToggle({
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";
   if (option === "ice") return "Ice";
+  if (option === "solar") return "Solar";
   if (option === "dark") return "Dark";
   if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";

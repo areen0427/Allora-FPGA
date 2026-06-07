@@ -12,14 +12,14 @@ export function getBoardCapabilities(board: BoardDefinition): BoardCapabilities 
       synthesisDiagram: {
         supported: true,
         label: "Supported",
-        detail: "Hardware diagrams are generated through the local Yosys flow.",
+        detail: "Hardware diagrams are generated through the local Yosys flow. Yosys must be installed and available on PATH.",
       },
       bitstream: {
         supported: board.family === "iCE40 UltraPlus" || board.family === "ECP5",
         label: board.family === "iCE40 UltraPlus" || board.family === "ECP5" ? "Supported" : "Not wired",
         detail:
           board.family === "iCE40 UltraPlus" || board.family === "ECP5"
-            ? "Bitstreams are generated with Yosys, NextPNR, and the board packer."
+            ? "Bitstreams are generated with local Yosys, NextPNR, and board packer commands."
             : "This Yosys board family does not have a packer command wired up yet.",
       },
     };

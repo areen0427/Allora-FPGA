@@ -68,7 +68,7 @@ export default function Dashboard({
       ? project.topLevelFileName
       : project?.files.find((file) => isHdlFile(file.name))?.name ?? null
   );
-  const [sidebarWidth, setSidebarWidth] = useState(250);
+  const [sidebarWidth, setSidebarWidth] = useState(270);
   const [lastSavedAt, setLastSavedAt] = useState(project?.updatedAt ?? "");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [saveErrorMessage, setSaveErrorMessage] = useState("");
@@ -433,6 +433,45 @@ function makeTopLevelFile(fileName: string | null) {
   markWorkspaceUnsaved();
 }
 
+async function updateConstraintFile(fileName: string, content: string) {
+  const existing = files.find((file) => file.name === fileName);
+  const nextPath =
+    existing?.path ??
+    (projectPath ? `${projectPath}/constraints/${fileName}` : undefined);
+
+  if (nextPath) {
+    try {
+      await writeProjectFile(nextPath, content);
+    } catch (error) {
+      setSaveStatus("error");
+      setSaveErrorMessage(getErrorMessage(error));
+      return;
+    }
+  }
+
+  setFiles((currentFiles) => {
+    const currentFile = currentFiles.find((file) => file.name === fileName);
+
+    if (currentFile) {
+      return currentFiles.map((file) =>
+        file.name === fileName
+          ? { ...file, content, path: file.path ?? nextPath }
+          : file
+      );
+    }
+
+    return [
+      ...currentFiles,
+      {
+        name: fileName,
+        content,
+        path: nextPath,
+      },
+    ];
+  });
+  markWorkspaceUnsaved(fileName);
+}
+
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
 
@@ -652,6 +691,7 @@ function makeTopLevelFile(fileName: string | null) {
               </button>
 
               <label
+                className="project-file-import"
                 title="Import files"
                 aria-label="Import files"
                 style={{
@@ -901,6 +941,7 @@ function makeTopLevelFile(fileName: string | null) {
             projectName={projectName}
             projectPath={projectPath}
             topLevelFileName={topLevelFileName}
+            onUpdateConstraints={updateConstraintFile}
             onAddArtifact={async ({ fileName, content, isBinary }) => {
               const artifactPath = projectPath
                 ? `${projectPath}/build/${fileName}`
@@ -1217,7 +1258,11 @@ function ProjectTreeNode({
     <div
       role="button"
       tabIndex={0}
-      className="project-tree-file"
+      className={[
+        "project-tree-file",
+        isActive ? "active" : "",
+        isDragTarget ? "drag-target" : "",
+      ].filter(Boolean).join(" ")}
       draggable
       onClick={() => onOpenFile(node.name)}
       onKeyDown={(event) => {
@@ -1277,6 +1322,7 @@ function ProjectTreeNode({
       }}
     >
       <span
+        className="project-tree-open-indicator"
         style={{
           width: "10px",
           height: "10px",
@@ -1302,6 +1348,7 @@ function ProjectTreeNode({
 
       {isDirty ? (
         <span
+          className="project-tree-dirty-indicator"
           title="Unsaved changes"
           style={{
             width: "7px",
@@ -1315,6 +1362,7 @@ function ProjectTreeNode({
 
       {isTopLevel ? (
         <span
+          className="project-tree-top-badge"
           style={{
             padding: "2px 6px",
             borderRadius: "999px",
@@ -1517,7 +1565,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "dark", "black-ice"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -1598,6 +1646,7 @@ function SettingToggle({
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";
   if (option === "ice") return "Ice";
+  if (option === "solar") return "Solar";
   if (option === "dark") return "Dark";
   if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";
