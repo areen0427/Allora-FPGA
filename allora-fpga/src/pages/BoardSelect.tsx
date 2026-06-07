@@ -2,7 +2,7 @@ import { BOARDS, getBoardById } from "../data/boards";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown, Cpu, FolderClock, Home, Settings } from "lucide-react";
-import { formatProjectTime, getSavedProjects } from "../data/projects";
+import { formatProjectTime, getSavedProjects, removeSavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
 
 type VariantBoard = Extract<(typeof BOARDS)[number], { variants: unknown }>;
@@ -51,8 +51,9 @@ export default function BoardSelect({
     useState<VariantBoard | null>(null);
   const [showAvailableBoards, setShowAvailableBoards] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
   const newProjectRef = useRef<HTMLElement | null>(null);
-  const recentProjects = getSavedProjects().slice(0, settings.recentProjectsLimit);
+  const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
 
   function selectBoard(board: (typeof BOARDS)[number]) {
     setShowAvailableBoards(false);
@@ -63,6 +64,11 @@ export default function BoardSelect({
     }
 
     onSelectBoard(board.id);
+  }
+
+  function removeRecentProject(projectId: string) {
+    removeSavedProject(projectId);
+    setSavedProjects(getSavedProjects());
   }
 
   return (
@@ -417,45 +423,71 @@ export default function BoardSelect({
             ) : (
               <div style={{ padding: "10px" }}>
                 {recentProjects.map((project) => (
-                  <button
+                  <div
                     className="recent-project-row"
                     key={project.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onOpenProject(project.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onOpenProject(project.id);
+                      }
+                    }}
                     style={{
                       width: "100%",
                       borderRadius: "12px",
                       padding: "12px",
                       textAlign: "left",
                       cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
                     }}
                   >
                     <div
-                      className="recent-project-title"
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 850,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                      style={{ flex: 1, minWidth: 0 }}
+                    >
+                      <div
+                        className="recent-project-title"
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 850,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {project.name}
+                      </div>
+                      <div
+                        className="recent-project-meta"
+                        style={{
+                          marginTop: "4px",
+                          fontSize: "12px",
+                          fontWeight: 750,
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {getRecentProjectBoardName(project.boardId)}
+                        <br />
+                        Last saved {formatProjectTime(project.updatedAt)} · {project.files.length} files
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="recent-project-remove"
+                      aria-label={`Remove ${project.name} from recent projects`}
+                      title="Remove from recent projects"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeRecentProject(project.id);
                       }}
                     >
-                      {project.name}
-                    </div>
-                    <div
-                      className="recent-project-meta"
-                      style={{
-                        marginTop: "4px",
-                        fontSize: "12px",
-                        fontWeight: 750,
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      {getRecentProjectBoardName(project.boardId)}
-                      <br />
-                      Last saved {formatProjectTime(project.updatedAt)} · {project.files.length} files
-                    </div>
-                  </button>
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -606,9 +638,9 @@ function SettingSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label style={{ display: "grid", gap: "7px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-field">
       {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)} style={settingControlStyle}>
+      <select className="setting-control" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{formatSettingOption(option)}</option>
         ))}
@@ -631,9 +663,9 @@ function SettingNumber({
   onChange: (value: number) => void;
 }) {
   return (
-    <label style={{ display: "grid", gap: "7px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-field">
       {label}
-      <input type="number" value={value} min={min} max={max} onChange={(event) => onChange(Number(event.target.value))} style={settingControlStyle} />
+      <input className="setting-control" type="number" value={value} min={min} max={max} onChange={(event) => onChange(Number(event.target.value))} />
     </label>
   );
 }
@@ -648,25 +680,12 @@ function SettingToggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-toggle">
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       {label}
     </label>
   );
 }
-
-const settingControlStyle = {
-  border: "1px solid #cbd5e1",
-  borderRadius: "12px",
-  background: "#ffffff",
-  color: "#0f172a",
-  minHeight: "48px",
-  height: "48px",
-  padding: "0 12px",
-  fontSize: "14px",
-  fontWeight: 750,
-  boxSizing: "border-box" as const,
-};
 
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";

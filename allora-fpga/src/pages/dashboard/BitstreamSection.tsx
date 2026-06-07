@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
-import { formatSynthesisFlow } from "./format";
 import InfoCard, { InfoRow } from "./InfoCard";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
@@ -349,7 +348,6 @@ export default function BitstreamSection({
 
         <InfoCard title="Source" style={{ padding: "20px", borderRadius: "20px" }}>
           <InfoRow label="Board" value={board.name} />
-          <InfoRow label="Flow" value={formatSynthesisFlow(board.synthesisFlow)} />
           <InfoRow label="Top Module" value={topModule ?? "Not found"} />
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} />
           <InfoRow

@@ -198,6 +198,44 @@
   width: 16px;
 }
 
+.project-tree-file .project-tree-close {
+  width: 0;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    opacity 0.15s ease,
+    width 0.15s ease,
+    color 0.15s ease;
+}
+
+.project-tree-file:hover .project-tree-close,
+.project-tree-file:focus-within .project-tree-close {
+  width: 16px;
+  opacity: 1;
+}
+
+.project-tree-file .project-tree-close:hover {
+  color: #2563eb;
+}
+
+html[data-theme="dark"] .project-tree-file .project-tree-close {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .project-tree-file .project-tree-close:hover {
+  color: #bfdbfe !important;
+}
+
 .sidebarNavButton {
   min-width: 0;
   height: 48px;
@@ -493,6 +531,11 @@ html[data-theme="dark"] .home-rail {
   color: #94a3b8 !important;
 }
 
+.editor-file-tab [title="Unsaved changes"],
+[title="Unsaved changes"] {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
 .board-card,
 .variant-card {
   overflow: hidden;
@@ -572,6 +615,39 @@ html[data-theme="dark"] .home-rail {
   box-shadow: none !important;
 }
 
+.recent-project-remove {
+  width: 0;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    opacity 0.15s ease,
+    width 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.recent-project-row:hover .recent-project-remove,
+.recent-project-row:focus-within .recent-project-remove {
+  width: 22px;
+  opacity: 1;
+}
+
+.recent-project-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
 .recent-project-title {
   color: #0f172a;
   background: transparent !important;
@@ -645,6 +721,12 @@ html[data-theme="dark"] .editor-shell .monaco-editor .line-numbers {
   color: #64748b !important;
 }
 
+html[data-theme="dark"] .editor-file-tab [title="Unsaved changes"],
+html[data-theme="dark"] [title="Unsaved changes"] {
+  background: #93c5fd !important;
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.12);
+}
+
 html[data-theme="dark"] .board-card::before,
 html[data-theme="dark"] .recent-projects-card::before,
 html[data-theme="dark"] .recent-project-empty::before,
@@ -677,6 +759,15 @@ html[data-theme="dark"] .recent-project-row {
 
 html[data-theme="dark"] .recent-project-row:hover {
   background: rgba(51, 65, 85, 0.32) !important;
+}
+
+html[data-theme="dark"] .recent-project-remove {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .recent-project-remove:hover {
+  background: rgba(248, 113, 113, 0.12) !important;
+  color: #fca5a5 !important;
 }
 
 html[data-theme="dark"] .recent-project-title {
@@ -731,6 +822,126 @@ html[data-theme="dark"] .recent-project-meta {
   height: 36px;
   font-size: 24px;
   cursor: pointer;
+}
+
+.setting-field {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-weight: 800;
+}
+
+.setting-control {
+  min-height: 48px;
+  height: 48px;
+  border: 1px solid rgba(203, 213, 225, 0.58);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(248, 250, 252, 0.18)),
+    rgba(255, 255, 255, 0.16);
+  color: #0f172a;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 10px rgba(15, 23, 42, 0.035);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  outline: none;
+}
+
+select.setting-control {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background:
+    linear-gradient(45deg, transparent 50%, #64748b 50%) calc(100% - 19px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, #64748b 50%, transparent 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(248, 250, 252, 0.18)) 0 0 / 100% 100% no-repeat,
+    rgba(255, 255, 255, 0.16) !important;
+  color-scheme: light;
+}
+
+.setting-control:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 0 0 3px rgba(37, 99, 235, 0.12),
+    0 8px 18px rgba(37, 99, 235, 0.08);
+}
+
+.setting-control option {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.setting-toggle {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-weight: 800;
+  padding: 0 12px;
+  border: 1px solid rgba(203, 213, 225, 0.58);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(248, 250, 252, 0.22)),
+    rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+.setting-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+html[data-theme="dark"] .setting-field,
+html[data-theme="dark"] .setting-toggle {
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] .setting-control {
+  border-color: rgba(75, 85, 99, 0.58) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 41, 55, 0.36), rgba(17, 24, 39, 0.24)),
+    rgba(17, 24, 39, 0.18) !important;
+  color: #f8fafc !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="dark"] select.setting-control {
+  background:
+    linear-gradient(45deg, transparent 50%, #cbd5e1 50%) calc(100% - 19px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, #cbd5e1 50%, transparent 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
+    linear-gradient(145deg, rgba(31, 41, 55, 0.36), rgba(17, 24, 39, 0.24)) 0 0 / 100% 100% no-repeat,
+    rgba(17, 24, 39, 0.18) !important;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] .setting-control:focus {
+  border-color: rgba(147, 197, 253, 0.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 0 0 3px rgba(37, 99, 235, 0.16),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme="dark"] .setting-control option {
+  background: #111827;
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .setting-toggle {
+  border-color: rgba(75, 85, 99, 0.64) !important;
+  background:
+    linear-gradient(145deg, rgba(31, 41, 55, 0.44), rgba(17, 24, 39, 0.3)),
+    rgba(17, 24, 39, 0.24) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .variant-grid {

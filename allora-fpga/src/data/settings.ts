@@ -9,7 +9,6 @@ export type AppSettings = {
   editorFontSize: number;
   editorTabSize: number;
   editorWordWrap: boolean;
-  defaultSynthesisFlow: "board-default";
   defaultPinMappingMode: "simple" | "advanced";
   recentProjectsLimit: number;
   confirmBeforeDelete: boolean;
@@ -24,7 +23,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   editorFontSize: 15,
   editorTabSize: 2,
   editorWordWrap: true,
-  defaultSynthesisFlow: "board-default",
   defaultPinMappingMode: "advanced",
   recentProjectsLimit: 5,
   confirmBeforeDelete: true,

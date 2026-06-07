@@ -10,6 +10,7 @@ export type SavedProject = {
   projectPath?: string;
   language?: string;
   activeFileName: string | null;
+  topLevelFileName?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -42,6 +43,12 @@ export function saveProject(project: SavedProject) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
 }
 
+export function removeSavedProject(projectId: string) {
+  const projects = getSavedProjects();
+  const nextProjects = projects.filter((project) => project.id !== projectId);
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
+}
+
 export function createProject({
   id,
   name,
@@ -50,6 +57,7 @@ export function createProject({
   projectPath,
   language,
   activeFileName,
+  topLevelFileName,
 }: {
   id?: string;
   name: string;
@@ -58,6 +66,7 @@ export function createProject({
   projectPath?: string;
   language?: string;
   activeFileName?: string | null;
+  topLevelFileName?: string | null;
 }) {
   const now = new Date().toISOString();
   const project: SavedProject = {
@@ -68,6 +77,7 @@ export function createProject({
     projectPath,
     language,
     activeFileName: activeFileName ?? null,
+    topLevelFileName: topLevelFileName ?? null,
     createdAt: now,
     updatedAt: now,
   };

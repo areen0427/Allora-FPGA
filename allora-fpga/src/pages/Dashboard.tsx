@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
@@ -36,15 +36,19 @@ type DashboardProps = {
   board: BoardDefinition;
   project: SavedProject | null;
   settings: AppSettings;
+  projectWarning?: string;
   onSettingsChange: (settings: AppSettings) => void;
   onBack: () => void;
   onHome: () => void;
 };
 
+type SaveStatus = "saved" | "saving" | "unsaved" | "error";
+
 export default function Dashboard({
   board,
   project,
   settings,
+  projectWarning,
   onSettingsChange,
   onBack,
   onHome,
@@ -60,10 +64,15 @@ export default function Dashboard({
     project?.activeFileName ? [project.activeFileName] : project?.files[0]?.name ? [project.files[0].name] : []
   );
   const [topLevelFileName, setTopLevelFileName] = useState<string | null>(
-    project?.files.find((file) => isHdlFile(file.name))?.name ?? null
+    project?.topLevelFileName && project.files.some((file) => file.name === project.topLevelFileName)
+      ? project.topLevelFileName
+      : project?.files.find((file) => isHdlFile(file.name))?.name ?? null
   );
-  const [sidebarWidth, setSidebarWidth] = useState(215);
+  const [sidebarWidth, setSidebarWidth] = useState(250);
   const [lastSavedAt, setLastSavedAt] = useState(project?.updatedAt ?? "");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
+  const [dirtyFileNames, setDirtyFileNames] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [draggedFileName, setDraggedFileName] = useState<string | null>(null);
   const [dragOverFileName, setDragOverFileName] = useState<string | null>(null);
@@ -77,6 +86,29 @@ export default function Dashboard({
   const activeFile = files.find((file) => file.name === activeFileName);
   const projectName = project?.name ?? "Untitled Project";
   const projectPath = project?.projectPath;
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+  const latestSaveStateRef = useRef({
+    project,
+    boardId: board.id,
+    files,
+    activeFileName,
+    topLevelFileName,
+    projectPath,
+  });
+  const showManualSaveButton =
+    !settings.autoSave || settings.autoSaveInterval !== "immediate";
+
+  useEffect(() => {
+    latestSaveStateRef.current = {
+      project,
+      boardId: board.id,
+      files,
+      activeFileName,
+      topLevelFileName,
+      projectPath,
+    };
+  }, [activeFileName, board.id, files, project, projectPath, topLevelFileName]);
 
   useEffect(() => {
     const hdlFiles = files.filter((file) => isHdlFile(file.name));
@@ -102,7 +134,71 @@ export default function Dashboard({
   }, [contextMenu]);
 
   useEffect(() => {
-    if (!project || !settings.autoSave) return;
+    function handleSaveShortcut(event: KeyboardEvent) {
+      if (event.key.toLowerCase() !== "s" || (!event.metaKey && !event.ctrlKey)) {
+        return;
+      }
+
+      event.preventDefault();
+      void saveCurrentProject();
+    }
+
+    window.addEventListener("keydown", handleSaveShortcut);
+    return () => window.removeEventListener("keydown", handleSaveShortcut);
+  }, [activeFileName, board.id, files, project, projectPath]);
+
+  async function saveCurrentProject() {
+    if (isSavingRef.current) {
+      pendingSaveRef.current = true;
+      setSaveStatus("saving");
+      return;
+    }
+
+    isSavingRef.current = true;
+
+    try {
+      do {
+        pendingSaveRef.current = false;
+        const snapshot = latestSaveStateRef.current;
+        if (!snapshot.project) return;
+
+        setSaveStatus("saving");
+        setSaveErrorMessage("");
+
+        const now = new Date().toISOString();
+        const nextProject = {
+          ...snapshot.project,
+          boardId: snapshot.boardId,
+          files: snapshot.files,
+          activeFileName: snapshot.activeFileName,
+          topLevelFileName: snapshot.topLevelFileName,
+          updatedAt: now,
+        };
+
+        saveProject(nextProject);
+
+        if (snapshot.projectPath) {
+          await Promise.all(
+            snapshot.files
+              .filter((file) => file.path && !file.isBinary)
+              .map((file) => writeProjectFile(file.path as string, file.content))
+          );
+        }
+        setLastSavedAt(now);
+      } while (pendingSaveRef.current);
+
+      setDirtyFileNames([]);
+      setSaveStatus("saved");
+    } catch (error) {
+      setSaveStatus("error");
+      setSaveErrorMessage(getErrorMessage(error));
+    } finally {
+      isSavingRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!project || !settings.autoSave || saveStatus !== "unsaved") return;
 
     const delay =
       settings.autoSaveInterval === "5s"
@@ -110,27 +206,6 @@ export default function Dashboard({
         : settings.autoSaveInterval === "30s"
           ? 30000
           : 0;
-
-    const saveCurrentProject = async () => {
-      const now = new Date().toISOString();
-      saveProject({
-        ...project,
-        boardId: board.id,
-        files,
-        activeFileName,
-        updatedAt: now,
-      });
-
-      if (projectPath) {
-        await Promise.all(
-          files
-            .filter((file) => file.path && !file.isBinary)
-            .map((file) => writeProjectFile(file.path as string, file.content))
-        );
-      }
-
-      setLastSavedAt(now);
-    };
 
     if (delay === 0) {
       void saveCurrentProject();
@@ -141,13 +216,28 @@ export default function Dashboard({
       void saveCurrentProject();
     }, delay);
     return () => window.clearTimeout(timeout);
-  }, [activeFileName, board.id, files, project, projectPath, settings.autoSave, settings.autoSaveInterval]);
+  }, [activeFileName, board.id, files, project, projectPath, saveStatus, settings.autoSave, settings.autoSaveInterval]);
+
+  function markWorkspaceUnsaved(fileName?: string | null) {
+    if (isSavingRef.current) {
+      pendingSaveRef.current = true;
+    }
+
+    setSaveStatus("unsaved");
+    setSaveErrorMessage("");
+
+    if (!fileName) return;
+
+    setDirtyFileNames((current) =>
+      current.includes(fileName) ? current : [...current, fileName]
+    );
+  }
 
   function startSidebarResize(event: React.MouseEvent<HTMLDivElement>) {
     event.preventDefault();
 
     function handleMouseMove(moveEvent: MouseEvent) {
-      const nextWidth = Math.min(Math.max(moveEvent.clientX - 24, 180), 260);
+      const nextWidth = Math.min(Math.max(moveEvent.clientX - 24, 250), 285);
       setSidebarWidth(nextWidth);
     }
 
@@ -190,6 +280,7 @@ function createNewFile(fileName = getUntitledFileName()) {
   setOpenFileNames((current) => [...new Set([...current, fileName])]);
   setActiveFileName(fileName);
   setActiveSection("editor");
+  markWorkspaceUnsaved(fileName);
 }
 
 async function renameFile(oldName: string, newName: string) {
@@ -207,7 +298,13 @@ async function renameFile(oldName: string, newName: string) {
       : targetFile?.path;
 
   if (targetFile?.path && nextPath && targetFile.path !== nextPath) {
-    await renameProjectFileOnDisk(targetFile.path, nextPath);
+    try {
+      await renameProjectFileOnDisk(targetFile.path, nextPath);
+    } catch (error) {
+      setSaveStatus("error");
+      setSaveErrorMessage(getErrorMessage(error));
+      return;
+    }
   }
 
   setFiles((currentFiles) =>
@@ -225,10 +322,14 @@ async function renameFile(oldName: string, newName: string) {
   setOpenFileNames((current) =>
     current.map((fileName) => (fileName === oldName ? newName : fileName))
   );
+  setDirtyFileNames((current) =>
+    current.map((fileName) => (fileName === oldName ? newName : fileName))
+  );
 
   if (topLevelFileName === oldName) {
     makeTopLevelFile(newName);
   }
+  markWorkspaceUnsaved(newName);
 }
 
 function updateActiveFile(content: string) {
@@ -244,6 +345,7 @@ function updateActiveFile(content: string) {
     ]);
     setActiveFileName(fileName);
     setActiveSection("editor");
+    markWorkspaceUnsaved(fileName);
     return;
   }
 
@@ -252,12 +354,14 @@ function updateActiveFile(content: string) {
       file.name === activeFileName ? { ...file, content } : file
     )
   );
+  markWorkspaceUnsaved(activeFileName);
 }
 
 function openFile(fileName: string) {
   setOpenFileNames((current) => [...new Set([...current, fileName])]);
   setActiveFileName(fileName);
   setActiveSection("editor");
+  markWorkspaceUnsaved();
 }
 
 function closeOpenFile(fileName: string) {
@@ -270,13 +374,20 @@ function closeOpenFile(fileName: string) {
 
     return nextOpenFiles;
   });
+  markWorkspaceUnsaved();
 }
 
 async function deleteFileFromProject(fileName: string) {
   const targetFile = files.find((file) => file.name === fileName);
 
   if (targetFile?.path) {
-    await deleteProjectFileOnDisk(targetFile.path);
+    try {
+      await deleteProjectFileOnDisk(targetFile.path);
+    } catch (error) {
+      setSaveStatus("error");
+      setSaveErrorMessage(getErrorMessage(error));
+      return;
+    }
   }
 
   const remainingFiles = files.filter((file) => file.name !== fileName);
@@ -294,6 +405,7 @@ async function deleteFileFromProject(fileName: string) {
     const nextTopLevel = remainingFiles.find((file) => isHdlFile(file.name));
     makeTopLevelFile(nextTopLevel?.name ?? null);
   }
+  markWorkspaceUnsaved();
 }
 
 function reorderFiles(sourceFileName: string, targetFileName: string) {
@@ -310,6 +422,7 @@ function reorderFiles(sourceFileName: string, targetFileName: string) {
     nextFiles.splice(targetIndex, 0, movedFile);
     return nextFiles;
   });
+  markWorkspaceUnsaved();
 }
 
 function makeTopLevelFile(fileName: string | null) {
@@ -317,6 +430,7 @@ function makeTopLevelFile(fileName: string | null) {
   if (!fileName) return;
 
   setFiles((currentFiles) => moveFileToTop(currentFiles, fileName));
+  markWorkspaceUnsaved();
 }
 
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -352,6 +466,7 @@ function makeTopLevelFile(fileName: string | null) {
         });
 
         openFile(file.name);
+        markWorkspaceUnsaved(file.name);
       };
 
       reader.readAsText(file);
@@ -367,7 +482,7 @@ function makeTopLevelFile(fileName: string | null) {
         minHeight: "100vh",
         background: "#f1f5f9",
         padding: "24px",
-        gap: "24px",
+        gap: "14px",
         color: "#0f172a",
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
@@ -381,8 +496,8 @@ function makeTopLevelFile(fileName: string | null) {
           width: `${sidebarWidth}px`,
           height: "calc(100vh - 48px)",
           overflow: "hidden",
-          minWidth: "180px",
-          maxWidth: "260px",
+          minWidth: "250px",
+          maxWidth: "285px",
           background:
         "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
 
@@ -580,10 +695,12 @@ function makeTopLevelFile(fileName: string | null) {
             projectPath={projectPath}
             activeFileName={activeFileName}
             openFileNames={openFileNames}
+            dirtyFileNames={dirtyFileNames}
             topLevelFileName={topLevelFileName}
             draggedFileName={draggedFileName}
             dragOverFileName={dragOverFileName}
             onOpenFile={openFile}
+            onCloseFile={closeOpenFile}
             onDragStartFile={setDraggedFileName}
             onDragOverFile={setDragOverFileName}
             onDropFile={(sourceFileName, targetFileName) => {
@@ -614,19 +731,48 @@ function makeTopLevelFile(fileName: string | null) {
           <div
             style={{
               minWidth: 0,
-              color: "#94a3b8",
+              color: saveStatus === "error" ? "#dc2626" : "#94a3b8",
               fontSize: "11px",
               fontWeight: 750,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
-            title={lastSavedAt ? "Saved" : "Not saved"}
+            title={saveErrorMessage || getSaveStatusLabel(saveStatus, lastSavedAt)}
           >
-            {lastSavedAt ? "Saved" : "Not saved"}
+            {getSaveStatusLabel(saveStatus, lastSavedAt)}
           </div>
 
           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+          {showManualSaveButton ? (
+            <button
+              type="button"
+              aria-label="Save now"
+              title="Save now"
+              disabled={saveStatus === "saving" || saveStatus === "saved"}
+              onClick={() => void saveCurrentProject()}
+              style={{
+                border: "1px solid #e2e8f0",
+                background: "#ffffff",
+                color: "#475569",
+                borderRadius: "10px",
+                width: "30px",
+                height: "30px",
+                cursor:
+                  saveStatus === "saving" || saveStatus === "saved"
+                    ? "not-allowed"
+                    : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                opacity: saveStatus === "saving" || saveStatus === "saved" ? 0.56 : 1,
+              }}
+            >
+              <span style={{ fontSize: "12px", fontWeight: 900 }}>S</span>
+            </button>
+          ) : null}
+
           <button
             type="button"
             aria-label="Settings"
@@ -697,12 +843,30 @@ function makeTopLevelFile(fileName: string | null) {
           minHeight: 0,
         }}
       >
+        {projectWarning ? (
+          <div
+            className="dashboard-glass-card"
+            style={{
+              marginBottom: "14px",
+              borderRadius: "16px",
+              padding: "12px 14px",
+              color: "#92400e",
+              fontSize: "13px",
+              fontWeight: 750,
+              lineHeight: 1.45,
+            }}
+          >
+            {projectWarning}
+          </div>
+        ) : null}
+
         {activeSection === "editor" && (
         <EditorSection
             openFiles={files.filter((file) => openFileNames.includes(file.name))}
             activeFileName={activeFileName}
-            setActiveFileName={setActiveFileName}
+            setActiveFileName={openFile}
             activeFile={activeFile}
+            dirtyFileNames={dirtyFileNames}
             updateActiveFile={updateActiveFile}
             createNewFile={() => createNewFile()}
             closeOpenFile={closeOpenFile}
@@ -912,10 +1076,12 @@ function ProjectTree({
   projectPath,
   activeFileName,
   openFileNames,
+  dirtyFileNames,
   topLevelFileName,
   draggedFileName,
   dragOverFileName,
   onOpenFile,
+  onCloseFile,
   onDragStartFile,
   onDragOverFile,
   onDropFile,
@@ -926,10 +1092,12 @@ function ProjectTree({
   projectPath?: string;
   activeFileName: string | null;
   openFileNames: string[];
+  dirtyFileNames: string[];
   topLevelFileName: string | null;
   draggedFileName: string | null;
   dragOverFileName: string | null;
   onOpenFile: (fileName: string) => void;
+  onCloseFile: (fileName: string) => void;
   onDragStartFile: (fileName: string | null) => void;
   onDragOverFile: (fileName: string | null) => void;
   onDropFile: (sourceFileName: string, targetFileName: string) => void;
@@ -947,10 +1115,12 @@ function ProjectTree({
           depth={0}
           activeFileName={activeFileName}
           openFileNames={openFileNames}
+          dirtyFileNames={dirtyFileNames}
           topLevelFileName={topLevelFileName}
           draggedFileName={draggedFileName}
           dragOverFileName={dragOverFileName}
           onOpenFile={onOpenFile}
+          onCloseFile={onCloseFile}
           onDragStartFile={onDragStartFile}
           onDragOverFile={onDragOverFile}
           onDropFile={onDropFile}
@@ -967,10 +1137,12 @@ function ProjectTreeNode({
   depth,
   activeFileName,
   openFileNames,
+  dirtyFileNames,
   topLevelFileName,
   draggedFileName,
   dragOverFileName,
   onOpenFile,
+  onCloseFile,
   onDragStartFile,
   onDragOverFile,
   onDropFile,
@@ -981,10 +1153,12 @@ function ProjectTreeNode({
   depth: number;
   activeFileName: string | null;
   openFileNames: string[];
+  dirtyFileNames: string[];
   topLevelFileName: string | null;
   draggedFileName: string | null;
   dragOverFileName: string | null;
   onOpenFile: (fileName: string) => void;
+  onCloseFile: (fileName: string) => void;
   onDragStartFile: (fileName: string | null) => void;
   onDragOverFile: (fileName: string | null) => void;
   onDropFile: (sourceFileName: string, targetFileName: string) => void;
@@ -1014,10 +1188,12 @@ function ProjectTreeNode({
               depth={depth + 1}
               activeFileName={activeFileName}
               openFileNames={openFileNames}
+              dirtyFileNames={dirtyFileNames}
               topLevelFileName={topLevelFileName}
               draggedFileName={draggedFileName}
               dragOverFileName={dragOverFileName}
               onOpenFile={onOpenFile}
+              onCloseFile={onCloseFile}
               onDragStartFile={onDragStartFile}
               onDragOverFile={onDragOverFile}
               onDropFile={onDropFile}
@@ -1032,15 +1208,24 @@ function ProjectTreeNode({
 
   const isActive = node.name === activeFileName;
   const isOpen = openFileNames.includes(node.name);
+  const isDirty = dirtyFileNames.includes(node.name);
   const isTopLevel = node.name === topLevelFileName;
   const isDragged = node.name === draggedFileName;
   const isDragTarget = node.name === dragOverFileName && node.name !== draggedFileName;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      className="project-tree-file"
       draggable
       onClick={() => onOpenFile(node.name)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenFile(node.name);
+        }
+      }}
       onContextMenu={(event) => {
         event.preventDefault();
         onOpenContextMenu(node.name, event.clientX, event.clientY);
@@ -1115,6 +1300,19 @@ function ProjectTreeNode({
         {node.name}
       </span>
 
+      {isDirty ? (
+        <span
+          title="Unsaved changes"
+          style={{
+            width: "7px",
+            height: "7px",
+            borderRadius: "999px",
+            background: "#2563eb",
+            flexShrink: 0,
+          }}
+        />
+      ) : null}
+
       {isTopLevel ? (
         <span
           style={{
@@ -1132,7 +1330,22 @@ function ProjectTreeNode({
           TOP
         </span>
       ) : null}
-    </button>
+
+      {isOpen ? (
+        <button
+          type="button"
+          className="project-tree-close"
+          aria-label={`Close ${node.name}`}
+          title={`Close ${node.name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCloseFile(node.name);
+          }}
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -1248,6 +1461,24 @@ function moveFileToTop(files: ProjectFile[], fileName: string) {
   return [topLevelFile, ...nextFiles];
 }
 
+function getSaveStatusLabel(status: SaveStatus, lastSavedAt: string) {
+  if (status === "saving") return "Saving...";
+  if (status === "unsaved") return "Unsaved changes";
+  if (status === "error") return "Save failed";
+  return lastSavedAt ? "Saved" : "Not saved";
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+
+  return "The project could not be saved.";
+}
+
 function isHdlFile(fileName: string) {
   return (
     fileName.endsWith(".v") ||
@@ -1297,7 +1528,6 @@ function SettingsModal({
           <SettingToggle label="Auto-save" checked={settings.autoSave} onChange={(value) => updateSetting("autoSave", value)} />
           <SettingToggle label="Editor Word Wrap" checked={settings.editorWordWrap} onChange={(value) => updateSetting("editorWordWrap", value)} />
           <SettingToggle label="Confirm Delete" checked={settings.confirmBeforeDelete} onChange={(value) => updateSetting("confirmBeforeDelete", value)} />
-          <SettingSelect label="Synthesis Flow" value={settings.defaultSynthesisFlow} onChange={() => updateSetting("defaultSynthesisFlow", "board-default")} options={["board-default"]} />
         </div>
       </div>
     </div>
@@ -1316,9 +1546,9 @@ function SettingSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label style={{ display: "grid", gap: "7px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-field">
       {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)} style={settingControlStyle}>
+      <select className="setting-control" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{formatSettingOption(option)}</option>
         ))}
@@ -1341,9 +1571,9 @@ function SettingNumber({
   onChange: (value: number) => void;
 }) {
   return (
-    <label style={{ display: "grid", gap: "7px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-field">
       {label}
-      <input type="number" value={value} min={min} max={max} onChange={(event) => onChange(Number(event.target.value))} style={settingControlStyle} />
+      <input className="setting-control" type="number" value={value} min={min} max={max} onChange={(event) => onChange(Number(event.target.value))} />
     </label>
   );
 }
@@ -1358,25 +1588,12 @@ function SettingToggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: 800, color: "#334155" }}>
+    <label className="setting-toggle">
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       {label}
     </label>
   );
 }
-
-const settingControlStyle = {
-  border: "1px solid #cbd5e1",
-  borderRadius: "12px",
-  background: "#ffffff",
-  color: "#0f172a",
-  minHeight: "48px",
-  height: "48px",
-  padding: "0 12px",
-  fontSize: "14px",
-  fontWeight: 750,
-  boxSizing: "border-box" as const,
-};
 
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { formatSynthesisFlow } from "./format";
 import type { ProjectFile } from "./types";
 
 type SynthesisStatus = "idle" | "ready" | "blocked";
@@ -330,7 +329,6 @@ export default function SynthesisSection({
         <InfoCard title="Target" style={{ padding: "20px", borderRadius: "20px" }}>
           <InfoRow label="Board" value={board.name} />
           <InfoRow label="Device" value={board.fpgaId} />
-          <InfoRow label="Flow" value={formatSynthesisFlow(board.synthesisFlow)} />
           <InfoRow label="Synth Tool" value={board.toolchain.synth} />
         </InfoCard>
 

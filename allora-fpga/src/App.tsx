@@ -17,6 +17,7 @@ function App() {
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [project, setProject] = useState<SavedProject | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => getSettings());
+  const [projectWarning, setProjectWarning] = useState("");
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
@@ -27,6 +28,7 @@ function App() {
     setStage("board-select");
     setSelectedBoardId(null);
     setProject(null);
+    setProjectWarning("");
   }
 
   async function openProject(projectId: string) {
@@ -37,7 +39,11 @@ function App() {
 
     if (savedProject.projectPath) {
       try {
-        const files = await readProjectWorkspace(savedProject.projectPath);
+        const diskFiles = await readProjectWorkspace(savedProject.projectPath);
+        const files =
+          savedProject.files.length > 0
+            ? mergeSavedFilesWithDiskPaths(savedProject.files, diskFiles)
+            : diskFiles;
         nextProject = {
           ...savedProject,
           files,
@@ -45,11 +51,19 @@ function App() {
             savedProject.activeFileName && files.some((file) => file.name === savedProject.activeFileName)
               ? savedProject.activeFileName
               : files[0]?.name ?? null,
+          topLevelFileName:
+            savedProject.topLevelFileName && files.some((file) => file.name === savedProject.topLevelFileName)
+              ? savedProject.topLevelFileName
+              : files.find((file) => isHdlFile(file.name))?.name ?? null,
           updatedAt: new Date().toISOString(),
         };
         saveProject(nextProject);
+        setProjectWarning("");
       } catch {
         nextProject = savedProject;
+        setProjectWarning(
+          "The project folder could not be read, so this workspace opened from the saved snapshot."
+        );
       }
     }
 
@@ -98,9 +112,11 @@ function App() {
             projectPath: workspace.projectPath,
             language,
             activeFileName: workspace.activeFileName,
+            topLevelFileName: workspace.files.find((file) => isHdlFile(file.name))?.name ?? null,
           });
 
           setProject(nextProject);
+          setProjectWarning("");
           setStage("dashboard");
         }}
       />
@@ -113,6 +129,7 @@ function App() {
         board={selectedBoard}
         project={project}
         settings={settings}
+        projectWarning={projectWarning}
         onSettingsChange={setSettings}
         onBack={() => setStage("project-setup")}
         onHome={goHome}
@@ -134,3 +151,33 @@ function App() {
 }
 
 export default App;
+
+function isHdlFile(fileName: string) {
+  return (
+    fileName.endsWith(".v") ||
+    fileName.endsWith(".sv") ||
+    fileName.endsWith(".vhd") ||
+    fileName.endsWith(".vhdl")
+  );
+}
+
+function mergeSavedFilesWithDiskPaths(
+  savedFiles: SavedProject["files"],
+  diskFiles: SavedProject["files"]
+) {
+  const diskFileByName = new Map(diskFiles.map((file) => [file.name, file]));
+  const savedFileNames = new Set(savedFiles.map((file) => file.name));
+  const mergedFiles = savedFiles.map((file) => {
+    const diskFile = diskFileByName.get(file.name);
+    return {
+      ...file,
+      path: diskFile?.path ?? file.path,
+      isBinary: diskFile?.isBinary ?? file.isBinary,
+    };
+  });
+
+  return [
+    ...mergedFiles,
+    ...diskFiles.filter((file) => !savedFileNames.has(file.name)),
+  ];
+}

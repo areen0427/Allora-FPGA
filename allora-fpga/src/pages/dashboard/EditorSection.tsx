@@ -8,6 +8,7 @@ type EditorSectionProps = {
   activeFileName: string | null;
   setActiveFileName: (fileName: string) => void;
   activeFile: ProjectFile | undefined;
+  dirtyFileNames: string[];
   updateActiveFile: (content: string) => void;
   createNewFile: () => void;
   closeOpenFile: (fileName: string) => void;
@@ -20,6 +21,7 @@ export default function EditorSection({
   activeFileName,
   setActiveFileName,
   activeFile,
+  dirtyFileNames,
   updateActiveFile,
   createNewFile,
   closeOpenFile,
@@ -114,6 +116,20 @@ export default function EditorSection({
   ) : (
     <span>{file.name}</span>
   )}
+
+  {dirtyFileNames.includes(file.name) ? (
+    <span
+      aria-label="Unsaved changes"
+      title="Unsaved changes"
+      style={{
+        width: "7px",
+        height: "7px",
+        borderRadius: "999px",
+        background: "#2563eb",
+        flexShrink: 0,
+      }}
+    />
+  ) : null}
 
   <button
     type="button"
