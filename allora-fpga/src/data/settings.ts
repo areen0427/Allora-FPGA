@@ -1,7 +1,7 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 
 export type AppSettings = {
-  theme: "light" | "dark";
+  theme: "light" | "ice" | "dark" | "black-ice";
   defaultLanguage: "Verilog" | "SystemVerilog" | "VHDL";
   defaultProjectNamePattern: "my_fpga_project" | "{board}_project";
   autoSave: boolean;
@@ -15,7 +15,7 @@ export type AppSettings = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: "light",
+  theme: "ice",
   defaultLanguage: "Verilog",
   defaultProjectNamePattern: "my_fpga_project",
   autoSave: true,
@@ -33,9 +33,19 @@ export function getSettings(): AppSettings {
     const rawSettings = window.localStorage.getItem(SETTINGS_KEY);
     if (!rawSettings) return DEFAULT_SETTINGS;
 
+    const parsedSettings = JSON.parse(rawSettings);
+    const theme =
+      parsedSettings.theme === "light" ||
+      parsedSettings.theme === "ice" ||
+      parsedSettings.theme === "dark" ||
+      parsedSettings.theme === "black-ice"
+        ? parsedSettings.theme
+        : DEFAULT_SETTINGS.theme;
+
     return {
       ...DEFAULT_SETTINGS,
-      ...JSON.parse(rawSettings),
+      ...parsedSettings,
+      theme,
     };
   } catch {
     return DEFAULT_SETTINGS;

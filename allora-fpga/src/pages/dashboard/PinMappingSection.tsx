@@ -165,11 +165,12 @@ export default function PinMappingSection({
       <InfoCard
         title="Summary"
         style={{ padding: "20px", borderRadius: "20px", maxHeight: "100%" }}
+        compact
       >
-        <InfoRow label="Detected Ports" value={String(ports.length)} />
-        <InfoRow label="Mapped Ports" value={String(mappedCount)} />
-        <InfoRow label="Board Pins" value={String(board.pins.length)} />
-        <InfoRow label="Constraint File" value={`constraints.${board.constraintsFile}`} />
+        <InfoRow label="Detected Ports" value={String(ports.length)} compact />
+        <InfoRow label="Mapped Ports" value={String(mappedCount)} compact />
+        <InfoRow label="Board Pins" value={String(board.pins.length)} compact />
+        <InfoRow label="Constraint File" value={`constraints.${board.constraintsFile}`} compact />
       </InfoCard>
     </div>
   );

@@ -1517,7 +1517,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "dark"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -1597,7 +1597,9 @@ function SettingToggle({
 
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";
+  if (option === "ice") return "Ice";
   if (option === "dark") return "Dark";
+  if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";
   if (option === "simple") return "Simple";
   if (option === "advanced") return "Advanced";

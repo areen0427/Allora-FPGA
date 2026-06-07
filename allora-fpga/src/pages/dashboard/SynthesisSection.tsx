@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
+import { getBoardCapabilities } from "../../data/boardCapabilities";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
 import type { ProjectFile } from "./types";
 
-type SynthesisStatus = "idle" | "ready" | "blocked";
+type SynthesisStatus = "idle" | "ready" | "blocked" | "unsupported";
 
 type SynthesisDiagramNode = {
   id: string;
@@ -63,7 +64,12 @@ export default function SynthesisSection({
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile]
   );
-  const status: SynthesisStatus = hdlFiles.length > 0 ? "ready" : "blocked";
+  const capabilities = getBoardCapabilities(board);
+  const status: SynthesisStatus = !capabilities.synthesisDiagram.supported
+    ? "unsupported"
+    : hdlFiles.length > 0
+      ? "ready"
+      : "blocked";
   const outputName = sanitizeName(projectName || "allora_project");
   const logSummary = log.find((line) => line.trim().length > 0) ?? "";
 
@@ -79,6 +85,15 @@ export default function SynthesisSection({
   }, [hdlFiles, onTopLevelFileNameChange, topLevelFileName]);
 
   async function runSynthesis() {
+    if (status === "unsupported") {
+      setDiagram(null);
+      setLog([
+        "[synthesis] Unsupported",
+        capabilities.synthesisDiagram.detail,
+      ]);
+      return;
+    }
+
     if (status === "blocked") {
       setDiagram(null);
       setLog([
@@ -159,40 +174,19 @@ export default function SynthesisSection({
         </p>
 
         <div
-          className="dashboard-glass-card"
+          className="dashboard-glass-card synthesis-control-bar"
           style={{
             marginTop: "24px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            flexWrap: "wrap",
           }}
         >
           <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              color: "#475569",
-              fontSize: "14px",
-              fontWeight: 700,
-            }}
+            className="synthesis-top-level-field"
           >
-            Top level
+            <span>Top level</span>
             <select
+              className="synthesis-top-level-select"
               value={topLevelFileName ?? ""}
               onChange={(event) => onTopLevelFileNameChange(event.target.value || null)}
-              style={{
-                minHeight: "42px",
-                height: "42px",
-                borderRadius: "12px",
-                border: "1px solid #dbe4f0",
-                background: "#ffffff",
-                color: "#0f172a",
-                padding: "0 12px",
-                fontSize: "14px",
-                fontWeight: 700,
-              }}
             >
               {hdlFiles.map((file) => (
                 <option key={file.name} value={file.name}>
@@ -203,38 +197,19 @@ export default function SynthesisSection({
           </label>
 
           <button
-            className="primary-action"
+            className="primary-action synthesis-generate-button"
             type="button"
             onClick={runSynthesis}
             disabled={status !== "ready" || isRunning}
-            style={{
-              border: "none",
-              borderRadius: "14px",
-              background: status === "ready" && !isRunning ? "#2563eb" : "#cbd5e1",
-              color: "#ffffff",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-              cursor: status === "ready" && !isRunning ? "pointer" : "not-allowed",
-            }}
           >
             {isRunning ? "Generating Diagram..." : "Generate Hardware Diagram"}
           </button>
 
           {log.length > 0 ? (
             <button
+              className="synthesis-secondary-button"
               type="button"
               onClick={() => setShowAdvancedLog((current) => !current)}
-              style={{
-                border: "1px solid #dbe4f0",
-                background: "#ffffff",
-                color: "#475569",
-                borderRadius: "12px",
-                padding: "10px 14px",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
             >
               {showAdvancedLog ? "Hide Advanced Log" : "Show Advanced Log"}
             </button>
@@ -275,7 +250,9 @@ export default function SynthesisSection({
                   No synthesized diagram yet
                 </div>
                 <div style={{ marginTop: "10px", lineHeight: 1.6 }}>
-                  Run synthesis to generate the actual hardware structure for the current HDL files.
+                  {status === "unsupported"
+                    ? capabilities.synthesisDiagram.detail
+                    : "Run synthesis to generate the actual hardware structure for the current HDL files."}
                 </div>
               </div>
             </div>
@@ -326,14 +303,15 @@ export default function SynthesisSection({
           minWidth: 0,
         }}
       >
-        <InfoCard title="Target" style={{ padding: "20px", borderRadius: "20px" }}>
-          <InfoRow label="Board" value={board.name} />
-          <InfoRow label="Device" value={board.fpgaId} />
-          <InfoRow label="Synth Tool" value={board.toolchain.synth} />
+        <InfoCard title="Target" style={{ padding: "20px", borderRadius: "20px" }} compact>
+          <InfoRow label="Board" value={board.name} compact />
+          <InfoRow label="Device" value={board.fpgaId} compact />
+          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
+          <InfoRow label="Status" value={capabilities.synthesisDiagram.label} compact />
         </InfoCard>
 
-        <InfoCard title="Inputs" style={{ padding: "20px", borderRadius: "20px" }}>
-          <InfoRow label="HDL Files" value={String(hdlFiles.length)} />
+        <InfoCard title="Inputs" style={{ padding: "20px", borderRadius: "20px" }} compact>
+          <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Top Module"
             value={
@@ -341,8 +319,9 @@ export default function SynthesisSection({
               topModule ??
               "Not found"
             }
+            compact
           />
-          <InfoRow label="Output Netlist" value={`${diagram?.outputName ?? outputName}.json`} />
+          <InfoRow label="Output Netlist" value={`${diagram?.outputName ?? outputName}.json`} compact />
         </InfoCard>
       </div>
     </div>

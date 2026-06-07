@@ -1,0 +1,90 @@
+import type { BoardDefinition, BoardPin } from "../boardTypes";
+
+const ICESUGAR_LEDS: BoardPin[] = [
+  { name: "iCESugarv15_LED_G", signal: "rgb_green", pin: "41", type: "led", group: "Tri-colour LED", activeLow: true, verified: true },
+  { name: "iCESugarv15_LED_R", signal: "rgb_red", pin: "40", type: "led", group: "Tri-colour LED", activeLow: true, verified: true },
+  { name: "iCESugarv15_LED_B", signal: "rgb_blue", pin: "39", type: "led", group: "Tri-colour LED", activeLow: true, verified: true },
+];
+
+const ICESUGAR_PMOD_PINS: BoardPin[] = [
+  { name: "iCESugarv15_PMOD1A_0", signal: "pmod1a_0", pin: "10", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1A_1", signal: "pmod1a_1", pin: "6", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1A_2", signal: "pmod1a_2", pin: "3", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1A_3", signal: "pmod1a_3", pin: "48", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1B_0", signal: "pmod1b_0", pin: "47", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1B_1", signal: "pmod1b_1", pin: "2", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1B_2", signal: "pmod1b_2", pin: "4", type: "gpio", group: "PMOD 1", verified: true },
+  { name: "iCESugarv15_PMOD1B_3", signal: "pmod1b_3", pin: "9", type: "gpio", group: "PMOD 1", verified: true },
+
+  { name: "iCESugarv15_PMOD2A_0", signal: "pmod2a_0", pin: "46", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2A_1", signal: "pmod2a_1", pin: "44", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2A_2", signal: "pmod2a_2", pin: "42", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2A_3", signal: "pmod2a_3", pin: "37", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2B_0", signal: "pmod2b_0", pin: "36", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2B_1", signal: "pmod2b_1", pin: "38", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2B_2", signal: "pmod2b_2", pin: "43", type: "gpio", group: "PMOD 2", verified: true },
+  { name: "iCESugarv15_PMOD2B_3", signal: "pmod2b_3", pin: "45", type: "gpio", group: "PMOD 2", verified: true },
+
+  { name: "iCESugarv15_PMOD3A_0", signal: "pmod3a_0", pin: "34", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3A_1", signal: "pmod3a_1", pin: "31", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3A_2", signal: "pmod3a_2", pin: "27", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3A_3", signal: "pmod3a_3", pin: "25", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3B_0", signal: "pmod3b_0", pin: "23", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3B_1", signal: "pmod3b_1", pin: "26", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3B_2", signal: "pmod3b_2", pin: "28", type: "gpio", group: "PMOD 3", verified: true },
+  { name: "iCESugarv15_PMOD3B_3", signal: "pmod3b_3", pin: "32", type: "gpio", group: "PMOD 3", verified: true },
+
+  { name: "iCESugarv15_PMOD4_0", signal: "pmod4_0", pin: "21", type: "gpio", group: "PMOD 4 / Switches", verified: true },
+  { name: "iCESugarv15_PMOD4_1", signal: "pmod4_1", pin: "20", type: "gpio", group: "PMOD 4 / Switches", verified: true },
+  { name: "iCESugarv15_PMOD4_2", signal: "pmod4_2", pin: "19", type: "gpio", group: "PMOD 4 / Switches", verified: true },
+  { name: "iCESugarv15_PMOD4_3", signal: "pmod4_3", pin: "18", type: "gpio", group: "PMOD 4 / Switches", verified: true },
+];
+
+const ICESUGAR_PINS: BoardPin[] = [
+  ...ICESUGAR_LEDS,
+
+  { name: "iCESugarv15_RX", signal: "uart_rx", pin: "4", type: "uart", group: "UART", verified: true },
+  { name: "iCESugarv15_TX", signal: "uart_tx", pin: "6", type: "uart", group: "UART", verified: true },
+
+  { name: "iCESugarv15_USB_DN", signal: "usb_dn", pin: "9", type: "gpio", group: "USB", verified: true },
+  { name: "iCESugarv15_USB_DP", signal: "usb_dp", pin: "10", type: "gpio", group: "USB", verified: true },
+  { name: "iCESugarv15_USB_DP_PU", signal: "usb_dp_pu", pin: "11", type: "gpio", group: "USB", verified: true },
+
+  ...ICESUGAR_PMOD_PINS,
+
+  { name: "iCESugarv15_SPI_SS", signal: "spi_ss", pin: "16", type: "spi", group: "SPI", verified: true },
+  { name: "iCESugarv15_SPI_SCK", signal: "spi_sck", pin: "15", type: "spi", group: "SPI", verified: true },
+  { name: "iCESugarv15_SPI_MOSI", signal: "spi_mosi", pin: "17", type: "spi", group: "SPI", verified: true },
+  { name: "iCESugarv15_SPI_MISO", signal: "spi_miso", pin: "14", type: "spi", group: "SPI", verified: true },
+];
+
+export const icesugarV15: BoardDefinition = {
+  id: "icesugar-v1-5",
+  name: "iCESugar v1.5",
+  vendor: "Muse Lab",
+  family: "iCE40 UltraPlus",
+  device: "ICE40-UP5K",
+  package: "SG48",
+  fpgaId: "ice40up5k-sg48",
+  constraintsFile: "pcf",
+  synthesisFlow: "yosys-nextpnr",
+  toolchain: {
+    synth: "yosys",
+    placeRoute: "nextpnr-ice40",
+    pack: "icepack",
+    program: "icesprog",
+  },
+  clocks: [
+    {
+      name: "iCESugarv15_CLK",
+      pin: "35",
+      frequency: 12000000,
+      verified: true,
+    },
+  ],
+  pins: ICESUGAR_PINS,
+  leds: ICESUGAR_LEDS,
+  buttons: [],
+  notes:
+    "Pin mapping populated from the iCESugar v1.5 PCF. Some pins are exposed through multiple alternate functions such as UART, USB, and PMOD headers.",
+};

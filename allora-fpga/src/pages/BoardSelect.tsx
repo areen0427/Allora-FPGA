@@ -1,4 +1,5 @@
 import { BOARDS, getBoardById } from "../data/boards";
+import { getBoardCapabilities } from "../data/boardCapabilities";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown, Cpu, FolderClock, Home, Settings } from "lucide-react";
@@ -39,6 +40,28 @@ const boardCount = BOARDS.length;
 
 function getRecentProjectBoardName(boardId: string) {
   return getBoardById(boardId)?.name ?? boardId;
+}
+
+function getBoardSupportDisclaimer(board: (typeof BOARDS)[number]) {
+  const boardDefinitions =
+    "variants" in board
+      ? board.variants
+          .map((variant) => getBoardById(variant.id))
+          .filter((variantBoard): variantBoard is NonNullable<ReturnType<typeof getBoardById>> =>
+            Boolean(variantBoard)
+          )
+      : [board];
+
+  if (boardDefinitions.length === 0) return null;
+
+  const buildUnsupported = boardDefinitions.every((boardDefinition) => {
+    const capabilities = getBoardCapabilities(boardDefinition);
+    return !capabilities.synthesisDiagram.supported && !capabilities.bitstream.supported;
+  });
+
+  return buildUnsupported
+    ? "Synthesis and bitstream generation are not supported yet."
+    : null;
 }
 
 export default function BoardSelect({
@@ -292,60 +315,75 @@ export default function BoardSelect({
                 gap: "16px",
               }}
             >
-              {BOARDS.map((board) => (
-                <button
-                  className="board-card"
-                  key={board.id}
-                  onClick={() => selectBoard(board)}
-                  style={{
-                    borderRadius: "14px",
-                    padding: "22px",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    minHeight: "150px",
-                  }}
-                >
-                  <div
+              {BOARDS.map((board) => {
+                const supportDisclaimer = getBoardSupportDisclaimer(board);
+
+                return (
+                  <button
+                    className="board-card"
+                    key={board.id}
+                    onClick={() => selectBoard(board)}
                     style={{
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "10px",
-                      background: "#eff6ff",
-                      color: "#2563eb",
+                      borderRadius: "14px",
+                      padding: "22px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      height: "192px",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "18px",
+                      flexDirection: "column",
                     }}
                   >
-                    <Cpu size={18} />
-                  </div>
+                    <div
+                      style={{
+                        width: "34px",
+                        height: "34px",
+                        flexShrink: 0,
+                        borderRadius: "10px",
+                        background: "#eff6ff",
+                        color: "#2563eb",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: "18px",
+                      }}
+                    >
+                      <Cpu size={18} />
+                    </div>
 
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "24px",
-                      color: "#0f172a",
-                      fontWeight: 800,
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    {board.name}
-                  </h3>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "24px",
+                        color: "#0f172a",
+                        fontWeight: 800,
+                        letterSpacing: "-0.02em",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {board.name}
+                    </h3>
 
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      fontSize: "13px",
-                      color: "#64748b",
-                      fontWeight: 750,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {getBoardSummary(board).join(" · ")}
-                  </p>
-                </button>
-              ))}
+                    <p
+                      style={{
+                        margin: "10px 0 0",
+                        fontSize: "13px",
+                        color: "#64748b",
+                        fontWeight: 750,
+                        lineHeight: 1.5,
+                        minHeight: "39px",
+                      }}
+                    >
+                      {getBoardSummary(board).join(" · ")}
+                    </p>
+
+                    {supportDisclaimer ? (
+                      <div className="board-support-disclaimer">
+                        {supportDisclaimer}
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -609,7 +647,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "dark"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Default Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -689,7 +727,9 @@ function SettingToggle({
 
 function formatSettingOption(option: string) {
   if (option === "light") return "Light";
+  if (option === "ice") return "Ice";
   if (option === "dark") return "Dark";
+  if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";
   if (option === "simple") return "Simple";
   if (option === "advanced") return "Advanced";

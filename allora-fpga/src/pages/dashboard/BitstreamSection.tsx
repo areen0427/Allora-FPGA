@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
+import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
@@ -48,6 +49,7 @@ export default function BitstreamSection({
   const [artifact, setArtifact] = useState<BitstreamArtifact | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const capabilities = getBoardCapabilities(board);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const selectedTopLevelFile =
@@ -74,6 +76,12 @@ export default function BitstreamSection({
   }, [board.id, files, projectName, topLevelFileName]);
 
   async function handleGenerateBitstream() {
+    if (!capabilities.bitstream.supported) {
+      setErrorMessage(capabilities.bitstream.detail);
+      setArtifact(null);
+      return;
+    }
+
     if (hdlFiles.length === 0) {
       setErrorMessage("No HDL files found. Create or import a top-level file first.");
       setArtifact(null);
@@ -222,7 +230,7 @@ export default function BitstreamSection({
             lineHeight: 1.55,
           }}
         >
-          Generate a real programming artifact for supported local Yosys + NextPNR boards.
+          Generate a real programming artifact when the selected board has a wired local toolchain.
         </p>
 
         <div style={{ display: "flex", gap: "10px", marginTop: "22px", flexWrap: "wrap" }}>
@@ -230,18 +238,18 @@ export default function BitstreamSection({
             className="primary-action"
             type="button"
             onClick={handleGenerateBitstream}
-            disabled={hdlFiles.length === 0 || isGenerating}
+            disabled={!capabilities.bitstream.supported || hdlFiles.length === 0 || isGenerating}
             style={{
               border: "none",
               borderRadius: "14px",
               background:
-                hdlFiles.length > 0 && !isGenerating ? "#2563eb" : "#cbd5e1",
+                capabilities.bitstream.supported && hdlFiles.length > 0 && !isGenerating ? "#2563eb" : "#cbd5e1",
               color: "#ffffff",
               padding: "13px 18px",
               fontSize: "15px",
               fontWeight: 800,
               cursor:
-                hdlFiles.length > 0 && !isGenerating ? "pointer" : "not-allowed",
+                capabilities.bitstream.supported && hdlFiles.length > 0 && !isGenerating ? "pointer" : "not-allowed",
             }}
           >
             {isGenerating ? "Generating..." : "Generate Bitstream"}
@@ -282,7 +290,9 @@ export default function BitstreamSection({
             ? errorMessage
             : artifact
               ? "Bitstream generated and added to the project build folder."
-              : "Ready to build a hardware artifact from the selected top-level file."}
+              : capabilities.bitstream.supported
+                ? "Ready to build a hardware artifact from the selected top-level file."
+                : capabilities.bitstream.detail}
         </div>
 
         <div
@@ -333,26 +343,30 @@ export default function BitstreamSection({
       </InfoCard>
 
       <div style={{ display: "grid", gap: "22px" }}>
-        <InfoCard title="Output" style={{ padding: "20px", borderRadius: "20px" }}>
+        <InfoCard title="Output" style={{ padding: "20px", borderRadius: "20px" }} compact>
           <InfoRow
             label="Filename"
             value={
               artifact?.fileName ??
               `${sanitizeName(projectName || "allora_project")}.${extension}`
             }
+            compact
           />
-          <InfoRow label="Format" value={extension.toUpperCase()} />
-          <InfoRow label="Bytes" value={String(artifact?.byteLength ?? 0)} />
-          <InfoRow label="Generated" value={artifact?.generatedAt ?? "Not generated"} />
+          <InfoRow label="Format" value={extension.toUpperCase()} compact />
+          <InfoRow label="Bytes" value={String(artifact?.byteLength ?? 0)} compact />
+          <InfoRow label="Generated" value={artifact?.generatedAt ?? "Not generated"} compact />
         </InfoCard>
 
-        <InfoCard title="Source" style={{ padding: "20px", borderRadius: "20px" }}>
-          <InfoRow label="Board" value={board.name} />
-          <InfoRow label="Top Module" value={topModule ?? "Not found"} />
-          <InfoRow label="HDL Files" value={String(hdlFiles.length)} />
+        <InfoCard title="Source" style={{ padding: "20px", borderRadius: "20px" }} compact>
+          <InfoRow label="Board" value={board.name} compact />
+          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
+          <InfoRow label="Status" value={capabilities.bitstream.label} compact />
+          <InfoRow label="Top Module" value={topModule ?? "Not found"} compact />
+          <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Constraints"
             value={constraintFile?.name ?? `constraints.${board.constraintsFile}`}
+            compact
           />
         </InfoCard>
       </div>

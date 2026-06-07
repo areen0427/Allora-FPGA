@@ -41,6 +41,19 @@ export type BoardToolchain = {
   program?: string;
 };
 
+export type BoardCapability = {
+  supported: boolean;
+  label: string;
+  detail: string;
+};
+
+export type BoardCapabilities = {
+  toolchain: string;
+  pinMapping: BoardCapability;
+  synthesisDiagram: BoardCapability;
+  bitstream: BoardCapability;
+};
+
 export type BoardDefinition = {
   id: string;
   name: string;

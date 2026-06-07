@@ -228,11 +228,11 @@
   color: #2563eb;
 }
 
-html[data-theme="dark"] .project-tree-file .project-tree-close {
+html[data-theme="black-ice"] .project-tree-file .project-tree-close {
   color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] .project-tree-file .project-tree-close:hover {
+html[data-theme="black-ice"] .project-tree-file .project-tree-close:hover {
   color: #bfdbfe !important;
 }
 
@@ -282,11 +282,11 @@ html[data-theme="dark"] .project-tree-file .project-tree-close:hover {
   background: rgba(219, 234, 254, 0.45);
 }
 
-html[data-theme="dark"] .sidebarNavButton {
+html[data-theme="black-ice"] .sidebarNavButton {
   color: #cbd5e1 !important;
 }
 
-html[data-theme="dark"] .sidebarNavButton.active {
+html[data-theme="black-ice"] .sidebarNavButton.active {
   color: #93c5fd !important;
   background: linear-gradient(
     90deg,
@@ -296,7 +296,7 @@ html[data-theme="dark"] .sidebarNavButton.active {
   ) !important;
 }
 
-html[data-theme="dark"] .sidebarNavButton:hover {
+html[data-theme="black-ice"] .sidebarNavButton:hover {
   color: #bfdbfe !important;
   background: rgba(37, 99, 235, 0.18) !important;
 }
@@ -402,7 +402,7 @@ html[data-theme="dark"] .sidebarNavButton:hover {
   font-weight: 750;
 }
 
-html[data-theme="dark"] .liquid-board-menu {
+html[data-theme="black-ice"] .liquid-board-menu {
   border-color: rgba(148, 163, 184, 0.28) !important;
   background:
     linear-gradient(145deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.38)),
@@ -414,33 +414,33 @@ html[data-theme="dark"] .liquid-board-menu {
     0 6px 18px rgba(37, 99, 235, 0.12) !important;
 }
 
-html[data-theme="dark"] .liquid-board-menu::before {
+html[data-theme="black-ice"] .liquid-board-menu::before {
   background:
     radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.16), transparent 30%),
     linear-gradient(120deg, rgba(37, 99, 235, 0.14), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.1), transparent 44%) !important;
 }
 
-html[data-theme="dark"] .liquid-board-option {
+html[data-theme="black-ice"] .liquid-board-option {
   color: #f8fafc !important;
 }
 
-html[data-theme="dark"] .liquid-board-option:hover {
+html[data-theme="black-ice"] .liquid-board-option:hover {
   background: rgba(51, 65, 85, 0.58) !important;
   border-color: rgba(148, 163, 184, 0.28) !important;
 }
 
-html[data-theme="dark"] .liquid-board-meta {
+html[data-theme="black-ice"] .liquid-board-meta {
   color: #cbd5e1 !important;
 }
 
-html[data-theme="dark"] .glass-page {
+html[data-theme="black-ice"] .glass-page {
   background:
     radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.07), transparent 34%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.94)) !important;
 }
 
-html[data-theme="dark"] .home-rail {
+html[data-theme="black-ice"] .home-rail {
   background:
     linear-gradient(180deg, rgba(31, 41, 55, 0.54), rgba(17, 24, 39, 0.36)),
     rgba(17, 24, 39, 0.34) !important;
@@ -498,6 +498,125 @@ html[data-theme="dark"] .home-rail {
   overflow: hidden;
 }
 
+.synthesis-control-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px;
+  border-radius: 18px;
+}
+
+.synthesis-top-level-field {
+  min-width: min(100%, 260px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.synthesis-top-level-field span {
+  flex-shrink: 0;
+}
+
+.synthesis-top-level-select {
+  min-width: 0;
+  height: 42px;
+  flex: 1;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72)),
+    #ffffff;
+  color: #0f172a;
+  padding: 0 34px 0 13px;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72));
+  background-position:
+    calc(100% - 18px) 18px,
+    calc(100% - 13px) 18px,
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
+  background-repeat: no-repeat;
+}
+
+.synthesis-top-level-select:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.58);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.synthesis-generate-button,
+.synthesis-secondary-button {
+  min-height: 42px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 850;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.synthesis-generate-button {
+  border: none;
+  background:
+    linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  padding: 0 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+.synthesis-generate-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 10px 22px rgba(37, 99, 235, 0.28);
+}
+
+.synthesis-generate-button:disabled {
+  background: #cbd5e1;
+  color: #ffffff;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.synthesis-secondary-button {
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72)),
+    #ffffff;
+  color: #475569;
+  padding: 0 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.synthesis-secondary-button:hover {
+  border-color: rgba(37, 99, 235, 0.32);
+  color: #2563eb;
+}
+
 .editor-tab-bar {
   background:
     linear-gradient(180deg, rgba(248, 250, 252, 0.72), rgba(241, 245, 249, 0.46)),
@@ -544,6 +663,23 @@ html[data-theme="dark"] .home-rail {
     border-color 0.18s ease,
     box-shadow 0.18s ease,
     background 0.18s ease;
+}
+
+.board-support-disclaimer {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: auto;
+  max-width: 100%;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 999px;
+  background: rgba(239, 246, 255, 0.74);
+  color: #2563eb;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-align: left;
+  white-space: normal;
 }
 
 .board-card::before,
@@ -658,11 +794,11 @@ html[data-theme="dark"] .home-rail {
   background: transparent !important;
 }
 
-html[data-theme="dark"] .liquid-home-card,
-html[data-theme="dark"] .board-card,
-html[data-theme="dark"] .recent-project-empty,
-html[data-theme="dark"] .variant-modal,
-html[data-theme="dark"] .variant-card {
+html[data-theme="black-ice"] .liquid-home-card,
+html[data-theme="black-ice"] .board-card,
+html[data-theme="black-ice"] .recent-project-empty,
+html[data-theme="black-ice"] .variant-modal,
+html[data-theme="black-ice"] .variant-card {
   border-color: rgba(148, 163, 184, 0.22) !important;
   background:
     linear-gradient(145deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.34)),
@@ -674,110 +810,120 @@ html[data-theme="dark"] .variant-card {
     0 5px 18px rgba(37, 99, 235, 0.045) !important;
 }
 
-html[data-theme="dark"] .dashboard-glass-card {
-  border-color: rgba(75, 85, 99, 0.62) !important;
+html[data-theme="black-ice"] .dashboard-glass-card {
+  border-color: rgba(96, 165, 250, 0.2) !important;
   background:
-    linear-gradient(145deg, rgba(31, 41, 55, 0.74), rgba(17, 24, 39, 0.64)),
-    rgba(17, 24, 39, 0.5) !important;
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(30, 41, 59, 0.76), rgba(15, 23, 42, 0.62)),
+    rgba(15, 23, 42, 0.54) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 10px 26px rgba(0, 0, 0, 0.2) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 -20px 44px rgba(30, 64, 175, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.24),
+    0 5px 18px rgba(37, 99, 235, 0.06) !important;
 }
 
-html[data-theme="dark"] .dashboard-workspace {
+html[data-theme="black-ice"] .dashboard-workspace {
   background:
-    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.08), transparent 32%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.92)) !important;
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 32, 56, 0.94)) !important;
 }
 
-html[data-theme="dark"] .editor-tab-bar {
+html[data-theme="black-ice"] .editor-tab-bar {
   background:
-    linear-gradient(180deg, rgba(31, 41, 55, 0.58), rgba(17, 24, 39, 0.42)),
-    rgba(17, 24, 39, 0.28) !important;
-  border-bottom-color: rgba(75, 85, 99, 0.58) !important;
+    linear-gradient(180deg, rgba(30, 41, 59, 0.64), rgba(15, 32, 56, 0.46)),
+    rgba(15, 23, 42, 0.3) !important;
+  border-bottom-color: rgba(96, 165, 250, 0.2) !important;
 }
 
-html[data-theme="dark"] .editor-file-tab,
-html[data-theme="dark"] .editor-add-tab {
+html[data-theme="black-ice"] .editor-file-tab,
+html[data-theme="black-ice"] .editor-add-tab {
   background: transparent !important;
-  border-right-color: rgba(75, 85, 99, 0.58) !important;
+  border-right-color: rgba(96, 165, 250, 0.16) !important;
 }
 
-html[data-theme="dark"] .editor-file-tab.active {
+html[data-theme="black-ice"] .editor-file-tab.active {
   background:
-    linear-gradient(145deg, rgba(31, 41, 55, 0.74), rgba(17, 24, 39, 0.5)),
-    rgba(17, 24, 39, 0.34) !important;
+    linear-gradient(145deg, rgba(30, 41, 59, 0.78), rgba(15, 32, 56, 0.56)),
+    rgba(15, 23, 42, 0.38) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
-html[data-theme="dark"] .editor-shell .monaco-editor,
-html[data-theme="dark"] .editor-shell .monaco-editor-background,
-html[data-theme="dark"] .editor-shell .monaco-editor .inputarea.ime-input,
-html[data-theme="dark"] .editor-shell .monaco-editor .margin {
-  background-color: rgba(17, 24, 39, 0.86) !important;
+html[data-theme="black-ice"] .editor-shell .monaco-editor,
+html[data-theme="black-ice"] .editor-shell .monaco-editor-background,
+html[data-theme="black-ice"] .editor-shell .monaco-editor .inputarea.ime-input,
+html[data-theme="black-ice"] .editor-shell .monaco-editor .margin {
+  background-color: #0f1d33 !important;
 }
 
-html[data-theme="dark"] .editor-shell .monaco-editor .line-numbers {
+html[data-theme="black-ice"] .editor-shell .monaco-editor .line-numbers {
   color: #64748b !important;
 }
 
-html[data-theme="dark"] .editor-file-tab [title="Unsaved changes"],
-html[data-theme="dark"] [title="Unsaved changes"] {
+html[data-theme="black-ice"] .editor-file-tab [title="Unsaved changes"],
+html[data-theme="black-ice"] [title="Unsaved changes"] {
   background: #93c5fd !important;
   box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.12);
 }
 
-html[data-theme="dark"] .board-card::before,
-html[data-theme="dark"] .recent-projects-card::before,
-html[data-theme="dark"] .recent-project-empty::before,
-html[data-theme="dark"] .project-setup-card::before,
-html[data-theme="dark"] .variant-modal::before,
-html[data-theme="dark"] .variant-card::before {
+html[data-theme="black-ice"] .board-card::before,
+html[data-theme="black-ice"] .recent-projects-card::before,
+html[data-theme="black-ice"] .recent-project-empty::before,
+html[data-theme="black-ice"] .project-setup-card::before,
+html[data-theme="black-ice"] .variant-modal::before,
+html[data-theme="black-ice"] .variant-card::before {
   background:
     radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.08), transparent 30%),
     linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.05), transparent 44%) !important;
 }
 
-html[data-theme="dark"] .dashboard-glass-card::before {
+html[data-theme="black-ice"] .dashboard-glass-card::before {
   background:
-    radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.045), transparent 28%),
-    linear-gradient(120deg, rgba(37, 99, 235, 0.035), transparent 36%) !important;
+    radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.08), transparent 30%),
+    linear-gradient(120deg, rgba(37, 99, 235, 0.06), transparent 40%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.035), transparent 48%) !important;
 }
 
-html[data-theme="dark"] .board-card:hover,
-html[data-theme="dark"] .variant-card:hover {
+html[data-theme="black-ice"] .board-card:hover,
+html[data-theme="black-ice"] .variant-card:hover {
   border-color: rgba(148, 163, 184, 0.3) !important;
   background:
     linear-gradient(145deg, rgba(51, 65, 85, 0.56), rgba(15, 23, 42, 0.4)),
     rgba(15, 23, 42, 0.5) !important;
 }
 
-html[data-theme="dark"] .recent-project-row {
+html[data-theme="black-ice"] .recent-project-row {
   background: transparent !important;
 }
 
-html[data-theme="dark"] .recent-project-row:hover {
+html[data-theme="black-ice"] .recent-project-row:hover {
   background: rgba(51, 65, 85, 0.32) !important;
 }
 
-html[data-theme="dark"] .recent-project-remove {
+html[data-theme="black-ice"] .recent-project-remove {
   color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] .recent-project-remove:hover {
+html[data-theme="black-ice"] .recent-project-remove:hover {
   background: rgba(248, 113, 113, 0.12) !important;
   color: #fca5a5 !important;
 }
 
-html[data-theme="dark"] .recent-project-title {
+html[data-theme="black-ice"] .recent-project-title {
   color: #f8fafc !important;
   background: transparent !important;
 }
 
-html[data-theme="dark"] .recent-project-meta {
+html[data-theme="black-ice"] .recent-project-meta {
   color: #cbd5e1 !important;
   background: transparent !important;
+}
+
+html[data-theme="black-ice"] .board-support-disclaimer {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(30, 64, 175, 0.18);
+  color: #bfdbfe;
 }
 
 .modal-backdrop {
@@ -898,12 +1044,12 @@ select.setting-control {
   accent-color: #2563eb;
 }
 
-html[data-theme="dark"] .setting-field,
-html[data-theme="dark"] .setting-toggle {
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-field,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-toggle {
   color: #e5e7eb !important;
 }
 
-html[data-theme="dark"] .setting-control {
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-control {
   border-color: rgba(75, 85, 99, 0.58) !important;
   background:
     linear-gradient(145deg, rgba(31, 41, 55, 0.36), rgba(17, 24, 39, 0.24)),
@@ -914,7 +1060,7 @@ html[data-theme="dark"] .setting-control {
     0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-html[data-theme="dark"] select.setting-control {
+html:is([data-theme="dark"], [data-theme="black-ice"]) select.setting-control {
   background:
     linear-gradient(45deg, transparent 50%, #cbd5e1 50%) calc(100% - 19px) 50% / 5px 5px no-repeat,
     linear-gradient(135deg, #cbd5e1 50%, transparent 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
@@ -923,7 +1069,7 @@ html[data-theme="dark"] select.setting-control {
   color-scheme: dark;
 }
 
-html[data-theme="dark"] .setting-control:focus {
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-control:focus {
   border-color: rgba(147, 197, 253, 0.42) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
@@ -931,12 +1077,12 @@ html[data-theme="dark"] .setting-control:focus {
     0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
-html[data-theme="dark"] .setting-control option {
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-control option {
   background: #111827;
   color: #f8fafc;
 }
 
-html[data-theme="dark"] .setting-toggle {
+html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-toggle {
   border-color: rgba(75, 85, 99, 0.64) !important;
   background:
     linear-gradient(145deg, rgba(31, 41, 55, 0.44), rgba(17, 24, 39, 0.3)),
@@ -974,4 +1120,351 @@ html[data-theme="dark"] .setting-toggle {
 .variant-card p {
   margin: 0;
   color: #64748b;
+}
+
+html[data-theme="light"] .glass-page {
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .home-rail,
+html[data-theme="light"] .liquid-home-card,
+html[data-theme="light"] .board-card,
+html[data-theme="light"] .recent-project-empty,
+html[data-theme="light"] .variant-modal,
+html[data-theme="light"] .variant-card,
+html[data-theme="light"] .dashboard-glass-card,
+html[data-theme="light"] .liquid-board-menu {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="light"] .dashboard-workspace {
+  background: #f8fafc !important;
+}
+
+html[data-theme="light"] .editor-tab-bar,
+html[data-theme="light"] .editor-file-tab.active,
+html[data-theme="light"] .setting-toggle {
+  background: #ffffff !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="light"] .board-card::before,
+html[data-theme="light"] .recent-projects-card::before,
+html[data-theme="light"] .recent-project-empty::before,
+html[data-theme="light"] .project-setup-card::before,
+html[data-theme="light"] .variant-modal::before,
+html[data-theme="light"] .variant-card::before,
+html[data-theme="light"] .dashboard-glass-card::before,
+html[data-theme="light"] .liquid-board-menu::before {
+  display: none;
+}
+
+html[data-theme="light"] .board-support-disclaimer {
+  border-color: #dbeafe;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+html[data-theme="ice"] .liquid-home-card,
+html[data-theme="ice"] .board-card,
+html[data-theme="ice"] .recent-project-empty,
+html[data-theme="ice"] .variant-modal,
+html[data-theme="ice"] .variant-card,
+html[data-theme="ice"] .liquid-board-menu {
+  border-color: rgba(255, 255, 255, 0.68) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.32)),
+    rgba(238, 246, 255, 0.5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -24px 48px rgba(255, 255, 255, 0.22),
+    0 16px 38px rgba(15, 23, 42, 0.11),
+    0 7px 22px rgba(37, 99, 235, 0.08) !important;
+  backdrop-filter: blur(28px) saturate(1.42);
+  -webkit-backdrop-filter: blur(28px) saturate(1.42);
+}
+
+html[data-theme="ice"] .glass-page {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(219, 234, 254, 0.52), transparent 30%),
+    radial-gradient(circle at 92% 8%, rgba(186, 230, 253, 0.28), transparent 34%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 239, 255, 0.76)) !important;
+}
+
+html[data-theme="ice"] .home-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(219, 234, 254, 0.24)),
+    rgba(239, 246, 255, 0.26) !important;
+  border-right-color: rgba(255, 255, 255, 0.58) !important;
+}
+
+html[data-theme="ice"] .board-support-disclaimer {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(219, 234, 254, 0.62);
+  color: #1d4ed8;
+}
+
+html[data-theme="ice"] .dashboard-glass-card {
+  border-color: rgba(255, 255, 255, 0.66) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(219, 234, 254, 0.72), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(219, 234, 254, 0.46)),
+    rgba(238, 246, 255, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    inset 0 -20px 44px rgba(219, 234, 254, 0.24),
+    0 15px 36px rgba(15, 23, 42, 0.09),
+    0 6px 20px rgba(37, 99, 235, 0.065) !important;
+  backdrop-filter: blur(24px) saturate(1.28);
+  -webkit-backdrop-filter: blur(24px) saturate(1.28);
+}
+
+html[data-theme="ice"] .dashboard-workspace {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(191, 219, 254, 0.62), transparent 30%),
+    linear-gradient(135deg, rgba(248, 250, 252, 0.94), rgba(219, 234, 254, 0.78)) !important;
+}
+
+html[data-theme="ice"] .dashboard-glass-card::before {
+  background:
+    radial-gradient(circle at 9% 0%, rgba(255, 255, 255, 0.44), transparent 30%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.105), transparent 40%),
+    linear-gradient(300deg, rgba(14, 165, 233, 0.075), transparent 48%) !important;
+}
+
+html[data-theme="ice"] .editor-tab-bar {
+  background:
+    linear-gradient(180deg, rgba(239, 246, 255, 0.78), rgba(219, 234, 254, 0.38)),
+    rgba(255, 255, 255, 0.24) !important;
+  border-bottom-color: rgba(191, 219, 254, 0.72) !important;
+}
+
+html[data-theme="ice"] .editor-file-tab,
+html[data-theme="ice"] .editor-add-tab {
+  border-right-color: rgba(191, 219, 254, 0.64) !important;
+}
+
+html[data-theme="ice"] .editor-file-tab.active {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.5)),
+    rgba(239, 246, 255, 0.46) !important;
+}
+
+html[data-theme="ice"] .editor-shell .monaco-editor,
+html[data-theme="ice"] .editor-shell .monaco-editor-background,
+html[data-theme="ice"] .editor-shell .monaco-editor .inputarea.ime-input,
+html[data-theme="ice"] .editor-shell .monaco-editor .margin {
+  background-color: #eff7ff !important;
+}
+
+html[data-theme="ice"] .synthesis-control-bar {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(219, 234, 254, 0.62), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.42)),
+    rgba(238, 246, 255, 0.56) !important;
+}
+
+html[data-theme="ice"] .synthesis-top-level-select,
+html[data-theme="ice"] .synthesis-secondary-button {
+  border-color: rgba(191, 219, 254, 0.82);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(219, 234, 254, 0.46)),
+    rgba(239, 246, 255, 0.58);
+}
+
+html[data-theme="dark"] .glass-page,
+html[data-theme="dark"] .dashboard-workspace {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .home-rail,
+html[data-theme="dark"] .liquid-home-card,
+html[data-theme="dark"] .board-card,
+html[data-theme="dark"] .recent-project-empty,
+html[data-theme="dark"] .variant-modal,
+html[data-theme="dark"] .variant-card,
+html[data-theme="dark"] .dashboard-glass-card,
+html[data-theme="dark"] .liquid-board-menu {
+  border-color: #374151 !important;
+  background: #1f2937 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="dark"] .editor-tab-bar,
+html[data-theme="dark"] .editor-file-tab.active,
+html[data-theme="dark"] .setting-toggle {
+  background: #111827 !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="dark"] .board-card::before,
+html[data-theme="dark"] .recent-projects-card::before,
+html[data-theme="dark"] .recent-project-empty::before,
+html[data-theme="dark"] .project-setup-card::before,
+html[data-theme="dark"] .variant-modal::before,
+html[data-theme="dark"] .variant-card::before,
+html[data-theme="dark"] .dashboard-glass-card::before,
+html[data-theme="dark"] .liquid-board-menu::before {
+  display: none;
+}
+
+html[data-theme="dark"] .board-support-disclaimer {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(37, 99, 235, 0.16);
+  color: #bfdbfe;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .sidebarNavButton {
+  color: #cbd5e1 !important;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .sidebarNavButton.active {
+  color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .sidebarNavButton.active {
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.34) 0%,
+    rgba(37, 99, 235, 0.2) 32%,
+    rgba(37, 99, 235, 0) 66%
+  ) !important;
+  color: #bfdbfe !important;
+}
+
+html[data-theme="dark"] .sidebarNavButton:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.2) 0%,
+    rgba(37, 99, 235, 0.11) 34%,
+    rgba(37, 99, 235, 0) 68%
+  ) !important;
+  color: #dbeafe !important;
+}
+
+html[data-theme="dark"] .synthesis-top-level-field {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .synthesis-top-level-select,
+html[data-theme="dark"] .synthesis-secondary-button {
+  border-color: #374151;
+  background:
+    linear-gradient(180deg, #1f2937, #111827);
+  color: #f8fafc;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .synthesis-top-level-select option {
+  background: #111827;
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .synthesis-secondary-button:hover {
+  border-color: rgba(96, 165, 250, 0.48);
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .synthesis-generate-button:disabled {
+  background: #475569;
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .editor-shell {
+  background: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme="dark"] .editor-tab-bar {
+  background: #1f2937 !important;
+  border-bottom-color: #374151 !important;
+}
+
+html[data-theme="dark"] .editor-file-tab,
+html[data-theme="dark"] .editor-add-tab {
+  background: #1f2937 !important;
+  border-right-color: #374151 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .editor-file-tab.active {
+  background: #111827 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .editor-shell .monaco-editor,
+html[data-theme="dark"] .editor-shell .monaco-editor-background,
+html[data-theme="dark"] .editor-shell .monaco-editor .inputarea.ime-input,
+html[data-theme="dark"] .editor-shell .monaco-editor .margin {
+  background-color: #111827 !important;
+}
+
+html[data-theme="dark"] .editor-shell .monaco-editor .line-numbers {
+  color: #64748b !important;
+}
+
+html[data-theme="black-ice"] .synthesis-top-level-field {
+  color: #cbd5e1;
+}
+
+html[data-theme="black-ice"] .synthesis-control-bar {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.16), transparent 36%),
+    linear-gradient(145deg, rgba(30, 41, 59, 0.74), rgba(15, 32, 56, 0.56)),
+    rgba(15, 23, 42, 0.5) !important;
+}
+
+html[data-theme="black-ice"] .synthesis-top-level-select,
+html[data-theme="black-ice"] .synthesis-secondary-button {
+  border-color: rgba(96, 165, 250, 0.22);
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.8), rgba(15, 32, 56, 0.58)),
+    rgba(15, 23, 42, 0.42);
+  color: #f8fafc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+html[data-theme="black-ice"] .synthesis-top-level-select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+html[data-theme="black-ice"] .synthesis-secondary-button:hover {
+  border-color: rgba(96, 165, 250, 0.42);
+  color: #bfdbfe;
+}
+
+html[data-theme="black-ice"] .synthesis-generate-button {
+  background:
+    linear-gradient(135deg, #1d4ed8, #0284c7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+html[data-theme="black-ice"] .synthesis-generate-button:disabled {
+  background: #475569;
+  color: #cbd5e1;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-project-title,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .liquid-board-name,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .variant-card h3 {
+  color: #f8fafc !important;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-project-meta,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .liquid-board-meta,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .variant-card p {
+  color: #cbd5e1 !important;
 }

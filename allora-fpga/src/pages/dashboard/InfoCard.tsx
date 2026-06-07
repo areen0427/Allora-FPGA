@@ -4,9 +4,10 @@ type InfoCardProps = {
   title: string;
   children: ReactNode;
   style?: CSSProperties;
+  compact?: boolean;
 };
 
-export default function InfoCard({ title, children, style }: InfoCardProps) {
+export default function InfoCard({ title, children, style, compact = false }: InfoCardProps) {
   return (
     <div
       className="dashboard-glass-card"
@@ -22,8 +23,8 @@ export default function InfoCard({ title, children, style }: InfoCardProps) {
       <h2
         style={{
           margin: 0,
-          marginBottom: "22px",
-          fontSize: "24px",
+          marginBottom: compact ? "16px" : "22px",
+          fontSize: compact ? "18px" : "24px",
           letterSpacing: "-0.03em",
         }}
       >
@@ -35,12 +36,20 @@ export default function InfoCard({ title, children, style }: InfoCardProps) {
   );
 }
 
-export function InfoRow({ label, value }: { label: string; value: string }) {
+export function InfoRow({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
   return (
-    <div style={{ marginTop: "18px" }}>
+    <div style={{ marginTop: compact ? "13px" : "18px" }}>
       <div
         style={{
-          fontSize: "13px",
+          fontSize: compact ? "11px" : "13px",
           fontWeight: 800,
           color: "#64748b",
           textTransform: "uppercase",
@@ -52,8 +61,8 @@ export function InfoRow({ label, value }: { label: string; value: string }) {
 
       <div
         style={{
-          marginTop: "5px",
-          fontSize: "19px",
+          marginTop: compact ? "4px" : "5px",
+          fontSize: compact ? "14px" : "19px",
           fontWeight: 750,
           color: "#0f172a",
           overflowWrap: "anywhere",

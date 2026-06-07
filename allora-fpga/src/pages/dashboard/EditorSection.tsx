@@ -31,6 +31,8 @@ export default function EditorSection({
 
     const [editingFile, setEditingFile] = useState<string | null>(null);
     const [editingName, setEditingName] = useState("");
+    const isDarkEditor =
+      settings.theme === "dark" || settings.theme === "black-ice";
 
   return (
     <div
@@ -181,7 +183,7 @@ export default function EditorSection({
           height="100%"
           value={activeFile?.content ?? ""}
           language={getMonacoLanguage(activeFile?.name)}
-          theme={settings.theme === "dark" ? "allora-dark" : "allora"}
+          theme={isDarkEditor ? "allora-dark" : "allora"}
           onMount={(_, monaco) => {
             registerHdlLanguages(monaco);
 
@@ -219,7 +221,7 @@ export default function EditorSection({
               },
             });
 
-            monaco.editor.setTheme(settings.theme === "dark" ? "allora-dark" : "allora");
+            monaco.editor.setTheme(isDarkEditor ? "allora-dark" : "allora");
           }}
           onChange={(value) => updateActiveFile(value ?? "")}
           options={{

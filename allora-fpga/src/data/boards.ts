@@ -1,7 +1,9 @@
 import type { BoardDefinition } from "./boardTypes";
 import { ac701 } from "./boards/ac701";
 import { ARTY_A7_BOARDS } from "./boards/artya7";
+import { fomuPvt } from "./boards/fomu";
 import { icebreaker } from "./boards/icebreaker";
+import { icesugarV15 } from "./boards/icesugar";
 import { orangecrab } from "./boards/orangecrab";
 import { TINYFPGA_BOARDS } from "./boards/tinyfpga";
 import { ULX3S_BOARDS } from "./boards/ulx3s";
@@ -13,12 +15,16 @@ export type {
   BoardPin,
   BoardClock,
   BoardToolchain,
+  BoardCapability,
+  BoardCapabilities,
   BoardDefinition,
 } from "./boardTypes";
 
 export const BOARDS = [
   ac701,
+  fomuPvt,
   icebreaker,
+  icesugarV15,
   orangecrab,
   {
     id: "arty-a7",
@@ -56,7 +62,9 @@ export const BOARDS = [
 
 export function getBoardById(id: string): BoardDefinition | undefined {
   if (id === ac701.id) return ac701;
+  if (id === fomuPvt.id) return fomuPvt;
   if (id === icebreaker.id) return icebreaker;
+  if (id === icesugarV15.id) return icesugarV15;
   if (id === orangecrab.id) return orangecrab;
 
   return [...ARTY_A7_BOARDS, ...ULX3S_BOARDS, ...TINYFPGA_BOARDS].find((board) => board.id === id);
