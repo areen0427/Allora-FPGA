@@ -2,7 +2,7 @@ import { BOARDS, getBoardById } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDown, Cpu, FolderClock, Home, Settings } from "lucide-react";
+import { ChevronDown, Cpu, FolderClock, Home, Search, Settings } from "lucide-react";
 import { formatProjectTime, getSavedProjects, removeSavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
 
@@ -15,6 +15,9 @@ type BoardSelectProps = {
   onOpenProject: (projectId: string) => void;
 };
 
+type BoardCardItem = (typeof BOARDS)[number];
+type BoardSupportFilter = "all" | "supported" | "runner-needed";
+
 function getBoardSummary(board: (typeof BOARDS)[number]) {
   if ("variants" in board) {
     if (board.id === "arty-a7") {
@@ -23,6 +26,38 @@ function getBoardSummary(board: (typeof BOARDS)[number]) {
 
     if (board.id === "tinyfpga") {
       return [board.vendor, "iCE40 LP", board.device, "CM81"];
+    }
+
+    if (board.id === "colorlight-i5-family") {
+      return [board.vendor, "ECP5", "LFE5U-25F", "CABGA"];
+    }
+
+    if (board.id === "butterstick") {
+      return [board.vendor, "ECP5", "LFE5UM5G", "BG381C"];
+    }
+
+    if (board.id === "ecpix-5") {
+      return [board.vendor, "ECP5", "LFE5UM5G", "BG554I"];
+    }
+
+    if (board.id === "tang-nano") {
+      return [board.vendor, "Gowin", "9K / 20K", "QN88"];
+    }
+
+    if (board.id === "icebreaker-bitsy") {
+      return [board.vendor, "iCE40 UltraPlus", "UP5K", "SG48"];
+    }
+
+    if (board.id === "icepi-zero") {
+      return [board.vendor, "ECP5", "25F / 45F", "BG256C"];
+    }
+
+    if (board.id === "kosagi-netv2") {
+      return [board.vendor, "Artix-7", "A7-35 / A7-100", "FGG484"];
+    }
+
+    if (board.id === "sqrl-acorn") {
+      return [board.vendor, "Artix-7", "A100T / A200T", "FGG/FBG484"];
     }
 
     return [
@@ -36,32 +71,67 @@ function getBoardSummary(board: (typeof BOARDS)[number]) {
   return [board.vendor, board.family, board.device, board.package];
 }
 
-const boardCount = BOARDS.length;
+function getBoardDefinitions(board: BoardCardItem) {
+  return "variants" in board
+    ? board.variants
+        .map((variant) => getBoardById(variant.id))
+        .filter((variantBoard): variantBoard is NonNullable<ReturnType<typeof getBoardById>> =>
+          Boolean(variantBoard)
+        )
+    : [board];
+}
+
+const boardCount = BOARDS.reduce(
+  (count, board) => count + ("variants" in board ? board.variants.length : 1),
+  0
+);
 
 function getRecentProjectBoardName(boardId: string) {
   return getBoardById(boardId)?.name ?? boardId;
 }
 
-function getBoardSupportDisclaimer(board: (typeof BOARDS)[number]) {
-  const boardDefinitions =
-    "variants" in board
-      ? board.variants
-          .map((variant) => getBoardById(variant.id))
-          .filter((variantBoard): variantBoard is NonNullable<ReturnType<typeof getBoardById>> =>
-            Boolean(variantBoard)
-          )
-      : [board];
-
-  if (boardDefinitions.length === 0) return null;
-
-  const buildUnsupported = boardDefinitions.every((boardDefinition) => {
+function isBuildSupported(board: BoardCardItem) {
+  return getBoardDefinitions(board).some((boardDefinition) => {
     const capabilities = getBoardCapabilities(boardDefinition);
-    return !capabilities.synthesisDiagram.supported && !capabilities.bitstream.supported;
+    return capabilities.synthesisDiagram.supported && capabilities.bitstream.supported;
   });
+}
 
-  return buildUnsupported
-    ? "Synthesis and bitstream generation are not supported yet."
-    : null;
+function getBoardFamilies(board: BoardCardItem) {
+  const families = getBoardDefinitions(board).map((boardDefinition) => boardDefinition.family);
+  return [...new Set(families)];
+}
+
+function getBoardSearchText(board: BoardCardItem) {
+  const variantText = "variants" in board
+    ? board.variants.map((variant) => `${variant.name} ${variant.fpga}`).join(" ")
+    : "";
+  const definitionsText = getBoardDefinitions(board)
+    .map((boardDefinition) =>
+      [
+        boardDefinition.name,
+        boardDefinition.vendor,
+        boardDefinition.family,
+        boardDefinition.device,
+        boardDefinition.package,
+        boardDefinition.fpgaId,
+      ].join(" ")
+    )
+    .join(" ");
+
+  return [board.name, board.vendor, board.device, variantText, definitionsText]
+    .join(" ")
+    .toLowerCase();
+}
+
+function getBoardSupportGroup(board: BoardCardItem) {
+  return isBuildSupported(board) ? "Supported" : "Not Fully Supported";
+}
+
+function getBoardGroupDetail(group: string) {
+  return group === "Not Fully Supported"
+    ? "Synth + bitstream generation not supported yet"
+    : "Synth + bitstream generation supported";
 }
 
 export default function BoardSelect({
@@ -75,11 +145,56 @@ export default function BoardSelect({
   const [showAvailableBoards, setShowAvailableBoards] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
+  const [boardSearch, setBoardSearch] = useState("");
+  const [supportFilter, setSupportFilter] = useState<BoardSupportFilter>("all");
+  const [familyFilter, setFamilyFilter] = useState("all");
+  const [showAllBoards, setShowAllBoards] = useState(false);
+  const [showFamilyMenu, setShowFamilyMenu] = useState(false);
   const newProjectRef = useRef<HTMLElement | null>(null);
   const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
+  const familyOptions = [...new Set(BOARDS.flatMap(getBoardFamilies))].sort();
+  const normalizedBoardSearch = boardSearch.trim().toLowerCase();
+  const filteredBoards = BOARDS
+    .filter((board) => {
+      if (normalizedBoardSearch && !getBoardSearchText(board).includes(normalizedBoardSearch)) {
+        return false;
+      }
+
+      if (supportFilter === "supported" && !isBuildSupported(board)) {
+        return false;
+      }
+
+      if (supportFilter === "runner-needed" && isBuildSupported(board)) {
+        return false;
+      }
+
+      if (familyFilter !== "all" && !getBoardFamilies(board).includes(familyFilter)) {
+        return false;
+      }
+
+      return true;
+    })
+    .sort((first, second) => {
+      const supportDelta = Number(isBuildSupported(second)) - Number(isBuildSupported(first));
+      return supportDelta || first.name.localeCompare(second.name);
+    });
+  const boardPreviewLimit = 8;
+  const filtersActive =
+    normalizedBoardSearch.length > 0 || supportFilter !== "all" || familyFilter !== "all";
+  const visibleBoards = showAllBoards || filtersActive
+    ? filteredBoards
+    : filteredBoards.slice(0, boardPreviewLimit);
+  const boardGroups = ["Supported", "Not Fully Supported"]
+    .map((group) => ({
+      group,
+      boards: visibleBoards.filter((board) => getBoardSupportGroup(board) === group),
+    }))
+    .filter((group) => group.boards.length > 0);
+  const selectedFamilyLabel = familyFilter === "all" ? "All families" : familyFilter;
 
   function selectBoard(board: (typeof BOARDS)[number]) {
     setShowAvailableBoards(false);
+    setShowFamilyMenu(false);
 
     if ("variants" in board) {
       setSelectedVariantBoard(board);
@@ -97,7 +212,10 @@ export default function BoardSelect({
   return (
     <div
       className="glass-page"
-      onClick={() => setShowAvailableBoards(false)}
+      onClick={() => {
+        setShowAvailableBoards(false);
+        setShowFamilyMenu(false);
+      }}
       style={{
         minHeight: "100vh",
         background:
@@ -230,18 +348,21 @@ export default function BoardSelect({
                   gap: "7px",
                 }}
               >
-                {boardCount} boards available
+                Boards
+                <span className="board-count-pill">{boardCount}</span>
                 <ChevronDown size={14} />
               </button>
 
               {showAvailableBoards && (
                 <div
-                  className="liquid-board-menu"
+                  className="liquid-board-menu board-available-menu"
                   style={{
                     position: "absolute",
                     top: "42px",
                     right: 0,
                     width: "280px",
+                    maxHeight: "420px",
+                    overflowY: "auto",
                     zIndex: 10,
                   }}
                 >
@@ -308,83 +429,207 @@ export default function BoardSelect({
               </div>
             </div>
 
+            <div className="board-browser-controls">
+              <label className="board-search-field">
+                <Search size={15} />
+                <input
+                  value={boardSearch}
+                  onChange={(event) => {
+                    setBoardSearch(event.target.value);
+                    setShowAllBoards(false);
+                  }}
+                  placeholder="Search boards"
+                  type="search"
+                />
+              </label>
+
+              <div className="board-filter-group" aria-label="Board support filter">
+                {([
+                  ["all", "All"],
+                  ["supported", "Supported"],
+                  ["runner-needed", "Not Fully Supported"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={supportFilter === value ? "active" : ""}
+                    onClick={() => {
+                      setSupportFilter(value);
+                      setShowAllBoards(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className="board-family-menu-wrap"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="board-family-trigger"
+                  onClick={() => setShowFamilyMenu((visible) => !visible)}
+                  aria-label="Board family filter"
+                >
+                  {selectedFamilyLabel}
+                  <span className="board-count-pill board-family-filter-pill">
+                    {familyFilter === "all" ? familyOptions.length : 1}
+                  </span>
+                  <ChevronDown size={14} />
+                </button>
+
+                {showFamilyMenu ? (
+                  <div className="liquid-board-menu board-family-menu">
+                    {(["all", ...familyOptions] as const).map((family) => (
+                      <button
+                        key={family}
+                        type="button"
+                        className={`liquid-board-option board-family-option${
+                          familyFilter === family ? " active" : ""
+                        }`}
+                        onClick={() => {
+                          setFamilyFilter(family);
+                          setShowAllBoards(false);
+                          setShowFamilyMenu(false);
+                        }}
+                      >
+                        <span className="liquid-board-copy">
+                          <span className="liquid-board-name">
+                            {family === "all" ? "All families" : family}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
                 gap: "16px",
               }}
             >
-              {BOARDS.map((board) => {
-                const supportDisclaimer = getBoardSupportDisclaimer(board);
+              {boardGroups.length === 0 ? (
+                <div className="board-empty-state">
+                  No boards match the current filters.
+                </div>
+              ) : null}
 
-                return (
-                  <button
-                    className="board-card"
-                    key={board.id}
-                    onClick={() => selectBoard(board)}
-                    style={{
-                      borderRadius: "14px",
-                      padding: "22px",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      height: "192px",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "34px",
-                        height: "34px",
-                        flexShrink: 0,
-                        borderRadius: "10px",
-                        background: "#eff6ff",
-                        color: "#2563eb",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: "18px",
-                      }}
-                    >
-                      <Cpu size={18} />
-                    </div>
+              {boardGroups.map(({ group, boards }) => (
+                <div className="board-group" key={group}>
+                  <div className="board-group-heading">
+                    <span>
+                      {group}
+                      <span className="board-heading-dot">·</span>
+                      <span className="board-group-detail">{getBoardGroupDetail(group)}</span>
+                    </span>
+                    <span>{boards.length}</span>
+                  </div>
 
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "24px",
-                        color: "#0f172a",
-                        fontWeight: 800,
-                        letterSpacing: "-0.02em",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {board.name}
-                    </h3>
+                  <div className="board-grid">
+                    {boards.map((board) => (
+                        <button
+                          className="board-card"
+                          key={board.id}
+                          onClick={() => selectBoard(board)}
+                          style={{
+                            borderRadius: "14px",
+                            padding: "18px",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            height: "172px",
+                            display: "flex",
+                            flexDirection: "column",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "32px",
+                              height: "32px",
+                              flexShrink: 0,
+                              borderRadius: "10px",
+                              background: "#eff6ff",
+                              color: "#2563eb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: "14px",
+                            }}
+                          >
+                            <Cpu size={17} />
+                          </div>
 
-                    <p
-                      style={{
-                        margin: "10px 0 0",
-                        fontSize: "13px",
-                        color: "#64748b",
-                        fontWeight: 750,
-                        lineHeight: 1.5,
-                        minHeight: "39px",
-                      }}
-                    >
-                      {getBoardSummary(board).join(" · ")}
-                    </p>
+                          <div className="board-card-title-row">
+                            <h3
+                              style={{
+                                margin: 0,
+                                fontSize: "17px",
+                                color: "#0f172a",
+                                fontWeight: 850,
+                                lineHeight: 1.18,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {board.name}
+                            </h3>
 
-                    {supportDisclaimer ? (
-                      <div className="board-support-disclaimer">
-                        {supportDisclaimer}
-                      </div>
-                    ) : null}
-                  </button>
-                );
-              })}
+                            {"variants" in board ? (
+                              <span className="board-count-pill board-family-pill">
+                                {board.variants.length}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <p
+                            style={{
+                              margin: "8px 0 0",
+                              fontSize: "11px",
+                              color: "#64748b",
+                              fontWeight: 750,
+                              lineHeight: 1.45,
+                              minHeight: "35px",
+                            }}
+                          >
+                            {getBoardSummary(board).join(" · ")}
+                          </p>
+                        </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {filteredBoards.length > boardPreviewLimit && !filtersActive ? (
+              <button
+                type="button"
+                className="board-show-more"
+                onClick={() => setShowAllBoards((current) => !current)}
+              >
+                {showAllBoards
+                  ? "Show Fewer Boards"
+                  : `Show all ${filteredBoards.length} Boards`}
+              </button>
+            ) : null}
+
+            {filtersActive ? (
+              <button
+                type="button"
+                className="board-clear-filters"
+                onClick={() => {
+                  setBoardSearch("");
+                  setSupportFilter("all");
+                  setFamilyFilter("all");
+                  setShowAllBoards(false);
+                }}
+              >
+                Clear filters
+              </button>
+            ) : null}
           </section>
 
           <aside

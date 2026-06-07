@@ -1,0 +1,154 @@
+import type { BoardDefinition, BoardPin } from "../boardTypes";
+
+const COLORLIGHT_I5_LEDS: BoardPin[] = [
+  { name: "user_led_n", signal: "led", pin: "U16", type: "led", group: "User LED", activeLow: true, verified: true },
+];
+
+const COLORLIGHT_I5A_907_LEDS: BoardPin[] = [
+  { name: "user_led_n", signal: "led", pin: "P11", type: "led", group: "User LED", activeLow: true, verified: true },
+];
+
+const COLORLIGHT_I5_BUTTONS: BoardPin[] = [
+  { name: "cpu_reset_n", signal: "cpu_reset_n", pin: "K18", type: "button", group: "Reset", activeLow: true, verified: true },
+];
+
+const COLORLIGHT_I5A_907_BUTTONS: BoardPin[] = [
+  { name: "user_btn_n", signal: "user_btn_n", pin: "M13", type: "button", group: "User Button", activeLow: true, verified: true },
+];
+
+const COLORLIGHT_I5_PINS: BoardPin[] = [
+  ...COLORLIGHT_I5_LEDS,
+  ...COLORLIGHT_I5_BUTTONS,
+  { name: "serial_tx", signal: "uart_tx", pin: "J17", type: "uart", group: "Serial", verified: true },
+  { name: "serial_rx", signal: "uart_rx", pin: "H18", type: "uart", group: "Serial", verified: true },
+  { name: "spiflash_cs_n", signal: "spi_cs_n", pin: "R2", type: "spi", group: "SPI Flash", activeLow: true, verified: true },
+  { name: "spiflash_mosi", signal: "spi_mosi", pin: "W2", type: "spi", group: "SPI Flash", verified: true },
+  { name: "spiflash_miso", signal: "spi_miso", pin: "V2", type: "spi", group: "SPI Flash", verified: true },
+  { name: "eth0_rx_ctl", signal: "eth0_rx_ctl", pin: "P2", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth0_tx_ctl", signal: "eth0_tx_ctl", pin: "K1", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth1_rx_ctl", signal: "eth1_rx_ctl", pin: "M20", type: "gpio", group: "Ethernet 1", verified: true },
+  { name: "eth1_tx_ctl", signal: "eth1_tx_ctl", pin: "P19", type: "gpio", group: "Ethernet 1", verified: true },
+  { name: "gpdi_clk_p", signal: "gpdi_clk_p", pin: "J19", type: "gpio", group: "GPDI", verified: true },
+  { name: "gpdi_data0_p", signal: "gpdi_data0_p", pin: "G19", type: "gpio", group: "GPDI", verified: true },
+  { name: "gpdi_data1_p", signal: "gpdi_data1_p", pin: "E20", type: "gpio", group: "GPDI", verified: true },
+  { name: "gpdi_data2_p", signal: "gpdi_data2_p", pin: "C20", type: "gpio", group: "GPDI", verified: true },
+];
+
+const COLORLIGHT_I5A_907_PINS: BoardPin[] = [
+  ...COLORLIGHT_I5A_907_LEDS,
+  ...COLORLIGHT_I5A_907_BUTTONS,
+  { name: "serial_tx", signal: "uart_tx", pin: "P15", type: "uart", group: "Serial / Fan", verified: true },
+  { name: "serial_rx", signal: "uart_rx", pin: "L14", type: "uart", group: "Serial / Fan", verified: true },
+  { name: "uartbone_tx", signal: "uartbone_tx", pin: "F15", type: "uart", group: "UARTBone / EXT_VOL", verified: true },
+  { name: "uartbone_rx", signal: "uartbone_rx", pin: "E16", type: "uart", group: "UARTBone / EXT_VOL", verified: true },
+  { name: "usb_d_p", signal: "usb_dp", pin: "F15", type: "gpio", group: "USB", verified: true },
+  { name: "usb_d_n", signal: "usb_dn", pin: "E16", type: "gpio", group: "USB", verified: true },
+  { name: "usb_pullup", signal: "usb_pullup", pin: "A12", type: "gpio", group: "USB", verified: true },
+  { name: "spiflash_cs_n", signal: "spi_cs_n", pin: "N8", type: "spi", group: "SPI Flash", activeLow: true, verified: true },
+  { name: "spiflash_mosi", signal: "spi_mosi", pin: "T8", type: "spi", group: "SPI Flash", verified: true },
+  { name: "spiflash_miso", signal: "spi_miso", pin: "T7", type: "spi", group: "SPI Flash", verified: true },
+  { name: "eth0_rx_ctl", signal: "eth0_rx_ctl", pin: "N6", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth0_tx_ctl", signal: "eth0_tx_ctl", pin: "M3", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth1_rx_ctl", signal: "eth1_rx_ctl", pin: "L15", type: "gpio", group: "Ethernet 1", verified: true },
+  { name: "eth1_tx_ctl", signal: "eth1_tx_ctl", pin: "R15", type: "gpio", group: "Ethernet 1", verified: true },
+];
+
+const COLORLIGHT_I9_LEDS: BoardPin[] = [
+  { name: "user_led", signal: "led", pin: "A18", type: "led", group: "User LED", verified: true },
+  { name: "serial_rgb_led_dout", signal: "rgb_dout", pin: "T3", type: "led", group: "Serial RGB LED", verified: true },
+];
+
+const COLORLIGHT_I9_PINS: BoardPin[] = [
+  ...COLORLIGHT_I9_LEDS,
+  { name: "serial_tx", signal: "uart_tx", pin: "R2", type: "uart", group: "Serial", verified: true },
+  { name: "serial_rx", signal: "uart_rx", pin: "T4", type: "uart", group: "Serial", verified: true },
+  { name: "spiflash_cs_n", signal: "spi_cs_n", pin: "T19", type: "spi", group: "SPI Flash", activeLow: true, verified: true },
+  { name: "spiflash_mosi", signal: "spi_mosi", pin: "P22", type: "spi", group: "SPI Flash", verified: true },
+  { name: "spiflash_miso", signal: "spi_miso", pin: "R22", type: "spi", group: "SPI Flash", verified: true },
+  { name: "eth0_rx_ctl", signal: "eth0_rx_ctl", pin: "F1", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth0_tx_ctl", signal: "eth0_tx_ctl", pin: "D1", type: "gpio", group: "Ethernet 0", verified: true },
+  { name: "eth1_rx_ctl", signal: "eth1_rx_ctl", pin: "R1", type: "gpio", group: "Ethernet 1", verified: true },
+  { name: "eth1_tx_ctl", signal: "eth1_tx_ctl", pin: "N5", type: "gpio", group: "Ethernet 1", verified: true },
+];
+
+export const colorlightI5: BoardDefinition = {
+  id: "colorlight-i5",
+  name: "Colorlight i5",
+  vendor: "Colorlight",
+  family: "ECP5",
+  device: "LFE5U-25F",
+  package: "CABGA381",
+  fpgaId: "lfe5u-25f-cabga381",
+  constraintsFile: "lpf",
+  synthesisFlow: "yosys-nextpnr",
+  toolchain: {
+    synth: "yosys",
+    placeRoute: "nextpnr-ecp5",
+    pack: "ecppack",
+    program: "ecpdap",
+  },
+  clocks: [
+    { name: "clk25", pin: "P3", frequency: 25000000, verified: true },
+  ],
+  pins: COLORLIGHT_I5_PINS,
+  leds: COLORLIGHT_I5_LEDS,
+  buttons: COLORLIGHT_I5_BUTTONS,
+  notes:
+    "Pin mapping based on the LiteX Colorlight i5 v7.0 platform. Main low-speed IOs are listed; SDRAM and full Ethernet buses are intentionally summarized.",
+};
+
+export const colorlightI5a907: BoardDefinition = {
+  id: "colorlight-i5a-907",
+  name: "Colorlight i5A-907",
+  vendor: "Colorlight",
+  family: "ECP5",
+  device: "LFE5U-25F",
+  package: "CABGA256",
+  fpgaId: "lfe5u-25f-cabga256",
+  constraintsFile: "lpf",
+  synthesisFlow: "yosys-nextpnr",
+  toolchain: {
+    synth: "yosys",
+    placeRoute: "nextpnr-ecp5",
+    pack: "ecppack",
+    program: "openocd",
+  },
+  clocks: [
+    { name: "clk25", pin: "P6", frequency: 25000000, verified: true },
+  ],
+  pins: COLORLIGHT_I5A_907_PINS,
+  leds: COLORLIGHT_I5A_907_LEDS,
+  buttons: COLORLIGHT_I5A_907_BUTTONS,
+  notes:
+    "Pin mapping based on the LiteX Colorlight i5A-907 v7.0 platform. Some pins have alternate functions such as UARTBone and USB.",
+};
+
+export const colorlightI9Plus: BoardDefinition = {
+  id: "colorlight-i9-plus",
+  name: "Colorlight i9+",
+  vendor: "Colorlight",
+  family: "Artix-7",
+  device: "XC7A50T",
+  package: "FGG484",
+  fpgaId: "xc7a50t-fgg484-1",
+  constraintsFile: "xdc",
+  synthesisFlow: "vivado",
+  toolchain: {
+    synth: "vivado",
+    placeRoute: "vivado",
+    program: "openFPGALoader",
+  },
+  clocks: [
+    { name: "clk25", pin: "K4", frequency: 25000000, verified: true },
+  ],
+  pins: COLORLIGHT_I9_PINS,
+  leds: COLORLIGHT_I9_LEDS,
+  buttons: [],
+  notes:
+    "Pin mapping based on the LiteX Colorlight i9+ platform. This Artix-7 board needs the Vivado runner for synthesis and bitstream generation.",
+};
+
+export const COLORLIGHT_I5_BOARDS: BoardDefinition[] = [
+  colorlightI5,
+  colorlightI5a907,
+];
