@@ -3,10 +3,10 @@ import type { ChangeEvent } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
 import BoardSection from "./dashboard/BoardSection";
-import ConstraintsSection from "./dashboard/ConstraintsSection";
 import SynthesisSection from "./dashboard/SynthesisSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
+import HealthSection from "./dashboard/HealthSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
 import {
@@ -15,7 +15,7 @@ import {
   CircuitBoard,
   Code2,
   Cpu,
-  FileCode2,
+  Activity,
   MapPinned,
   Plus,
   Settings,
@@ -626,7 +626,7 @@ async function updateConstraintFile(fileName: string, content: string) {
           <SidebarButton label="Board" icon={<CircuitBoard size={16} />} active={activeSection === "board"} onClick={() => setActiveSection("board")} />
           <SidebarButton label="Synthesis" icon={<Binary size={16} />} active={activeSection === "synthesis"} onClick={() => setActiveSection("synthesis")} />
           <SidebarButton label="Pins" icon={<MapPinned size={16} />} active={activeSection === "pin-mapping"} onClick={() => setActiveSection("pin-mapping")} />
-          <SidebarButton label="Constraints" icon={<FileCode2 size={16} />} active={activeSection === "constraints"} onClick={() => setActiveSection("constraints")} />
+          <SidebarButton label="Health" icon={<Activity size={16} />} active={activeSection === "health"} onClick={() => setActiveSection("health")} />
           <SidebarButton label="Bitstream" icon={<Zap size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
         </nav>
 
@@ -916,7 +916,13 @@ async function updateConstraintFile(fileName: string, content: string) {
         )}
 
         {activeSection === "board" && <BoardSection board={board} />}
-        {activeSection === "constraints" && <ConstraintsSection board={board} />}
+        {activeSection === "health" && (
+          <HealthSection
+            board={board}
+            files={files}
+            topLevelFileName={topLevelFileName}
+          />
+        )}
         {activeSection === "synthesis" && (
           <SynthesisSection
             board={board}

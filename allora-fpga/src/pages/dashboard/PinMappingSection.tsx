@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../../data/boards";
-import InfoCard, { InfoRow } from "./InfoCard";
+import InfoCard from "./InfoCard";
 import type { ProjectFile } from "./types";
-
-export type HdlPort = {
-  name: string;
-  direction: "input" | "output" | "inout";
-  baseName?: string;
-  index?: number;
-};
+import {
+  createSuggestedMappings,
+  findPorts,
+  getPinOptions,
+  type HdlPort,
+} from "./pinMappingUtils";
 
 type PinMappingSectionProps = {
   board: BoardDefinition;
@@ -53,10 +52,7 @@ export default function PinMappingSection({
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 260px",
-        gap: "22px",
-        alignItems: "start",
+        display: "block",
         height: "calc(100vh - 48px)",
         minHeight: 0,
         overflow: "hidden",
@@ -66,8 +62,10 @@ export default function PinMappingSection({
         title="Pin Mapping"
         style={{
           height: "100%",
-          overflow: mode === "simple" ? "auto" : "hidden",
+          overflow: "hidden",
           minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -77,39 +75,55 @@ export default function PinMappingSection({
             alignItems: "center",
             gap: "12px",
             marginBottom: "18px",
+            flexWrap: "wrap",
           }}
         >
-          <div
-            style={{
-              display: "inline-flex",
-              gap: "4px",
-              padding: "4px",
-              borderRadius: "14px",
-              background: "#f1f5f9",
-            }}
-          >
-            {(["simple", "advanced"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setMode(option)}
-                style={{
-                  border: "none",
-                  borderRadius: "10px",
-                  background: mode === option ? "#ffffff" : "transparent",
-                  color: mode === option ? "#2563eb" : "#64748b",
-                  padding: "8px 12px",
-                  fontSize: "13px",
-                  fontWeight: 850,
-                  cursor: "pointer",
-                  textTransform: "capitalize",
-                  boxShadow:
-                    mode === option ? "0 1px 3px rgba(15,23,42,0.08)" : "none",
-                }}
-              >
-                {option}
-              </button>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "inline-flex",
+                gap: "4px",
+                padding: "4px",
+                borderRadius: "14px",
+                background: "#f1f5f9",
+              }}
+            >
+              {(["simple", "advanced"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setMode(option)}
+                  style={{
+                    border: "none",
+                    borderRadius: "10px",
+                    background: mode === option ? "#ffffff" : "transparent",
+                    color: mode === option ? "#2563eb" : "#64748b",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                    fontWeight: 850,
+                    cursor: "pointer",
+                    textTransform: "capitalize",
+                    boxShadow:
+                      mode === option ? "0 1px 3px rgba(15,23,42,0.08)" : "none",
+                  }}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <SummaryPill label="Ports" value={String(ports.length)} />
+              <SummaryPill label="Mapped" value={`${mappedCount}/${ports.length}`} />
+              <SummaryPill label="Pins" value={String(board.pins.length)} />
+              <SummaryPill label="Constraints" value={`.${board.constraintsFile}`} />
+            </div>
           </div>
 
           <button
@@ -151,7 +165,7 @@ export default function PinMappingSection({
             setPortMapping={setPortMapping}
           />
         ) : (
-          <AdvancedPinMapper
+          <ResourcePinMapper
             board={board}
             ports={ports}
             selectedPortName={selectedPortName}
@@ -161,17 +175,44 @@ export default function PinMappingSection({
           />
         )}
       </InfoCard>
+    </div>
+  );
+}
 
-      <InfoCard
-        title="Summary"
-        style={{ padding: "20px", borderRadius: "20px", maxHeight: "100%" }}
-        compact
+function SummaryPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        minWidth: "72px",
+        borderRadius: "12px",
+        border: "1px solid var(--dashboard-control-border, rgba(203, 213, 225, 0.78))",
+        background: "var(--dashboard-control-bg, rgba(255,255,255,0.68))",
+        padding: "7px 10px",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+      }}
+    >
+      <div
+        style={{
+          color: "var(--dashboard-muted-text, #64748b)",
+          fontSize: "10px",
+          fontWeight: 900,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+        }}
       >
-        <InfoRow label="Detected Ports" value={String(ports.length)} compact />
-        <InfoRow label="Mapped Ports" value={String(mappedCount)} compact />
-        <InfoRow label="Board Pins" value={String(board.pins.length)} compact />
-        <InfoRow label="Constraint File" value={`constraints.${board.constraintsFile}`} compact />
-      </InfoCard>
+        {label}
+      </div>
+      <div
+        style={{
+          color: "var(--dashboard-strong-text, #0f172a)",
+          fontSize: "13px",
+          fontWeight: 900,
+          marginTop: "2px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -193,9 +234,10 @@ function SimplePinMapper({
     <div
       style={{
         marginTop: "24px",
+        minHeight: 0,
         border: "1px solid #e2e8f0",
         borderRadius: "16px",
-        overflow: "hidden",
+        overflow: "auto",
       }}
     >
       <div
@@ -303,7 +345,7 @@ function SimplePinMapper({
   );
 }
 
-function AdvancedPinMapper({
+function ResourcePinMapper({
   board,
   ports,
   selectedPortName,
@@ -318,12 +360,14 @@ function AdvancedPinMapper({
   getSelectedPin: (portName: string) => string;
   setPortMapping: (portName: string, pinKey: string) => void;
 }) {
-  const pinOptions = getPinOptions(board);
   const selectedPort =
     ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
   const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
-  const leftPins = pinOptions.slice(0, Math.ceil(pinOptions.length / 2));
-  const rightPins = pinOptions.slice(Math.ceil(pinOptions.length / 2));
+  const pinOptions = getPinOptions(board);
+  const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
+  const mappedPorts = ports.filter((port) => getSelectedPin(port.name));
+  const resourceGroups = getResourceGroups(board);
+  const constraintPreview = createConstraintPreview(board, ports, getSelectedPin);
 
   function assignPin(pinKey: string) {
     if (!selectedPort) return;
@@ -331,7 +375,16 @@ function AdvancedPinMapper({
   }
 
   return (
-    <div style={{ marginTop: "18px", display: "grid", gap: "14px" }}>
+    <div
+      style={{
+        marginTop: "18px",
+        flex: "1 1 auto",
+        minHeight: 0,
+        display: "grid",
+        gridTemplateRows: ports.length === 0 ? "auto" : "auto minmax(0, 1fr) auto",
+        gap: "14px",
+      }}
+    >
       {ports.length === 0 ? (
         <EmptyPortState />
       ) : (
@@ -384,231 +437,354 @@ function AdvancedPinMapper({
 
           <div
             style={{
+              minHeight: 0,
               display: "grid",
-              gridTemplateColumns: "auto minmax(240px, 360px) auto",
-              gap: "22px",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: "360px",
+              gridTemplateColumns: "minmax(0, 1.35fr) minmax(280px, 0.65fr)",
+              gap: "14px",
+              overflow: "hidden",
             }}
           >
-            <PinRail
-              pins={leftPins}
-              selectedPin={selectedPin}
-              selectedPort={selectedPort}
-              onAssignPin={assignPin}
-            />
+            <div
+              style={{
+                minHeight: 0,
+                overflow: "auto",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: "12px",
+                paddingRight: "4px",
+                alignContent: "start",
+              }}
+            >
+              {resourceGroups.map((group) => (
+                <ResourceGroupCard
+                  key={group.title}
+                  group={group}
+                  selectedPin={selectedPin}
+                  selectedPort={selectedPort}
+                  onAssignPin={assignPin}
+                />
+              ))}
+            </div>
 
             <div
               style={{
-                height: "360px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                minHeight: 0,
+                display: "grid",
+                gridTemplateRows: "auto minmax(0, 1fr)",
+                gap: "12px",
               }}
             >
               <div
+                className="pin-map-assignment-card"
                 style={{
-                  width: "min(320px, 82%)",
-                  aspectRatio: "1 / 1",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "18px",
-                  background:
-                    "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#334155",
-                  textAlign: "center",
-                  padding: "20px",
-                  boxShadow:
-                    "0 12px 28px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                  border: "1px solid var(--dashboard-surface-border, #e2e8f0)",
+                  borderRadius: "16px",
+                  background: "var(--dashboard-surface-bg, #ffffff)",
+                  color: "var(--dashboard-text, #0f172a)",
+                  padding: "14px",
+                }}
+              >
+                <div style={{ color: "var(--dashboard-muted-text, #64748b)", fontSize: "11px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Current Assignment
+                </div>
+                <div style={{ marginTop: "8px", color: "var(--dashboard-strong-text, #0f172a)", fontSize: "15px", fontWeight: 900, overflowWrap: "anywhere" }}>
+                  {selectedPort?.name ?? "No port selected"}
+                </div>
+                <div style={{ marginTop: "6px", color: selectedPinOption ? "var(--dashboard-control-active-border, #2563eb)" : "var(--dashboard-muted-text, #94a3b8)", fontSize: "13px", fontWeight: 800, lineHeight: 1.35 }}>
+                  {selectedPinOption
+                    ? selectedPinOption.label
+                    : "Choose a board resource to map this port."}
+                </div>
+              </div>
+
+              <div
+                className="pin-map-preview-card"
+                style={{
+                  minHeight: 0,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  display: "grid",
+                  gridTemplateRows: "auto minmax(0, 1fr)",
                 }}
               >
                 <div
+                  className="pin-map-preview-header"
                   style={{
-                    fontSize: "24px",
-                    fontWeight: 900,
-                    letterSpacing: "-0.04em",
-                  }}
-                >
-                  {board.device}
-                </div>
-                <div
-                  style={{
-                    marginTop: "8px",
-                    color: "#64748b",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                  }}
-                >
-                  {board.package}
-                </div>
-                <div
-                  style={{
-                    marginTop: "22px",
-                    borderRadius: "999px",
-                    background: selectedPort ? "#eff6ff" : "#ffffff",
-                    border: "1px solid #dbe4f0",
-                    color: selectedPort ? "#2563eb" : "#64748b",
-                    padding: "9px 12px",
+                    padding: "12px 14px",
+                    borderBottom: "1px solid rgba(148,163,184,0.22)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "10px",
                     fontSize: "12px",
-                    fontWeight: 850,
+                    fontWeight: 900,
                   }}
                 >
-                  {selectedPort
-                    ? selectedPort.name
-                    : "Select signal"}
+                  <span>Constraint Preview</span>
+                  <span>{mappedPorts.length}/{ports.length}</span>
                 </div>
+                <pre
+                  className="pin-map-preview-code"
+                  style={{
+                    margin: 0,
+                    minHeight: 0,
+                    overflow: "auto",
+                    padding: "14px",
+                    fontSize: "12px",
+                    lineHeight: 1.5,
+                    whiteSpace: "pre-wrap",
+                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                  }}
+                >
+                  {constraintPreview}
+                </pre>
               </div>
             </div>
-
-            <PinRail
-              pins={rightPins}
-              selectedPin={selectedPin}
-              selectedPort={selectedPort}
-              onAssignPin={assignPin}
-            />
           </div>
 
-          <PinLegend />
         </>
       )}
     </div>
   );
 }
+type ResourceGroup = {
+  title: string;
+  detail: string;
+  pins: Array<{
+    key: string;
+    name: string;
+    pin: string;
+    type: string;
+    symbol: string;
+    detail?: string;
+  }>;
+};
 
-function PinRail({
-  pins,
+function ResourceGroupCard({
+  group,
   selectedPin,
   selectedPort,
   onAssignPin,
 }: {
-  pins: ReturnType<typeof getPinOptions>;
+  group: ResourceGroup;
   selectedPin: string;
   selectedPort: HdlPort | null;
   onAssignPin: (pinKey: string) => void;
 }) {
-  const rail = getRailLayout(pins.length);
-
   return (
     <div
+      className="pin-map-resource-card"
       style={{
-        display: "grid",
-        alignContent: "center",
-        justifyContent: "center",
-        gridTemplateColumns: `repeat(${rail.columns}, ${rail.size}px)`,
-        gap: `${rail.gap}px`,
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
+        padding: "14px",
+        minWidth: 0,
       }}
     >
-      {pins.map((pin) => {
-        const active = pin.key === selectedPin;
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+        <div>
+          <div style={{ color: "#0f172a", fontSize: "15px", fontWeight: 900 }}>
+            {group.title}
+          </div>
+          <div style={{ marginTop: "4px", color: "#64748b", fontSize: "12px", fontWeight: 750 }}>
+            {group.detail}
+          </div>
+        </div>
+        <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 900 }}>
+          {group.pins.length}
+        </span>
+      </div>
 
-        return (
-          <button
-            key={pin.key}
-            type="button"
-            disabled={!selectedPort}
-            onClick={() => onAssignPin(pin.key)}
-            title={pin.label}
-            style={{
-              border: `1px solid ${active ? "#2563eb" : "#dbe4f0"}`,
-              borderRadius: "999px",
-              background: active ? "#eff6ff" : getPinTypeColor(pin.type).background,
-              color: active ? "#2563eb" : selectedPort ? getPinTypeColor(pin.type).color : "#94a3b8",
-              width: `${rail.dot}px`,
-              height: `${rail.dot}px`,
-              padding: 0,
-              textAlign: "center",
-              fontSize: `${rail.fontSize}px`,
-              fontWeight: 900,
-              cursor: selectedPort ? "pointer" : "not-allowed",
-              overflow: "hidden",
-            }}
-          >
-            {pin.symbol}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+      <div
+        style={{
+          marginTop: "12px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(86px, 1fr))",
+          gap: "8px",
+        }}
+      >
+        {group.pins.map((pin) => {
+          const active = selectedPin === pin.key;
+          const color = getPinTypeColor(pin.type);
 
-function getRailLayout(pinCount: number) {
-  if (pinCount > 42) {
-    return { columns: 5, size: 31, dot: 30, gap: 5, fontSize: 8 };
-  }
-
-  if (pinCount > 28) {
-    return { columns: 4, size: 35, dot: 34, gap: 6, fontSize: 9 };
-  }
-
-  if (pinCount > 16) {
-    return { columns: 3, size: 39, dot: 38, gap: 7, fontSize: 10 };
-  }
-
-  return { columns: 2, size: 44, dot: 42, gap: 9, fontSize: 12 };
-}
-
-function PinLegend() {
-  const items = [
-    { label: "Clock", symbol: "CLK", type: "clock" },
-    { label: "GPIO", symbol: "IO", type: "gpio" },
-    { label: "LED", symbol: "LED", type: "led" },
-    { label: "Button/Reset", symbol: "BTN", type: "button" },
-    { label: "Bus", symbol: "BUS", type: "spi" },
-    { label: "USB/Other", symbol: "USB", type: "unknown" },
-  ];
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: "8px",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        paddingTop: "2px",
-      }}
-    >
-      {items.map((item) => {
-        const color = getPinTypeColor(item.type);
-
-        return (
-          <div
-            key={item.label}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              color: "#64748b",
-              fontSize: "12px",
-              fontWeight: 800,
-            }}
-          >
-            <span
+          return (
+            <button
+              className={`pin-map-resource-button${active ? " active" : ""}`}
+              key={pin.key}
+              type="button"
+              disabled={!selectedPort}
+              onClick={() => onAssignPin(pin.key)}
+              title={`${pin.name} (${pin.pin})`}
               style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "999px",
-                background: color.background,
-                color: color.color,
-                border: "1px solid #dbe4f0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "8px",
-                fontWeight: 900,
+                minWidth: 0,
+                minHeight: "58px",
+                border: active ? "2px solid #2563eb" : "1px solid #dbe4f0",
+                borderRadius: "13px",
+                cursor: selectedPort ? "pointer" : "not-allowed",
+                padding: "9px",
+                display: "grid",
+                gap: "3px",
+                boxShadow: active ? "0 0 0 4px rgba(37,99,235,0.12)" : "none",
               }}
             >
-              {item.symbol}
-            </span>
-            {item.label}
-          </div>
-        );
-      })}
+              <span
+                style={{
+                  justifySelf: "start",
+                  borderRadius: "999px",
+                  background: color.background,
+                  color: color.color,
+                  padding: "3px 6px",
+                  fontSize: "9px",
+                  fontWeight: 950,
+                }}
+              >
+                {pin.symbol}
+              </span>
+              <span style={{ fontSize: "12px", fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pin.pin}
+              </span>
+              <span style={{ color: "#64748b", fontSize: "10px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pin.detail ?? pin.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+function getResourceGroups(board: BoardDefinition): ResourceGroup[] {
+  const groups = new Map<string, ResourceGroup>();
+
+  function addPin(groupTitle: string, groupDetail: string, pin: ResourceGroup["pins"][number]) {
+    const group = groups.get(groupTitle) ?? {
+      title: groupTitle,
+      detail: groupDetail,
+      pins: [],
+    };
+
+    group.pins.push(pin);
+    groups.set(groupTitle, group);
+  }
+
+  board.clocks
+    .filter((clock) => clock.pin)
+    .forEach((clock) =>
+      addPin("Clocks", "Clock sources", {
+        key: `clock:${clock.name}`,
+        name: clock.name,
+        pin: clock.pin ?? "",
+        type: "clock",
+        symbol: "CLK",
+        detail: `${Math.round(clock.frequency / 1_000_000)} MHz`,
+      })
+    );
+
+  board.pins.forEach((pin) => {
+    const title = getResourceGroupTitle(pin);
+    addPin(title, pin.group ?? getPinTypeLabel(pin.type), {
+      key: `pin:${pin.name}:${pin.pin}`,
+      name: pin.name,
+      pin: pin.pin,
+      type: pin.type,
+      symbol: getResourceSymbol(pin),
+      detail: pin.signal ?? pin.group ?? pin.name,
+    });
+  });
+
+  return Array.from(groups.values()).sort((a, b) => getResourceOrder(a.title) - getResourceOrder(b.title));
+}
+
+function getResourceGroupTitle(pin: BoardPin) {
+  if (pin.type === "led") return "LEDs";
+  if (pin.type === "button") return "Buttons / Reset";
+  if (pin.type === "uart") return "UART";
+  if (pin.type === "spi" || pin.type === "flash") return "SPI / Flash";
+  if (pin.type === "i2c") return "I2C";
+  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+    return "USB / Special";
+  }
+  if (pin.type === "gpio") return pin.group ?? "GPIO";
+  return pin.group ?? "Other";
+}
+
+function getResourceOrder(title: string) {
+  const order = [
+    "Clocks",
+    "LEDs",
+    "Buttons / Reset",
+    "UART",
+    "SPI / Flash",
+    "I2C",
+    "GPIO",
+    "USB / Special",
+  ];
+
+  const index = order.indexOf(title);
+  return index === -1 ? 100 : index;
+}
+
+function getResourceSymbol(pin: BoardPin) {
+  if (pin.type === "clock") return "CLK";
+  if (pin.type === "led") return "LED";
+  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
+  if (pin.type === "uart") return "URT";
+  if (pin.type === "spi" || pin.type === "flash") return "SPI";
+  if (pin.type === "i2c") return "I2C";
+  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+    return "USB";
+  }
+  if (pin.type === "gpio") return "IO";
+  return "PIN";
+}
+
+function getPinTypeLabel(type: string) {
+  if (type === "led") return "User outputs";
+  if (type === "button") return "User inputs";
+  if (type === "uart") return "Serial";
+  if (type === "spi" || type === "flash") return "Serial bus";
+  if (type === "i2c") return "Two-wire bus";
+  if (type === "gpio") return "General I/O";
+  return "Board resources";
+}
+
+function createConstraintPreview(
+  board: BoardDefinition,
+  ports: HdlPort[],
+  getSelectedPin: (portName: string) => string
+) {
+  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+  const lines = [`# ${board.name} ${board.constraintsFile.toUpperCase()} preview`];
+
+  if (ports.length === 0) {
+    lines.push("# No top-level ports detected.");
+    return lines.join("\n");
+  }
+
+  for (const port of ports) {
+    const selectedPin = getSelectedPin(port.name);
+    const pin = selectedPin ? pinOptions.get(selectedPin) : null;
+
+    if (!pin?.pin) {
+      lines.push(`# ${port.name} is unmapped`);
+      continue;
+    }
+
+    if (board.constraintsFile === "xdc") {
+      lines.push(`set_property PACKAGE_PIN ${pin.pin} [get_ports ${port.name}]`);
+      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
+    } else if (board.constraintsFile === "pcf") {
+      lines.push(`set_io ${port.name} ${pin.pin}`);
+    } else if (board.constraintsFile === "lpf") {
+      lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
+      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=LVCMOS33;`);
+    } else {
+      lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function EmptyPortState() {
@@ -625,344 +801,6 @@ function EmptyPortState() {
       module/entity ports in the selected top-level file to start mapping pins.
     </div>
   );
-}
-
-export function findPorts(files: ProjectFile[]) {
-  const ports: HdlPort[] = [];
-  const seen = new Set<string>();
-
-  for (const file of files) {
-    const discovered = file.name.endsWith(".vhd") || file.name.endsWith(".vhdl")
-      ? findVhdlPorts(file.content)
-      : findVerilogPorts(file.content);
-
-    for (const port of discovered) {
-      if (seen.has(port.name)) continue;
-      seen.add(port.name);
-      ports.push(port);
-    }
-  }
-
-  return ports;
-}
-
-function findVerilogPorts(content: string) {
-  const ports: HdlPort[] = [];
-  const source = stripVerilogComments(content);
-  const portPattern = /\b(input|output|inout)\b\s+([\s\S]*?)(?=\binput\b|\boutput\b|\binout\b|\);|;)/g;
-
-  for (const match of source.matchAll(portPattern)) {
-    const direction = match[1] as HdlPort["direction"];
-    const declaration = match[2]
-      .replace(/\b(?:wire|reg|logic|signed|unsigned)\b/g, " ")
-      .trim();
-    const rangeMatch = declaration.match(/\[(\d+)\s*:\s*(\d+)\]/);
-    const declarationWithoutRanges = declaration.replace(/\[[^\]]+\]/g, " ");
-
-    for (const rawName of declarationWithoutRanges.split(",")) {
-      const name = rawName
-        .replace(/=.*$/, "")
-        .trim()
-        .match(/[a-zA-Z_][a-zA-Z0-9_$]*$/)?.[0];
-
-      if (!name) continue;
-
-      ports.push(
-        ...expandPort({
-          direction,
-          name,
-          msb: rangeMatch?.[1],
-          lsb: rangeMatch?.[2],
-        })
-      );
-    }
-  }
-
-  return ports;
-}
-
-function stripVerilogComments(content: string) {
-  return content
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/\/\/.*$/gm, " ");
-}
-
-function findVhdlPorts(content: string) {
-  const ports: HdlPort[] = [];
-  const portBlock = content.match(/port\s*\(([\s\S]*?)\)\s*;/i)?.[1] ?? "";
-  const portPattern =
-    /([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(in|out|inout)\b[^;]*(?:\((\d+)\s+downto\s+(\d+)\))?/gi;
-
-  for (const match of portBlock.matchAll(portPattern)) {
-    const direction = match[2].toLowerCase() as HdlPort["direction"];
-    ports.push(
-      ...expandPort({
-        name: match[1],
-        direction,
-        msb: match[3],
-        lsb: match[4],
-      })
-    );
-  }
-
-  return ports;
-}
-
-function expandPort({
-  name,
-  direction,
-  msb,
-  lsb,
-}: {
-  name: string;
-  direction: HdlPort["direction"];
-  msb?: string;
-  lsb?: string;
-}) {
-  if (!msb || !lsb) return [{ name, direction }];
-
-  const start = Number(msb);
-  const end = Number(lsb);
-  const step = start >= end ? -1 : 1;
-  const ports: HdlPort[] = [];
-
-  for (let index = start; step > 0 ? index <= end : index >= end; index += step) {
-    ports.push({
-      name: `${name}[${index}]`,
-      baseName: name,
-      index,
-      direction,
-    });
-  }
-
-  return ports;
-}
-
-export function createSuggestedMappings(
-  ports: HdlPort[],
-  pins: BoardPin[],
-  clocks: BoardDefinition["clocks"]
-) {
-  const mappings: Record<string, string> = {};
-  const usedPins = new Set<string>();
-
-  for (const port of ports) {
-    const clockMatch = findClockMatch(port, clocks);
-
-    if (clockMatch?.pin) {
-      mappings[port.name] = `clock:${clockMatch.name}`;
-      continue;
-    }
-
-    const pinMatch = findPinMatch(port, pins, usedPins);
-
-    if (pinMatch) {
-      mappings[port.name] = `pin:${pinMatch.name}:${pinMatch.pin}`;
-      usedPins.add(pinMatch.name);
-    }
-  }
-
-  return mappings;
-}
-
-function findClockMatch(
-  port: HdlPort,
-  clocks: BoardDefinition["clocks"]
-) {
-  const aliases = getPortAliases(port);
-  const isClockPort = aliases.some((alias) =>
-    ["clk", "clock", "sysclk", "clk12", "clk25", "clk48"].includes(alias)
-  );
-
-  if (!isClockPort) return null;
-
-  return (
-    clocks.find((clock) =>
-      aliases.some((alias) => normalizeName(clock.name).includes(alias))
-    ) ?? clocks[0] ?? null
-  );
-}
-
-function findPinMatch(
-  port: HdlPort,
-  pins: BoardPin[],
-  usedPins: Set<string>
-) {
-  const aliases = getPortAliases(port);
-  const preferredTypes = getPreferredTypes(aliases, port.direction);
-  const isResetPort = aliases.some((alias) =>
-    ["rst", "reset", "rstn", "resetn"].includes(alias)
-  );
-  const hasSpecificAlias = aliases.some((alias) => alias.length > 1);
-
-  for (const type of preferredTypes) {
-    const candidates = pins.filter((pin) => pin.type === type && !usedPins.has(pin.name));
-    const indexedMatch = findIndexedCandidate(port, candidates);
-    if (indexedMatch) return indexedMatch;
-
-    const aliasMatch = findAliasCandidate(aliases, candidates);
-    if (aliasMatch) return aliasMatch;
-
-    if (isResetPort && type === "button") {
-      const resetCandidate =
-        candidates.find((pin) => pin.activeLow) ?? candidates[0] ?? null;
-      if (resetCandidate) return resetCandidate;
-    }
-
-    if (candidates.length === 1) return candidates[0];
-
-    if (!hasSpecificAlias && candidates.length > 0) {
-      return candidates[0];
-    }
-  }
-
-  return findAliasCandidate(
-    aliases,
-    pins.filter((pin) => !usedPins.has(pin.name)),
-    { allowShortAliases: false }
-  );
-}
-
-function findIndexedCandidate(port: HdlPort, candidates: BoardPin[]) {
-  if (port.index === undefined) return null;
-  const normalizedBase = normalizeName(port.baseName ?? port.name);
-
-  return (
-    candidates.find((pin) => {
-      const searchable = getPinSearchTerms(pin).join(" ");
-      return (
-        normalizeName(searchable).includes(normalizedBase) &&
-        new RegExp(`(^|[^0-9])${port.index}([^0-9]|$)`).test(searchable)
-      );
-    }) ?? candidates[port.index] ?? null
-  );
-}
-
-function findAliasCandidate(
-  aliases: string[],
-  candidates: BoardPin[],
-  options: { allowShortAliases?: boolean } = {}
-) {
-  const searchableAliases = options.allowShortAliases === false
-    ? aliases.filter((alias) => alias.length > 1)
-    : aliases;
-
-  if (searchableAliases.length === 0) return null;
-
-  return (
-    candidates.find((pin) =>
-      getPinSearchTerms(pin).some((term) => {
-        const normalizedPin = normalizeName(term);
-        return searchableAliases.some(
-          (alias) =>
-            normalizedPin === alias ||
-            normalizedPin.includes(alias) ||
-            alias.includes(normalizedPin)
-        );
-      })
-    ) ?? null
-  );
-}
-
-function getPreferredTypes(
-  aliases: string[],
-  direction: HdlPort["direction"]
-): BoardPin["type"][] {
-  if (aliases.some((alias) => ["rst", "reset", "rstn", "resetn", "btn", "button", "sw", "switch"].includes(alias))) {
-    return ["button", "gpio"];
-  }
-
-  if (aliases.some((alias) => ["led", "rgb", "red", "green", "blue", "r", "g", "b"].includes(alias))) {
-    return ["led", "gpio"];
-  }
-
-  if (aliases.some((alias) => ["tx", "uarttx"].includes(alias))) {
-    return ["uart", "gpio"];
-  }
-
-  if (aliases.some((alias) => ["rx", "uartrx"].includes(alias))) {
-    return ["uart", "gpio"];
-  }
-
-  if (aliases.some((alias) => alias.startsWith("gpio") || alias === "io")) {
-    return ["gpio"];
-  }
-
-  return direction === "output" ? ["led", "gpio"] : ["button", "gpio"];
-}
-
-function getPortAliases(port: HdlPort) {
-  const rawName = port.baseName ?? port.name;
-  const normalized = normalizeName(rawName);
-  const aliases = new Set([normalized]);
-
-  if (["clk", "clock", "sysclk"].includes(normalized)) {
-    aliases.add("clk");
-    aliases.add("clock");
-  }
-
-  if (["rst", "reset", "rstn", "resetn"].includes(normalized)) {
-    aliases.add("rst");
-    aliases.add("reset");
-    aliases.add("rstn");
-  }
-
-  if (normalized.startsWith("led")) aliases.add("led");
-  if (normalized.startsWith("btn") || normalized.includes("button")) {
-    aliases.add("btn");
-    aliases.add("button");
-  }
-  if (normalized.includes("uart") && normalized.endsWith("tx")) aliases.add("tx");
-  if (normalized.includes("uart") && normalized.endsWith("rx")) aliases.add("rx");
-  if (normalized.endsWith("tx")) aliases.add("tx");
-  if (normalized.endsWith("rx")) aliases.add("rx");
-
-  return Array.from(aliases);
-}
-
-function getPinSearchTerms(pin: BoardPin) {
-  return [pin.name, pin.signal, pin.group, pin.pin].filter(Boolean).map(String);
-}
-
-export function getPinOptions(board: BoardDefinition) {
-  return [
-    ...board.clocks
-      .filter((clock) => clock.pin)
-      .map((clock) => ({
-        key: `clock:${clock.name}`,
-        label: `${clock.name} (${clock.pin}) - Clock`,
-        shortLabel: `${clock.name} ${clock.pin}`,
-        pin: clock.pin ?? "",
-        type: "clock",
-        symbol: "CLK",
-      })),
-    ...board.pins.map((pin) => ({
-      key: `pin:${pin.name}:${pin.pin}`,
-      label: `${pin.name} (${pin.pin})${pin.group ? ` - ${pin.group}` : ""}`,
-      shortLabel: `${pin.name} ${pin.pin}`,
-      pin: pin.pin,
-      type: pin.type,
-      symbol: getPinSymbol(pin),
-    })),
-  ];
-}
-
-function normalizeName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-function getPinSymbol(pin: BoardPin) {
-  if (pin.type === "clock") return "CLK";
-  if (pin.type === "led") return "LED";
-  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
-  if (pin.type === "uart") return "URT";
-  if (pin.type === "spi" || pin.type === "flash") return "SPI";
-  if (pin.type === "i2c") return "I2C";
-  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
-    return "USB";
-  }
-  if (pin.type === "gpio") return "IO";
-  return "PIN";
 }
 
 function getPinTypeColor(type: string) {

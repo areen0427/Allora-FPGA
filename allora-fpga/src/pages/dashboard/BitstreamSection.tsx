@@ -4,7 +4,12 @@ import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
-import { createSuggestedMappings, findPorts, getPinOptions } from "./PinMappingSection";
+import {
+  createSuggestedMappings,
+  findPorts,
+  getPinOptions,
+  type HdlPort,
+} from "./pinMappingUtils";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -71,6 +76,11 @@ export default function BitstreamSection({
     () => createGeneratedConstraints(board, topLevelPorts, projectName),
     [board, topLevelPorts, projectName]
   );
+  const autoMappings = useMemo(
+    () => createConstraintMappings(board, topLevelPorts),
+    [board, topLevelPorts]
+  );
+  const unmappedPorts = autoMappings.filter((mapping) => !mapping.pin);
   const extension = getBitstreamExtension(board);
   const constraintFile =
     files.find((file) =>
@@ -80,10 +90,12 @@ export default function BitstreamSection({
       file.name.toLowerCase().endsWith(`.${board.constraintsFile}`)
     ) ??
     null;
+  const constraintFileName = constraintFile?.name ?? `constraints.${board.constraintsFile}`;
+  const buildConstraintContent = generatedConstraintContent || (constraintFile?.content ?? "");
   const buildInputKey = [
     hdlFiles.map((file) => `${file.name}:${file.content}`).join("\n---hdl---\n"),
-    constraintFile?.name ?? "",
-    generatedConstraintContent || (constraintFile?.content ?? ""),
+    constraintFileName,
+    buildConstraintContent,
   ].join("\n---constraints---\n");
 
   useEffect(() => {
@@ -110,9 +122,9 @@ export default function BitstreamSection({
       return;
     }
 
-    if (!constraintFile) {
+    if (!generatedConstraintContent && !constraintFile) {
       setErrorMessage(
-        `No constraints.${board.constraintsFile} file was found in the project.`
+        `No constraints.${board.constraintsFile} file was found, and no top-level ports were available for automatic constraints.`
       );
       setArtifact(null);
       return;
@@ -146,8 +158,8 @@ export default function BitstreamSection({
               content: file.content,
             })),
             constraintFile: {
-              name: constraintFile.name,
-              content: generatedConstraintContent || constraintFile.content,
+              name: constraintFileName,
+              content: buildConstraintContent,
             },
             outputExtension: extension,
             projectPath,
@@ -178,12 +190,21 @@ export default function BitstreamSection({
 
       setArtifact(nextArtifact);
       if (generatedConstraintContent) {
-        await onUpdateConstraints?.(constraintFile.name, generatedConstraintContent);
+        await onUpdateConstraints?.(constraintFileName, generatedConstraintContent);
       }
       await onAddArtifact?.({
         fileName: nextArtifact.fileName,
         content: `[binary ${extension.toUpperCase()} artifact generated at ${generatedAt}]`,
         isBinary: true,
+      });
+      await onAddArtifact?.({
+        fileName: `${result.outputName}.build.log`,
+        content: createBuildLogArtifact({
+          board,
+          artifact: nextArtifact,
+          constraintsFileName: constraintFileName,
+          topModule: result.topModule,
+        }),
       });
     } catch (error) {
       setArtifact(null);
@@ -320,9 +341,9 @@ export default function BitstreamSection({
           {errorMessage
             ? errorMessage
             : artifact
-              ? "Bitstream generated and added to the project build folder."
+              ? `Bitstream generated. Auto constraints ${constraintFile ? "updated" : "created"} for this project.`
               : capabilities.bitstream.supported
-                ? "Ready to build a hardware artifact from the selected top-level file."
+                ? "Ready to auto-map top-level ports, write constraints, and build a hardware artifact."
                 : capabilities.bitstream.detail}
         </div>
 
@@ -406,9 +427,69 @@ export default function BitstreamSection({
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Constraints"
-            value={constraintFile?.name ?? `constraints.${board.constraintsFile}`}
+            value={constraintFileName}
             compact
           />
+        </InfoCard>
+
+        <InfoCard title="Auto Mapping" style={{ padding: "20px", borderRadius: "20px" }} compact>
+          <InfoRow label="Detected Ports" value={String(topLevelPorts.length)} compact />
+          <InfoRow
+            label="Mapped"
+            value={`${autoMappings.length - unmappedPorts.length}/${autoMappings.length}`}
+            compact
+          />
+          <div
+            style={{
+              marginTop: "14px",
+              display: "grid",
+              gap: "8px",
+              maxHeight: "210px",
+              overflow: "auto",
+            }}
+          >
+            {autoMappings.length === 0 ? (
+              <div style={{ color: "#64748b", fontSize: "13px", lineHeight: 1.4 }}>
+                No ports detected yet.
+              </div>
+            ) : (
+              autoMappings.map((mapping) => (
+                <div
+                  key={mapping.port.name}
+                  style={{
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "12px",
+                    padding: "9px 10px",
+                    background: mapping.pin ? "#f8fafc" : "#fff7ed",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#0f172a",
+                      fontSize: "13px",
+                      fontWeight: 850,
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {mapping.port.name}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: "3px",
+                      color: mapping.pin ? "#64748b" : "#c2410c",
+                      fontSize: "12px",
+                      fontWeight: 750,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {mapping.pin
+                      ? `${mapping.pin.label}`
+                      : "Unmapped - add a matching board pin or map manually"}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </InfoCard>
       </div>
     </div>
@@ -457,21 +538,42 @@ function createHexPreview(
   return lines.join("\n");
 }
 
+function createBuildLogArtifact({
+  board,
+  artifact,
+  constraintsFileName,
+  topModule,
+}: {
+  board: BoardDefinition;
+  artifact: BitstreamArtifact;
+  constraintsFileName: string;
+  topModule: string;
+}) {
+  return [
+    `Allora build report`,
+    `board: ${board.name}`,
+    `device: ${board.fpgaId}`,
+    `top: ${topModule}`,
+    `constraints: ${constraintsFileName}`,
+    `bitstream: ${artifact.fileName}`,
+    `bitstream bytes: ${artifact.byteLength}`,
+    `generated: ${artifact.generatedAt}`,
+    ``,
+    artifact.logs.length > 0 ? artifact.logs.join("\n") : "No toolchain log output was returned.",
+  ].join("\n");
+}
+
 function createGeneratedConstraints(
   board: BoardDefinition,
-  ports: ReturnType<typeof findPorts>,
+  ports: HdlPort[],
   projectName: string
 ) {
   if (ports.length === 0) return "";
 
-  const suggestions = createSuggestedMappings(ports, board.pins, board.clocks);
-  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+  const mappings = createConstraintMappings(board, ports);
   const lines = [`# ${board.name} generated constraints for ${sanitizeName(projectName)}`];
 
-  for (const port of ports) {
-    const selectedPin = suggestions[port.name];
-    const pin = selectedPin ? pinOptions.get(selectedPin) : null;
-
+  for (const { port, pin } of mappings) {
     if (!pin?.pin) {
       lines.push(`# ${port.name} is unmapped`);
       continue;
@@ -491,6 +593,19 @@ function createGeneratedConstraints(
 
   lines.push("");
   return lines.join("\n");
+}
+
+function createConstraintMappings(board: BoardDefinition, ports: HdlPort[]) {
+  const suggestions = createSuggestedMappings(ports, board.pins, board.clocks);
+  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+
+  return ports.map((port) => {
+    const selectedPin = suggestions[port.name];
+    return {
+      port,
+      pin: selectedPin ? pinOptions.get(selectedPin) ?? null : null,
+    };
+  });
 }
 
 function isHdlFile(fileName: string) {

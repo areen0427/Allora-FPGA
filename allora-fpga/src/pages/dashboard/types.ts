@@ -3,7 +3,7 @@ export type DashboardSection =
   | "board"
   | "synthesis"
   | "pin-mapping"
-  | "constraints"
+  | "health"
   | "bitstream";
 
 export type ProjectFile = {
