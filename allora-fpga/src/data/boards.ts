@@ -5,6 +5,7 @@ import { COLORLIGHT_I5_BOARDS, colorlightI9Plus } from "./boards/colorlight";
 import { fomuPvt } from "./boards/fomu";
 import { icebreaker } from "./boards/icebreaker";
 import { icesugarV15 } from "./boards/icesugar";
+import { litexCatalogBoardGroups, litexCatalogBoards } from "./boards/litexCatalog";
 import { butterstickBoards, ecpix5Boards, icesugarPro, tangNanoBoards } from "./boards/litexDerived";
 import {
   iceVWireless,
@@ -47,6 +48,7 @@ export const BOARDS = [
   orangecrab,
   sqrlFk33,
   trellisBoard,
+  ...litexCatalogBoardGroups,
   {
     id: "icebreaker-bitsy",
     name: "iCEBreaker Bitsy",
@@ -186,6 +188,7 @@ export function getBoardById(id: string): BoardDefinition | undefined {
     ...icebreakerBitsyBoards,
     ...icepiZeroBoards,
     ...kosagiNetV2Boards,
+    ...litexCatalogBoards,
     ...sqrlAcornBoards,
     ...tangNanoBoards,
     ...ARTY_A7_BOARDS,

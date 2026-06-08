@@ -61,11 +61,15 @@ function getBoardSummary(board: (typeof BOARDS)[number]) {
       return [board.vendor, "Artix-7", "A100T / A200T", "FGG/FBG484"];
     }
 
+    const boardDefinitions = getBoardDefinitions(board);
+    const families = [...new Set(boardDefinitions.map((definition) => definition.family))];
+    const devices = [...new Set(boardDefinitions.map((definition) => definition.device))];
+
     return [
       board.vendor,
-      board.device,
-      "LFE5U-xxF",
-      "CABGA381",
+      families.length === 1 ? families[0] : `${families.length} families`,
+      `${board.variants.length} variants`,
+      devices.length === 1 ? devices[0] : "Mixed FPGAs",
     ];
   }
 
@@ -591,7 +595,8 @@ export default function BoardSelect({
                                 color: "#0f172a",
                                 fontWeight: 850,
                                 lineHeight: 1.18,
-                                flexShrink: 0,
+                                flex: "1 1 auto",
+                                minWidth: 0,
                               }}
                             >
                               {board.name}

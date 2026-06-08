@@ -1,4 +1,4 @@
-export type ConstraintFile = "pcf" | "lpf" | "xdc" | "cst";
+export type ConstraintFile = "pcf" | "lpf" | "xdc" | "cst" | "qsf";
 
 export type SynthesisFlow =
   | "yosys-nextpnr"

@@ -404,8 +404,17 @@ export default function BitstreamSection({
         </div>
       </InfoCard>
 
-      <div style={{ display: "grid", gap: "22px", maxHeight: "100%", overflow: "auto" }}>
-        <InfoCard title="Output" style={{ padding: "20px", borderRadius: "20px" }} compact>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          maxHeight: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
+        <InfoCard title="Output" style={{ padding: "14px", borderRadius: "16px" }} compact>
           <InfoRow
             label="Filename"
             value={
@@ -416,15 +425,12 @@ export default function BitstreamSection({
           />
           <InfoRow label="Format" value={extension.toUpperCase()} compact />
           <InfoRow label="Bytes" value={String(artifact?.byteLength ?? 0)} compact />
-          <InfoRow label="Generated" value={artifact?.generatedAt ?? "Not generated"} compact />
         </InfoCard>
 
-        <InfoCard title="Source" style={{ padding: "20px", borderRadius: "20px" }} compact>
+        <InfoCard title="Source" style={{ padding: "14px", borderRadius: "16px" }} compact>
           <InfoRow label="Board" value={board.name} compact />
           <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
-          <InfoRow label="Status" value={capabilities.bitstream.label} compact />
           <InfoRow label="Top Module" value={topModule ?? "Not found"} compact />
-          <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Constraints"
             value={constraintFileName}
@@ -432,7 +438,16 @@ export default function BitstreamSection({
           />
         </InfoCard>
 
-        <InfoCard title="Auto Mapping" style={{ padding: "20px", borderRadius: "20px" }} compact>
+        <InfoCard
+          title="Auto Mapping"
+          style={{
+            padding: "14px",
+            borderRadius: "16px",
+            minHeight: 0,
+            overflow: "hidden",
+          }}
+          compact
+        >
           <InfoRow label="Detected Ports" value={String(topLevelPorts.length)} compact />
           <InfoRow
             label="Mapped"
@@ -444,17 +459,21 @@ export default function BitstreamSection({
               marginTop: "14px",
               display: "grid",
               gap: "8px",
-              maxHeight: "210px",
+              maxHeight: "120px",
               overflow: "auto",
             }}
           >
             {autoMappings.length === 0 ? (
-              <div style={{ color: "#64748b", fontSize: "13px", lineHeight: 1.4 }}>
+              <div
+                className="bitstream-mapping-empty"
+                style={{ color: "#64748b", fontSize: "13px", lineHeight: 1.4 }}
+              >
                 No ports detected yet.
               </div>
             ) : (
               autoMappings.map((mapping) => (
                 <div
+                  className={`bitstream-mapping-row${mapping.pin ? "" : " unmapped"}`}
                   key={mapping.port.name}
                   style={{
                     border: "1px solid #e2e8f0",
@@ -464,6 +483,7 @@ export default function BitstreamSection({
                   }}
                 >
                   <div
+                    className="bitstream-mapping-port"
                     style={{
                       color: "#0f172a",
                       fontSize: "13px",
@@ -474,6 +494,7 @@ export default function BitstreamSection({
                     {mapping.port.name}
                   </div>
                   <div
+                    className="bitstream-mapping-pin"
                     style={{
                       marginTop: "3px",
                       color: mapping.pin ? "#64748b" : "#c2410c",

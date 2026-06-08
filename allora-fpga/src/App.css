@@ -1029,6 +1029,7 @@ html[data-theme="black-ice"] .home-rail {
 .pin-map-resource-card,
 .pin-map-assignment-card,
 .pin-map-preview-card,
+.bitstream-mapping-row,
 .health-metric-card,
 .health-readiness-item {
   border-color: var(--dashboard-surface-border) !important;
@@ -1050,6 +1051,7 @@ html[data-theme="black-ice"] .home-rail {
 
 .pin-map-resource-card div,
 .pin-map-assignment-card div,
+.bitstream-mapping-port,
 .health-metric-card div,
 .health-readiness-item div,
 .pin-map-resource-button span:not(:first-child) {
@@ -1059,10 +1061,21 @@ html[data-theme="black-ice"] .home-rail {
 .pin-map-resource-card div[style*="64748b"],
 .pin-map-resource-card span[style*="94a3b8"],
 .pin-map-assignment-card div[style*="64748b"],
+.bitstream-mapping-empty,
+.bitstream-mapping-pin,
 .health-metric-card div[style*="64748b"],
 .health-readiness-item div[style*="64748b"],
 .pin-map-resource-button span[style*="64748b"] {
   color: var(--dashboard-muted-text) !important;
+}
+
+.bitstream-mapping-row.unmapped {
+  border-color: var(--dashboard-control-active-border) !important;
+  background: var(--dashboard-control-active-bg) !important;
+}
+
+.bitstream-mapping-row.unmapped .bitstream-mapping-pin {
+  color: var(--dashboard-strong-text) !important;
 }
 
 .pin-map-preview-header {
