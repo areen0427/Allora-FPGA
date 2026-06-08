@@ -198,6 +198,12 @@ export default function BoardSelect({
       boards: visibleBoards.filter((board) => getBoardSupportGroup(board) === group),
     }))
     .filter((group) => group.boards.length > 0);
+  const availableBoardGroups = ["Supported", "Not Fully Supported"]
+    .map((group) => ({
+      group,
+      boards: BOARDS.filter((board) => getBoardSupportGroup(board) === group),
+    }))
+    .filter((group) => group.boards.length > 0);
   const selectedFamilyLabel = familyFilter === "all" ? "All families" : familyFilter;
 
   function selectBoard(board: (typeof BOARDS)[number]) {
@@ -383,26 +389,37 @@ export default function BoardSelect({
                     position: "absolute",
                     top: "42px",
                     right: 0,
-                    width: "280px",
-                    maxHeight: "420px",
+                    width: "min(760px, calc(100vw - 72px))",
+                    maxHeight: "520px",
                     overflowY: "auto",
                     zIndex: 10,
                   }}
                 >
-                  {BOARDS.map((board) => (
-                    <button
-                      className="liquid-board-option"
-                      key={board.id}
-                      type="button"
-                      onClick={() => selectBoard(board)}
-                    >
-                      <span className="liquid-board-copy">
-                        <span className="liquid-board-name">{board.name}</span>
-                        <span className="liquid-board-meta">
-                          {getBoardSummary(board).slice(0, 2).join(" · ")}
-                        </span>
-                      </span>
-                    </button>
+                  {availableBoardGroups.map(({ group, boards }) => (
+                    <div className="board-available-section" key={group}>
+                      <div className="board-available-heading">
+                        <span>{group}</span>
+                        <span>{boards.length}</span>
+                      </div>
+
+                      <div className="board-available-grid">
+                        {boards.map((board) => (
+                          <button
+                            className="liquid-board-option board-available-option"
+                            key={board.id}
+                            type="button"
+                            onClick={() => selectBoard(board)}
+                          >
+                            <span className="liquid-board-copy">
+                              <span className="liquid-board-name">{board.name}</span>
+                              <span className="liquid-board-meta">
+                                {getBoardSummary(board).slice(0, 2).join(" · ")}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

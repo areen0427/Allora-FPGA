@@ -1,10 +1,23 @@
-export type ConstraintFile = "pcf" | "lpf" | "xdc" | "cst" | "qsf";
+export type ConstraintFile =
+  | "pcf"
+  | "lpf"
+  | "xdc"
+  | "cst"
+  | "qsf"
+  | "peri"
+  | "ccf"
+  | "pdc";
 
 export type SynthesisFlow =
   | "yosys-nextpnr"
   | "gowin"
   | "vivado"
-  | "quartus";
+  | "quartus"
+  | "efinity"
+  | "gatemate"
+  | "quicklogic"
+  | "radiant"
+  | "microchip";
 
 export type PinType =
   | "clock"
