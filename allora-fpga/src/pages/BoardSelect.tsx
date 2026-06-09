@@ -2,9 +2,18 @@ import { BOARDS, getBoardById } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDown, Cpu, FolderClock, FolderOpen, Home, Search, Settings } from "lucide-react";
+import {
+  ChevronDown,
+  Cpu,
+  FolderClock,
+  FolderOpen,
+  Home,
+  Search,
+  Settings,
+} from "lucide-react";
 import { formatProjectTime, getSavedProjects, removeSavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
+import { getBoardIcon } from "./boardIcons";
 
 type VariantBoard = Extract<(typeof BOARDS)[number], { variants: unknown }>;
 
@@ -572,7 +581,10 @@ export default function BoardSelect({
                   </div>
 
                   <div className="board-grid">
-                    {boards.map((board) => (
+                    {boards.map((board) => {
+                      const BoardIcon = getBoardIcon(board);
+
+                      return (
                         <button
                           className="board-card"
                           key={board.id}
@@ -587,21 +599,8 @@ export default function BoardSelect({
                             flexDirection: "column",
                           }}
                         >
-                          <div
-                            style={{
-                              width: "32px",
-                              height: "32px",
-                              flexShrink: 0,
-                              borderRadius: "10px",
-                              background: "#eff6ff",
-                              color: "#2563eb",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginBottom: "14px",
-                            }}
-                          >
-                            <Cpu size={17} />
+                          <div className="board-icon-badge">
+                            <BoardIcon size={17} strokeWidth={2.2} />
                           </div>
 
                           <div className="board-card-title-row">
@@ -639,7 +638,8 @@ export default function BoardSelect({
                             {getBoardSummary(board).join(" · ")}
                           </p>
                         </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -1024,7 +1024,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "aero", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Default Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -1106,6 +1106,7 @@ function formatSettingOption(option: string) {
   if (option === "light") return "Light";
   if (option === "ice") return "Ice";
   if (option === "solar") return "Solar";
+  if (option === "aero") return "Aero";
   if (option === "dark") return "Dark";
   if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";

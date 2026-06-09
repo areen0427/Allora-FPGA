@@ -54,8 +54,11 @@ export default function PinMappingSection({
       style={{
         display: "block",
         height: "calc(100vh - 48px)",
+        boxSizing: "border-box",
+        padding: "8px",
+        margin: "-8px",
         minHeight: 0,
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       <InfoCard

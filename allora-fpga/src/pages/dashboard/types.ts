@@ -2,6 +2,7 @@ export type DashboardSection =
   | "editor"
   | "board"
   | "synthesis"
+  | "testbench"
   | "pin-mapping"
   | "health"
   | "bitstream";

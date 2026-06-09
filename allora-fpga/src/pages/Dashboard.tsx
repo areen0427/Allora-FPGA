@@ -4,6 +4,7 @@ import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
 import BoardSection from "./dashboard/BoardSection";
 import SynthesisSection from "./dashboard/SynthesisSection";
+import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
 import HealthSection from "./dashboard/HealthSection";
@@ -14,14 +15,15 @@ import {
   Binary,
   CircuitBoard,
   Code2,
-  Cpu,
   Activity,
   MapPinned,
+  Waves,
+  SquareTerminal,
   Plus,
   Settings,
   Upload,
-  Zap,
 } from "lucide-react";
+import { getBoardIconForBoardId } from "./boardIcons";
 import { saveProject } from "../data/projects";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
@@ -98,6 +100,7 @@ export default function Dashboard({
   });
   const showManualSaveButton =
     !settings.autoSave || settings.autoSaveInterval !== "immediate";
+  const BoardHomeIcon = getBoardIconForBoardId(board.id);
 
   useEffect(() => {
     latestSaveStateRef.current = {
@@ -266,14 +269,14 @@ export default function Dashboard({
   return `untitled-${index}.${extension}`;
 }
 
-function createNewFile(fileName = getUntitledFileName()) {
+function createNewFile(fileName = getUntitledFileName(), content = "") {
   if (files.some((file) => file.name === fileName)) return;
 
   setFiles((currentFiles) => [
     ...currentFiles,
     {
       name: fileName,
-      content: "",
+      content,
       path: projectPath ? buildProjectFilePath(projectPath, fileName) : undefined,
     },
   ]);
@@ -480,7 +483,8 @@ async function updateConstraintFile(fileName: string, content: string) {
         file.name.endsWith(".v") ||
         file.name.endsWith(".sv") ||
         file.name.endsWith(".vhd") ||
-        file.name.endsWith(".vhdl");
+        file.name.endsWith(".vhdl") ||
+        file.name.endsWith(".vcd");
 
       if (!allowed) return;
 
@@ -584,7 +588,7 @@ async function updateConstraintFile(fileName: string, content: string) {
       padding: 0,
     }}
   >
-    <Cpu size={18} color="white" strokeWidth={2.2} />
+    <BoardHomeIcon size={18} color="white" strokeWidth={2.2} />
   </button>
 
   <div style={{ minWidth: 0 }}>
@@ -625,9 +629,10 @@ async function updateConstraintFile(fileName: string, content: string) {
           <SidebarButton label="Editor" icon={<Code2 size={16} />} active={activeSection === "editor"} onClick={() => setActiveSection("editor")} />
           <SidebarButton label="Board" icon={<CircuitBoard size={16} />} active={activeSection === "board"} onClick={() => setActiveSection("board")} />
           <SidebarButton label="Synthesis" icon={<Binary size={16} />} active={activeSection === "synthesis"} onClick={() => setActiveSection("synthesis")} />
+          <SidebarButton label="Testbench" icon={<Waves size={16} />} active={activeSection === "testbench"} onClick={() => setActiveSection("testbench")} />
           <SidebarButton label="Pins" icon={<MapPinned size={16} />} active={activeSection === "pin-mapping"} onClick={() => setActiveSection("pin-mapping")} />
           <SidebarButton label="Health" icon={<Activity size={16} />} active={activeSection === "health"} onClick={() => setActiveSection("health")} />
-          <SidebarButton label="Bitstream" icon={<Zap size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
+          <SidebarButton label="Bitstream" icon={<SquareTerminal size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
         </nav>
 
         <div
@@ -715,7 +720,7 @@ async function updateConstraintFile(fileName: string, content: string) {
                 <input
                   type="file"
                   multiple
-                  accept=".v,.sv,.vhd,.vhdl"
+                  accept=".v,.sv,.vhd,.vhdl,.vcd"
                   onChange={importFiles}
                   style={{ display: "none" }}
                 />
@@ -930,6 +935,38 @@ async function updateConstraintFile(fileName: string, content: string) {
             projectName={projectName}
             topLevelFileName={topLevelFileName}
             onTopLevelFileNameChange={makeTopLevelFile}
+          />
+        )}
+        {activeSection === "testbench" && (
+          <TestbenchSection
+            board={board}
+            files={files}
+            projectName={projectName}
+            projectPath={projectPath}
+            topLevelFileName={topLevelFileName}
+            onCreateTestbench={(fileName, content) => createNewFile(fileName, content)}
+            onOpenFile={openFile}
+            onAddArtifact={async ({ fileName, content, path }) => {
+              const artifactPath =
+                path ?? (projectPath ? `${projectPath}/sim/${fileName}` : undefined);
+
+              setFiles((currentFiles) => {
+                const existing = currentFiles.find((file) => file.name === fileName);
+                if (existing) {
+                  return currentFiles.map((file) =>
+                    file.name === fileName
+                      ? { ...file, content, path: file.path ?? artifactPath }
+                      : file
+                  );
+                }
+
+                return [
+                  ...currentFiles,
+                  { name: fileName, content, path: artifactPath },
+                ];
+              });
+              markWorkspaceUnsaved(fileName);
+            }}
           />
         )}
         {activeSection === "pin-mapping" && (
@@ -1571,7 +1608,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "aero", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -1653,6 +1690,7 @@ function formatSettingOption(option: string) {
   if (option === "light") return "Light";
   if (option === "ice") return "Ice";
   if (option === "solar") return "Solar";
+  if (option === "aero") return "Aero";
   if (option === "dark") return "Dark";
   if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";

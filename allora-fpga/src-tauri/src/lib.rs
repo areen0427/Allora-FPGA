@@ -334,6 +334,26 @@ struct GenerateBitstreamResponse {
   bytes: Vec<u8>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SimulateTestbenchRequest {
+  project_name: String,
+  source_files: Vec<SynthesisInputFile>,
+  testbench_file: SynthesisInputFile,
+  top_module: Option<String>,
+  project_path: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SimulateTestbenchResponse {
+  logs: Vec<String>,
+  top_module: String,
+  waveform_name: String,
+  waveform_path: Option<String>,
+  vcd: String,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ErrorPayload {
@@ -620,6 +640,153 @@ fn generate_bitstream(
     output_name,
     artifact_path: project_artifact_path,
     bytes,
+  })
+}
+
+#[tauri::command]
+fn simulate_testbench(
+  request: SimulateTestbenchRequest,
+) -> Result<SimulateTestbenchResponse, ErrorPayload> {
+  if request.source_files.is_empty() {
+    return Err(error("No design HDL files were provided."));
+  }
+
+  if is_vhdl_file(&request.testbench_file.name)
+    || request.source_files.iter().any(|file| is_vhdl_file(&file.name))
+  {
+    return Err(error(
+      "Real testbench simulation is currently wired for Verilog/SystemVerilog through Icarus Verilog. VHDL simulation is not available yet.",
+    ));
+  }
+
+  let output_name = sanitize_name(&request.project_name);
+  let temp_dir = create_work_dir(&format!("{output_name}_sim"))?;
+  let source_dir = temp_dir.join("src");
+  fs::create_dir_all(&source_dir)
+    .map_err(|err| error(&format!("Unable to create simulation workspace: {err}")))?;
+
+  let mut written_files = Vec::new();
+  for file in request
+    .source_files
+    .iter()
+    .filter(|file| file.name != request.testbench_file.name)
+  {
+    let path = source_dir.join(&file.name);
+    if let Some(parent) = path.parent() {
+      fs::create_dir_all(parent)
+        .map_err(|err| error(&format!("Unable to create source folder: {err}")))?;
+    }
+    fs::write(&path, &file.content)
+      .map_err(|err| error(&format!("Unable to write {}: {err}", file.name)))?;
+    written_files.push(path);
+  }
+
+  let testbench_path = source_dir.join(&request.testbench_file.name);
+  if let Some(parent) = testbench_path.parent() {
+    fs::create_dir_all(parent)
+      .map_err(|err| error(&format!("Unable to create testbench folder: {err}")))?;
+  }
+  fs::write(&testbench_path, &request.testbench_file.content)
+    .map_err(|err| error(&format!("Unable to write {}: {err}", request.testbench_file.name)))?;
+  written_files.push(testbench_path.clone());
+
+  let executable_path = temp_dir.join("simulation.out");
+  let waveform_name = format!("{output_name}.vcd");
+  let default_waveform_path = temp_dir.join("waveform.vcd");
+  let requested_top = request
+    .top_module
+    .clone()
+    .or_else(|| find_first_verilog_module(&request.testbench_file.content))
+    .unwrap_or_else(|| "testbench".to_string());
+  let mut logs = vec![
+    format!("[simulation] Project: {}", request.project_name),
+    format!("[simulation] Testbench: {}", request.testbench_file.name),
+    format!("[simulation] Design files: {}", request.source_files.len()),
+    format!("[simulation] Top hint: {requested_top}"),
+  ];
+
+  let mut iverilog_args = vec![
+    "-g2012".to_string(),
+    "-s".to_string(),
+    requested_top.clone(),
+    "-o".to_string(),
+    executable_path.to_string_lossy().to_string(),
+  ];
+  iverilog_args.extend(
+    written_files
+      .iter()
+      .map(|path| path.to_string_lossy().to_string()),
+  );
+
+  let compile_output = Command::new(tool_command("iverilog"))
+    .args(&iverilog_args)
+    .current_dir(&temp_dir)
+    .output()
+    .map_err(|err| command_launch_error("iverilog", &err))?;
+  logs.push(String::new());
+  logs.push("[iverilog] Command".to_string());
+  logs.push(format!("iverilog {}", iverilog_args.join(" ")));
+  append_command_logs(&mut logs, &compile_output.stdout, &compile_output.stderr);
+
+  if !compile_output.status.success() {
+    let _ = fs::remove_dir_all(&temp_dir);
+    let error_details = format_command_error("Icarus Verilog", &compile_output.stdout, &compile_output.stderr);
+    return Err(error(&error_details));
+  }
+
+  let run_output = Command::new(tool_command("vvp"))
+    .arg(executable_path.as_os_str())
+    .current_dir(&temp_dir)
+    .output()
+    .map_err(|err| command_launch_error("vvp", &err))?;
+  logs.push(String::new());
+  logs.push("[vvp] Command".to_string());
+  logs.push("vvp simulation.out".to_string());
+  append_command_logs(&mut logs, &run_output.stdout, &run_output.stderr);
+
+  if !run_output.status.success() {
+    let _ = fs::remove_dir_all(&temp_dir);
+    let error_details = format_command_error("vvp", &run_output.stdout, &run_output.stderr);
+    return Err(error(&error_details));
+  }
+
+  let waveform_path_tmp = find_vcd_file(&temp_dir)?.unwrap_or(default_waveform_path);
+  if !waveform_path_tmp.exists() {
+    let _ = fs::remove_dir_all(&temp_dir);
+    return Err(error(
+      "Simulation finished but no VCD waveform was produced. Add $dumpfile(\"waveform.vcd\") and $dumpvars(...) to the testbench.",
+    ));
+  }
+
+  let vcd = fs::read_to_string(&waveform_path_tmp)
+    .map_err(|err| error(&format!("Unable to read generated waveform: {err}")))?;
+
+  let project_waveform_path = if let Some(project_path) = &request.project_path {
+    let build_dir = PathBuf::from(project_path).join("sim");
+    fs::create_dir_all(&build_dir)
+      .map_err(|err| error(&format!("Unable to create simulation output directory: {err}")))?;
+    let final_path = build_dir.join(&waveform_name);
+    fs::write(&final_path, &vcd)
+      .map_err(|err| error(&format!("Unable to save waveform into the project: {err}")))?;
+    Some(final_path.to_string_lossy().to_string())
+  } else {
+    None
+  };
+
+  logs.push(String::new());
+  logs.push(format!("[output] Waveform bytes: {}", vcd.len()));
+  if let Some(path) = &project_waveform_path {
+    logs.push(format!("[output] Saved to {path}"));
+  }
+
+  let _ = fs::remove_dir_all(&temp_dir);
+
+  Ok(SimulateTestbenchResponse {
+    logs,
+    top_module: requested_top,
+    waveform_name,
+    waveform_path: project_waveform_path,
+    vcd,
   })
 }
 
@@ -1241,6 +1408,51 @@ fn sanitize_constraint_name(name: &str) -> String {
     .unwrap_or_else(|| "constraints.pcf".to_string())
 }
 
+fn find_vcd_file(root: &Path) -> Result<Option<PathBuf>, ErrorPayload> {
+  let mut stack = vec![root.to_path_buf()];
+
+  while let Some(path) = stack.pop() {
+    let entries = fs::read_dir(&path)
+      .map_err(|err| error(&format!("Unable to inspect simulation output: {err}")))?;
+
+    for entry in entries {
+      let entry = entry
+        .map_err(|err| error(&format!("Unable to inspect simulation output: {err}")))?;
+      let entry_path = entry.path();
+
+      if entry_path.is_dir() {
+        stack.push(entry_path);
+        continue;
+      }
+
+      if entry_path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("vcd"))
+      {
+        return Ok(Some(entry_path));
+      }
+    }
+  }
+
+  Ok(None)
+}
+
+fn find_first_verilog_module(content: &str) -> Option<String> {
+  let mut tokens = content
+    .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_' || character == '$'));
+
+  while let Some(token) = tokens.next() {
+    if token == "module" {
+      return tokens
+        .find(|candidate| !candidate.is_empty())
+        .map(ToOwned::to_owned);
+    }
+  }
+
+  None
+}
+
 fn is_vhdl_file(name: &str) -> bool {
   name.ends_with(".vhd") || name.ends_with(".vhdl")
 }
@@ -1295,7 +1507,8 @@ pub fn run() {
       rename_project_file,
       delete_project_file,
       generate_synthesis_diagram,
-      generate_bitstream
+      generate_bitstream,
+      simulate_testbench
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
