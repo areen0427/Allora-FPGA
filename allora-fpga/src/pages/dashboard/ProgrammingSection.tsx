@@ -21,10 +21,19 @@ type ProgrammerStatus = {
   message: string;
 };
 
+type DetectedUsbDevice = {
+  name: string;
+  vendor: string;
+  productId: string;
+  possibleBoards: string[];
+};
+
 type BoardConnectionStatus = {
   connected: boolean;
   details: string;
-  usbDevices: string[];
+  usbDevices: DetectedUsbDevice[];
+  programmerDetected: boolean;
+  programmerDetails: string;
 };
 
 type ProgramResult = {
@@ -92,6 +101,8 @@ export default function ProgrammingSection({
         connected: false,
         details: "Failed to detect connected boards.",
         usbDevices: [],
+        programmerDetected: false,
+        programmerDetails: "Unknown",
       });
     } finally {
       setIsDetectingBoard(false);
@@ -360,6 +371,21 @@ export default function ProgrammingSection({
             value={boardStatus ? (boardStatus.connected ? "Connected" : "Not detected") : "Unknown"}
             compact
           />
+          {boardStatus?.usbDevices?.map((device, index) => (
+            <div key={index} style={{ marginTop: "6px" }}>
+              <InfoRow label="Device" value={device.name} compact />
+              {device.possibleBoards.length > 0 ? (
+                <InfoRow label="Possible Boards" value={device.possibleBoards.join(", ")} compact />
+              ) : null}
+            </div>
+          ))}
+          {boardStatus?.programmerDetected !== undefined ? (
+            <InfoRow
+              label="Programmer"
+              value={boardStatus.programmerDetected ? "Found" : "Not found"}
+              compact
+            />
+          ) : null}
         </InfoCard>
 
         <InfoCard title="Programmer" style={{ padding: "14px", borderRadius: "16px" }} compact>

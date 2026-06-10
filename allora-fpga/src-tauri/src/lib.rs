@@ -69,109 +69,314 @@ struct WriteProjectFileRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RenameProjectFileRequest {
-  from_path: String,
-  to_path: String,
+struct DetectConnectedBoardRequest {
+  programmer_command: String,
+  usb_vendor_id: Option<u32>,
+  usb_product_id: Option<u32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct DeleteProjectFileRequest {
-  path: String,
+struct DetectedUsbDevice {
+  name: String,
+  vendor: String,
+  product_id: String,
+  possible_boards: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectConnectedBoardResponse {
+  connected: bool,
+  details: String,
+  usb_devices: Vec<DetectedUsbDevice>,
+  programmer_detected: bool,
+  programmer_details: String,
 }
 
 #[tauri::command]
-fn create_project_workspace(
-  app: AppHandle,
-  request: CreateProjectWorkspaceRequest,
-) -> Result<CreateProjectWorkspaceResponse, ErrorPayload> {
-  if request.files.is_empty() {
-    return Err(error("No project files were provided."));
-  }
+fn detect_connected_board(
+  request: DetectConnectedBoardRequest,
+) -> Result<DetectConnectedBoardResponse, ErrorPayload> {
+  let command = request.programmer_command.trim();
+  let mut usb_devices = Vec::new();
+  let mut programmer_detected = false;
+  let mut programmer_details = String::new();
 
-  let base_dir = if let Some(parent_directory) = request.parent_directory.as_deref() {
-    PathBuf::from(parent_directory)
+  // Step 1: Detect if the programmer tool is available
+  let tool_path = resolve_tool_path(command);
+  if tool_path.exists() {
+    programmer_detected = true;
+    programmer_details = format!("{} found at {}", command, tool_path.display());
   } else {
-    let documents_dir = app
-      .path()
-      .document_dir()
-      .map_err(|err| error(&format!("Unable to locate the documents directory: {err}")))?;
-    documents_dir.join("Allora FPGA Projects")
-  };
-  fs::create_dir_all(&base_dir)
-    .map_err(|err| error(&format!("Unable to create the projects directory: {err}")))?;
-
-  let project_name = sanitize_name(&request.project_name);
-  let folder_name = sanitize_name(&request.folder_name);
-  let project_id = format!(
-    "{}-{}",
-    project_name,
-    SystemTime::now()
-      .duration_since(UNIX_EPOCH)
-      .map_err(|err| error(&format!("Unable to read system time: {err}")))?
-      .as_millis()
-  );
-
-  let project_path = unique_project_dir(&base_dir, &folder_name)?;
-  fs::create_dir_all(&project_path)
-    .map_err(|err| error(&format!("Unable to create the project directory: {err}")))?;
-
-  let mut files = Vec::with_capacity(request.files.len());
-  for file in request.files {
-    let relative_path = normalize_relative_path(&file.relative_path)?;
-    let absolute_path = project_path.join(&relative_path);
-
-    if let Some(parent) = absolute_path.parent() {
-      fs::create_dir_all(parent)
-        .map_err(|err| error(&format!("Unable to create file directory: {err}")))?;
-    }
-
-    fs::write(&absolute_path, file.content)
-      .map_err(|err| error(&format!("Unable to write {}: {err}", relative_path.display())))?;
-
-    files.push(WorkspaceFileRecord {
-      relative_path: relative_path.to_string_lossy().to_string(),
-      absolute_path: absolute_path.to_string_lossy().to_string(),
-    });
+    programmer_details = format!("{} not found on PATH", command);
   }
 
-  Ok(CreateProjectWorkspaceResponse {
-    project_id,
-    project_path: project_path.to_string_lossy().to_string(),
-    files,
+  // Step 2: Scan USB devices for FPGA-related hardware
+  #[cfg(target_os = "macos")]
+  {
+    let output = Command::new("system_profiler")
+      .arg("SPUSBDataType")
+      .output()
+      .or_else(|_| Command::new("ioreg").arg("-p").arg("IOUSB").output());
+
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      let mut current_device = String::new();
+      let mut current_vendor = String::new();
+      let mut current_product_id = String::new();
+
+      for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("Product ID:") {
+          current_product_id = trimmed
+            .split(':')
+            .nth(1)
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        }
+        if trimmed.contains("Vendor ID:") {
+          current_vendor = trimmed
+            .split(':')
+            .nth(1)
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        }
+        if trimmed.contains("Product:") || trimmed.contains("Name:") {
+          let name = trimmed
+            .split(':')
+            .nth(1)
+            .unwrap_or("")
+            .trim()
+            .to_string();
+          if !name.is_empty() {
+            current_device = name;
+          }
+        }
+        if trimmed.contains("Manufacturer:") {
+          let mfr = trimmed
+            .split(':')
+            .nth(1)
+            .unwrap_or("")
+            .trim()
+            .to_string();
+          if !mfr.is_empty() && current_vendor.is_empty() {
+            current_vendor = mfr;
+          }
+        }
+
+        // When we hit a blank line or new device, process the current device
+        if trimmed.is_empty() && !current_device.is_empty() {
+          let lower = format!("{} {} {}", current_device, current_vendor, current_product_id).to_lowercase();
+          if lower.contains("ftdi") || lower.contains("lattice") || lower.contains("digilent")
+            || lower.contains("sipeed") || lower.contains("tinyfpga") || lower.contains("fomu")
+            || lower.contains("1bit") || lower.contains("1209") || lower.contains("0403")
+            || lower.contains("6010") || lower.contains("cmsis") || lower.contains("jtag")
+            || lower.contains("ft2232") || lower.contains("ft232") || lower.contains("ftdi")
+          {
+            let possible_boards = identify_possible_boards(&current_device, &current_vendor, &current_product_id);
+            usb_devices.push(DetectedUsbDevice {
+              name: current_device.clone(),
+              vendor: current_vendor.clone(),
+              product_id: current_product_id.clone(),
+              possible_boards,
+            });
+          }
+          current_device.clear();
+          current_vendor.clear();
+          current_product_id.clear();
+        }
+      }
+
+      // Process any remaining device
+      if !current_device.is_empty() {
+        let lower = format!("{} {} {}", current_device, current_vendor, current_product_id).to_lowercase();
+        if lower.contains("ftdi") || lower.contains("lattice") || lower.contains("digilent")
+          || lower.contains("sipeed") || lower.contains("tinyfpga") || lower.contains("fomu")
+          || lower.contains("1bit") || lower.contains("1209") || lower.contains("0403")
+          || lower.contains("6010") || lower.contains("cmsis") || lower.contains("jtag")
+          || lower.contains("ft2232") || lower.contains("ft232") || lower.contains("ftdi")
+        {
+          let possible_boards = identify_possible_boards(&current_device, &current_vendor, &current_product_id);
+          usb_devices.push(DetectedUsbDevice {
+            name: current_device,
+            vendor: current_vendor,
+            product_id: current_product_id,
+            possible_boards,
+          });
+        }
+      }
+    }
+  }
+
+  #[cfg(target_os = "linux")]
+  {
+    let output = Command::new("lsusb").output();
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      for line in text.lines() {
+        let lower = line.to_lowercase();
+        if lower.contains("ftdi") || lower.contains("lattice") || lower.contains("digilent")
+          || lower.contains("sipeed") || lower.contains("tinyfpga") || lower.contains("fomu")
+          || lower.contains("1bit") || lower.contains("1209") || lower.contains("0403")
+          || lower.contains("6010") || lower.contains("cmsis") || lower.contains("jtag")
+          || lower.contains("ft2232") || lower.contains("ft232")
+        {
+          let possible_boards = identify_possible_boards_from_lsusb(line);
+          usb_devices.push(DetectedUsbDevice {
+            name: line.to_string(),
+            vendor: String::new(),
+            product_id: String::new(),
+            possible_boards,
+          });
+        }
+      }
+    }
+  }
+
+  #[cfg(target_os = "windows")]
+  {
+    let output = Command::new("wmic")
+      .args(["path", "Win32_USBControllerDevice", "get", "Dependent"])
+      .output();
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      for line in text.lines() {
+        let lower = line.to_lowercase();
+        if lower.contains("ftdi") || lower.contains("lattice") || lower.contains("digilent")
+          || lower.contains("sipeed") || lower.contains("tinyfpga") || lower.contains("fomu")
+          || lower.contains("cmsis") || lower.contains("jtag")
+          || lower.contains("ft2232") || lower.contains("ft232")
+        {
+          usb_devices.push(DetectedUsbDevice {
+            name: line.to_string(),
+            vendor: String::new(),
+            product_id: String::new(),
+            possible_boards: vec![],
+          });
+        }
+      }
+    }
+  }
+
+  let connected = !usb_devices.is_empty();
+  let details = if connected {
+    let device_count = usb_devices.len();
+    let board_count: usize = usb_devices.iter().map(|d| d.possible_boards.len()).sum();
+    if board_count > 0 {
+      format!(
+        "Found {} USB device(s) with {} possible board match(es).",
+        device_count, board_count
+      )
+    } else {
+      format!(
+        "Found {} USB device(s). Board identification may require manual selection.",
+        device_count
+      )
+    }
+  } else {
+    "No compatible USB devices detected. Connect a board and try again.".to_string()
+  };
+
+  Ok(DetectConnectedBoardResponse {
+    connected,
+    details,
+    usb_devices,
+    programmer_detected,
+    programmer_details,
   })
 }
 
-#[tauri::command]
-fn pick_project_parent_directory() -> Result<Option<String>, ErrorPayload> {
-  #[cfg(target_os = "macos")]
-  {
-    let output = Command::new("osascript")
-      .args([
-        "-e",
-        "set chosenFolder to choose folder with prompt \"Choose where to create the project folder\"",
-        "-e",
-        "POSIX path of chosenFolder",
-      ])
-      .output()
-      .map_err(|err| error(&format!("Unable to open the folder picker: {err}")))?;
+fn identify_possible_boards(device_name: &str, vendor: &str, product_id: &str) -> Vec<String> {
+  let combined = format!("{} {} {}", device_name, vendor, product_id).to_lowercase();
+  let mut boards = Vec::new();
 
-    if !output.status.success() {
-      return Ok(None);
-    }
-
-    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if path.is_empty() {
-      Ok(None)
-    } else {
-      Ok(Some(path))
-    }
+  if combined.contains("ft2232") || combined.contains("ft232") {
+    boards.push("ULX3S".to_string());
+    boards.push("ECPIX-5".to_string());
+    boards.push("ButterStick".to_string());
+    boards.push("Custom ECP5 Board".to_string());
   }
 
-  #[cfg(not(target_os = "macos"))]
-  {
-    Ok(None)
+  if combined.contains("ftdi") && !combined.contains("ft2232") && !combined.contains("ft232") {
+    boards.push("iCEBreaker".to_string());
+    boards.push("iCESugar".to_string());
+    boards.push("TinyFPGA".to_string());
+    boards.push("Fomu".to_string());
   }
+
+  if combined.contains("digilent") {
+    boards.push("Arty A7".to_string());
+    boards.push("Basys 3".to_string());
+    boards.push("Nexys Video".to_string());
+    boards.push("Nexys 4".to_string());
+  }
+
+  if combined.contains("sipeed") {
+    boards.push("Tang Nano 9K".to_string());
+    boards.push("Tang Nano 20K".to_string());
+  }
+
+  if combined.contains("lattice") {
+    boards.push("iCEBreaker".to_string());
+    boards.push("iCESugar".to_string());
+    boards.push("OrangeCrab".to_string());
+  }
+
+  if combined.contains("1bit") || combined.contains("1209") {
+    boards.push("iCEBreaker".to_string());
+    boards.push("iCEBreaker Bitsy".to_string());
+  }
+
+  if combined.contains("cmsis") || combined.contains("jtag") {
+    boards.push("Custom Board (JTAG)".to_string());
+  }
+
+  boards
+}
+
+fn identify_possible_boards_from_lsusb(line: &str) -> Vec<String> {
+  let lower = line.to_lowercase();
+  let mut boards = Vec::new();
+
+  if lower.contains("ft2232") || lower.contains("ft232") {
+    boards.push("ULX3S".to_string());
+    boards.push("ECPIX-5".to_string());
+    boards.push("ButterStick".to_string());
+    boards.push("Custom ECP5 Board".to_string());
+  }
+
+  if lower.contains("ftdi") && !lower.contains("ft2232") && !lower.contains("ft232") {
+    boards.push("iCEBreaker".to_string());
+    boards.push("iCESugar".to_string());
+    boards.push("TinyFPGA".to_string());
+    boards.push("Fomu".to_string());
+  }
+
+  if lower.contains("digilent") {
+    boards.push("Arty A7".to_string());
+    boards.push("Basys 3".to_string());
+    boards.push("Nexys Video".to_string());
+  }
+
+  if lower.contains("sipeed") {
+    boards.push("Tang Nano 9K".to_string());
+    boards.push("Tang Nano 20K".to_string());
+  }
+
+  if lower.contains("lattice") {
+    boards.push("iCEBreaker".to_string());
+    boards.push("iCESugar".to_string());
+    boards.push("OrangeCrab".to_string());
+  }
+
+  if lower.contains("cmsis") || lower.contains("jtag") {
+    boards.push("Custom Board (JTAG)".to_string());
+  }
+
+  boards
 }
 
 #[tauri::command]
@@ -353,22 +558,6 @@ struct DetectProgrammerResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct DetectConnectedBoardRequest {
-  programmer_command: String,
-  usb_vendor_id: Option<u32>,
-  usb_product_id: Option<u32>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DetectConnectedBoardResponse {
-  connected: bool,
-  details: String,
-  usb_devices: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct ProgramFpgaRequest {
   programmer_command: String,
   bitstream_path: String,
@@ -457,91 +646,6 @@ fn detect_programmer(
       }
     }
   }
-}
-
-#[tauri::command]
-fn detect_connected_board(
-  request: DetectConnectedBoardRequest,
-) -> Result<DetectConnectedBoardResponse, ErrorPayload> {
-  let command = request.programmer_command.trim();
-  let mut usb_devices = Vec::new();
-
-  // Try to detect connected devices using system tools
-  #[cfg(target_os = "macos")]
-  {
-    let output = Command::new("system_profiler")
-      .arg("SPUSBDataType")
-      .output()
-      .or_else(|_| Command::new("ioreg").arg("-p").arg("IOUSB").output());
-
-    if let Ok(output) = output {
-      let text = String::from_utf8_lossy(&output.stdout).to_string();
-      let relevant_lines: Vec<String> = text
-        .lines()
-        .filter(|line| {
-          let lower = line.to_lowercase();
-          lower.contains("lattice") || lower.contains("ftdi")
-            || lower.contains("digilent") || lower.contains("sipeed")
-            || lower.contains("tinyfpga") || lower.contains("fomu")
-            || lower.contains("1bit") || lower.contains("1209")
-            || lower.contains("0403") || lower.contains("6010")
-        })
-        .map(ToOwned::to_owned)
-        .collect();
-      usb_devices.extend(relevant_lines);
-    }
-  }
-
-  #[cfg(target_os = "linux")]
-  {
-    let output = Command::new("lsusb").output();
-    if let Ok(output) = output {
-      let text = String::from_utf8_lossy(&output.stdout).to_string();
-      for line in text.lines() {
-        let lower = line.to_lowercase();
-        if lower.contains("lattice") || lower.contains("ftdi")
-          || lower.contains("digilent") || lower.contains("sipeed")
-          || lower.contains("tinyfpga") || lower.contains("fomu")
-        {
-          usb_devices.push(line.to_string());
-        }
-      }
-    }
-  }
-
-  #[cfg(target_os = "windows")]
-  {
-    let output = Command::new("wmic")
-      .args(["path", "Win32_USBControllerDevice", "get", "Dependent"])
-      .output();
-    if let Ok(output) = output {
-      let text = String::from_utf8_lossy(&output.stdout).to_string();
-      for line in text.lines() {
-        let lower = line.to_lowercase();
-        if lower.contains("lattice") || lower.contains("ftdi")
-          || lower.contains("digilent") || lower.contains("sipeed")
-        {
-          usb_devices.push(line.to_string());
-        }
-      }
-    }
-  }
-
-  let connected = !usb_devices.is_empty();
-  let details = if connected {
-    format!(
-      "Found {} potentially compatible USB device(s).",
-      usb_devices.len()
-    )
-  } else {
-    "No compatible USB devices detected. Connect a board and try again.".to_string()
-  };
-
-  Ok(DetectConnectedBoardResponse {
-    connected,
-    details,
-    usb_devices,
-  })
 }
 
 #[tauri::command]
