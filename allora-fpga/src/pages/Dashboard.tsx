@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
@@ -24,15 +24,13 @@ import {
   Upload,
 } from "lucide-react";
 import { getBoardIconForBoardId } from "./boardIcons";
-import { saveProject } from "../data/projects";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
-import {
-  buildProjectFilePath,
-  deleteProjectFile as deleteProjectFileOnDisk,
-  renameProjectFile as renameProjectFileOnDisk,
-  writeProjectFile,
-} from "../lib/projectWorkspace";
+import { buildProjectFilePath } from "../lib/projectWorkspace";
+import { useFileManagement } from "../hooks/useFileManagement";
+import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
+import { useSaveProject } from "../hooks/useSaveProject";
+import { isHdlFile, getSaveStatusLabel } from "../hooks/utils";
 
 type DashboardProps = {
   board: BoardDefinition;
@@ -43,8 +41,6 @@ type DashboardProps = {
   onBack: () => void;
   onHome: () => void;
 };
-
-type SaveStatus = "saved" | "saving" | "unsaved" | "error";
 
 export default function Dashboard({
   board,
@@ -57,27 +53,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const [activeSection, setActiveSection] =
     useState<DashboardSection>("editor");
-
-  const [files, setFiles] = useState<ProjectFile[]>(project?.files ?? []);
-  const [activeFileName, setActiveFileName] = useState<string | null>(
-    project?.activeFileName ?? null
-  );
-  const [openFileNames, setOpenFileNames] = useState<string[]>(
-    project?.activeFileName ? [project.activeFileName] : project?.files[0]?.name ? [project.files[0].name] : []
-  );
-  const [topLevelFileName, setTopLevelFileName] = useState<string | null>(
-    project?.topLevelFileName && project.files.some((file) => file.name === project.topLevelFileName)
-      ? project.topLevelFileName
-      : project?.files.find((file) => isHdlFile(file.name))?.name ?? null
-  );
   const [sidebarWidth, setSidebarWidth] = useState(270);
-  const [lastSavedAt, setLastSavedAt] = useState(project?.updatedAt ?? "");
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
-  const [saveErrorMessage, setSaveErrorMessage] = useState("");
-  const [dirtyFileNames, setDirtyFileNames] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [draggedFileName, setDraggedFileName] = useState<string | null>(null);
-  const [dragOverFileName, setDragOverFileName] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     fileName: string;
     x: number;
@@ -85,46 +62,172 @@ export default function Dashboard({
   } | null>(null);
   const [deletingFileName, setDeletingFileName] = useState<string | null>(null);
 
-  const activeFile = files.find((file) => file.name === activeFileName);
+  // --- File management hook ---
+  const fileMgmt = useFileManagement(project);
+
+  // --- Active file / tabs hook ---
+  const activeTabs = useActiveFileTabs({
+    projectFiles: fileMgmt.files,
+    initialActiveFileName: project?.activeFileName,
+    initialTopLevelFileName: project?.topLevelFileName,
+    setFiles: fileMgmt.setFiles,
+  });
+
+  // --- Save project hook ---
+  const saveProject = useSaveProject({
+    project,
+    board,
+    files: fileMgmt.files,
+    activeFileName: activeTabs.activeFileName,
+    topLevelFileName: activeTabs.topLevelFileName,
+    autoSave: settings.autoSave,
+    autoSaveInterval: settings.autoSaveInterval,
+  });
+
   const projectName = project?.name ?? "Untitled Project";
   const projectPath = project?.projectPath;
-  const isSavingRef = useRef(false);
-  const pendingSaveRef = useRef(false);
-  const latestSaveStateRef = useRef({
-    project,
-    boardId: board.id,
-    files,
-    activeFileName,
-    topLevelFileName,
-    projectPath,
-  });
-  const showManualSaveButton =
-    !settings.autoSave || settings.autoSaveInterval !== "immediate";
   const BoardHomeIcon = getBoardIconForBoardId(board.id);
 
-  useEffect(() => {
-    latestSaveStateRef.current = {
-      project,
-      boardId: board.id,
-      files,
-      activeFileName,
-      topLevelFileName,
-      projectPath,
-    };
-  }, [activeFileName, board.id, files, project, projectPath, topLevelFileName]);
+  // --- Coordinating functions that wire hooks together ---
 
-  useEffect(() => {
-    const hdlFiles = files.filter((file) => isHdlFile(file.name));
-    if (hdlFiles.length === 0) {
-      setTopLevelFileName(null);
+  function markWorkspaceUnsaved(fileName?: string | null) {
+    saveProject.markWorkspaceUnsaved(fileName);
+    if (fileName) {
+      activeTabs.setDirtyFileNames((current) =>
+        current.includes(fileName) ? current : [...current, fileName],
+      );
+    }
+  }
+
+  function handleOpenFile(fileName: string) {
+    activeTabs.openFile(fileName);
+    setActiveSection("editor");
+    markWorkspaceUnsaved();
+  }
+
+  function handleCloseOpenFile(fileName: string) {
+    activeTabs.closeOpenFile(fileName);
+    markWorkspaceUnsaved();
+  }
+
+  function handleCreateNewFile(fileName?: string, content?: string) {
+    const result = fileMgmt.createNewFile(fileName, content);
+    if (!result) return;
+    activeTabs.openFile(result);
+    setActiveSection("editor");
+    markWorkspaceUnsaved(result);
+  }
+
+  function handleUpdateActiveFile(content: string) {
+    if (!activeTabs.activeFileName) {
+      const fileName = fileMgmt.getUntitledFileName();
+      fileMgmt.setFiles([
+        {
+          name: fileName,
+          content,
+          path: projectPath
+            ? buildProjectFilePath(projectPath, fileName)
+            : undefined,
+        },
+      ]);
+      activeTabs.setActiveFileName(fileName);
+      setActiveSection("editor");
+      markWorkspaceUnsaved(fileName);
       return;
     }
 
-    if (!topLevelFileName || !hdlFiles.some((file) => file.name === topLevelFileName)) {
-      makeTopLevelFile(hdlFiles[0].name);
-    }
-  }, [files, topLevelFileName]);
+    fileMgmt.setFiles((currentFiles) =>
+      currentFiles.map((file) =>
+        file.name === activeTabs.activeFileName
+          ? { ...file, content }
+          : file,
+      ),
+    );
+    markWorkspaceUnsaved(activeTabs.activeFileName);
+  }
 
+  async function handleRenameFile(oldName: string, newName: string) {
+    const result = await fileMgmt.renameFile(oldName, newName);
+    if (!result) return;
+    if ("error" in result) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage(result.error);
+      return;
+    }
+    activeTabs.setActiveFileName(result.newName);
+    activeTabs.updateOpenFileAfterRename(result.oldName, result.newName);
+    if (activeTabs.topLevelFileName === result.oldName) {
+      handleMakeTopLevelFile(result.newName);
+    }
+    markWorkspaceUnsaved(result.newName);
+  }
+
+  async function handleDeleteFileFromProject(fileName: string) {
+    const result = await fileMgmt.deleteFileFromProject(fileName);
+    if (!result) return;
+    if ("error" in result) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage(result.error);
+      return;
+    }
+    activeTabs.removeOpenFile(fileName);
+
+    if (activeTabs.activeFileName === fileName) {
+      const nextActiveFile = result.remainingFiles.find((file) =>
+        activeTabs.openFileNames
+          .filter((name) => name !== fileName)
+          .includes(file.name),
+      );
+      activeTabs.setActiveFileName(nextActiveFile?.name ?? null);
+    }
+
+    if (activeTabs.topLevelFileName === fileName) {
+      const nextTopLevel = result.remainingFiles.find((file) =>
+        isHdlFile(file.name),
+      );
+      handleMakeTopLevelFile(nextTopLevel?.name ?? null);
+    }
+    markWorkspaceUnsaved();
+  }
+
+  function handleReorderFiles(sourceFileName: string, targetFileName: string) {
+    fileMgmt.reorderFiles(sourceFileName, targetFileName);
+    markWorkspaceUnsaved();
+  }
+
+  function handleMakeTopLevelFile(fileName: string | null) {
+    activeTabs.makeTopLevelFile(fileName);
+    fileMgmt.moveFileToTopLevel(fileName);
+    markWorkspaceUnsaved();
+  }
+
+  async function handleUpdateConstraintFile(
+    fileName: string,
+    content: string,
+  ) {
+    const result = await fileMgmt.updateConstraintFile(fileName, content);
+    if (result.error) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage(result.error);
+      return;
+    }
+    markWorkspaceUnsaved(fileName);
+  }
+
+  function handleImportFiles(event: ChangeEvent<HTMLInputElement>) {
+    fileMgmt.importFiles(event);
+    // Note: importFiles triggers setFiles internally; we mark unsaved via the files effect
+    markWorkspaceUnsaved();
+  }
+
+  function handleSidebarDrop(sourceFileName: string, targetFileName: string) {
+    if (!sourceFileName) return;
+    handleReorderFiles(sourceFileName, targetFileName);
+    fileMgmt.setDraggedFileName(null);
+    fileMgmt.setDragOverFileName(null);
+  }
+
+  // --- Context menu close ---
   useEffect(() => {
     if (!contextMenu) return;
 
@@ -136,106 +239,7 @@ export default function Dashboard({
     return () => window.removeEventListener("click", closeContextMenu);
   }, [contextMenu]);
 
-  useEffect(() => {
-    function handleSaveShortcut(event: KeyboardEvent) {
-      if (event.key.toLowerCase() !== "s" || (!event.metaKey && !event.ctrlKey)) {
-        return;
-      }
-
-      event.preventDefault();
-      void saveCurrentProject();
-    }
-
-    window.addEventListener("keydown", handleSaveShortcut);
-    return () => window.removeEventListener("keydown", handleSaveShortcut);
-  }, [activeFileName, board.id, files, project, projectPath]);
-
-  async function saveCurrentProject() {
-    if (isSavingRef.current) {
-      pendingSaveRef.current = true;
-      setSaveStatus("saving");
-      return;
-    }
-
-    isSavingRef.current = true;
-
-    try {
-      do {
-        pendingSaveRef.current = false;
-        const snapshot = latestSaveStateRef.current;
-        if (!snapshot.project) return;
-
-        setSaveStatus("saving");
-        setSaveErrorMessage("");
-
-        const now = new Date().toISOString();
-        const nextProject = {
-          ...snapshot.project,
-          boardId: snapshot.boardId,
-          files: snapshot.files,
-          activeFileName: snapshot.activeFileName,
-          topLevelFileName: snapshot.topLevelFileName,
-          updatedAt: now,
-        };
-
-        saveProject(nextProject);
-
-        if (snapshot.projectPath) {
-          await Promise.all(
-            snapshot.files
-              .filter((file) => file.path && !file.isBinary)
-              .map((file) => writeProjectFile(file.path as string, file.content))
-          );
-        }
-        setLastSavedAt(now);
-      } while (pendingSaveRef.current);
-
-      setDirtyFileNames([]);
-      setSaveStatus("saved");
-    } catch (error) {
-      setSaveStatus("error");
-      setSaveErrorMessage(getErrorMessage(error));
-    } finally {
-      isSavingRef.current = false;
-    }
-  }
-
-  useEffect(() => {
-    if (!project || !settings.autoSave || saveStatus !== "unsaved") return;
-
-    const delay =
-      settings.autoSaveInterval === "5s"
-        ? 5000
-        : settings.autoSaveInterval === "30s"
-          ? 30000
-          : 0;
-
-    if (delay === 0) {
-      void saveCurrentProject();
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      void saveCurrentProject();
-    }, delay);
-    return () => window.clearTimeout(timeout);
-  }, [activeFileName, board.id, files, project, projectPath, saveStatus, settings.autoSave, settings.autoSaveInterval]);
-
-  function markWorkspaceUnsaved(fileName?: string | null) {
-    if (isSavingRef.current) {
-      pendingSaveRef.current = true;
-    }
-
-    setSaveStatus("unsaved");
-    setSaveErrorMessage("");
-
-    if (!fileName) return;
-
-    setDirtyFileNames((current) =>
-      current.includes(fileName) ? current : [...current, fileName]
-    );
-  }
-
+  // --- Sidebar resize ---
   function startSidebarResize(event: React.MouseEvent<HTMLDivElement>) {
     event.preventDefault();
 
@@ -251,271 +255,6 @@ export default function Dashboard({
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-  }
-
-  function getUntitledFileName() {
-  let index = 1;
-  const extension =
-    project?.language === "SystemVerilog"
-      ? "sv"
-      : project?.language === "VHDL"
-        ? "vhd"
-        : "v";
-
-  while (files.some((file) => file.name === `untitled-${index}.${extension}`)) {
-    index++;
-  }
-
-  return `untitled-${index}.${extension}`;
-}
-
-function createNewFile(fileName = getUntitledFileName(), content = "") {
-  if (files.some((file) => file.name === fileName)) return;
-
-  setFiles((currentFiles) => [
-    ...currentFiles,
-    {
-      name: fileName,
-      content,
-      path: projectPath ? buildProjectFilePath(projectPath, fileName) : undefined,
-    },
-  ]);
-  setOpenFileNames((current) => [...new Set([...current, fileName])]);
-  setActiveFileName(fileName);
-  setActiveSection("editor");
-  markWorkspaceUnsaved(fileName);
-}
-
-async function renameFile(oldName: string, newName: string) {
-  if (!newName || oldName === newName) return;
-
-  if (files.some((file) => file.name === newName)) {
-    alert("A file with that name already exists.");
-    return;
-  }
-
-  const targetFile = files.find((file) => file.name === oldName);
-  const nextPath =
-    targetFile?.path && projectPath
-      ? buildProjectFilePath(projectPath, newName)
-      : targetFile?.path;
-
-  if (targetFile?.path && nextPath && targetFile.path !== nextPath) {
-    try {
-      await renameProjectFileOnDisk(targetFile.path, nextPath);
-    } catch (error) {
-      setSaveStatus("error");
-      setSaveErrorMessage(getErrorMessage(error));
-      return;
-    }
-  }
-
-  setFiles((currentFiles) =>
-    currentFiles.map((file) =>
-      file.name === oldName
-        ? { ...file, name: newName, path: nextPath }
-        : file
-    )
-  );
-
-  if (activeFileName === oldName) {
-    setActiveFileName(newName);
-  }
-
-  setOpenFileNames((current) =>
-    current.map((fileName) => (fileName === oldName ? newName : fileName))
-  );
-  setDirtyFileNames((current) =>
-    current.map((fileName) => (fileName === oldName ? newName : fileName))
-  );
-
-  if (topLevelFileName === oldName) {
-    makeTopLevelFile(newName);
-  }
-  markWorkspaceUnsaved(newName);
-}
-
-function updateActiveFile(content: string) {
-  if (!activeFileName) {
-    const fileName = getUntitledFileName();
-
-    setFiles([
-      {
-        name: fileName,
-        content,
-        path: projectPath ? buildProjectFilePath(projectPath, fileName) : undefined,
-      },
-    ]);
-    setActiveFileName(fileName);
-    setActiveSection("editor");
-    markWorkspaceUnsaved(fileName);
-    return;
-  }
-
-  setFiles((currentFiles) =>
-    currentFiles.map((file) =>
-      file.name === activeFileName ? { ...file, content } : file
-    )
-  );
-  markWorkspaceUnsaved(activeFileName);
-}
-
-function openFile(fileName: string) {
-  setOpenFileNames((current) => [...new Set([...current, fileName])]);
-  setActiveFileName(fileName);
-  setActiveSection("editor");
-  markWorkspaceUnsaved();
-}
-
-function closeOpenFile(fileName: string) {
-  setOpenFileNames((current) => {
-    const nextOpenFiles = current.filter((name) => name !== fileName);
-
-    if (activeFileName === fileName) {
-      setActiveFileName(nextOpenFiles[0] ?? null);
-    }
-
-    return nextOpenFiles;
-  });
-  markWorkspaceUnsaved();
-}
-
-async function deleteFileFromProject(fileName: string) {
-  const targetFile = files.find((file) => file.name === fileName);
-
-  if (targetFile?.path) {
-    try {
-      await deleteProjectFileOnDisk(targetFile.path);
-    } catch (error) {
-      setSaveStatus("error");
-      setSaveErrorMessage(getErrorMessage(error));
-      return;
-    }
-  }
-
-  const remainingFiles = files.filter((file) => file.name !== fileName);
-  setFiles(remainingFiles);
-  setOpenFileNames((current) => current.filter((name) => name !== fileName));
-
-  if (activeFileName === fileName) {
-    const nextActiveFile = remainingFiles.find((file) =>
-      openFileNames.filter((name) => name !== fileName).includes(file.name)
-    );
-    setActiveFileName(nextActiveFile?.name ?? null);
-  }
-
-  if (topLevelFileName === fileName) {
-    const nextTopLevel = remainingFiles.find((file) => isHdlFile(file.name));
-    makeTopLevelFile(nextTopLevel?.name ?? null);
-  }
-  markWorkspaceUnsaved();
-}
-
-function reorderFiles(sourceFileName: string, targetFileName: string) {
-  if (sourceFileName === targetFileName) return;
-
-  setFiles((currentFiles) => {
-    const sourceIndex = currentFiles.findIndex((file) => file.name === sourceFileName);
-    const targetIndex = currentFiles.findIndex((file) => file.name === targetFileName);
-
-    if (sourceIndex === -1 || targetIndex === -1) return currentFiles;
-
-    const nextFiles = [...currentFiles];
-    const [movedFile] = nextFiles.splice(sourceIndex, 1);
-    nextFiles.splice(targetIndex, 0, movedFile);
-    return nextFiles;
-  });
-  markWorkspaceUnsaved();
-}
-
-function makeTopLevelFile(fileName: string | null) {
-  setTopLevelFileName(fileName);
-  if (!fileName) return;
-
-  setFiles((currentFiles) => moveFileToTop(currentFiles, fileName));
-  markWorkspaceUnsaved();
-}
-
-async function updateConstraintFile(fileName: string, content: string) {
-  const existing = files.find((file) => file.name === fileName);
-  const nextPath =
-    existing?.path ??
-    (projectPath ? `${projectPath}/constraints/${fileName}` : undefined);
-
-  if (nextPath) {
-    try {
-      await writeProjectFile(nextPath, content);
-    } catch (error) {
-      setSaveStatus("error");
-      setSaveErrorMessage(getErrorMessage(error));
-      return;
-    }
-  }
-
-  setFiles((currentFiles) => {
-    const currentFile = currentFiles.find((file) => file.name === fileName);
-
-    if (currentFile) {
-      return currentFiles.map((file) =>
-        file.name === fileName
-          ? { ...file, content, path: file.path ?? nextPath }
-          : file
-      );
-    }
-
-    return [
-      ...currentFiles,
-      {
-        name: fileName,
-        content,
-        path: nextPath,
-      },
-    ];
-  });
-  markWorkspaceUnsaved(fileName);
-}
-
-  function importFiles(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFiles = Array.from(event.target.files ?? []);
-
-    selectedFiles.forEach((file) => {
-      const allowed =
-        file.name.endsWith(".v") ||
-        file.name.endsWith(".sv") ||
-        file.name.endsWith(".vhd") ||
-        file.name.endsWith(".vhdl") ||
-        file.name.endsWith(".vcd");
-
-      if (!allowed) return;
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const content = String(reader.result ?? "");
-        const nextPath = projectPath
-          ? buildProjectFilePath(projectPath, file.name)
-          : undefined;
-
-        setFiles((currentFiles) => {
-          const alreadyExists = currentFiles.some((f) => f.name === file.name);
-
-          if (alreadyExists) {
-            return currentFiles.map((f) =>
-              f.name === file.name ? { ...f, content, path: f.path ?? nextPath } : f
-            );
-          }
-
-          return [...currentFiles, { name: file.name, content, path: nextPath }];
-        });
-
-        openFile(file.name);
-        markWorkspaceUnsaved(file.name);
-      };
-
-      reader.readAsText(file);
-    });
-
-    event.target.value = "";
   }
 
   return (
@@ -675,7 +414,7 @@ async function updateConstraintFile(fileName: string, content: string) {
                 type="button"
                 title="New file"
                 aria-label="New file"
-                onClick={() => createNewFile()}
+                onClick={() => handleCreateNewFile()}
                 style={{
                   height: "28px",
                   width: "28px",
@@ -721,7 +460,7 @@ async function updateConstraintFile(fileName: string, content: string) {
                   type="file"
                   multiple
                   accept=".v,.sv,.vhd,.vhdl,.vcd"
-                  onChange={importFiles}
+                  onChange={handleImportFiles}
                   style={{ display: "none" }}
                 />
               </label>
@@ -736,25 +475,20 @@ async function updateConstraintFile(fileName: string, content: string) {
                 }}
             >
           <ProjectTree
-            files={files}
+            files={fileMgmt.files}
             projectPath={projectPath}
-            activeFileName={activeFileName}
-            openFileNames={openFileNames}
-            dirtyFileNames={dirtyFileNames}
-            topLevelFileName={topLevelFileName}
-            draggedFileName={draggedFileName}
-            dragOverFileName={dragOverFileName}
-            onOpenFile={openFile}
-            onCloseFile={closeOpenFile}
-            onDragStartFile={setDraggedFileName}
-            onDragOverFile={setDragOverFileName}
-            onDropFile={(sourceFileName, targetFileName) => {
-              if (!sourceFileName) return;
-              reorderFiles(sourceFileName, targetFileName);
-              setDraggedFileName(null);
-              setDragOverFileName(null);
-            }}
-            onSetTopLevelFile={makeTopLevelFile}
+            activeFileName={activeTabs.activeFileName}
+            openFileNames={activeTabs.openFileNames}
+            dirtyFileNames={activeTabs.dirtyFileNames}
+            topLevelFileName={activeTabs.topLevelFileName}
+            draggedFileName={fileMgmt.draggedFileName}
+            dragOverFileName={fileMgmt.dragOverFileName}
+            onOpenFile={handleOpenFile}
+            onCloseFile={handleCloseOpenFile}
+            onDragStartFile={fileMgmt.setDraggedFileName}
+            onDragOverFile={fileMgmt.setDragOverFileName}
+            onDropFile={handleSidebarDrop}
+            onSetTopLevelFile={handleMakeTopLevelFile}
             onOpenContextMenu={(fileName, x, y) =>
               setContextMenu({ fileName, x, y })
             }
@@ -776,26 +510,26 @@ async function updateConstraintFile(fileName: string, content: string) {
           <div
             style={{
               minWidth: 0,
-              color: saveStatus === "error" ? "#dc2626" : "#94a3b8",
+              color: saveProject.saveStatus === "error" ? "#dc2626" : "#94a3b8",
               fontSize: "11px",
               fontWeight: 750,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
-            title={saveErrorMessage || getSaveStatusLabel(saveStatus, lastSavedAt)}
+            title={saveProject.saveErrorMessage || getSaveStatusLabel(saveProject.saveStatus, saveProject.lastSavedAt)}
           >
-            {getSaveStatusLabel(saveStatus, lastSavedAt)}
+            {getSaveStatusLabel(saveProject.saveStatus, saveProject.lastSavedAt)}
           </div>
 
           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-          {showManualSaveButton ? (
+          {saveProject.showManualSaveButton ? (
             <button
               type="button"
               aria-label="Save now"
               title="Save now"
-              disabled={saveStatus === "saving" || saveStatus === "saved"}
-              onClick={() => void saveCurrentProject()}
+              disabled={saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved"}
+              onClick={() => void saveProject.saveCurrentProject()}
               style={{
                 border: "1px solid #e2e8f0",
                 background: "#ffffff",
@@ -804,14 +538,14 @@ async function updateConstraintFile(fileName: string, content: string) {
                 width: "30px",
                 height: "30px",
                 cursor:
-                  saveStatus === "saving" || saveStatus === "saved"
+                  saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved"
                     ? "not-allowed"
                     : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 0,
-                opacity: saveStatus === "saving" || saveStatus === "saved" ? 0.56 : 1,
+                opacity: saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved" ? 0.56 : 1,
               }}
             >
               <span style={{ fontSize: "12px", fontWeight: 900 }}>S</span>
@@ -907,15 +641,15 @@ async function updateConstraintFile(fileName: string, content: string) {
 
         {activeSection === "editor" && (
         <EditorSection
-            openFiles={files.filter((file) => openFileNames.includes(file.name))}
-            activeFileName={activeFileName}
-            setActiveFileName={openFile}
-            activeFile={activeFile}
-            dirtyFileNames={dirtyFileNames}
-            updateActiveFile={updateActiveFile}
-            createNewFile={() => createNewFile()}
-            closeOpenFile={closeOpenFile}
-            renameFile={renameFile}
+            openFiles={fileMgmt.files.filter((file) => activeTabs.openFileNames.includes(file.name))}
+            activeFileName={activeTabs.activeFileName}
+            setActiveFileName={handleOpenFile}
+            activeFile={activeTabs.activeFile}
+            dirtyFileNames={activeTabs.dirtyFileNames}
+            updateActiveFile={handleUpdateActiveFile}
+            createNewFile={() => handleCreateNewFile()}
+            closeOpenFile={handleCloseOpenFile}
+            renameFile={handleRenameFile}
             settings={settings}
           />
         )}
@@ -924,39 +658,39 @@ async function updateConstraintFile(fileName: string, content: string) {
         {activeSection === "health" && (
           <HealthSection
             board={board}
-            files={files}
-            topLevelFileName={topLevelFileName}
+            files={fileMgmt.files}
+            topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
         {activeSection === "synthesis" && (
           <SynthesisSection
             board={board}
-            files={files}
+            files={fileMgmt.files}
             projectName={projectName}
-            topLevelFileName={topLevelFileName}
-            onTopLevelFileNameChange={makeTopLevelFile}
+            topLevelFileName={activeTabs.topLevelFileName}
+            onTopLevelFileNameChange={handleMakeTopLevelFile}
           />
         )}
         {activeSection === "testbench" && (
           <TestbenchSection
             board={board}
-            files={files}
+            files={fileMgmt.files}
             projectName={projectName}
             projectPath={projectPath}
-            topLevelFileName={topLevelFileName}
-            onCreateTestbench={(fileName, content) => createNewFile(fileName, content)}
-            onOpenFile={openFile}
+            topLevelFileName={activeTabs.topLevelFileName}
+            onCreateTestbench={(fileName, content) => handleCreateNewFile(fileName, content)}
+            onOpenFile={handleOpenFile}
             onAddArtifact={async ({ fileName, content, path }) => {
               const artifactPath =
                 path ?? (projectPath ? `${projectPath}/sim/${fileName}` : undefined);
 
-              setFiles((currentFiles) => {
+              fileMgmt.setFiles((currentFiles) => {
                 const existing = currentFiles.find((file) => file.name === fileName);
                 if (existing) {
                   return currentFiles.map((file) =>
                     file.name === fileName
                       ? { ...file, content, path: file.path ?? artifactPath }
-                      : file
+                      : file,
                   );
                 }
 
@@ -972,25 +706,25 @@ async function updateConstraintFile(fileName: string, content: string) {
         {activeSection === "pin-mapping" && (
           <PinMappingSection
             board={board}
-            files={files}
+            files={fileMgmt.files}
             defaultMode={settings.defaultPinMappingMode}
-            topLevelFileName={topLevelFileName}
+            topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
         {activeSection === "bitstream" && (
           <BitstreamSection
             board={board}
-            files={files}
+            files={fileMgmt.files}
             projectName={projectName}
             projectPath={projectPath}
-            topLevelFileName={topLevelFileName}
-            onUpdateConstraints={updateConstraintFile}
+            topLevelFileName={activeTabs.topLevelFileName}
+            onUpdateConstraints={handleUpdateConstraintFile}
             onAddArtifact={async ({ fileName, content, isBinary }) => {
               const artifactPath = projectPath
                 ? `${projectPath}/build/${fileName}`
                 : undefined;
 
-              setFiles((currentFiles) => {
+              fileMgmt.setFiles((currentFiles) => {
                 const existing = currentFiles.find((file) => file.name === fileName);
                 if (existing) {
                   return currentFiles.map((file) =>
@@ -1001,7 +735,7 @@ async function updateConstraintFile(fileName: string, content: string) {
                           path: file.path ?? artifactPath,
                           isBinary,
                         }
-                      : file
+                      : file,
                   );
                 }
 
@@ -1045,7 +779,7 @@ async function updateConstraintFile(fileName: string, content: string) {
             disabled={!isHdlFile(contextMenu.fileName)}
             onClick={() => {
               if (!isHdlFile(contextMenu.fileName)) return;
-              makeTopLevelFile(contextMenu.fileName);
+              handleMakeTopLevelFile(contextMenu.fileName);
               setContextMenu(null);
             }}
             style={{
@@ -1132,7 +866,7 @@ async function updateConstraintFile(fileName: string, content: string) {
                 onClick={async () => {
                   const fileName = deletingFileName;
                   setDeletingFileName(null);
-                  await deleteFileFromProject(fileName);
+                  await handleDeleteFileFromProject(fileName);
                 }}
                 style={{
                   border: "1px solid #fecaca",
@@ -1447,7 +1181,7 @@ type TreeNode =
 function buildProjectTree(
   files: ProjectFile[],
   projectPath: string | undefined,
-  topLevelFileName: string | null
+  topLevelFileName: string | null,
 ) {
   const root: TreeNode[] = [];
 
@@ -1457,7 +1191,7 @@ function buildProjectTree(
     let currentLevel = root;
     let currentPath = "";
 
-    parts.forEach((part, index) => {
+    parts.forEach((part: string, index: number) => {
       currentPath = currentPath ? `${currentPath}/${part}` : part;
       const isLeaf = index === parts.length - 1;
 
@@ -1474,7 +1208,7 @@ function buildProjectTree(
 
       let directory = currentLevel.find(
         (node): node is Extract<TreeNode, { type: "directory" }> =>
-          node.type === "directory" && node.name === part
+          node.type === "directory" && node.name === part,
       );
 
       if (!directory) {
@@ -1512,7 +1246,7 @@ function sortTreeNodes(nodes: TreeNode[]): TreeNode[] {
     .map((node) =>
       node.type === "directory"
         ? { ...node, children: sortTreeNodes(node.children) }
-        : node
+        : node,
     );
 }
 
@@ -1543,42 +1277,6 @@ function getTreeNodePriority(node: TreeNode) {
   return 0;
 }
 
-function moveFileToTop(files: ProjectFile[], fileName: string) {
-  const fileIndex = files.findIndex((file) => file.name === fileName);
-  if (fileIndex <= 0) return files;
-
-  const nextFiles = [...files];
-  const [topLevelFile] = nextFiles.splice(fileIndex, 1);
-  return [topLevelFile, ...nextFiles];
-}
-
-function getSaveStatusLabel(status: SaveStatus, lastSavedAt: string) {
-  if (status === "saving") return "Saving...";
-  if (status === "unsaved") return "Unsaved changes";
-  if (status === "error") return "Save failed";
-  return lastSavedAt ? "Saved" : "Not saved";
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-
-  if (error && typeof error === "object" && "message" in error) {
-    return String((error as { message: unknown }).message);
-  }
-
-  return "The project could not be saved.";
-}
-
-function isHdlFile(fileName: string) {
-  return (
-    fileName.endsWith(".v") ||
-    fileName.endsWith(".sv") ||
-    fileName.endsWith(".vhd") ||
-    fileName.endsWith(".vhdl")
-  );
-}
-
 function SettingsModal({
   settings,
   onChange,
@@ -1590,7 +1288,7 @@ function SettingsModal({
 }) {
   function updateSetting<Key extends keyof AppSettings>(
     key: Key,
-    value: AppSettings[Key]
+    value: AppSettings[Key],
   ) {
     onChange({ ...settings, [key]: value });
   }
@@ -1608,7 +1306,7 @@ function SettingsModal({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "aero", "dark", "black-ice"]} />
+          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
           <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
           <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
           <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
@@ -1690,7 +1388,6 @@ function formatSettingOption(option: string) {
   if (option === "light") return "Light";
   if (option === "ice") return "Ice";
   if (option === "solar") return "Solar";
-  if (option === "aero") return "Aero";
   if (option === "dark") return "Dark";
   if (option === "black-ice") return "Black Ice";
   if (option === "immediate") return "Immediate";
