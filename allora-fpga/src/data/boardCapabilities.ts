@@ -22,6 +22,7 @@ export function getBoardCapabilities(board: BoardDefinition): BoardCapabilities 
             ? "Bitstreams are generated with local Yosys, NextPNR, and board packer commands."
             : "This Yosys board family does not have a packer command wired up yet.",
       },
+      programming: getProgrammingCapability(board),
     };
   }
 
@@ -45,6 +46,7 @@ export function getBoardCapabilities(board: BoardDefinition): BoardCapabilities 
         detail:
           "Bitstream generation for this board needs a Vivado batch runner and a local Vivado install.",
       },
+      programming: getProgrammingCapability(board),
     };
   }
 
@@ -65,5 +67,31 @@ export function getBoardCapabilities(board: BoardDefinition): BoardCapabilities 
       label: "Not wired",
       detail: "This toolchain does not have an app bitstream runner yet.",
     },
+    programming: getProgrammingCapability(board),
+  };
+}
+
+function getProgrammingCapability(board: BoardDefinition) {
+  if (board.programmer) {
+    return {
+      supported: true,
+      label: "Supported",
+      detail: `Program this board using ${board.programmer.description} (${board.programmer.command}).`,
+    };
+  }
+
+  if (board.toolchain.program) {
+    return {
+      supported: true,
+      label: "Supported",
+      detail: `Program this board using ${board.toolchain.program}.`,
+    };
+  }
+
+  return {
+    supported: false,
+    label: "Not configured",
+    detail:
+      "No programmer is configured for this board. Add programmer metadata to enable direct FPGA programming.",
   };
 }

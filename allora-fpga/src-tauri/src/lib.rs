@@ -334,6 +334,340 @@ struct GenerateBitstreamResponse {
   bytes: Vec<u8>,
 }
 
+// ── FPGA Programming ─────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectProgrammerRequest {
+  programmer_command: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectProgrammerResponse {
+  installed: bool,
+  version_output: Option<String>,
+  tool_path: Option<String>,
+  message: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectConnectedBoardRequest {
+  programmer_command: String,
+  usb_vendor_id: Option<u32>,
+  usb_product_id: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectConnectedBoardResponse {
+  connected: bool,
+  details: String,
+  usb_devices: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProgramFpgaRequest {
+  programmer_command: String,
+  bitstream_path: String,
+  board_name: String,
+  extra_args: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProgramFpgaResponse {
+  success: bool,
+  logs: Vec<String>,
+  message: String,
+}
+
+#[tauri::command]
+fn detect_programmer(
+  request: DetectProgrammerRequest,
+) -> Result<DetectProgrammerResponse, ErrorPayload> {
+  let command = request.programmer_command.trim();
+  if command.is_empty() {
+    return Err(error("No programmer command specified."));
+  }
+
+  let tool_path = resolve_tool_path(command);
+  let mut logs = vec![
+    format!("[programmer] Detecting: {command}"),
+    format!("[programmer] Path: {}", tool_path.display()),
+  ];
+
+  // Try running the command with --help or -h to detect if it exists
+  let output = Command::new(&tool_path)
+    .arg("--help")
+    .output()
+    .or_else(|_| {
+      Command::new(&tool_path)
+        .arg("-h")
+        .output()
+    })
+    .or_else(|_| {
+      Command::new(&tool_path)
+        .arg("--version")
+        .output()
+    });
+
+  match output {
+    Ok(result) => {
+      let stdout = String::from_utf8_lossy(&result.stdout).to_string();
+      let stderr = String::from_utf8_lossy(&result.stderr).to_string();
+      let combined = format!("{stdout}\n{stderr}");
+      let version_line = combined
+        .lines()
+        .find(|line| line.to_lowercase().contains("version") || line.to_lowercase().contains(command))
+        .map(ToOwned::to_owned);
+
+      if result.status.success() || !stdout.trim().is_empty() {
+        logs.push("[programmer] Status: found".to_string());
+        Ok(DetectProgrammerResponse {
+          installed: true,
+          version_output: version_line,
+          tool_path: Some(tool_path.to_string_lossy().to_string()),
+          message: format!("{command} is installed and available."),
+        })
+      } else {
+        logs.push("[programmer] Status: not found".to_string());
+        Ok(DetectProgrammerResponse {
+          installed: false,
+          version_output: None,
+          tool_path: None,
+          message: format!("{command} was not found. Install it to enable FPGA programming."),
+        })
+      }
+    }
+    Err(err) => {
+      if err.kind() == io::ErrorKind::NotFound {
+        Ok(DetectProgrammerResponse {
+          installed: false,
+          version_output: None,
+          tool_path: None,
+          message: format!(
+            "{command} is not installed or is not available on PATH. Install it to enable FPGA programming."
+          ),
+        })
+      } else {
+        Err(error(&format!("Unable to probe for {command}: {err}")))
+      }
+    }
+  }
+}
+
+#[tauri::command]
+fn detect_connected_board(
+  request: DetectConnectedBoardRequest,
+) -> Result<DetectConnectedBoardResponse, ErrorPayload> {
+  let command = request.programmer_command.trim();
+  let mut usb_devices = Vec::new();
+
+  // Try to detect connected devices using system tools
+  #[cfg(target_os = "macos")]
+  {
+    let output = Command::new("system_profiler")
+      .arg("SPUSBDataType")
+      .output()
+      .or_else(|_| Command::new("ioreg").arg("-p").arg("IOUSB").output());
+
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      let relevant_lines: Vec<String> = text
+        .lines()
+        .filter(|line| {
+          let lower = line.to_lowercase();
+          lower.contains("lattice") || lower.contains("ftdi")
+            || lower.contains("digilent") || lower.contains("sipeed")
+            || lower.contains("tinyfpga") || lower.contains("fomu")
+            || lower.contains("1bit") || lower.contains("1209")
+            || lower.contains("0403") || lower.contains("6010")
+        })
+        .map(ToOwned::to_owned)
+        .collect();
+      usb_devices.extend(relevant_lines);
+    }
+  }
+
+  #[cfg(target_os = "linux")]
+  {
+    let output = Command::new("lsusb").output();
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      for line in text.lines() {
+        let lower = line.to_lowercase();
+        if lower.contains("lattice") || lower.contains("ftdi")
+          || lower.contains("digilent") || lower.contains("sipeed")
+          || lower.contains("tinyfpga") || lower.contains("fomu")
+        {
+          usb_devices.push(line.to_string());
+        }
+      }
+    }
+  }
+
+  #[cfg(target_os = "windows")]
+  {
+    let output = Command::new("wmic")
+      .args(["path", "Win32_USBControllerDevice", "get", "Dependent"])
+      .output();
+    if let Ok(output) = output {
+      let text = String::from_utf8_lossy(&output.stdout).to_string();
+      for line in text.lines() {
+        let lower = line.to_lowercase();
+        if lower.contains("lattice") || lower.contains("ftdi")
+          || lower.contains("digilent") || lower.contains("sipeed")
+        {
+          usb_devices.push(line.to_string());
+        }
+      }
+    }
+  }
+
+  let connected = !usb_devices.is_empty();
+  let details = if connected {
+    format!(
+      "Found {} potentially compatible USB device(s).",
+      usb_devices.len()
+    )
+  } else {
+    "No compatible USB devices detected. Connect a board and try again.".to_string()
+  };
+
+  Ok(DetectConnectedBoardResponse {
+    connected,
+    details,
+    usb_devices,
+  })
+}
+
+#[tauri::command]
+fn program_fpga(
+  request: ProgramFpgaRequest,
+) -> Result<ProgramFpgaResponse, ErrorPayload> {
+  let command = request.programmer_command.trim();
+  if command.is_empty() {
+    return Err(error("No programmer command specified."));
+  }
+
+  let bitstream_path = PathBuf::from(&request.bitstream_path);
+  if !bitstream_path.exists() {
+    return Err(error(&format!(
+      "Bitstream file not found: {}",
+      bitstream_path.display()
+    )));
+  }
+
+  let tool_path = resolve_tool_path(command);
+  let mut args = Vec::new();
+
+  // Build command arguments based on the programmer type
+  let cmd_lower = command.to_lowercase();
+  if cmd_lower.contains("iceprog") || cmd_lower.contains("icesprog") {
+    args.push(bitstream_path.display().to_string());
+  } else if cmd_lower.contains("ecpprog") {
+    args.push(bitstream_path.display().to_string());
+  } else if cmd_lower.contains("openfpgaloader") {
+    args.push(bitstream_path.display().to_string());
+  } else if cmd_lower.contains("fujprog") {
+    args.push(bitstream_path.display().to_string());
+  } else if cmd_lower.contains("dfu-util") {
+    args.push("-D".to_string());
+    args.push(bitstream_path.display().to_string());
+  } else if cmd_lower.contains("vivado") {
+    // Vivado needs a TCL script
+    return Err(error(
+      "Vivado hardware programming requires a TCL script. Use Vivado Hardware Manager directly.",
+    ));
+  } else if cmd_lower.contains("quartus") || cmd_lower.contains("usb-blaster") {
+    args.push("--mode".to_string());
+    args.push("JTAG".to_string());
+    args.push("-o".to_string());
+    args.push(format!("P;{}", bitstream_path.display()));
+  } else {
+    // Generic: pass bitstream as argument
+    args.push(bitstream_path.display().to_string());
+  }
+
+  // Add extra arguments if provided
+  if let Some(extra) = &request.extra_args {
+    args.extend(extra.iter().cloned());
+  }
+
+  let mut logs = vec![
+    format!("[programming] Board: {}", request.board_name),
+    format!("[programming] Programmer: {command}"),
+    format!("[programming] Bitstream: {}", bitstream_path.display()),
+    format!("[programming] Command: {command} {}", args.join(" ")),
+  ];
+
+  let output = Command::new(&tool_path)
+    .args(&args)
+    .output()
+    .map_err(|err| {
+      if err.kind() == io::ErrorKind::NotFound {
+        error(&format!(
+          "{command} is not installed or is not available on PATH. Install it to enable FPGA programming."
+        ))
+      } else {
+        error(&format!("Unable to launch {command}: {err}"))
+      }
+    })?;
+
+  let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+  let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+  if !stdout.trim().is_empty() {
+    logs.push(String::new());
+    logs.push("[stdout]".to_string());
+    logs.extend(stdout.lines().map(ToOwned::to_owned));
+  }
+
+  if !stderr.trim().is_empty() {
+    logs.push(String::new());
+    logs.push("[stderr]".to_string());
+    logs.extend(stderr.lines().map(ToOwned::to_owned));
+  }
+
+  if output.status.success() {
+    logs.push(String::new());
+    logs.push("[programming] ✓ Programming completed successfully.".to_string());
+    Ok(ProgramFpgaResponse {
+      success: true,
+      logs,
+      message: format!("Successfully programmed {} with {}.", request.board_name, request.bitstream_path),
+    })
+  } else {
+    let error_details = format_command_error(command, &output.stdout, &output.stderr);
+    logs.push(String::new());
+    logs.push(format!("[programming] ✗ {error_details}"));
+    Ok(ProgramFpgaResponse {
+      success: false,
+      logs,
+      message: error_details,
+    })
+  }
+}
+
+fn resolve_tool_path(command: &str) -> PathBuf {
+  let path = PathBuf::from(command);
+  if path.components().count() > 1 {
+    return path;
+  }
+
+  for tool_dir in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] {
+    let candidate = Path::new(tool_dir).join(command);
+    if candidate.exists() {
+      return candidate;
+    }
+  }
+
+  PathBuf::from(command)
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SimulateTestbenchRequest {
@@ -1508,7 +1842,10 @@ pub fn run() {
       delete_project_file,
       generate_synthesis_diagram,
       generate_bitstream,
-      simulate_testbench
+      simulate_testbench,
+      detect_programmer,
+      detect_connected_board,
+      program_fpga
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -144,8 +144,8 @@ function getBoardSupportGroup(board: BoardCardItem) {
 
 function getBoardGroupDetail(group: string) {
   return group === "Not Fully Supported"
-    ? "Synth + bitstream generation not supported yet"
-    : "Synth + bitstream supported with local tools";
+    ? "Synth, bitstream, and Programming not supported yet"
+    : "Synth, Bitstream, and Programming supported with local tools";
 }
 
 export default function BoardSelect({

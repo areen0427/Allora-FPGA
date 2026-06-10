@@ -54,6 +54,26 @@ export type BoardToolchain = {
   program?: string;
 };
 
+export type ProgrammerBackend =
+  | "iceprog"
+  | "ecpprog"
+  | "openFPGALoader"
+  | "ujprog"
+  | "vivado_hw_manager"
+  | "quartus_pgm"
+  | "gowin_programmer"
+  | "ftdi_jtag";
+
+export type BoardProgrammer = {
+  backend: ProgrammerBackend;
+  command: string;
+  description: string;
+  defaultArgs?: string[];
+  usbVendorId?: number;
+  usbProductId?: number;
+  bitstreamExtensions: string[];
+};
+
 export type BoardCapability = {
   supported: boolean;
   label: string;
@@ -65,6 +85,7 @@ export type BoardCapabilities = {
   pinMapping: BoardCapability;
   synthesisDiagram: BoardCapability;
   bitstream: BoardCapability;
+  programming: BoardCapability;
 };
 
 export type BoardDefinition = {
@@ -78,6 +99,7 @@ export type BoardDefinition = {
   constraintsFile: ConstraintFile;
   synthesisFlow: SynthesisFlow;
   toolchain: BoardToolchain;
+  programmer?: BoardProgrammer;
   clocks: BoardClock[];
   pins: BoardPin[];
   leds: BoardPin[];

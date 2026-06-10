@@ -33,6 +33,8 @@ export type {
   BoardCapability,
   BoardCapabilities,
   BoardDefinition,
+  BoardProgrammer,
+  ProgrammerBackend,
 } from "./boardTypes";
 
 export const BOARDS = [

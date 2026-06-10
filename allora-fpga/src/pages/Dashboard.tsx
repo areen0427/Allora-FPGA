@@ -7,6 +7,7 @@ import SynthesisSection from "./dashboard/SynthesisSection";
 import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
+import ProgrammingSection from "./dashboard/ProgrammingSection";
 import HealthSection from "./dashboard/HealthSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
@@ -19,6 +20,7 @@ import {
   MapPinned,
   Waves,
   SquareTerminal,
+  Cpu,
   Plus,
   Settings,
   Upload,
@@ -372,6 +374,7 @@ export default function Dashboard({
           <SidebarButton label="Pins" icon={<MapPinned size={16} />} active={activeSection === "pin-mapping"} onClick={() => setActiveSection("pin-mapping")} />
           <SidebarButton label="Health" icon={<Activity size={16} />} active={activeSection === "health"} onClick={() => setActiveSection("health")} />
           <SidebarButton label="Bitstream" icon={<SquareTerminal size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
+          <SidebarButton label="Program" icon={<Cpu size={16} />} active={activeSection === "programming"} onClick={() => setActiveSection("programming")} />
         </nav>
 
         <div
@@ -745,6 +748,15 @@ export default function Dashboard({
                 ];
               });
             }}
+          />
+        )}
+        {activeSection === "programming" && (
+          <ProgrammingSection
+            board={board}
+            files={fileMgmt.files}
+            projectName={projectName}
+            projectPath={projectPath}
+            topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
       </main>
