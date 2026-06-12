@@ -1,0 +1,110 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header {
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.7) 100%);
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header .logo {
+    font-size: 2em;
+    text-align: center;
+}
+
+.hero {
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.7) 100%);
+    padding: 40px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hero .hero-content {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.features {
+    display: flex;
+    justify-content: space-around;
+    padding: 40px;
+}
+
+.feature {
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.7) 100%);
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 30%;
+}
+
+.feature .feature-glass {
+    width: 100%;
+    height: 150px;
+    background-color: #0d6efd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.feature-glass::before {
+    content: '';
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.7), 
+                inset 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.footer {
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.7) 100%);
+    padding: 20px;
+    text-align: center;
+}
+
+/* Navigation Bar */
+.navbar {
+    background:
+    linear-gradient(135deg, #2563eb, #0ea5e9);
+    overflow: hidden;
+    border-top: 2px solid #0d6efd; /* Adding top border */
+    box-shadow: none; /* Remove any default shadows */
+    border-radius: 15px; /* Rounded edges */
+    width: calc(100% - 60px); /* Slightly reduced width */
+    margin: 0 auto; /* Center the navbar horizontally */
+}
+
+.navbar a {
+    float: left;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+    font-size: 17px;
+    transition: all 0.3s ease; /* Smooth transition effect */
+}
+
+.navbar a::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: all 0.3s ease; /* Smooth transition effect */
+}
+
+.navbar a:hover::after {
+    opacity: 1;
+    transform: scaleX(1);
+}
