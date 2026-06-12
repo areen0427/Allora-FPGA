@@ -238,7 +238,7 @@ function SimplePinMapper({
       style={{
         marginTop: "24px",
         minHeight: 0,
-        border: "1px solid #e2e8f0",
+        border: "1px solid #cbd5e1",
         borderRadius: "16px",
         overflow: "auto",
       }}
@@ -249,8 +249,8 @@ function SimplePinMapper({
           gridTemplateColumns: "1fr 110px minmax(220px, 1.4fr)",
           gap: "12px",
           padding: "12px 16px",
-          background: "#f8fafc",
-          borderBottom: "1px solid #e2e8f0",
+          background: "#eef2f7",
+          borderBottom: "1px solid #cbd5e1",
           color: "#64748b",
           fontSize: "12px",
           fontWeight: 900,
@@ -279,7 +279,7 @@ function SimplePinMapper({
                 gap: "12px",
                 alignItems: "center",
                 padding: "14px 16px",
-                borderTop: "1px solid #e2e8f0",
+                borderTop: "1px solid #cbd5e1",
               }}
             >
               <div>

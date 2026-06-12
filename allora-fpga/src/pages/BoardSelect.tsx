@@ -3,12 +3,11 @@ import { getBoardCapabilities } from "../data/boardCapabilities";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  ChevronDown,
   Cpu,
   FolderClock,
   FolderOpen,
   Home,
-  Search,
+  Map as MapIcon,
   Settings,
 } from "lucide-react";
 import { formatProjectTime, getSavedProjects, removeSavedProject } from "../data/projects";
@@ -26,7 +25,6 @@ type BoardSelectProps = {
 };
 
 type BoardCardItem = (typeof BOARDS)[number];
-type BoardSupportFilter = "all" | "supported" | "runner-needed";
 
 function getBoardSummary(board: (typeof BOARDS)[number]) {
   if ("variants" in board) {
@@ -95,11 +93,6 @@ function getBoardDefinitions(board: BoardCardItem) {
     : [board];
 }
 
-const boardCount = BOARDS.reduce(
-  (count, board) => count + ("variants" in board ? board.variants.length : 1),
-  0
-);
-
 function getRecentProjectBoardName(boardId: string) {
   return getBoardById(boardId)?.name ?? boardId;
 }
@@ -111,43 +104,6 @@ function isBuildSupported(board: BoardCardItem) {
   });
 }
 
-function getBoardFamilies(board: BoardCardItem) {
-  const families = getBoardDefinitions(board).map((boardDefinition) => boardDefinition.family);
-  return [...new Set(families)];
-}
-
-function getBoardSearchText(board: BoardCardItem) {
-  const variantText = "variants" in board
-    ? board.variants.map((variant) => `${variant.name} ${variant.fpga}`).join(" ")
-    : "";
-  const definitionsText = getBoardDefinitions(board)
-    .map((boardDefinition) =>
-      [
-        boardDefinition.name,
-        boardDefinition.vendor,
-        boardDefinition.family,
-        boardDefinition.device,
-        boardDefinition.package,
-        boardDefinition.fpgaId,
-      ].join(" ")
-    )
-    .join(" ");
-
-  return [board.name, board.vendor, board.device, variantText, definitionsText]
-    .join(" ")
-    .toLowerCase();
-}
-
-function getBoardSupportGroup(board: BoardCardItem) {
-  return isBuildSupported(board) ? "Supported" : "Not Fully Supported";
-}
-
-function getBoardGroupDetail(group: string) {
-  return group === "Not Fully Supported"
-    ? "Synth, bitstream, and Programming not supported yet"
-    : "Synth, Bitstream, and Programming supported with local tools";
-}
-
 export default function BoardSelect({
   settings,
   onSettingsChange,
@@ -155,70 +111,27 @@ export default function BoardSelect({
   onOpenProject,
   onOpenExistingProject,
 }: BoardSelectProps) {
-  const [selectedVariantBoard, setSelectedVariantBoard] =
-    useState<VariantBoard | null>(null);
-  const [showAvailableBoards, setShowAvailableBoards] = useState(false);
+  const [selectedVariantBoard, setSelectedVariantBoard] = useState<VariantBoard | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
-  const [boardSearch, setBoardSearch] = useState("");
-  const [supportFilter, setSupportFilter] = useState<BoardSupportFilter>("all");
-  const [familyFilter, setFamilyFilter] = useState("all");
   const [showAllBoards, setShowAllBoards] = useState(false);
-  const [showFamilyMenu, setShowFamilyMenu] = useState(false);
   const [isOpeningExistingProject, setIsOpeningExistingProject] = useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
+  const [activeView, setActiveView] = useState<"home" | "pin-mapping">("home");
+  const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
   const newProjectRef = useRef<HTMLElement | null>(null);
   const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
-  const familyOptions = [...new Set(BOARDS.flatMap(getBoardFamilies))].sort();
-  const normalizedBoardSearch = boardSearch.trim().toLowerCase();
-  const filteredBoards = BOARDS
-    .filter((board) => {
-      if (normalizedBoardSearch && !getBoardSearchText(board).includes(normalizedBoardSearch)) {
-        return false;
-      }
 
-      if (supportFilter === "supported" && !isBuildSupported(board)) {
-        return false;
-      }
+  const supportedBoards = BOARDS.filter((board) => isBuildSupported(board)).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const unsupportedBoards = BOARDS.filter((board) => !isBuildSupported(board)).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 
-      if (supportFilter === "runner-needed" && isBuildSupported(board)) {
-        return false;
-      }
+  const visibleBoards = showAllBoards ? supportedBoards : supportedBoards.slice(0, 8);
 
-      if (familyFilter !== "all" && !getBoardFamilies(board).includes(familyFilter)) {
-        return false;
-      }
-
-      return true;
-    })
-    .sort((first, second) => {
-      const supportDelta = Number(isBuildSupported(second)) - Number(isBuildSupported(first));
-      return supportDelta || first.name.localeCompare(second.name);
-    });
-  const boardPreviewLimit = 8;
-  const filtersActive =
-    normalizedBoardSearch.length > 0 || supportFilter !== "all" || familyFilter !== "all";
-  const visibleBoards = showAllBoards || filtersActive
-    ? filteredBoards
-    : filteredBoards.slice(0, boardPreviewLimit);
-  const boardGroups = ["Supported", "Not Fully Supported"]
-    .map((group) => ({
-      group,
-      boards: visibleBoards.filter((board) => getBoardSupportGroup(board) === group),
-    }))
-    .filter((group) => group.boards.length > 0);
-  const availableBoardGroups = ["Supported", "Not Fully Supported"]
-    .map((group) => ({
-      group,
-      boards: BOARDS.filter((board) => getBoardSupportGroup(board) === group),
-    }))
-    .filter((group) => group.boards.length > 0);
-  const selectedFamilyLabel = familyFilter === "all" ? "All families" : familyFilter;
-
-  function selectBoard(board: (typeof BOARDS)[number]) {
-    setShowAvailableBoards(false);
-    setShowFamilyMenu(false);
-
+  function handleSelectBoard(board: (typeof BOARDS)[number]) {
     if ("variants" in board) {
       setSelectedVariantBoard(board);
       return;
@@ -250,10 +163,7 @@ export default function BoardSelect({
   return (
     <div
       className="glass-page"
-      onClick={() => {
-        setShowAvailableBoards(false);
-        setShowFamilyMenu(false);
-      }}
+      onClick={() => {}}
       style={{
         minHeight: "100vh",
         background:
@@ -294,11 +204,23 @@ export default function BoardSelect({
         </div>
 
         <RailButton
-          active
+          active={activeView === "home"}
           label="Home"
-          onClick={() => newProjectRef.current?.scrollIntoView({ behavior: "smooth" })}
+          onClick={() => {
+            setActiveView("home");
+            setSelectedPinBoard(null);
+            newProjectRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
         >
           <Home size={20} />
+        </RailButton>
+
+        <RailButton
+          active={activeView === "pin-mapping"}
+          label="Pin Mapping"
+          onClick={() => setActiveView("pin-mapping")}
+        >
+          <MapIcon size={20} />
         </RailButton>
 
         <RailButton
@@ -323,593 +245,425 @@ export default function BoardSelect({
         <div
           style={{
             width: "100%",
-            maxWidth: "1280px",
+            maxWidth: activeView === "home" ? "1280px" : "1680px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "34px",
-            }}
-          >
-            <div>
+          {activeView === "home" ? (
+            <>
               <div
                 style={{
-                  fontSize: "13px",
-                  color: "#64748b",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                Allora FPGA
-              </div>
-
-              <h1
-                style={{
-                  margin: "6px 0 0",
-                  fontSize: "40px",
-                  fontWeight: 850,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1.05,
-                }}
-              >
-                Welcome
-              </h1>
-            </div>
-
-            <div
-              onClick={(event) => event.stopPropagation()}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                position: "relative",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setShowAvailableBoards((visible) => !visible)}
-                style={{
-                  padding: "8px 12px",
-                  border: "1px solid #dbe4f0",
-                  borderRadius: "999px",
-                  background: "#ffffff",
-                  color: "#475569",
-                  fontSize: "13px",
-                  fontWeight: 800,
-                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  gap: "7px",
+                  justifyContent: "space-between",
+                  marginBottom: "34px",
                 }}
               >
-                Boards
-                <span className="board-count-pill">{boardCount}</span>
-                <ChevronDown size={14} />
-              </button>
-
-              {showAvailableBoards && (
-                <div
-                  className="liquid-board-menu board-available-menu"
-                  style={{
-                    position: "absolute",
-                    top: "42px",
-                    right: 0,
-                    width: "min(760px, calc(100vw - 72px))",
-                    maxHeight: "520px",
-                    overflowY: "auto",
-                    zIndex: 10,
-                  }}
-                >
-                  {availableBoardGroups.map(({ group, boards }) => (
-                    <div className="board-available-section" key={group}>
-                      <div className="board-available-heading">
-                        <span>{group}</span>
-                        <span>{boards.length}</span>
-                      </div>
-
-                      <div className="board-available-grid">
-                        {boards.map((board) => (
-                          <button
-                            className="liquid-board-option board-available-option"
-                            key={board.id}
-                            type="button"
-                            onClick={() => selectBoard(board)}
-                          >
-                            <span className="liquid-board-copy">
-                              <span className="liquid-board-name">{board.name}</span>
-                              <span className="liquid-board-meta">
-                                {getBoardSummary(board).slice(0, 2).join(" · ")}
-                              </span>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) 320px",
-              gap: "24px",
-              alignItems: "start",
-            }}
-          >
-          <section ref={newProjectRef}>
-            <div
-              style={{
-                marginBottom: "18px",
-                display: "flex",
-                alignItems: "end",
-                justifyContent: "space-between",
-                gap: "18px",
-              }}
-            >
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: "26px",
-                    fontWeight: 850,
-                    letterSpacing: "-0.03em",
-                  }}
-                >
-                  New Project
-                </h2>
-
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    color: "#64748b",
-                    fontSize: "16px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                Choose an FPGA Board to create a project workspace.
-                </p>
-              </div>
-            </div>
-
-            <div className="board-browser-controls">
-              <label className="board-search-field">
-                <Search size={15} />
-                <input
-                  value={boardSearch}
-                  onChange={(event) => {
-                    setBoardSearch(event.target.value);
-                    setShowAllBoards(false);
-                  }}
-                  placeholder="Search boards"
-                  type="search"
-                />
-              </label>
-
-              <div className="board-filter-group" aria-label="Board support filter">
-                {([
-                  ["all", "All"],
-                  ["supported", "Supported"],
-                  ["runner-needed", "Not Fully Supported"],
-                ] as const).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={supportFilter === value ? "active" : ""}
-                    onClick={() => {
-                      setSupportFilter(value);
-                      setShowAllBoards(false);
+                <div>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "#64748b",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
                     }}
                   >
-                    {label}
-                  </button>
-                ))}
+                    Allora FPGA
+                  </div>
+
+                  <h1
+                    style={{
+                      margin: "6px 0 0",
+                      fontSize: "40px",
+                      fontWeight: 850,
+                      letterSpacing: "-0.04em",
+                      lineHeight: 1.05,
+                    }}
+                  >
+                    Welcome
+                  </h1>
+                </div>
               </div>
 
               <div
-                className="board-family-menu-wrap"
-                onClick={(event) => event.stopPropagation()}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) 320px",
+                  gap: "24px",
+                  alignItems: "start",
+                }}
               >
-                <button
-                  type="button"
-                  className="board-family-trigger"
-                  onClick={() => setShowFamilyMenu((visible) => !visible)}
-                  aria-label="Board family filter"
+              <section ref={newProjectRef}>
+                <div
+                  style={{
+                    marginBottom: "18px",
+                    display: "flex",
+                    alignItems: "end",
+                    justifyContent: "space-between",
+                    gap: "18px",
+                  }}
                 >
-                  {selectedFamilyLabel}
-                  <span className="board-count-pill board-family-filter-pill">
-                    {familyFilter === "all" ? familyOptions.length : 1}
-                  </span>
-                  <ChevronDown size={14} />
-                </button>
+                  <div>
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: "26px",
+                        fontWeight: 850,
+                        letterSpacing: "-0.03em",
+                      }}
+                    >
+                      New Project
+                    </h2>
 
-                {showFamilyMenu ? (
-                  <div className="liquid-board-menu board-family-menu">
-                    {(["all", ...familyOptions] as const).map((family) => (
+                    <p
+                      style={{
+                        margin: "8px 0 0",
+                        color: "#64748b",
+                        fontSize: "16px",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                    Choose an FPGA Board to create a project workspace.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
+                  {visibleBoards.map((board) => {
+                    const BoardIcon = getBoardIcon(board);
+
+                    return (
                       <button
-                        key={family}
-                        type="button"
-                        className={`liquid-board-option board-family-option${
-                          familyFilter === family ? " active" : ""
-                        }`}
-                        onClick={() => {
-                          setFamilyFilter(family);
-                          setShowAllBoards(false);
-                          setShowFamilyMenu(false);
+                        className="board-card"
+                        key={board.id}
+                        onClick={() => handleSelectBoard(board)}
+                        style={{
+                          borderRadius: "14px",
+                          padding: "18px",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          height: "172px",
+                          display: "flex",
+                          flexDirection: "column",
                         }}
                       >
-                        <span className="liquid-board-copy">
-                          <span className="liquid-board-name">
-                            {family === "all" ? "All families" : family}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
+                        <div className="board-icon-badge">
+                          <BoardIcon size={17} strokeWidth={2.2} />
+                        </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              {boardGroups.length === 0 ? (
-                <div className="board-empty-state">
-                  No boards match the current filters.
-                </div>
-              ) : null}
-
-              {boardGroups.map(({ group, boards }) => (
-                <div className="board-group" key={group}>
-                  <div className="board-group-heading">
-                    <span>
-                      {group}
-                      <span className="board-heading-dot">·</span>
-                      <span className="board-group-detail">{getBoardGroupDetail(group)}</span>
-                    </span>
-                    <span>{boards.length}</span>
-                  </div>
-
-                  <div className="board-grid">
-                    {boards.map((board) => {
-                      const BoardIcon = getBoardIcon(board);
-
-                      return (
-                        <button
-                          className="board-card"
-                          key={board.id}
-                          onClick={() => selectBoard(board)}
-                          style={{
-                            borderRadius: "14px",
-                            padding: "18px",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            height: "172px",
-                            display: "flex",
-                            flexDirection: "column",
-                          }}
-                        >
-                          <div className="board-icon-badge">
-                            <BoardIcon size={17} strokeWidth={2.2} />
-                          </div>
-
-                          <div className="board-card-title-row">
-                            <h3
-                              style={{
-                                margin: 0,
-                                fontSize: "17px",
-                                color: "#0f172a",
-                                fontWeight: 850,
-                                lineHeight: 1.18,
-                                flex: "1 1 auto",
-                                minWidth: 0,
-                              }}
-                            >
-                              {board.name}
-                            </h3>
-
-                            {"variants" in board ? (
-                              <span className="board-count-pill board-family-pill">
-                                {board.variants.length}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          <p
+                        <div className="board-card-title-row">
+                          <h3
                             style={{
-                              margin: "8px 0 0",
-                              fontSize: "11px",
-                              color: "#64748b",
-                              fontWeight: 750,
-                              lineHeight: 1.45,
-                              minHeight: "35px",
+                              margin: 0,
+                              fontSize: "17px",
+                              color: "#0f172a",
+                              fontWeight: 850,
+                              lineHeight: 1.18,
+                              flex: "1 1 auto",
+                              minWidth: 0,
                             }}
                           >
-                            {getBoardSummary(board).join(" · ")}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
+                            {board.name}
+                          </h3>
+
+                          {"variants" in board ? (
+                            <span className="board-count-pill board-family-pill">
+                              {board.variants.length}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            fontSize: "11px",
+                            color: "#64748b",
+                            fontWeight: 750,
+                            lineHeight: 1.45,
+                            minHeight: "35px",
+                          }}
+                        >
+                          {getBoardSummary(board).join(" · ")}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
 
-            {filteredBoards.length > boardPreviewLimit && !filtersActive ? (
-              <button
-                type="button"
-                className="board-show-more"
-                onClick={() => setShowAllBoards((current) => !current)}
-              >
-                {showAllBoards
-                  ? "Show Fewer Boards"
-                  : `Show all ${filteredBoards.length} Boards`}
-              </button>
-            ) : null}
-
-            {filtersActive ? (
-              <button
-                type="button"
-                className="board-clear-filters"
-                onClick={() => {
-                  setBoardSearch("");
-                  setSupportFilter("all");
-                  setFamilyFilter("all");
-                  setShowAllBoards(false);
-                }}
-              >
-                Clear filters
-              </button>
-            ) : null}
-          </section>
-
-          <div
-            style={{
-              marginTop: "78px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "14px",
-            }}
-          >
-            <section
-              className="liquid-home-card open-project-card"
-              style={{
-                borderRadius: "16px",
-                padding: "18px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => void handleOpenExistingProject()}
-                disabled={isOpeningExistingProject}
-                style={{
-                  width: "100%",
-                  border: "none",
-                  background: "transparent",
-                  color: "inherit",
-                  padding: 0,
-                  cursor: isOpeningExistingProject ? "wait" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  textAlign: "left",
-                }}
-              >
-                <span
-                  className="open-project-icon"
-                  style={{
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "12px",
-                    background: "#eff6ff",
-                    color: "#2563eb",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <FolderOpen size={19} />
-                </span>
-                <span style={{ minWidth: 0 }}>
-                  <span
-                    className="open-project-title"
-                    style={{
-                      display: "block",
-                      fontSize: "15px",
-                      fontWeight: 850,
-                      color: "#0f172a",
-                    }}
+                {supportedBoards.length > 8 && !showAllBoards ? (
+                  <button
+                    type="button"
+                    className="board-show-more"
+                    onClick={() => setShowAllBoards(true)}
                   >
-                    {isOpeningExistingProject ? "Opening Project" : "Open Existing Project"}
-                  </span>
-                  <span
-                    className="open-project-subtitle"
-                    style={{
-                      display: "block",
-                      marginTop: "4px",
-                      fontSize: "12px",
-                      fontWeight: 750,
-                      color: "#64748b",
-                      lineHeight: 1.4,
-                    }}
+                    Show all {supportedBoards.length} Boards
+                  </button>
+                ) : null}
+
+                {showAllBoards && supportedBoards.length > 8 ? (
+                  <button
+                    type="button"
+                    className="board-show-more"
+                    onClick={() => setShowAllBoards(false)}
                   >
-                    Choose the project&apos;s top folder.
-                  </span>
-                </span>
-              </button>
+                    Show Fewer Boards
+                  </button>
+                ) : null}
+              </section>
 
-              {openExistingProjectError ? (
-                <div
-                  style={{
-                    marginTop: "12px",
-                    color: "#dc2626",
-                    fontSize: "12px",
-                    fontWeight: 750,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {openExistingProjectError}
-                </div>
-              ) : null}
-            </section>
-
-          <aside
-            className="liquid-home-card recent-projects-card"
-            style={{
-              borderRadius: "16px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "20px",
-                borderBottom: "1px solid #e2e8f0",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "18px",
-                  fontWeight: 850,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Recent Projects
-              </h2>
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  fontSize: "14px",
-                  color: "#64748b",
-                  lineHeight: 1.45,
-                }}
-              >
-                Your latest FPGA workspaces will appear here.
-              </p>
-            </div>
-
-            {recentProjects.length === 0 ? (
               <div
-                className="recent-project-empty"
                 style={{
-                  padding: "26px 20px",
-                  minHeight: "180px",
+                  marginTop: "78px",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  textAlign: "center",
-                  color: "#64748b",
+                  gap: "14px",
                 }}
               >
-                <FolderClock size={34} strokeWidth={1.8} />
-                <div
+                <section
+                  className="liquid-home-card open-project-card"
                   style={{
-                    marginTop: "12px",
-                    fontSize: "15px",
-                    fontWeight: 800,
-                    color: "#334155",
+                    borderRadius: "16px",
+                    padding: "18px",
                   }}
                 >
-                  No recent projects
-                </div>
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    fontSize: "14px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  Start with a board on the left.
-                </p>
-              </div>
-            ) : (
-              <div style={{ padding: "10px" }}>
-                {recentProjects.map((project) => (
-                  <div
-                    className="recent-project-row"
-                    key={project.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onOpenProject(project.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onOpenProject(project.id);
-                      }
-                    }}
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenExistingProject()}
+                    disabled={isOpeningExistingProject}
                     style={{
                       width: "100%",
-                      borderRadius: "12px",
-                      padding: "12px",
-                      textAlign: "left",
-                      cursor: "pointer",
+                      border: "none",
+                      background: "transparent",
+                      color: "inherit",
+                      padding: 0,
+                      cursor: isOpeningExistingProject ? "wait" : "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "12px",
+                      textAlign: "left",
                     }}
                   >
-                    <div
-                      style={{ flex: 1, minWidth: 0 }}
+                    <span
+                      className="open-project-icon"
+                      style={{
+                        width: "38px",
+                        height: "38px",
+                        borderRadius: "12px",
+                        background: "#eff6ff",
+                        color: "#2563eb",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
                     >
-                      <div
-                        className="recent-project-title"
+                      <FolderOpen size={19} />
+                    </span>
+                    <span style={{ minWidth: 0 }}>
+                      <span
+                        className="open-project-title"
                         style={{
-                          fontSize: "14px",
+                          display: "block",
+                          fontSize: "15px",
                           fontWeight: 850,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          color: "#0f172a",
                         }}
                       >
-                        {project.name}
-                      </div>
-                      <div
-                        className="recent-project-meta"
+                        {isOpeningExistingProject ? "Opening Project" : "Open Existing Project"}
+                      </span>
+                      <span
+                        className="open-project-subtitle"
                         style={{
+                          display: "block",
                           marginTop: "4px",
                           fontSize: "12px",
                           fontWeight: 750,
-                          lineHeight: 1.45,
+                          color: "#64748b",
+                          lineHeight: 1.4,
                         }}
                       >
-                        {getRecentProjectBoardName(project.boardId)}
-                        <br />
-                        Last saved {formatProjectTime(project.updatedAt)} · {project.files.length} files
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="recent-project-remove"
-                      aria-label={`Remove ${project.name} from recent projects`}
-                      title="Remove from recent projects"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        removeRecentProject(project.id);
+                        Choose the project's top folder.
+                      </span>
+                    </span>
+                  </button>
+
+                  {openExistingProjectError ? (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        color: "#dc2626",
+                        fontSize: "12px",
+                        fontWeight: 750,
+                        lineHeight: 1.45,
                       }}
                     >
-                      ×
-                    </button>
+                      {openExistingProjectError}
+                    </div>
+                  ) : null}
+                </section>
+
+              <aside
+                className="liquid-home-card recent-projects-card"
+                style={{
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "20px",
+                    borderBottom: "1px solid #e2e8f0",
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "18px",
+                      fontWeight: 850,
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    Recent Projects
+                  </h2>
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      fontSize: "14px",
+                      color: "#64748b",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Your latest FPGA workspaces will appear here.
+                  </p>
+                </div>
+
+                {recentProjects.length === 0 ? (
+                  <div
+                    className="recent-project-empty"
+                    style={{
+                      padding: "26px 20px",
+                      minHeight: "180px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                      color: "#64748b",
+                    }}
+                  >
+                    <FolderClock size={34} strokeWidth={1.8} />
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        fontSize: "15px",
+                        fontWeight: 800,
+                        color: "#334155",
+                      }}
+                    >
+                      No recent projects
+                    </div>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: "14px",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      Start with a board on the left.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div style={{ padding: "10px" }}>
+                    {recentProjects.map((project) => (
+                      <div
+                        className="recent-project-row"
+                        key={project.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onOpenProject(project.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onOpenProject(project.id);
+                          }
+                        }}
+                        style={{
+                          width: "100%",
+                          borderRadius: "12px",
+                          padding: "12px",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                        }}
+                      >
+                        <div
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
+                          <div
+                            className="recent-project-title"
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 850,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {project.name}
+                          </div>
+                          <div
+                            className="recent-project-meta"
+                            style={{
+                              marginTop: "4px",
+                              fontSize: "12px",
+                              fontWeight: 750,
+                              lineHeight: 1.45,
+                            }}
+                          >
+                            {getRecentProjectBoardName(project.boardId)}
+                            <br />
+                            Last saved {formatProjectTime(project.updatedAt)} · {project.files.length} files
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="recent-project-remove"
+                          aria-label={`Remove ${project.name} from recent projects`}
+                          title="Remove from recent projects"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            removeRecentProject(project.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </aside>
               </div>
+              </div>
+              </>
+            ) : (
+              /* Pin Mapping View */
+              <PinMappingBrowser
+                unsupportedBoards={unsupportedBoards}
+                selectedBoardId={selectedPinBoard}
+                onSelectBoard={setSelectedPinBoard}
+              />
             )}
-          </aside>
-          </div>
           </div>
         </div>
-      </div>
+
 
       {selectedVariantBoard && (
         <div
@@ -956,6 +710,434 @@ export default function BoardSelect({
           onClose={() => setShowSettings(false)}
         />
       )}
+    </div>
+  );
+}
+
+function PinMappingBrowser({
+  unsupportedBoards,
+  selectedBoardId,
+  onSelectBoard,
+}: {
+  unsupportedBoards: (typeof BOARDS)[number][];
+  selectedBoardId: string | null;
+  onSelectBoard: (boardId: string | null) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const filteredBoards = normalizedSearch
+    ? unsupportedBoards.filter((board) =>
+        board.name.toLowerCase().includes(normalizedSearch) ||
+        board.vendor.toLowerCase().includes(normalizedSearch) ||
+        ("device" in board && board.device.toLowerCase().includes(normalizedSearch))
+      )
+    : unsupportedBoards;
+
+  const selectedBoard = selectedBoardId ? getBoardById(selectedBoardId) : null;
+
+  const resourceGroups = selectedBoard
+    ? getResourceGroupsForBrowser(selectedBoard)
+    : [];
+
+  return (
+    <>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "20px",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Pin Mapping Browser
+          </div>
+
+          <h1
+            style={{
+              margin: "6px 0 0",
+              fontSize: "40px",
+              fontWeight: 850,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.05,
+            }}
+          >
+            Board Pinouts
+          </h1>
+
+          <p
+            style={{
+              margin: "8px 0 0",
+              color: "#64748b",
+              fontSize: "16px",
+              lineHeight: 1.45,
+            }}
+          >
+            Browse pin mappings for boards that are not fully supported.
+          </p>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "400px minmax(0, 1fr)",
+          gap: "24px",
+          alignItems: "stretch",
+          height: "calc(100vh - 180px)",
+        }}
+      >
+        {/* Board List */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            minHeight: 0,
+          }}
+        >
+          <label
+            className="board-search-field pin-browser-search"
+            style={{
+              width: "100%",
+            }}
+          >
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search boards"
+              type="search"
+            />
+          </label>
+
+          <div className="pin-board-list">
+            {filteredBoards.map((board) => {
+              const isSelected = selectedBoardId && (
+                board.id === selectedBoardId ||
+                ("variants" in board && board.variants.some((v) => v.id === selectedBoardId))
+              );
+
+              return (
+                <button
+                  key={board.id}
+                  type="button"
+                  className={isSelected ? "pin-board-item selected" : "pin-board-item"}
+                  onClick={() => {
+                    if ("variants" in board) {
+                      onSelectBoard(board.variants[0].id);
+                    } else {
+                      onSelectBoard(board.id);
+                    }
+                  }}
+                >
+                  <div className="pin-board-item-name">{board.name}</div>
+                  <div className="pin-board-item-meta">
+                    {"variants" in board
+                      ? `${board.vendor} · ${board.variants.length} variants`
+                      : `${board.vendor} · ${board.family} · ${board.device}`}
+                  </div>
+                </button>
+              );
+            })}
+
+            {filteredBoards.length === 0 && (
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: "#64748b",
+                  fontSize: "14px",
+                  fontWeight: 750,
+                }}
+              >
+                No boards match your search.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Pin Detail */}
+        {selectedBoard ? (
+          <div
+            className="dashboard-glass-card"
+            style={{
+              borderRadius: "16px",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              minHeight: 0,
+            }}
+          >
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "24px",
+                  fontWeight: 850,
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                {selectedBoard.name}
+              </h2>
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  color: "#64748b",
+                  fontSize: "14px",
+                  lineHeight: 1.45,
+                }}
+              >
+                {"vendor" in selectedBoard && selectedBoard.vendor} · {"family" in selectedBoard && selectedBoard.family} · {"device" in selectedBoard && selectedBoard.device}
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <PinSummaryPill label="Pins" value={String(selectedBoard.pins.length)} />
+              <PinSummaryPill label="Clocks" value={String(selectedBoard.clocks.length)} />
+              <PinSummaryPill label="Constraints" value={`.${selectedBoard.constraintsFile}`} />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                flex: 1,
+                minHeight: 0,
+                overflowY: "auto",
+                paddingRight: "4px",
+              }}
+            >
+              {resourceGroups.map((group) => (
+                <div key={group.title} className="pin-group-card">
+                  <div className="pin-group-header">
+                    <div>
+                      <div className="pin-group-title">{group.title}</div>
+                      <div className="pin-group-detail">{group.detail}</div>
+                    </div>
+                    <span className="pin-group-count">{group.pins.length}</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                      gap: "8px",
+                    }}
+                  >
+                    {group.pins.map((pin) => {
+                      const color = getPinTypeColor(pin.type);
+
+                      return (
+                        <div key={pin.key} className="pin-tile">
+                          <span
+                            className="pin-tile-symbol"
+                            style={{
+                              background: color.background,
+                              color: color.color,
+                            }}
+                          >
+                            {pin.symbol}
+                          </span>
+                          <span className="pin-tile-pin" title={pin.pin}>
+                            {pin.pin}
+                          </span>
+                          <span className="pin-tile-detail" title={pin.detail ?? pin.name}>
+                            {pin.detail ?? pin.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="dashboard-glass-card"
+            style={{
+              borderRadius: "16px",
+              padding: "48px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+              color: "#64748b",
+              textAlign: "center",
+              minHeight: "300px",
+            }}
+          >
+            <MapIcon size={40} strokeWidth={1.5} />
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 850,
+                color: "#334155",
+              }}
+            >
+              Select a board to view its pin mapping
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "14px",
+                lineHeight: 1.45,
+                maxWidth: "400px",
+              }}
+            >
+              Choose a board from the list on the left to see all available I/O pins,
+              clocks, and board resources.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+type PinBrowserResourceGroup = {
+  title: string;
+  detail: string;
+  pins: Array<{
+    key: string;
+    name: string;
+    pin: string;
+    type: string;
+    symbol: string;
+    detail?: string;
+  }>;
+};
+
+function getResourceGroupsForBrowser(board: ReturnType<typeof getBoardById> & object): PinBrowserResourceGroup[] {
+  const groups = new Map<string, PinBrowserResourceGroup>();
+
+  function addPin(groupTitle: string, groupDetail: string, pin: PinBrowserResourceGroup["pins"][number]) {
+    const group = groups.get(groupTitle) ?? {
+      title: groupTitle,
+      detail: groupDetail,
+      pins: [],
+    };
+
+    group.pins.push(pin);
+    groups.set(groupTitle, group);
+  }
+
+  board.clocks
+    .filter((clock) => clock.pin)
+    .forEach((clock) =>
+      addPin("Clocks", "Clock sources", {
+        key: `clock:${clock.name}`,
+        name: clock.name,
+        pin: clock.pin ?? "",
+        type: "clock",
+        symbol: "CLK",
+        detail: `${Math.round(clock.frequency / 1_000_000)} MHz`,
+      })
+    );
+
+  board.pins.forEach((pin) => {
+    const title = getResourceGroupTitle(pin);
+    addPin(title, pin.group ?? getPinTypeLabel(pin.type), {
+      key: `pin:${pin.name}:${pin.pin}`,
+      name: pin.name,
+      pin: pin.pin,
+      type: pin.type,
+      symbol: getResourceSymbol(pin),
+      detail: pin.signal ?? pin.group ?? pin.name,
+    });
+  });
+
+  return Array.from(groups.values()).sort((a, b) => getResourceOrder(a.title) - getResourceOrder(b.title));
+}
+
+function getResourceGroupTitle(pin: { type: string; group?: string; signal?: string }) {
+  if (pin.type === "led") return "LEDs";
+  if (pin.type === "button") return "Buttons / Reset";
+  if (pin.type === "uart") return "UART";
+  if (pin.type === "spi" || pin.type === "flash") return "SPI / Flash";
+  if (pin.type === "i2c") return "I2C";
+  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+    return "USB / Special";
+  }
+  if (pin.type === "gpio") return pin.group ?? "GPIO";
+  return pin.group ?? "Other";
+}
+
+function getResourceOrder(title: string) {
+  const order = [
+    "Clocks",
+    "LEDs",
+    "Buttons / Reset",
+    "UART",
+    "SPI / Flash",
+    "I2C",
+    "GPIO",
+    "USB / Special",
+  ];
+
+  const index = order.indexOf(title);
+  return index === -1 ? 100 : index;
+}
+
+function getResourceSymbol(pin: { type: string; activeLow?: boolean; group?: string; signal?: string }) {
+  if (pin.type === "clock") return "CLK";
+  if (pin.type === "led") return "LED";
+  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
+  if (pin.type === "uart") return "URT";
+  if (pin.type === "spi" || pin.type === "flash") return "SPI";
+  if (pin.type === "i2c") return "I2C";
+  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+    return "USB";
+  }
+  if (pin.type === "gpio") return "IO";
+  return "PIN";
+}
+
+function getPinTypeLabel(type: string) {
+  if (type === "led") return "User outputs";
+  if (type === "button") return "User inputs";
+  if (type === "uart") return "Serial";
+  if (type === "spi" || type === "flash") return "Serial bus";
+  if (type === "i2c") return "Two-wire bus";
+  if (type === "gpio") return "General I/O";
+  return "Board resources";
+}
+
+function getPinTypeColor(type: string) {
+  if (type === "clock") return { background: "#eff6ff", color: "#2563eb" };
+  if (type === "led") return { background: "#fef3c7", color: "#b45309" };
+  if (type === "button") return { background: "#fee2e2", color: "#b91c1c" };
+  if (type === "uart" || type === "spi" || type === "flash" || type === "i2c") {
+    return { background: "#f0fdf4", color: "#15803d" };
+  }
+  if (type === "unknown") return { background: "#f5f3ff", color: "#6d28d9" };
+  return { background: "#f8fafc", color: "#475569" };
+}
+
+function PinSummaryPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="pin-summary-pill">
+      <div className="pin-summary-pill-label">{label}</div>
+      <div className="pin-summary-pill-value">{value}</div>
     </div>
   );
 }

@@ -69,6 +69,19 @@ struct WriteProjectFileRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct RenameProjectFileRequest {
+  from_path: String,
+  to_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeleteProjectFileRequest {
+  path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct DetectConnectedBoardRequest {
   programmer_command: String,
   usb_vendor_id: Option<u32>,
@@ -1920,6 +1933,89 @@ fn sanitize_name(name: &str) -> String {
 fn error(message: &str) -> ErrorPayload {
   ErrorPayload {
     message: message.to_string(),
+  }
+}
+
+#[tauri::command]
+fn create_project_workspace(
+  request: CreateProjectWorkspaceRequest,
+) -> Result<CreateProjectWorkspaceResponse, ErrorPayload> {
+  let parent = request
+    .parent_directory
+    .as_deref()
+    .map(PathBuf::from)
+    .unwrap_or_else(|| {
+      std::env::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("AlloraProjects")
+    });
+
+  fs::create_dir_all(&parent)
+    .map_err(|err| error(&format!("Unable to create parent directory: {err}")))?;
+
+  let project_dir = unique_project_dir(&parent, &request.folder_name)?;
+
+  fs::create_dir_all(&project_dir)
+    .map_err(|err| error(&format!("Unable to create project directory: {err}")))?;
+
+  let mut files = Vec::new();
+
+  for file_spec in &request.files {
+    let relative = normalize_relative_path(&file_spec.relative_path)?;
+    let absolute = project_dir.join(&relative);
+
+    if let Some(parent_dir) = absolute.parent() {
+      fs::create_dir_all(parent_dir)
+        .map_err(|err| error(&format!("Unable to create file directory: {err}")))?;
+    }
+
+    fs::write(&absolute, &file_spec.content)
+      .map_err(|err| error(&format!("Unable to write {}: {err}", file_spec.relative_path)))?;
+
+    files.push(WorkspaceFileRecord {
+      relative_path: file_spec.relative_path.clone(),
+      absolute_path: absolute.to_string_lossy().to_string(),
+    });
+  }
+
+  let project_id = sanitize_name(&request.project_name);
+
+  Ok(CreateProjectWorkspaceResponse {
+    project_id,
+    project_path: project_dir.to_string_lossy().to_string(),
+    files,
+  })
+}
+
+#[tauri::command]
+fn pick_project_parent_directory() -> Result<Option<String>, ErrorPayload> {
+  #[cfg(target_os = "macos")]
+  {
+    let output = Command::new("osascript")
+      .args([
+        "-e",
+        "set chosenFolder to choose folder with prompt \"Choose a parent directory for your project\"",
+        "-e",
+        "POSIX path of chosenFolder",
+      ])
+      .output()
+      .map_err(|err| error(&format!("Unable to open the folder picker: {err}")))?;
+
+    if !output.status.success() {
+      return Ok(None);
+    }
+
+    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if path.is_empty() {
+      Ok(None)
+    } else {
+      Ok(Some(path))
+    }
+  }
+
+  #[cfg(not(target_os = "macos"))]
+  {
+    Ok(None)
   }
 }
 
