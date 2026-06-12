@@ -301,10 +301,15 @@ function sanitizeModuleName(name: string) {
   return sanitized;
 }
 
+const invalidFolderNamePattern = new RegExp(
+  `[<>:"/\\\\|?*${String.fromCharCode(0)}-${String.fromCharCode(31)}]+`,
+  "g",
+);
+
 function sanitizeFolderName(value: string) {
   const sanitized = value
     .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1F]+/g, "_")
+    .replace(invalidFolderNamePattern, "_")
     .replace(/\s+/g, "_")
     .replace(/^_+|_+$/g, "");
 

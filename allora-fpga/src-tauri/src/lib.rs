@@ -6,7 +6,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -84,7 +83,9 @@ struct DeleteProjectFileRequest {
 #[serde(rename_all = "camelCase")]
 struct DetectConnectedBoardRequest {
   programmer_command: String,
+  #[allow(dead_code)]
   usb_vendor_id: Option<u32>,
+  #[allow(dead_code)]
   usb_product_id: Option<u32>,
 }
 
@@ -113,19 +114,14 @@ fn detect_connected_board(
 ) -> Result<DetectConnectedBoardResponse, ErrorPayload> {
   let command = request.programmer_command.trim();
   let mut usb_devices = Vec::new();
-  let mut programmer_detected = false;
-  let mut programmer_details = String::new();
 
-  // Step 1: Detect if the programmer tool is available
   let tool_path = resolve_tool_path(command);
-  if tool_path.exists() {
-    programmer_detected = true;
-    programmer_details = format!("{} found at {}", command, tool_path.display());
+  let (programmer_detected, programmer_details) = if tool_path.exists() {
+    (true, format!("{} found at {}", command, tool_path.display()))
   } else {
-    programmer_details = format!("{} not found on PATH", command);
-  }
+    (false, format!("{} not found on PATH", command))
+  };
 
-  // Step 2: Scan USB devices for FPGA-related hardware
   #[cfg(target_os = "macos")]
   {
     let output = Command::new("system_profiler")
@@ -350,6 +346,7 @@ fn identify_possible_boards(device_name: &str, vendor: &str, product_id: &str) -
   boards
 }
 
+#[cfg(target_os = "linux")]
 fn identify_possible_boards_from_lsusb(line: &str) -> Vec<String> {
   let lower = line.to_lowercase();
   let mut boards = Vec::new();

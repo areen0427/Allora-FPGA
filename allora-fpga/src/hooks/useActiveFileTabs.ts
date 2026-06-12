@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { ProjectFile } from "../pages/dashboard/types";
 import { isHdlFile } from "./utils";
@@ -36,6 +36,22 @@ export function useActiveFileTabs({
 
   const activeFile = projectFiles.find((file) => file.name === activeFileName);
 
+  const makeTopLevelFile = useCallback(
+    (fileName: string | null) => {
+      setTopLevelFileNameState(fileName);
+      if (!fileName) return;
+
+      setFiles((currentFiles) => {
+        const fileIndex = currentFiles.findIndex((f) => f.name === fileName);
+        if (fileIndex <= 0) return currentFiles;
+        const nextFiles = [...currentFiles];
+        const [topLevelFile] = nextFiles.splice(fileIndex, 1);
+        return [topLevelFile, ...nextFiles];
+      });
+    },
+    [setFiles],
+  );
+
   useEffect(() => {
     const hdlFiles = projectFiles.filter((file) => isHdlFile(file.name));
     if (hdlFiles.length === 0) {
@@ -49,7 +65,7 @@ export function useActiveFileTabs({
     ) {
       makeTopLevelFile(hdlFiles[0].name);
     }
-  }, [projectFiles, topLevelFileName]);
+  }, [makeTopLevelFile, projectFiles, topLevelFileName]);
 
   function openFile(fileName: string) {
     setOpenFileNames((current) => [...new Set([...current, fileName])]);
@@ -77,19 +93,6 @@ export function useActiveFileTabs({
       ),
     );
     return activeFileName;
-  }
-
-  function makeTopLevelFile(fileName: string | null) {
-    setTopLevelFileNameState(fileName);
-    if (!fileName) return;
-
-    setFiles((currentFiles) => {
-      const fileIndex = currentFiles.findIndex((f) => f.name === fileName);
-      if (fileIndex <= 0) return currentFiles;
-      const nextFiles = [...currentFiles];
-      const [topLevelFile] = nextFiles.splice(fileIndex, 1);
-      return [topLevelFile, ...nextFiles];
-    });
   }
 
   function updateOpenFileAfterRename(oldName: string, newName: string) {
