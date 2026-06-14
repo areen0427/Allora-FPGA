@@ -29,7 +29,7 @@ type ProjectSetupProps = {
     projectName: string,
     language: string,
     parentDirectory: string | null,
-    templateId: string
+    templateId: string,
   ) => Promise<void> | void;
 };
 
@@ -52,8 +52,13 @@ export default function ProjectSetup({
 
   function changeLanguage(nextLanguage: TemplateLanguage) {
     setLanguage(nextLanguage);
-    const selected = PROJECT_TEMPLATES.find((template) => template.id === templateId);
-    if (selected && getTemplateUnavailableReason(selected, board, nextLanguage)) {
+    const selected = PROJECT_TEMPLATES.find(
+      (template) => template.id === templateId,
+    );
+    if (
+      selected &&
+      getTemplateUnavailableReason(selected, board, nextLanguage)
+    ) {
       setTemplateId("blinky");
     }
   }
@@ -139,7 +144,9 @@ export default function ProjectSetup({
         <select
           value={language}
           onChange={(e) =>
-            changeLanguage(e.target.value as "Verilog" | "SystemVerilog" | "VHDL")
+            changeLanguage(
+              e.target.value as "Verilog" | "SystemVerilog" | "VHDL",
+            )
           }
           style={{
             background: "#ffffff",
@@ -157,7 +164,11 @@ export default function ProjectSetup({
 
         <div className="template-grid">
           {PROJECT_TEMPLATES.map((template) => {
-            const reason = getTemplateUnavailableReason(template, board, language);
+            const reason = getTemplateUnavailableReason(
+              template,
+              board,
+              language,
+            );
             const disabled = Boolean(reason);
             const selected = templateId === template.id;
 
@@ -240,7 +251,9 @@ export default function ProjectSetup({
               fontSize: "15px",
               fontWeight: 700,
               cursor:
-                !hasTauriInvoke() || isChoosingLocation ? "not-allowed" : "pointer",
+                !hasTauriInvoke() || isChoosingLocation
+                  ? "not-allowed"
+                  : "pointer",
               opacity: !hasTauriInvoke() || isChoosingLocation ? 0.65 : 1,
             }}
           >
@@ -257,7 +270,7 @@ export default function ProjectSetup({
                 projectName,
                 language,
                 parentDirectory,
-                templateId
+                templateId,
               );
             } finally {
               setIsCreating(false);

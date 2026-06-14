@@ -29,12 +29,18 @@ export default function HealthSection({
   const capabilities = getBoardCapabilities(board);
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const constraintFile = files.find((file) =>
-    file.name.toLowerCase().endsWith(`.${board.constraintsFile}`)
+    file.name.toLowerCase().endsWith(`.${board.constraintsFile}`),
   );
-  const bitstreamFile = files.find((file) => /\.(bit|bin|fs|svf|jed)$/i.test(file.name));
+  const bitstreamFile = files.find((file) =>
+    /\.(bit|bin|fs|svf|jed)$/i.test(file.name),
+  );
   const buildReport = parseBuildReports(files);
   const bitstreamSize = bitstreamFile
-    ? formatBytes(bitstreamFile.isBinary ? bitstreamFile.content.length : byteLength(bitstreamFile.content))
+    ? formatBytes(
+        bitstreamFile.isBinary
+          ? bitstreamFile.content.length
+          : byteLength(bitstreamFile.content),
+      )
     : "Pending";
   const reportState = bitstreamFile ? "warn" : "pending";
   const reportFallback = bitstreamFile ? "Not reported" : "Pending";
@@ -47,7 +53,9 @@ export default function HealthSection({
       label: "Top Module",
       value: topLevelFileName ?? "Missing",
       state: topLevelFileName ? "good" : "warn",
-      detail: topLevelFileName ? "Ready for analysis" : "Set a top-level HDL file",
+      detail: topLevelFileName
+        ? "Ready for analysis"
+        : "Set a top-level HDL file",
     },
     {
       label: "Constraints",
@@ -67,7 +75,9 @@ export default function HealthSection({
       label: "Timing",
       value: buildReport.timing ?? reportFallback,
       state: buildReport.timing
-        ? buildReport.timing.toLowerCase().includes("fail") ? "warn" : "good"
+        ? buildReport.timing.toLowerCase().includes("fail")
+          ? "warn"
+          : "good"
         : reportState,
       detail: buildReport.timingDetail ?? reportDetail,
     },
@@ -142,10 +152,12 @@ function BuildHistoryCard({ files }: { files: ProjectFile[] }) {
   if (records.length === 0) return null;
 
   const latest = records[records.length - 1];
-  const latestWithMetrics = [...records].reverse().find(
-    (record) => (record.utilization?.length ?? 0) > 0
+  const latestWithMetrics = [...records]
+    .reverse()
+    .find((record) => (record.utilization?.length ?? 0) > 0);
+  const utilization = getDisplayUtilization(
+    latestWithMetrics?.utilization ?? [],
   );
-  const utilization = getDisplayUtilization(latestWithMetrics?.utilization ?? []);
   const fmaxSeries = records
     .filter((record) => typeof record.fmaxMhz === "number")
     .slice(-20);
@@ -173,7 +185,8 @@ function BuildHistoryCard({ files }: { files: ProjectFile[] }) {
           </div>
           {utilization.length === 0 ? (
             <div className="build-history-empty">
-              No utilization metrics parsed yet. Generate a bitstream to populate this.
+              No utilization metrics parsed yet. Generate a bitstream to
+              populate this.
             </div>
           ) : (
             <div style={{ display: "grid", gap: "10px", marginTop: "12px" }}>
@@ -184,7 +197,9 @@ function BuildHistoryCard({ files }: { files: ProjectFile[] }) {
                     <div className="build-history-bar-label">
                       <span>{entry.label}</span>
                       <span className="build-history-subtle">
-                        {entry.used.toLocaleString()} / {entry.total.toLocaleString()} ({percent.toFixed(percent < 10 ? 1 : 0)}%)
+                        {entry.used.toLocaleString()} /{" "}
+                        {entry.total.toLocaleString()} (
+                        {percent.toFixed(percent < 10 ? 1 : 0)}%)
                       </span>
                     </div>
                     <div className="build-history-bar-track">
@@ -225,9 +240,16 @@ function BuildHistoryCard({ files }: { files: ProjectFile[] }) {
                   {formatRecordTime(record.timestamp)}
                 </span>
                 <span className="build-history-subtle">
-                  {record.fmaxMhz ? `${record.fmaxMhz.toFixed(1)} MHz` : record.success ? "—" : "failed"}
+                  {record.fmaxMhz
+                    ? `${record.fmaxMhz.toFixed(1)} MHz`
+                    : record.success
+                      ? "—"
+                      : "failed"}
                 </span>
-                <span className="build-history-subtle" style={{ marginLeft: "auto" }}>
+                <span
+                  className="build-history-subtle"
+                  style={{ marginLeft: "auto" }}
+                >
                   {formatDuration(record.durationMs)}
                 </span>
               </div>
@@ -253,7 +275,8 @@ function FmaxSparkline({ records }: { records: BuildRecord[] }) {
 
   const points = values.map((value, index) => {
     const x =
-      padding + (index / Math.max(values.length - 1, 1)) * (width - padding * 2);
+      padding +
+      (index / Math.max(values.length - 1, 1)) * (width - padding * 2);
     const y =
       height - padding - ((value - min) / range) * (height - padding * 2);
     return { x, y };
@@ -382,8 +405,17 @@ function ReadinessItem({
       }}
     >
       <div>
-        <div style={{ color: "#0f172a", fontSize: "14px", fontWeight: 900 }}>{label}</div>
-        <div style={{ marginTop: "4px", color: "#64748b", fontSize: "12px", fontWeight: 750 }}>
+        <div style={{ color: "#0f172a", fontSize: "14px", fontWeight: 900 }}>
+          {label}
+        </div>
+        <div
+          style={{
+            marginTop: "4px",
+            color: "#64748b",
+            fontSize: "12px",
+            fontWeight: 750,
+          }}
+        >
           {value}
         </div>
       </div>
@@ -441,8 +473,14 @@ function parseBuildReports(files: ProjectFile[]) {
     return {};
   }
 
-  const timingMet = /timing\s+(?:met|passed|pass)|timing\s+constraints\s+are\s+met/i.test(reportText);
-  const timingFailed = /timing\s+(?:failed|fail|not\s+met)|violated\s+timing|slack\s*[:=]\s*-\d/i.test(reportText);
+  const timingMet =
+    /timing\s+(?:met|passed|pass)|timing\s+constraints\s+are\s+met/i.test(
+      reportText,
+    );
+  const timingFailed =
+    /timing\s+(?:failed|fail|not\s+met)|violated\s+timing|slack\s*[:=]\s*-\d/i.test(
+      reportText,
+    );
   const maxFrequency = findFirstMatch(reportText, [
     /(?:max(?:imum)?\s+frequency|fmax|max_freq)\s*[:=]?\s*([0-9.]+\s*(?:mhz|MHz|MHz\.|hz|kHz|MHz))/i,
     /([0-9.]+)\s*MHz\s+\(?.*?fmax/i,
@@ -467,8 +505,12 @@ function parseBuildReports(files: ProjectFile[]) {
         : undefined,
     maxFrequency: maxFrequency?.replace(/\s+/g, " "),
     maxFrequencyDetail: maxFrequency ? "Parsed from build report" : undefined,
-    utilization: utilizationParts.length > 0 ? utilizationParts.join(" / ") : undefined,
-    utilizationDetail: utilizationParts.length > 0 ? "Parsed from utilization report" : undefined,
+    utilization:
+      utilizationParts.length > 0 ? utilizationParts.join(" / ") : undefined,
+    utilizationDetail:
+      utilizationParts.length > 0
+        ? "Parsed from utilization report"
+        : undefined,
   };
 }
 
@@ -485,7 +527,10 @@ function findMetric(text: string, labels: string[]) {
   for (const label of labels) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const patterns = [
-      new RegExp(`\\b${escaped}\\b\\s*[:=]\\s*([0-9,]+(?:\\s*/\\s*[0-9,]+)?)`, "i"),
+      new RegExp(
+        `\\b${escaped}\\b\\s*[:=]\\s*([0-9,]+(?:\\s*/\\s*[0-9,]+)?)`,
+        "i",
+      ),
       new RegExp(`\\b([0-9,]+)\\s+${escaped}\\b`, "i"),
     ];
     const match = findFirstMatch(text, patterns);

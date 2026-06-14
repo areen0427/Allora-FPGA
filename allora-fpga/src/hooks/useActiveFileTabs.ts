@@ -30,7 +30,7 @@ export function useActiveFileTabs({
     initialTopLevelFileName &&
       projectFiles.some((f) => f.name === initialTopLevelFileName)
       ? initialTopLevelFileName
-      : projectFiles.find((f) => isHdlFile(f.name))?.name ?? null,
+      : (projectFiles.find((f) => isHdlFile(f.name))?.name ?? null),
   );
   const [dirtyFileNames, setDirtyFileNames] = useState<string[]>([]);
 

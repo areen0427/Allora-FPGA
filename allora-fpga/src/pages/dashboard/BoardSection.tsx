@@ -17,7 +17,10 @@ export default function BoardSection({ board }: { board: BoardDefinition }) {
         <InfoRow label="Family" value={board.family} />
         <InfoRow label="Device" value={board.device} />
         <InfoRow label="Package" value={board.package} />
-        <InfoRow label="Constraint Format" value={board.constraintsFile.toUpperCase()} />
+        <InfoRow
+          label="Constraint Format"
+          value={board.constraintsFile.toUpperCase()}
+        />
         <InfoRow label="Toolchain" value={capabilities.toolchain} />
         <InfoRow
           label="Synthesis Diagram"

@@ -25,7 +25,7 @@ export type BuildRecord = {
 
 export function readBuildHistory(files: ProjectFile[]): BuildRecord[] {
   const historyFile = files.find(
-    (file) => file.name === BUILD_HISTORY_FILE_NAME && !file.isBinary
+    (file) => file.name === BUILD_HISTORY_FILE_NAME && !file.isBinary,
   );
   if (!historyFile?.content) return [];
 
@@ -34,7 +34,7 @@ export function readBuildHistory(files: ProjectFile[]): BuildRecord[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (record): record is BuildRecord =>
-        Boolean(record) && typeof record === "object" && "timestamp" in record
+        Boolean(record) && typeof record === "object" && "timestamp" in record,
     );
   } catch {
     return [];
@@ -55,7 +55,7 @@ export function parseBuildMetrics(logs: string[]) {
 
   for (const line of logs) {
     const fmaxMatch = line.match(
-      /max frequency for clock\s+'?\$?[^':]*'?\s*:\s*([\d.]+)\s*MHz(?:\s*\((PASS|FAIL)\b)?/i
+      /max frequency for clock\s+'?\$?[^':]*'?\s*:\s*([\d.]+)\s*MHz(?:\s*\((PASS|FAIL)\b)?/i,
     );
     if (fmaxMatch) {
       const value = Number.parseFloat(fmaxMatch[1]);
@@ -71,7 +71,7 @@ export function parseBuildMetrics(logs: string[]) {
     }
 
     const utilizationMatch = line.match(
-      /^\s*(?:Info:)?\s*([A-Z][A-Z0-9_]+):\s*(\d+)\s*\/\s*(\d+)/
+      /^\s*(?:Info:)?\s*([A-Z][A-Z0-9_]+):\s*(\d+)\s*\/\s*(\d+)/,
     );
     if (utilizationMatch) {
       const resource = utilizationMatch[1];
@@ -88,7 +88,10 @@ export function parseBuildMetrics(logs: string[]) {
 }
 
 const RESOURCE_LABELS: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /^(ICESTORM_LC|TRELLIS_SLICE|TRELLIS_COMB|SLICE)$/, label: "Logic" },
+  {
+    pattern: /^(ICESTORM_LC|TRELLIS_SLICE|TRELLIS_COMB|SLICE)$/,
+    label: "Logic",
+  },
   { pattern: /^(ICESTORM_RAM|DP16KD|EBR)$/, label: "Block RAM" },
   { pattern: /^(ICESTORM_DSP|MULT18X18D|DSP)$/, label: "DSP" },
   { pattern: /^(ICESTORM_PLL|EHXPLLL|PLL)$/, label: "PLL" },
@@ -119,7 +122,7 @@ export function getDisplayUtilization(entries: BuildUtilizationEntry[]) {
 
 export function appendBuildRecord(
   files: ProjectFile[],
-  record: BuildRecord
+  record: BuildRecord,
 ): { fileName: string; content: string; records: BuildRecord[] } {
   const records = [...readBuildHistory(files), record].slice(-MAX_RECORDS);
   return {
@@ -131,9 +134,12 @@ export function appendBuildRecord(
 
 export async function persistBuildHistory(
   projectPath: string,
-  content: string
+  content: string,
 ) {
-  await writeProjectFile(`${projectPath}/build/${BUILD_HISTORY_FILE_NAME}`, content);
+  await writeProjectFile(
+    `${projectPath}/build/${BUILD_HISTORY_FILE_NAME}`,
+    content,
+  );
 }
 
 export function createBuildRecordId() {

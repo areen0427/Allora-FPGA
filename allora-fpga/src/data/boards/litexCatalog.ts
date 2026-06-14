@@ -1,4 +1,9 @@
-import type { BoardDefinition, BoardPin, ConstraintFile, SynthesisFlow } from "../boardTypes";
+import type {
+  BoardDefinition,
+  BoardPin,
+  ConstraintFile,
+  SynthesisFlow,
+} from "../boardTypes";
 
 type PinSpec = [string, string, string, BoardPin["type"], string, boolean?];
 
@@ -35,7 +40,11 @@ function makeCatalogBoard(spec: CatalogBoardSpec): BoardDefinition {
     fpgaId: spec.fpgaId,
     constraintsFile: spec.constraintsFile,
     synthesisFlow: spec.synthesisFlow,
-    toolchain: { synth: spec.toolchain, placeRoute: spec.toolchain, program: spec.program },
+    toolchain: {
+      synth: spec.toolchain,
+      placeRoute: spec.toolchain,
+      program: spec.program,
+    },
     clocks: [{ ...spec.clock, verified: spec.clock.pin !== "unknown" }],
     pins,
     leds: pins.filter((pin) => pin.type === "led"),
@@ -59,8 +68,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "USB-Blaster",
     source: "sitlinv_a_e115fb",
     clock: { name: "clk27", pin: "A11", frequency: 25000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "sitlinv-stlv7325-v1",
@@ -244,12 +252,26 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_a_rx_p", "sfp_a_rx_p", "D10", "gpio", "Sfp A Rx"],
       ["sfp_a_tx_n", "sfp_a_tx_n", "A7", "gpio", "Sfp A Tx", true],
       ["sfp_a_tx_p", "sfp_a_tx_p", "A8", "gpio", "Sfp A Tx"],
-      ["sfp_a_tx_disable_n_0", "sfp_a_tx_disable_n", "Y20", "gpio", "Sfp A Tx Disable N", true],
+      [
+        "sfp_a_tx_disable_n_0",
+        "sfp_a_tx_disable_n",
+        "Y20",
+        "gpio",
+        "Sfp A Tx Disable N",
+        true,
+      ],
       ["sfp_b_rx_n", "sfp_b_rx_n", "F9", "gpio", "Sfp B Rx", true],
       ["sfp_b_rx_p", "sfp_b_rx_p", "F10", "gpio", "Sfp B Rx"],
       ["sfp_b_tx_n", "sfp_b_tx_n", "C7", "gpio", "Sfp B Tx", true],
       ["sfp_b_tx_p", "sfp_b_tx_p", "C8", "gpio", "Sfp B Tx"],
-      ["sfp_b_tx_disable_n_0", "sfp_b_tx_disable_n", "D14", "gpio", "Sfp B Tx Disable N", true],
+      [
+        "sfp_b_tx_disable_n_0",
+        "sfp_b_tx_disable_n",
+        "D14",
+        "gpio",
+        "Sfp B Tx Disable N",
+        true,
+      ],
     ],
   },
   {
@@ -636,9 +658,21 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["user_sw_1", "user_sw", "J22", "button", "Switches"],
       ["power_btn_0", "power_btn", "P9:9", "button", "User Buttons"],
       ["user_btn_1", "user_btn", "H22", "button", "User Buttons"],
-      ["spisdcard_aux_cmd_dir", "spisdcard_aux_cmd_dir", "U22", "spi", "SDCard"],
+      [
+        "spisdcard_aux_cmd_dir",
+        "spisdcard_aux_cmd_dir",
+        "U22",
+        "spi",
+        "SDCard",
+      ],
       ["spisdcard_aux_d0_dir", "spisdcard_aux_d0_dir", "T22", "spi", "SDCard"],
-      ["spisdcard_aux_d123_dir", "spisdcard_aux_d123_dir", "U21", "spi", "SDCard"],
+      [
+        "spisdcard_aux_d123_dir",
+        "spisdcard_aux_d123_dir",
+        "U21",
+        "spi",
+        "SDCard",
+      ],
       ["spisdcard_aux_sel", "spisdcard_aux_sel", "P13", "spi", "SDCard"],
       ["mipi_i2c_scl", "mipi_i2c_scl", "M1", "i2c", "I2C"],
       ["mipi_i2c_sda", "mipi_i2c_sda", "M2", "i2c", "I2C"],
@@ -894,8 +928,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "USB-Blaster",
     source: "trenz_mf_c10lp_001",
     clock: { name: "sys_clk", pin: "unknown", frequency: 80000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "trenz-mf-max10-001",
@@ -911,8 +944,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "USB-Blaster",
     source: "trenz_mf_max10_001",
     clock: { name: "sys_clk", pin: "unknown", frequency: 116000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "trenz-mf001-intel",
@@ -928,8 +960,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "USB-Blaster",
     source: "trenz_mf001_intel",
     clock: { name: "sys_clk", pin: "unknown", frequency: 116000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "trenz-s7mini",
@@ -1018,9 +1049,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "trenz_te0710",
     clock: { name: "clk100", pin: "unknown", frequency: 100000000 },
-    pins: [
-      ["user_led_0", "user_led", "L15", "led", "User LEDs"],
-    ],
+    pins: [["user_led_0", "user_led", "L15", "led", "User LEDs"]],
   },
   {
     id: "trenz-te0711",
@@ -1386,12 +1415,26 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["linear_flash_a_1", "linear_flash_a1", "W21", "spi", "SPI Flash"],
       ["linear_flash_a_2", "linear_flash_a2", "V24", "spi", "SPI Flash"],
       ["linear_flash_a_3", "linear_flash_a3", "U24", "spi", "SPI Flash"],
-      ["linear_flash_ce_n", "linear_flash_ce_n", "U19", "spi", "SPI Flash", true],
+      [
+        "linear_flash_ce_n",
+        "linear_flash_ce_n",
+        "U19",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["linear_flash_dq_0", "linear_flash_dq0", "P24", "spi", "SPI Flash"],
       ["linear_flash_dq_1", "linear_flash_dq1", "R25", "spi", "SPI Flash"],
       ["linear_flash_dq_2", "linear_flash_dq2", "R20", "spi", "SPI Flash"],
       ["linear_flash_dq_3", "linear_flash_dq3", "R21", "spi", "SPI Flash"],
-      ["linear_flash_oe_n", "linear_flash_oe_n", "M24", "spi", "SPI Flash", true],
+      [
+        "linear_flash_oe_n",
+        "linear_flash_oe_n",
+        "M24",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["spiflash4x_cs_n", "spiflash4x_cs_n", "U19", "spi", "SPI Flash", true],
       ["spiflash4x_dq_0", "spiflash4x_dq0", "P24", "spi", "SPI Flash"],
       ["spiflash4x_dq_1", "spiflash4x_dq1", "R25", "spi", "SPI Flash"],
@@ -1460,8 +1503,21 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["user_sma_gpio_n_0", "user_sma_gpio_n", "G27", "gpio", "GPIO", true],
       ["user_sma_gpio_p", "user_sma_gpio_p", "H27", "gpio", "GPIO"],
       ["user_sma_gpio_p_0", "user_sma_gpio_p", "H27", "gpio", "GPIO"],
-      ["jitter_attn_clk_n", "jitter_attn_clk_n", "M5", "gpio", "Jitter Attn Clk", true],
-      ["jitter_attn_clk_p", "jitter_attn_clk_p", "M6", "gpio", "Jitter Attn Clk"],
+      [
+        "jitter_attn_clk_n",
+        "jitter_attn_clk_n",
+        "M5",
+        "gpio",
+        "Jitter Attn Clk",
+        true,
+      ],
+      [
+        "jitter_attn_clk_p",
+        "jitter_attn_clk_p",
+        "M6",
+        "gpio",
+        "Jitter Attn Clk",
+      ],
       ["pcie_x2_clk_n", "pcie_x2_clk_n", "AB5", "gpio", "Pcie X2", true],
       ["pcie_x2_clk_p", "pcie_x2_clk_p", "AB6", "gpio", "Pcie X2"],
       ["pcie_x2_rst_n", "pcie_x2_rst_n", "K22", "gpio", "Pcie X2", true],
@@ -1553,8 +1609,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "xilinx_kv260",
     clock: { name: "pmod_hda16_cc", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "xilinx-sp605",
@@ -1599,10 +1654,36 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_tx_n", "sfp_tx_n", "A14", "gpio", "Sfp Tx", true],
       ["sfp_tx_p", "sfp_tx_p", "B14", "gpio", "Sfp Tx"],
       ["sfp_tx_disable_0", "sfp_tx_disable", "Y8", "gpio", "Sfp Tx Disable"],
-      ["user_sma_mgt_rx_n", "user_sma_mgt_rx_n", "C9", "gpio", "User Sma Mgt Rx", true],
-      ["user_sma_mgt_rx_p", "user_sma_mgt_rx_p", "D9", "gpio", "User Sma Mgt Rx"],
-      ["user_sma_mgt_tx_n", "user_sma_mgt_tx_n", "A8", "gpio", "User Sma Mgt Tx", true],
-      ["user_sma_mgt_tx_p", "user_sma_mgt_tx_p", "B8", "gpio", "User Sma Mgt Tx"],
+      [
+        "user_sma_mgt_rx_n",
+        "user_sma_mgt_rx_n",
+        "C9",
+        "gpio",
+        "User Sma Mgt Rx",
+        true,
+      ],
+      [
+        "user_sma_mgt_rx_p",
+        "user_sma_mgt_rx_p",
+        "D9",
+        "gpio",
+        "User Sma Mgt Rx",
+      ],
+      [
+        "user_sma_mgt_tx_n",
+        "user_sma_mgt_tx_n",
+        "A8",
+        "gpio",
+        "User Sma Mgt Tx",
+        true,
+      ],
+      [
+        "user_sma_mgt_tx_p",
+        "user_sma_mgt_tx_p",
+        "B8",
+        "gpio",
+        "User Sma Mgt Tx",
+      ],
     ],
   },
   {
@@ -1648,12 +1729,26 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["linear_flash_a_1", "linear_flash_a1", "AH28", "spi", "SPI Flash"],
       ["linear_flash_a_2", "linear_flash_a2", "AG31", "spi", "SPI Flash"],
       ["linear_flash_a_3", "linear_flash_a3", "AF30", "spi", "SPI Flash"],
-      ["linear_flash_ce_n", "linear_flash_ce_n", "AL36", "spi", "SPI Flash", true],
+      [
+        "linear_flash_ce_n",
+        "linear_flash_ce_n",
+        "AL36",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["linear_flash_dq_0", "linear_flash_dq0", "AM36", "spi", "SPI Flash"],
       ["linear_flash_dq_1", "linear_flash_dq1", "AN36", "spi", "SPI Flash"],
       ["linear_flash_dq_2", "linear_flash_dq2", "AJ36", "spi", "SPI Flash"],
       ["linear_flash_dq_3", "linear_flash_dq3", "AJ37", "spi", "SPI Flash"],
-      ["linear_flash_oe_n", "linear_flash_oe_n", "BA41", "spi", "SPI Flash", true],
+      [
+        "linear_flash_oe_n",
+        "linear_flash_oe_n",
+        "BA41",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["user_sma_gpio_n_0", "user_sma_gpio_n", "AP31", "gpio", "GPIO", true],
       ["user_sma_gpio_p_0", "user_sma_gpio_p", "AN31", "gpio", "GPIO"],
       ["pcie_x2_clk_n", "pcie_x2_clk_n", "AB7", "gpio", "Pcie X2", true],
@@ -1693,7 +1788,14 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["user_led_6", "user_led", "AV36", "led", "User LEDs"],
       ["user_led_7", "user_led", "BA37", "led", "User LEDs"],
       ["cpu_reset_0", "cpu_reset", "L19", "button", "User Buttons"],
-      ["i2c_mux_reset_n_0", "i2c_mux_reset_n", "AL25", "button", "User Buttons", true],
+      [
+        "i2c_mux_reset_n_0",
+        "i2c_mux_reset_n",
+        "AL25",
+        "button",
+        "User Buttons",
+        true,
+      ],
       ["user_btn_e_0", "user_btn_e", "BE23", "button", "User Buttons"],
       ["user_btn_n_0", "user_btn_n", "BB24", "button", "User Buttons", true],
       ["user_btn_s_0", "user_btn_s", "BE22", "button", "User Buttons"],
@@ -1842,12 +1944,51 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_tx_p", "sfp_tx_p", "W4", "gpio", "Sfp Tx"],
       ["si5324_int_n", "si5324_int_n", "AJ25", "gpio", "Si5324", true],
       ["si5324_rst_n", "si5324_rst_n", "W23", "gpio", "Si5324", true],
-      ["si5324_rec_clk_n", "si5324_rec_clk_n", "AE20", "gpio", "Si5324 Rec Clk", true],
-      ["si5324_rec_clk_p", "si5324_rec_clk_p", "AD20", "gpio", "Si5324 Rec Clk"],
-      ["user_sma_mgt_rx_n", "user_sma_mgt_rx_n", "AB5", "gpio", "User Sma Mgt Rx", true],
-      ["user_sma_mgt_rx_p", "user_sma_mgt_rx_p", "AB6", "gpio", "User Sma Mgt Rx"],
-      ["user_sma_mgt_tx_n", "user_sma_mgt_tx_n", "Y1", "gpio", "User Sma Mgt Tx", true],
-      ["user_sma_mgt_tx_p", "user_sma_mgt_tx_p", "Y2", "gpio", "User Sma Mgt Tx"],
+      [
+        "si5324_rec_clk_n",
+        "si5324_rec_clk_n",
+        "AE20",
+        "gpio",
+        "Si5324 Rec Clk",
+        true,
+      ],
+      [
+        "si5324_rec_clk_p",
+        "si5324_rec_clk_p",
+        "AD20",
+        "gpio",
+        "Si5324 Rec Clk",
+      ],
+      [
+        "user_sma_mgt_rx_n",
+        "user_sma_mgt_rx_n",
+        "AB5",
+        "gpio",
+        "User Sma Mgt Rx",
+        true,
+      ],
+      [
+        "user_sma_mgt_rx_p",
+        "user_sma_mgt_rx_p",
+        "AB6",
+        "gpio",
+        "User Sma Mgt Rx",
+      ],
+      [
+        "user_sma_mgt_tx_n",
+        "user_sma_mgt_tx_n",
+        "Y1",
+        "gpio",
+        "User Sma Mgt Tx",
+        true,
+      ],
+      [
+        "user_sma_mgt_tx_p",
+        "user_sma_mgt_tx_p",
+        "Y2",
+        "gpio",
+        "User Sma Mgt Tx",
+      ],
       ["usrclk_n", "usrclk_n", "AG14", "gpio", "Usrclk", true],
       ["usrclk_p", "usrclk_p", "AF14", "gpio", "Usrclk"],
     ],
@@ -2012,7 +2153,14 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_tx_n", "sfp_tx_n", "W5", "gpio", "Sfp Tx", true],
       ["sfp_tx_p", "sfp_tx_p", "Y4", "gpio", "Sfp Tx"],
       ["sfp_tx_p", "sfp_tx_p", "W6", "gpio", "Sfp Tx"],
-      ["sfp_tx_disable_n_1", "sfp_tx_disable_n", "AF20", "gpio", "Sfp Tx Disable N", true],
+      [
+        "sfp_tx_disable_n_1",
+        "sfp_tx_disable_n",
+        "AF20",
+        "gpio",
+        "Sfp Tx Disable N",
+        true,
+      ],
       ["hdmi_ctl_clkgen_lol", "hdmi_ctl_clkgen_lol", "G8", "gpio", "Video"],
       ["hdmi_ctl_clkgen_rst", "hdmi_ctl_clkgen_rst", "H8", "gpio", "Video"],
       ["hdmi_ctl_scl", "hdmi_ctl_scl", "N12", "gpio", "Video"],
@@ -2136,8 +2284,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "ztex213",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "adi-adrv2crr-fmc",
@@ -2388,8 +2535,22 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["ddram_ras_n", "ddram_ras_n", "H29", "gpio", "Ddram", true],
       ["ddram_ras_n", "ddram_ras_n", "AH34", "gpio", "Ddram", true],
       ["ddram_refclk_n", "ddram_refclk_n", "H26", "gpio", "Ddram Refclk", true],
-      ["ddram_refclk_n", "ddram_refclk_n", "AE32", "gpio", "Ddram Refclk", true],
-      ["ddram_refclk_n", "ddram_refclk_n", "AW13", "gpio", "Ddram Refclk", true],
+      [
+        "ddram_refclk_n",
+        "ddram_refclk_n",
+        "AE32",
+        "gpio",
+        "Ddram Refclk",
+        true,
+      ],
+      [
+        "ddram_refclk_n",
+        "ddram_refclk_n",
+        "AW13",
+        "gpio",
+        "Ddram Refclk",
+        true,
+      ],
       ["ddram_refclk_p", "ddram_refclk_p", "J26", "gpio", "Ddram Refclk"],
       ["ddram_refclk_p", "ddram_refclk_p", "AE31", "gpio", "Ddram Refclk"],
       ["ddram_refclk_p", "ddram_refclk_p", "AW14", "gpio", "Ddram Refclk"],
@@ -2769,10 +2930,38 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["qsfp_rx_p_3", "qsfp_rx_p3", "AV135", "gpio", "Qsfp"],
       ["qsfp_ctl_lpmode", "qsfp_ctl_lpmode", "BF107", "gpio", "Qsfp Ctl"],
       ["qsfp_ctl_lpmode", "qsfp_ctl_lpmode", "BE107", "gpio", "Qsfp Ctl"],
-      ["qsfp_ctl_modprs_n", "qsfp_ctl_modprs_n", "BF115", "gpio", "Qsfp Ctl", true],
-      ["qsfp_ctl_modprs_n", "qsfp_ctl_modprs_n", "BR109", "gpio", "Qsfp Ctl", true],
-      ["qsfp_ctl_reset_n", "qsfp_ctl_reset_n", "BE115", "gpio", "Qsfp Ctl", true],
-      ["qsfp_ctl_reset_n", "qsfp_ctl_reset_n", "BF104", "gpio", "Qsfp Ctl", true],
+      [
+        "qsfp_ctl_modprs_n",
+        "qsfp_ctl_modprs_n",
+        "BF115",
+        "gpio",
+        "Qsfp Ctl",
+        true,
+      ],
+      [
+        "qsfp_ctl_modprs_n",
+        "qsfp_ctl_modprs_n",
+        "BR109",
+        "gpio",
+        "Qsfp Ctl",
+        true,
+      ],
+      [
+        "qsfp_ctl_reset_n",
+        "qsfp_ctl_reset_n",
+        "BE115",
+        "gpio",
+        "Qsfp Ctl",
+        true,
+      ],
+      [
+        "qsfp_ctl_reset_n",
+        "qsfp_ctl_reset_n",
+        "BF104",
+        "gpio",
+        "Qsfp Ctl",
+        true,
+      ],
       ["qsfp_ctl_sel_n", "qsfp_ctl_sel_n", "BH109", "gpio", "Qsfp Ctl", true],
       ["qsfp_ctl_sel_n", "qsfp_ctl_sel_n", "BU109", "gpio", "Qsfp Ctl", true],
       ["sfp_rxn", "sfp_rxn", "BN3", "gpio", "Sfp"],
@@ -2800,8 +2989,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "USB-Blaster",
     source: "analog_pocket",
     clock: { name: "clk74a", pin: "unknown", frequency: 74250000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "antmicro-artix-dc-scm",
@@ -3180,9 +3368,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "openFPGALoader",
     source: "camlink_4k",
     clock: { name: "clk27", pin: "unknown", frequency: 27000000 },
-    pins: [
-      ["user_led_1", "user_led", "A9", "led", "User LEDs"],
-    ],
+    pins: [["user_led_1", "user_led", "A9", "led", "User LEDs"]],
   },
   {
     id: "colognechip-gatemate-evb",
@@ -3207,7 +3393,14 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["user_led_n_6", "user_led_n", "IO_EB_B7", "led", "User LEDs", true],
       ["user_led_n_7", "user_led_n", "IO_EB_B8", "led", "User LEDs", true],
       ["spiflash4x_clk", "spiflash4x_clk", "IO_WA_B8", "spi", "SPI Flash"],
-      ["spiflash4x_cs_n", "spiflash4x_cs_n", "IO_WA_A8", "spi", "SPI Flash", true],
+      [
+        "spiflash4x_cs_n",
+        "spiflash4x_cs_n",
+        "IO_WA_A8",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["spiflash4x_dq_0", "spiflash4x_dq0", "IO_WA_B7", "spi", "SPI Flash"],
       ["spiflash4x_dq_1", "spiflash4x_dq1", "IO_WA_A7", "spi", "SPI Flash"],
       ["spiflash4x_dq_2", "spiflash4x_dq2", "IO_WA_B6", "spi", "SPI Flash"],
@@ -3228,8 +3421,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "colorlight_5a_75b",
     clock: { name: "clk25", pin: "unknown", frequency: 25000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "colorlight-5a-75e",
@@ -3245,8 +3437,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "colorlight_5a_75e",
     clock: { name: "clk25", pin: "unknown", frequency: 25000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "decklink-intensity-pro-4k",
@@ -3515,10 +3706,38 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["spiflash4x_dq_1", "spiflash4x_dq1", "D19", "spi", "SPI Flash"],
       ["spiflash4x_dq_2", "spiflash4x_dq2", "G18", "spi", "SPI Flash"],
       ["spiflash4x_dq_3", "spiflash4x_dq3", "F18", "spi", "SPI Flash"],
-      ["seven_seg_ctrl_n_0_0", "seven_seg_ctrl_n0_0", "U2", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_1", "seven_seg_ctrl_n0_1", "U4", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_2", "seven_seg_ctrl_n0_2", "V4", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_3", "seven_seg_ctrl_n0_3", "W4", "gpio", "Seven Seg Ctrl N", true],
+      [
+        "seven_seg_ctrl_n_0_0",
+        "seven_seg_ctrl_n0_0",
+        "U2",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_1",
+        "seven_seg_ctrl_n0_1",
+        "U4",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_2",
+        "seven_seg_ctrl_n0_2",
+        "V4",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_3",
+        "seven_seg_ctrl_n0_3",
+        "W4",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
     ],
   },
   {
@@ -3939,9 +4158,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "ebaz4205",
     clock: { name: "clk33_333", pin: "unknown", frequency: 33333000 },
-    pins: [
-      ["user_led_1", "user_led", "W13", "led", "User LEDs"],
-    ],
+    pins: [["user_led_1", "user_led", "W13", "led", "User LEDs"]],
   },
   {
     id: "efinix-t8f81-dev-kit",
@@ -4425,8 +4642,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "enclustra_st1",
     clock: { name: "clk", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "fairwaves-xtrx",
@@ -4720,8 +4936,22 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["user_led_n_5", "user_led_n", "IO_SB_B2", "led", "User LEDs", true],
       ["user_led_n_6", "user_led_n", "IO_SB_A3", "led", "User LEDs", true],
       ["user_led_n_7", "user_led_n", "IO_SB_B3", "led", "User LEDs", true],
-      ["user_btn_n_1", "user_btn_n", "IO_EA_A4", "button", "User Buttons", true],
-      ["user_btn_n_2", "user_btn_n", "IO_EA_B3", "button", "User Buttons", true],
+      [
+        "user_btn_n_1",
+        "user_btn_n",
+        "IO_EA_A4",
+        "button",
+        "User Buttons",
+        true,
+      ],
+      [
+        "user_btn_n_2",
+        "user_btn_n",
+        "IO_EA_B3",
+        "button",
+        "User Buttons",
+        true,
+      ],
       ["sdcard_clk", "sdcard_clk", "IO_NA_A3", "spi", "SDCard"],
       ["sdcard_cmd", "sdcard_cmd", "IO_NA_B3", "spi", "SDCard"],
       ["sdcard_data_0", "sdcard_data0", "IO_NA_A1", "spi", "SDCard"],
@@ -4729,7 +4959,14 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sdcard_data_2", "sdcard_data2", "IO_NA_B2", "spi", "SDCard"],
       ["sdcard_data_3", "sdcard_data3", "IO_NA_A2", "spi", "SDCard"],
       ["spiflash4x_clk", "spiflash4x_clk", "IO_WA_B8", "spi", "SPI Flash"],
-      ["spiflash4x_cs_n", "spiflash4x_cs_n", "IO_WA_A8", "spi", "SPI Flash", true],
+      [
+        "spiflash4x_cs_n",
+        "spiflash4x_cs_n",
+        "IO_WA_A8",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["spiflash4x_dq_0", "spiflash4x_dq0", "IO_WA_B7", "spi", "SPI Flash"],
       ["spiflash4x_dq_1", "spiflash4x_dq1", "IO_WA_A7", "spi", "SPI Flash"],
       ["spiflash4x_dq_2", "spiflash4x_dq2", "IO_WA_B6", "spi", "SPI Flash"],
@@ -4867,8 +5104,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "krtkl_snickerdoodle",
     clock: { name: "clk100", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "lambdaconcept-pcie-screamer-m2",
@@ -4987,9 +5223,30 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["pcie_ctrl_sw1_pd", "pcie_ctrl_sw1_pd", "T6", "gpio", "Pcie Ctrl"],
       ["pcie_ctrl_sw2_pd", "pcie_ctrl_sw2_pd", "T5", "gpio", "Pcie Ctrl"],
       ["pcie_ctrl_sw_sel", "pcie_ctrl_sw_sel", "AF25", "gpio", "Pcie Ctrl"],
-      ["seven_seg_ctrl_n_0_0", "seven_seg_ctrl_n0_0", "AC21", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_1", "seven_seg_ctrl_n0_1", "W22", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_2", "seven_seg_ctrl_n0_2", "AE26", "gpio", "Seven Seg Ctrl N", true],
+      [
+        "seven_seg_ctrl_n_0_0",
+        "seven_seg_ctrl_n0_0",
+        "AC21",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_1",
+        "seven_seg_ctrl_n0_1",
+        "W22",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_2",
+        "seven_seg_ctrl_n0_2",
+        "AE26",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
       ["sfp_rxn", "sfp_rxn", "C10", "gpio", "Sfp"],
       ["sfp_rxn", "sfp_rxn", "V25", "gpio", "Sfp"],
       ["sfp_rxn", "sfp_rxn", "V22", "gpio", "Sfp"],
@@ -5405,8 +5662,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "logicbone",
     clock: { name: "clk25", pin: "unknown", frequency: 25000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-kolsch",
@@ -5447,8 +5703,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_konfekt",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-kopflos",
@@ -5464,8 +5719,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_kopflos",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-krote",
@@ -5481,8 +5735,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "iceprog",
     source: "machdyne_krote",
     clock: { name: "clk100", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-lakritz",
@@ -5498,8 +5751,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_lakritz",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-minze",
@@ -5515,8 +5767,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_minze",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-mozart-ml1",
@@ -5532,8 +5783,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_mozart_ml1",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-mozart-ml2",
@@ -5549,8 +5799,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_mozart_ml2",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-mozart-mx1",
@@ -5566,8 +5815,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_mozart_mx1",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-mozart-mx2",
@@ -5583,8 +5831,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_mozart_mx2",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-noir",
@@ -5600,8 +5847,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_noir",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-schoko",
@@ -5617,8 +5863,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_schoko",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-vanille",
@@ -5634,8 +5879,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_vanille",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "machdyne-vivaldi-ml1",
@@ -5651,8 +5895,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "machdyne_vivaldi_ml1",
     clock: { name: "clk48", pin: "unknown", frequency: 48000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "micronova-mercury2",
@@ -5855,8 +6098,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "openFPGALoader",
     source: "modretro_chromatic",
     clock: { name: "clk_fpga", pin: "unknown", frequency: 33554319 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "myir-myc-j7a100t",
@@ -6168,8 +6410,22 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_rx_los_1", "sfp_rx_los", "R17", "gpio", "Sfp Rx Los"],
       ["sfp_tx_disable_0", "sfp_tx_disable", "V22", "gpio", "Sfp Tx Disable"],
       ["sfp_tx_disable_1", "sfp_tx_disable", "P15", "gpio", "Sfp Tx Disable"],
-      ["sfp_tx_disable_n_0", "sfp_tx_disable_n", "V22", "gpio", "Sfp Tx Disable N", true],
-      ["sfp_tx_disable_n_1", "sfp_tx_disable_n", "P15", "gpio", "Sfp Tx Disable N", true],
+      [
+        "sfp_tx_disable_n_0",
+        "sfp_tx_disable_n",
+        "V22",
+        "gpio",
+        "Sfp Tx Disable N",
+        true,
+      ],
+      [
+        "sfp_tx_disable_n_1",
+        "sfp_tx_disable_n",
+        "P15",
+        "gpio",
+        "Sfp Tx Disable N",
+        true,
+      ],
       ["sfp_tx_fault_0", "sfp_tx_fault", "P20", "gpio", "Sfp Tx Fault"],
       ["sfp_tx_fault_1", "sfp_tx_fault", "U20", "gpio", "Sfp Tx Fault"],
     ],
@@ -6237,7 +6493,14 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     clock: { name: "clk0", pin: "unknown", frequency: 10000000 },
     pins: [
       ["spiflash4x_clk", "spiflash4x_clk", "IO_WA_B8", "spi", "SPI Flash"],
-      ["spiflash4x_cs_n", "spiflash4x_cs_n", "IO_WA_A8", "spi", "SPI Flash", true],
+      [
+        "spiflash4x_cs_n",
+        "spiflash4x_cs_n",
+        "IO_WA_A8",
+        "spi",
+        "SPI Flash",
+        true,
+      ],
       ["spiflash4x_dq_0", "spiflash4x_dq0", "IO_WA_B7", "spi", "SPI Flash"],
       ["spiflash4x_dq_1", "spiflash4x_dq1", "IO_WA_A7", "spi", "SPI Flash"],
       ["spiflash4x_dq_2", "spiflash4x_dq2", "IO_WA_B6", "spi", "SPI Flash"],
@@ -6278,10 +6541,34 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_los_1", "sfp_los", "A13", "gpio", "Sfp Los"],
       ["sfp_mod_def0_0", "sfp_mod_def0", "D14", "gpio", "Sfp Mod Def0"],
       ["sfp_mod_def0_1", "sfp_mod_def0", "A14", "gpio", "Sfp Mod Def0"],
-      ["sfp_rate_select_rs0", "sfp_rate_select_rs0", "D13", "gpio", "Sfp Rate Select"],
-      ["sfp_rate_select_rs0", "sfp_rate_select_rs0", "B14", "gpio", "Sfp Rate Select"],
-      ["sfp_rate_select_rs1", "sfp_rate_select_rs1", "E12", "gpio", "Sfp Rate Select"],
-      ["sfp_rate_select_rs1", "sfp_rate_select_rs1", "A12", "gpio", "Sfp Rate Select"],
+      [
+        "sfp_rate_select_rs0",
+        "sfp_rate_select_rs0",
+        "D13",
+        "gpio",
+        "Sfp Rate Select",
+      ],
+      [
+        "sfp_rate_select_rs0",
+        "sfp_rate_select_rs0",
+        "B14",
+        "gpio",
+        "Sfp Rate Select",
+      ],
+      [
+        "sfp_rate_select_rs1",
+        "sfp_rate_select_rs1",
+        "E12",
+        "gpio",
+        "Sfp Rate Select",
+      ],
+      [
+        "sfp_rate_select_rs1",
+        "sfp_rate_select_rs1",
+        "A12",
+        "gpio",
+        "Sfp Rate Select",
+      ],
       ["sfp_rx_n", "sfp_rx_n", "M1", "gpio", "Sfp Rx", true],
       ["sfp_rx_n", "sfp_rx_n", "K1", "gpio", "Sfp Rx", true],
       ["sfp_rx_p", "sfp_rx_p", "M2", "gpio", "Sfp Rx"],
@@ -6294,10 +6581,36 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_tx_disable_1", "sfp_tx_disable", "F13", "gpio", "Sfp Tx Disable"],
       ["sfp_tx_fault_0", "sfp_tx_fault", "C14", "gpio", "Sfp Tx Fault"],
       ["sfp_tx_fault_1", "sfp_tx_fault", "F14", "gpio", "Sfp Tx Fault"],
-      ["user_sma_mgt_rx_n", "user_sma_mgt_rx_n", "H1", "gpio", "User Sma Mgt Rx", true],
-      ["user_sma_mgt_rx_p", "user_sma_mgt_rx_p", "H2", "gpio", "User Sma Mgt Rx"],
-      ["user_sma_mgt_tx_n", "user_sma_mgt_tx_n", "J4", "gpio", "User Sma Mgt Tx", true],
-      ["user_sma_mgt_tx_p", "user_sma_mgt_tx_p", "J5", "gpio", "User Sma Mgt Tx"],
+      [
+        "user_sma_mgt_rx_n",
+        "user_sma_mgt_rx_n",
+        "H1",
+        "gpio",
+        "User Sma Mgt Rx",
+        true,
+      ],
+      [
+        "user_sma_mgt_rx_p",
+        "user_sma_mgt_rx_p",
+        "H2",
+        "gpio",
+        "User Sma Mgt Rx",
+      ],
+      [
+        "user_sma_mgt_tx_n",
+        "user_sma_mgt_tx_n",
+        "J4",
+        "gpio",
+        "User Sma Mgt Tx",
+        true,
+      ],
+      [
+        "user_sma_mgt_tx_p",
+        "user_sma_mgt_tx_p",
+        "J5",
+        "gpio",
+        "User Sma Mgt Tx",
+      ],
     ],
   },
   {
@@ -6359,8 +6672,22 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sfp_tx_n", "sfp_tx_n", "B1", "gpio", "Sfp Tx", true],
       ["sfp_tx_p", "sfp_tx_p", "D2", "gpio", "Sfp Tx"],
       ["sfp_tx_p", "sfp_tx_p", "B2", "gpio", "Sfp Tx"],
-      ["sfp_tx_disable_n_0", "sfp_tx_disable_n", "H23", "gpio", "Sfp Tx Disable N", true],
-      ["sfp_tx_disable_n_1", "sfp_tx_disable_n", "H24", "gpio", "Sfp Tx Disable N", true],
+      [
+        "sfp_tx_disable_n_0",
+        "sfp_tx_disable_n",
+        "H23",
+        "gpio",
+        "Sfp Tx Disable N",
+        true,
+      ],
+      [
+        "sfp_tx_disable_n_1",
+        "sfp_tx_disable_n",
+        "H24",
+        "gpio",
+        "Sfp Tx Disable N",
+        true,
+      ],
     ],
   },
   {
@@ -6446,8 +6773,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "puzhi_pz_a7xxt_kfb",
     clock: { name: "clk200", pin: "unknown", frequency: 200000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "qmtech-5cefa2",
@@ -6615,8 +6941,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "qmtech_daughterboard",
     clock: { name: "clk", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "qmtech-ep4ce15-starter-kit",
@@ -6735,8 +7060,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "qmtech_rp2040_daughterboard",
     clock: { name: "clk", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "qmtech-wukong",
@@ -6752,8 +7076,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "qmtech_wukong",
     clock: { name: "clk50", pin: "unknown", frequency: 50000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "qmtech-xc7a35t",
@@ -6769,8 +7092,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "qmtech_xc7a35t",
     clock: { name: "clk50", pin: "unknown", frequency: 50000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "qmtech-xc7k325t",
@@ -7036,10 +7358,38 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
       ["sdram_ba_1", "sdram_ba1", "74", "gpio", "Sdram"],
       ["sdram_cke", "sdram_cke", "58", "gpio", "Sdram"],
       ["sdram_cs_n", "sdram_cs_n", "72", "gpio", "Sdram", true],
-      ["seven_seg_ctrl_n_0_0", "seven_seg_ctrl_n0_0", "133", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_1", "seven_seg_ctrl_n0_1", "135", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_2", "seven_seg_ctrl_n0_2", "136", "gpio", "Seven Seg Ctrl N", true],
-      ["seven_seg_ctrl_n_0_3", "seven_seg_ctrl_n0_3", "137", "gpio", "Seven Seg Ctrl N", true],
+      [
+        "seven_seg_ctrl_n_0_0",
+        "seven_seg_ctrl_n0_0",
+        "133",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_1",
+        "seven_seg_ctrl_n0_1",
+        "135",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_2",
+        "seven_seg_ctrl_n0_2",
+        "136",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
+      [
+        "seven_seg_ctrl_n_0_3",
+        "seven_seg_ctrl_n0_3",
+        "137",
+        "gpio",
+        "Seven Seg Ctrl N",
+        true,
+      ],
     ],
   },
   {
@@ -7203,8 +7553,7 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "openFPGALoader",
     source: "sipeed_slogic16u3",
     clock: { name: "clk", pin: "unknown", frequency: 100000000 },
-    pins: [
-    ],
+    pins: [],
   },
   {
     id: "sipeed-tang-console",
@@ -7397,12 +7746,12 @@ const LITEX_CATALOG_SPECS: CatalogBoardSpec[] = [
     program: "vivado",
     source: "sipeed_tang_primer",
     clock: { name: "clk24", pin: "unknown", frequency: 24000000 },
-    pins: [
-    ],
+    pins: [],
   },
 ];
 
-export const litexCatalogBoards: BoardDefinition[] = LITEX_CATALOG_SPECS.map(makeCatalogBoard);
+export const litexCatalogBoards: BoardDefinition[] =
+  LITEX_CATALOG_SPECS.map(makeCatalogBoard);
 
 function makeCatalogGroup({
   id,
@@ -7434,7 +7783,9 @@ function makeCatalogGroup({
 }
 
 function getCatalogBoard(id: string): BoardDefinition {
-  const board = litexCatalogBoards.find((catalogBoard) => catalogBoard.id === id);
+  const board = litexCatalogBoards.find(
+    (catalogBoard) => catalogBoard.id === id,
+  );
 
   if (!board) {
     throw new Error(`Missing LiteX catalog board: ${id}`);
@@ -7449,60 +7800,42 @@ export const litexCatalogBoardGroups = [
     name: "SITLINV STLV7325",
     vendor: "SITLINV",
     device: "Kintex-7",
-    boardIds: [
-      "sitlinv-stlv7325-v1",
-      "sitlinv-stlv7325-v2",
-    ],
+    boardIds: ["sitlinv-stlv7325-v1", "sitlinv-stlv7325-v2"],
   }),
   makeCatalogGroup({
     id: "alchitry-au-family",
     name: "Alchitry Au",
     vendor: "Alchitry",
     device: "Artix-7",
-    boardIds: [
-      "alchitry-au",
-      "alchitry-au-v2",
-    ],
+    boardIds: ["alchitry-au", "alchitry-au-v2"],
   }),
   makeCatalogGroup({
     id: "aliexpress-xc7k",
     name: "AliExpress XC7K",
     vendor: "AliExpress",
     device: "Kintex-7",
-    boardIds: [
-      "aliexpress-xc7k70t",
-      "aliexpress-xc7k420t",
-    ],
+    boardIds: ["aliexpress-xc7k70t", "aliexpress-xc7k420t"],
   }),
   makeCatalogGroup({
     id: "alinx-ax70xx",
     name: "ALINX AX70xx",
     vendor: "ALINX",
     device: "Zynq-7000",
-    boardIds: [
-      "alinx-ax7010",
-      "alinx-ax7020",
-    ],
+    boardIds: ["alinx-ax7010", "alinx-ax7020"],
   }),
   makeCatalogGroup({
     id: "colorlight-5a-75",
     name: "Colorlight 5A-75",
     vendor: "Colorlight",
     device: "ECP5",
-    boardIds: [
-      "colorlight-5a-75b",
-      "colorlight-5a-75e",
-    ],
+    boardIds: ["colorlight-5a-75b", "colorlight-5a-75e"],
   }),
   makeCatalogGroup({
     id: "lambdaconcept-pcie-screamer-family",
     name: "LambdaConcept PCIe Screamer",
     vendor: "LambdaConcept",
     device: "Artix-7",
-    boardIds: [
-      "lambdaconcept-pcie-screamer",
-      "lambdaconcept-pcie-screamer-m2",
-    ],
+    boardIds: ["lambdaconcept-pcie-screamer", "lambdaconcept-pcie-screamer-m2"],
   }),
   makeCatalogGroup({
     id: "machdyne-mozart",
@@ -7521,40 +7854,28 @@ export const litexCatalogBoardGroups = [
     name: "Radiona ULX4M V2",
     vendor: "Radiona",
     device: "ECP5",
-    boardIds: [
-      "radiona-ulx4m-ld-v2",
-      "radiona-ulx4m-ls-v2",
-    ],
+    boardIds: ["radiona-ulx4m-ld-v2", "radiona-ulx4m-ls-v2"],
   }),
   makeCatalogGroup({
     id: "qmtech-5cefa",
     name: "QMTech 5CEFA",
     vendor: "QMTech",
     device: "Cyclone V",
-    boardIds: [
-      "qmtech-5cefa2",
-      "qmtech-5cefa5",
-    ],
+    boardIds: ["qmtech-5cefa2", "qmtech-5cefa5"],
   }),
   makeCatalogGroup({
     id: "qmtech-artix7",
     name: "QMTech Artix-7",
     vendor: "QMTech",
     device: "Artix-7",
-    boardIds: [
-      "qmtech-artix7-fbg484",
-      "qmtech-artix7-fgg676",
-    ],
+    boardIds: ["qmtech-artix7-fbg484", "qmtech-artix7-fgg676"],
   }),
   makeCatalogGroup({
     id: "sipeed-tang-mega-138k",
     name: "Sipeed Tang Mega 138K",
     vendor: "Sipeed",
     device: "Gowin",
-    boardIds: [
-      "sipeed-tang-mega-138k",
-      "sipeed-tang-mega-138k-pro",
-    ],
+    boardIds: ["sipeed-tang-mega-138k", "sipeed-tang-mega-138k-pro"],
   }),
   makeCatalogGroup({
     id: "sipeed-tang-primer",

@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { resolveBoardProgrammer } from "../../data/boardProgrammers";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import {
+  createTauriChannel,
+  hasTauriInvoke,
+  invokeTauri,
+} from "../../lib/tauri";
 
 type SerialPortRecord = {
   portName: string;
@@ -20,7 +24,11 @@ const LINE_ENDINGS: Record<LineEnding, string> = {
   crlf: "\r\n",
 };
 
-export default function SerialMonitorSection({ board }: { board: BoardDefinition }) {
+export default function SerialMonitorSection({
+  board,
+}: {
+  board: BoardDefinition;
+}) {
   const [ports, setPorts] = useState<SerialPortRecord[]>([]);
   const [selectedPort, setSelectedPort] = useState("");
   const [baudRate, setBaudRate] = useState(115200);
@@ -66,7 +74,7 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           return current;
         }
         const usbPort = found.find((port) =>
-          `${port.portName} ${port.description}`.toLowerCase().includes("usb")
+          `${port.portName} ${port.description}`.toLowerCase().includes("usb"),
         );
         return usbPort?.portName ?? found[0]?.portName ?? "";
       });
@@ -161,7 +169,9 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
             disabled={isConnected}
             aria-label="Serial port"
           >
-            {ports.length === 0 ? <option value="">No serial ports found</option> : null}
+            {ports.length === 0 ? (
+              <option value="">No serial ports found</option>
+            ) : null}
             {ports.map((port) => (
               <option key={port.portName} value={port.portName}>
                 {port.portName}
@@ -196,7 +206,9 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           <button
             type="button"
             className="primary-action synthesis-generate-button"
-            disabled={isBusy || (!isConnected && !selectedPort) || !hasTauriInvoke()}
+            disabled={
+              isBusy || (!isConnected && !selectedPort) || !hasTauriInvoke()
+            }
             onClick={() => void (isConnected ? disconnect() : connect())}
           >
             {isConnected ? "Disconnect" : "Connect"}
@@ -209,7 +221,8 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
             : isConnected
               ? statusMessage
               : hasTauriInvoke()
-                ? statusMessage || "Pick the board's USB serial port and connect to talk to your design."
+                ? statusMessage ||
+                  "Pick the board's USB serial port and connect to talk to your design."
                 : "Launch the Tauri desktop app to use the serial monitor."}
         </div>
 
@@ -221,7 +234,11 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           <input
             className="serial-control serial-input"
             value={draft}
-            placeholder={isConnected ? "Type and press Enter to send" : "Connect to send data"}
+            placeholder={
+              isConnected
+                ? "Type and press Enter to send"
+                : "Connect to send data"
+            }
             disabled={!isConnected}
             autoCapitalize="off"
             autoCorrect="off"
@@ -237,7 +254,9 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           <select
             className="serial-control"
             value={lineEnding}
-            onChange={(event) => setLineEnding(event.target.value as LineEnding)}
+            onChange={(event) =>
+              setLineEnding(event.target.value as LineEnding)
+            }
             aria-label="Line ending"
           >
             <option value="lf">LF</option>
@@ -273,16 +292,32 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           overflow: "hidden",
         }}
       >
-        <InfoCard title="Connection" style={{ padding: "14px", borderRadius: "16px" }} compact>
-          <InfoRow label="Status" value={isConnected ? "Connected" : "Idle"} compact />
+        <InfoCard
+          title="Connection"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
+          <InfoRow
+            label="Status"
+            value={isConnected ? "Connected" : "Idle"}
+            compact
+          />
           <InfoRow label="Port" value={selectedPort || "None"} compact />
           <InfoRow label="Baud" value={String(baudRate)} compact />
           <InfoRow label="Ports Found" value={String(ports.length)} compact />
         </InfoCard>
 
-        <InfoCard title="Board" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Board"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <InfoRow label="Name" value={board.name} compact />
-          <InfoRow label="Programmer" value={programmer?.command ?? "None"} compact />
+          <InfoRow
+            label="Programmer"
+            value={programmer?.command ?? "None"}
+            compact
+          />
           {programmer?.usbVendorId && programmer?.usbProductId ? (
             <InfoRow
               label="USB ID"
@@ -294,10 +329,14 @@ export default function SerialMonitorSection({ board }: { board: BoardDefinition
           ) : null}
         </InfoCard>
 
-        <InfoCard title="Tip" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Tip"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <div className="serial-tip">
-            The UART Hello template transmits at 115200 baud — flash it, connect here, and you
-            should see the greeting stream in.
+            The UART Hello template transmits at 115200 baud — flash it, connect
+            here, and you should see the greeting stream in.
           </div>
         </InfoCard>
       </div>

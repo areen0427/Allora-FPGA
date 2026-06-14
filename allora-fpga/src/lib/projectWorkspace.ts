@@ -36,7 +36,12 @@ export async function createProjectWorkspace({
   parentDirectory?: string | null;
   templateId?: string;
 }) {
-  const starterFiles = buildStarterFiles({ projectName, board, language, templateId });
+  const starterFiles = buildStarterFiles({
+    projectName,
+    board,
+    language,
+    templateId,
+  });
   const folderName = sanitizeFolderName(projectName);
   const response = await invokeTauri<CreateProjectWorkspaceResponse>(
     "create_project_workspace",
@@ -50,16 +55,17 @@ export async function createProjectWorkspace({
           content: file.content,
         })),
       },
-    }
+    },
   );
 
   const files: ProjectFile[] = response.files.map((writtenFile) => {
     const starterFile = starterFiles.find(
-      (file) => file.relativePath === writtenFile.relativePath
+      (file) => file.relativePath === writtenFile.relativePath,
     );
 
     return {
-      name: writtenFile.relativePath.split("/").pop() ?? writtenFile.relativePath,
+      name:
+        writtenFile.relativePath.split("/").pop() ?? writtenFile.relativePath,
       content: starterFile?.content ?? "",
       path: writtenFile.absolutePath,
     };
@@ -112,7 +118,7 @@ export async function readProjectWorkspace(projectPath: string) {
       request: {
         projectPath,
       },
-    }
+    },
   );
 
   return response.files.map((file) => ({
@@ -154,7 +160,11 @@ function buildStarterFiles({
   if (template?.generate && language !== "VHDL") {
     const generated = template.generate({ board, topModule });
     sourceContent = generated.source;
-    constraintsContent = createConstraintLines(board, topModule, generated.mappings);
+    constraintsContent = createConstraintLines(
+      board,
+      topModule,
+      generated.mappings,
+    );
   }
 
   return [
@@ -178,7 +188,7 @@ function buildStarterFiles({
           template: template?.id ?? "blinky",
         },
         null,
-        2
+        2,
       ),
     },
   ];
@@ -298,12 +308,15 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
     ].join("\n");
   }
 
-  return [`# ${board.name} starter constraints for ${topModule}`, ""].join("\n");
+  return [`# ${board.name} starter constraints for ${topModule}`, ""].join(
+    "\n",
+  );
 }
 
 function findResetPin(board: BoardDefinition) {
   return board.buttons.find((button) => {
-    const text = `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
+    const text =
+      `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
     return text.includes("rst") || text.includes("reset");
   });
 }

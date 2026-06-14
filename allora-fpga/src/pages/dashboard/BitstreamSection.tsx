@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import {
+  createTauriChannel,
+  hasTauriInvoke,
+  invokeTauri,
+} from "../../lib/tauri";
 import {
   appendBuildRecord,
   createBuildRecordId,
@@ -29,7 +33,10 @@ type BitstreamSectionProps = {
     content: string;
     isBinary?: boolean;
   }) => Promise<void> | void;
-  onUpdateConstraints?: (fileName: string, content: string) => Promise<void> | void;
+  onUpdateConstraints?: (
+    fileName: string,
+    content: string,
+  ) => Promise<void> | void;
 };
 
 type BitstreamArtifact = {
@@ -75,40 +82,44 @@ export default function BitstreamSection({
   }, [liveLogs]);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
-  const selectedTopLevelFile =
-    topLevelFileName
-      ? hdlFiles.find((file) => file.name === topLevelFileName) ?? null
-      : null;
+  const selectedTopLevelFile = topLevelFileName
+    ? (hdlFiles.find((file) => file.name === topLevelFileName) ?? null)
+    : null;
   const topModule = useMemo(
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
-    [selectedTopLevelFile]
+    [selectedTopLevelFile],
   );
   const topLevelPorts = useMemo(
     () => findPorts(selectedTopLevelFile ? [selectedTopLevelFile] : []),
-    [selectedTopLevelFile]
+    [selectedTopLevelFile],
   );
   const generatedConstraintContent = useMemo(
     () => createGeneratedConstraints(board, topLevelPorts, projectName),
-    [board, topLevelPorts, projectName]
+    [board, topLevelPorts, projectName],
   );
   const autoMappings = useMemo(
     () => createConstraintMappings(board, topLevelPorts),
-    [board, topLevelPorts]
+    [board, topLevelPorts],
   );
   const unmappedPorts = autoMappings.filter((mapping) => !mapping.pin);
   const extension = getBitstreamExtension(board);
   const constraintFile =
-    files.find((file) =>
-      file.name.toLowerCase() === `constraints.${board.constraintsFile}`
+    files.find(
+      (file) =>
+        file.name.toLowerCase() === `constraints.${board.constraintsFile}`,
     ) ??
     files.find((file) =>
-      file.name.toLowerCase().endsWith(`.${board.constraintsFile}`)
+      file.name.toLowerCase().endsWith(`.${board.constraintsFile}`),
     ) ??
     null;
-  const constraintFileName = constraintFile?.name ?? `constraints.${board.constraintsFile}`;
-  const buildConstraintContent = generatedConstraintContent || (constraintFile?.content ?? "");
+  const constraintFileName =
+    constraintFile?.name ?? `constraints.${board.constraintsFile}`;
+  const buildConstraintContent =
+    generatedConstraintContent || (constraintFile?.content ?? "");
   const buildInputKey = [
-    hdlFiles.map((file) => `${file.name}:${file.content}`).join("\n---hdl---\n"),
+    hdlFiles
+      .map((file) => `${file.name}:${file.content}`)
+      .join("\n---hdl---\n"),
     constraintFileName,
     buildConstraintContent,
   ].join("\n---constraints---\n");
@@ -126,20 +137,24 @@ export default function BitstreamSection({
     }
 
     if (hdlFiles.length === 0) {
-      setErrorMessage("No HDL files found. Create or import a top-level file first.");
+      setErrorMessage(
+        "No HDL files found. Create or import a top-level file first.",
+      );
       setArtifact(null);
       return;
     }
 
     if (!topModule) {
-      setErrorMessage("The selected top-level file does not contain a readable module declaration.");
+      setErrorMessage(
+        "The selected top-level file does not contain a readable module declaration.",
+      );
       setArtifact(null);
       return;
     }
 
     if (!generatedConstraintContent && !constraintFile) {
       setErrorMessage(
-        `No constraints.${board.constraintsFile} file was found, and no top-level ports were available for automatic constraints.`
+        `No constraints.${board.constraintsFile} file was found, and no top-level ports were available for automatic constraints.`,
       );
       setArtifact(null);
       return;
@@ -147,7 +162,7 @@ export default function BitstreamSection({
 
     if (!hasTauriInvoke()) {
       setErrorMessage(
-        "Launch the Tauri desktop app to generate a real bitstream."
+        "Launch the Tauri desktop app to generate a real bitstream.",
       );
       setArtifact(null);
       return;
@@ -164,7 +179,9 @@ export default function BitstreamSection({
       setLiveLogs((current) => [...current, line]);
     });
 
-    async function recordBuild(record: Omit<BuildRecord, "id" | "timestamp" | "durationMs">) {
+    async function recordBuild(
+      record: Omit<BuildRecord, "id" | "timestamp" | "durationMs">,
+    ) {
       try {
         const { fileName, content } = appendBuildRecord(files, {
           ...record,
@@ -205,7 +222,7 @@ export default function BitstreamSection({
             outputExtension: extension,
             projectPath,
           },
-        }
+        },
       );
 
       const bytes = new Uint8Array(result.bytes);
@@ -232,7 +249,10 @@ export default function BitstreamSection({
       setArtifact(nextArtifact);
       setLiveLogs(result.logs);
       if (generatedConstraintContent) {
-        await onUpdateConstraints?.(constraintFileName, generatedConstraintContent);
+        await onUpdateConstraints?.(
+          constraintFileName,
+          generatedConstraintContent,
+        );
       }
       await onAddArtifact?.({
         fileName: nextArtifact.fileName,
@@ -347,26 +367,46 @@ export default function BitstreamSection({
             lineHeight: 1.55,
           }}
         >
-          Generate a real programming artifact when the selected board has a wired local toolchain.
+          Generate a real programming artifact when the selected board has a
+          wired local toolchain.
         </p>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "22px", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginTop: "22px",
+            flexWrap: "wrap",
+          }}
+        >
           <button
             className="primary-action"
             type="button"
             onClick={handleGenerateBitstream}
-            disabled={!capabilities.bitstream.supported || hdlFiles.length === 0 || isGenerating}
+            disabled={
+              !capabilities.bitstream.supported ||
+              hdlFiles.length === 0 ||
+              isGenerating
+            }
             style={{
               border: "none",
               borderRadius: "14px",
               background:
-                capabilities.bitstream.supported && hdlFiles.length > 0 && !isGenerating ? "#2563eb" : "#cbd5e1",
+                capabilities.bitstream.supported &&
+                hdlFiles.length > 0 &&
+                !isGenerating
+                  ? "#2563eb"
+                  : "#cbd5e1",
               color: "#ffffff",
               padding: "13px 18px",
               fontSize: "15px",
               fontWeight: 800,
               cursor:
-                capabilities.bitstream.supported && hdlFiles.length > 0 && !isGenerating ? "pointer" : "not-allowed",
+                capabilities.bitstream.supported &&
+                hdlFiles.length > 0 &&
+                !isGenerating
+                  ? "pointer"
+                  : "not-allowed",
             }}
           >
             {isGenerating ? "Generating..." : "Generate Bitstream"}
@@ -444,7 +484,7 @@ export default function BitstreamSection({
               : isGenerating
                 ? "Building..."
                 : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
-                    projectName || "allora_project"
+                    projectName || "allora_project",
                   )}.${extension}`}
           </div>
 
@@ -458,7 +498,8 @@ export default function BitstreamSection({
                 background: "#ffffff",
                 color: "#475569",
                 padding: "16px",
-                fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+                fontFamily:
+                  "JetBrains Mono, SFMono-Regular, Consolas, monospace",
                 fontSize: "12px",
                 lineHeight: 1.55,
                 whiteSpace: "pre-wrap",
@@ -482,7 +523,11 @@ export default function BitstreamSection({
           overflow: "hidden",
         }}
       >
-        <InfoCard title="Output" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Output"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <InfoRow
             label="Filename"
             value={
@@ -492,18 +537,26 @@ export default function BitstreamSection({
             compact
           />
           <InfoRow label="Format" value={extension.toUpperCase()} compact />
-          <InfoRow label="Bytes" value={String(artifact?.byteLength ?? 0)} compact />
-        </InfoCard>
-
-        <InfoCard title="Source" style={{ padding: "14px", borderRadius: "16px" }} compact>
-          <InfoRow label="Board" value={board.name} compact />
-          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
-          <InfoRow label="Top Module" value={topModule ?? "Not found"} compact />
           <InfoRow
-            label="Constraints"
-            value={constraintFileName}
+            label="Bytes"
+            value={String(artifact?.byteLength ?? 0)}
             compact
           />
+        </InfoCard>
+
+        <InfoCard
+          title="Source"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
+          <InfoRow label="Board" value={board.name} compact />
+          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
+          <InfoRow
+            label="Top Module"
+            value={topModule ?? "Not found"}
+            compact
+          />
+          <InfoRow label="Constraints" value={constraintFileName} compact />
         </InfoCard>
 
         <InfoCard
@@ -516,7 +569,11 @@ export default function BitstreamSection({
           }}
           compact
         >
-          <InfoRow label="Detected Ports" value={String(topLevelPorts.length)} compact />
+          <InfoRow
+            label="Detected Ports"
+            value={String(topLevelPorts.length)}
+            compact
+          />
           <InfoRow
             label="Mapped"
             value={`${autoMappings.length - unmappedPorts.length}/${autoMappings.length}`}
@@ -599,7 +656,7 @@ function createHexPreview(
     files: ProjectFile[];
     fileStem: string;
     extension: string;
-  }
+  },
 ) {
   const lines = [];
 
@@ -648,19 +705,23 @@ function createBuildLogArtifact({
     `bitstream bytes: ${artifact.byteLength}`,
     `generated: ${artifact.generatedAt}`,
     ``,
-    artifact.logs.length > 0 ? artifact.logs.join("\n") : "No toolchain log output was returned.",
+    artifact.logs.length > 0
+      ? artifact.logs.join("\n")
+      : "No toolchain log output was returned.",
   ].join("\n");
 }
 
 function createGeneratedConstraints(
   board: BoardDefinition,
   ports: HdlPort[],
-  projectName: string
+  projectName: string,
 ) {
   if (ports.length === 0) return "";
 
   const mappings = createConstraintMappings(board, ports);
-  const lines = [`# ${board.name} generated constraints for ${sanitizeName(projectName)}`];
+  const lines = [
+    `# ${board.name} generated constraints for ${sanitizeName(projectName)}`,
+  ];
 
   for (const { port, pin } of mappings) {
     if (!pin?.pin) {
@@ -669,7 +730,9 @@ function createGeneratedConstraints(
     }
 
     if (board.constraintsFile === "xdc") {
-      lines.push(`set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${port.name}]`);
+      lines.push(
+        `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${port.name}]`,
+      );
       lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);
@@ -692,7 +755,7 @@ function createConstraintMappings(board: BoardDefinition, ports: HdlPort[]) {
     const selectedPin = suggestions[port.name];
     return {
       port,
-      pin: selectedPin ? pinOptions.get(selectedPin) ?? null : null,
+      pin: selectedPin ? (pinOptions.get(selectedPin) ?? null) : null,
     };
   });
 }
@@ -717,8 +780,10 @@ function findTopModule(files: ProjectFile[]) {
 
 function sanitizeName(name: string) {
   return (
-    name.trim().replace(/[^a-zA-Z0-9_]+/g, "_").replace(/^_+|_+$/g, "") ||
-    "allora_project"
+    name
+      .trim()
+      .replace(/[^a-zA-Z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "allora_project"
   );
 }
 

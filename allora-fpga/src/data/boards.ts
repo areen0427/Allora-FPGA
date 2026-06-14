@@ -5,8 +5,16 @@ import { COLORLIGHT_I5_BOARDS, colorlightI9Plus } from "./boards/colorlight";
 import { fomuPvt } from "./boards/fomu";
 import { icebreaker } from "./boards/icebreaker";
 import { icesugarV15 } from "./boards/icesugar";
-import { litexCatalogBoardGroups, litexCatalogBoards } from "./boards/litexCatalog";
-import { butterstickBoards, ecpix5Boards, icesugarPro, tangNanoBoards } from "./boards/litexDerived";
+import {
+  litexCatalogBoardGroups,
+  litexCatalogBoards,
+} from "./boards/litexCatalog";
+import {
+  butterstickBoards,
+  ecpix5Boards,
+  icesugarPro,
+  tangNanoBoards,
+} from "./boards/litexDerived";
 import {
   iceVWireless,
   icebreakerBitsyBoards,
@@ -57,8 +65,16 @@ export const BOARDS = [
     vendor: "1BitSquared",
     device: "iCE40UP5K",
     variants: [
-      { id: "icebreaker-bitsy-v0", name: "iCEBreaker Bitsy V0", fpga: "ICE40-UP5K" },
-      { id: "icebreaker-bitsy-v1", name: "iCEBreaker Bitsy V1", fpga: "ICE40-UP5K" },
+      {
+        id: "icebreaker-bitsy-v0",
+        name: "iCEBreaker Bitsy V0",
+        fpga: "ICE40-UP5K",
+      },
+      {
+        id: "icebreaker-bitsy-v1",
+        name: "iCEBreaker Bitsy V1",
+        fpga: "ICE40-UP5K",
+      },
     ],
   },
   {
@@ -78,7 +94,11 @@ export const BOARDS = [
     device: "Artix-7",
     variants: [
       { id: "kosagi-netv2-a7-35", name: "Kosagi NetV2 A7-35", fpga: "XC7A35T" },
-      { id: "kosagi-netv2-a7-100", name: "Kosagi NetV2 A7-100", fpga: "XC7A100T" },
+      {
+        id: "kosagi-netv2-a7-100",
+        name: "Kosagi NetV2 A7-100",
+        fpga: "XC7A100T",
+      },
     ],
   },
   {
@@ -87,9 +107,21 @@ export const BOARDS = [
     vendor: "SQRL",
     device: "Artix-7",
     variants: [
-      { id: "sqrl-acorn-cle-101", name: "SQRL Acorn CLE-101", fpga: "XC7A100T" },
-      { id: "sqrl-acorn-cle-215", name: "SQRL Acorn CLE-215", fpga: "XC7A200T" },
-      { id: "sqrl-acorn-cle-215plus", name: "SQRL Acorn CLE-215+", fpga: "XC7A200T" },
+      {
+        id: "sqrl-acorn-cle-101",
+        name: "SQRL Acorn CLE-101",
+        fpga: "XC7A100T",
+      },
+      {
+        id: "sqrl-acorn-cle-215",
+        name: "SQRL Acorn CLE-215",
+        fpga: "XC7A200T",
+      },
+      {
+        id: "sqrl-acorn-cle-215plus",
+        name: "SQRL Acorn CLE-215+",
+        fpga: "XC7A200T",
+      },
     ],
   },
   colorlightI9Plus,
@@ -111,7 +143,11 @@ export const BOARDS = [
     device: "ECP5",
     variants: [
       { id: "colorlight-i5", name: "Colorlight i5", fpga: "LFE5U-25F" },
-      { id: "colorlight-i5a-907", name: "Colorlight i5A-907", fpga: "LFE5U-25F" },
+      {
+        id: "colorlight-i5a-907",
+        name: "Colorlight i5A-907",
+        fpga: "LFE5U-25F",
+      },
     ],
   },
   {

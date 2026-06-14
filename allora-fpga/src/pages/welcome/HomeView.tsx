@@ -103,7 +103,11 @@ function SupportedBoardGrid({
 
       <div className="supported-board-grid">
         {visibleBoards.map((board) => (
-          <BoardCard key={board.id} board={board} onSelect={() => onSelectBoard(board)} />
+          <BoardCard
+            key={board.id}
+            board={board}
+            onSelect={() => onSelectBoard(board)}
+          />
         ))}
       </div>
 
@@ -113,18 +117,30 @@ function SupportedBoardGrid({
           className="board-show-more"
           onClick={() => onToggleShowAllBoards(!showAllBoards)}
         >
-          {showAllBoards ? "Show Fewer Boards" : `Show all ${boards.length} Boards`}
+          {showAllBoards
+            ? "Show Fewer Boards"
+            : `Show all ${boards.length} Boards`}
         </button>
       ) : null}
     </section>
   );
 }
 
-function BoardCard({ board, onSelect }: { board: BoardCatalogItem; onSelect: () => void }) {
+function BoardCard({
+  board,
+  onSelect,
+}: {
+  board: BoardCatalogItem;
+  onSelect: () => void;
+}) {
   const BoardIcon = getBoardIcon(board);
 
   return (
-    <button className="board-card welcome-board-card" type="button" onClick={onSelect}>
+    <button
+      className="board-card welcome-board-card"
+      type="button"
+      onClick={onSelect}
+    >
       <div className="board-icon-badge">
         <BoardIcon size={17} strokeWidth={2.2} />
       </div>
@@ -132,7 +148,9 @@ function BoardCard({ board, onSelect }: { board: BoardCatalogItem; onSelect: () 
       <div className="board-card-title-row">
         <h3>{board.name}</h3>
         {"variants" in board ? (
-          <span className="board-count-pill board-family-pill">{board.variants.length}</span>
+          <span className="board-count-pill board-family-pill">
+            {board.variants.length}
+          </span>
         ) : null}
       </div>
 
@@ -152,7 +170,12 @@ function OpenExistingProjectCard({
 }) {
   return (
     <section className="liquid-home-card open-project-card">
-      <button type="button" className="open-project-button" onClick={onOpen} disabled={isOpening}>
+      <button
+        type="button"
+        className="open-project-button"
+        onClick={onOpen}
+        disabled={isOpening}
+      >
         <span className="open-project-icon">
           <FolderOpen size={19} />
         </span>
@@ -160,7 +183,9 @@ function OpenExistingProjectCard({
           <span className="open-project-title">
             {isOpening ? "Opening Project" : "Open Existing Project"}
           </span>
-          <span className="open-project-subtitle">Choose the project's top folder.</span>
+          <span className="open-project-subtitle">
+            Choose the project's top folder.
+          </span>
         </span>
       </button>
 
@@ -212,7 +237,8 @@ function RecentProjectsCard({
                 <div className="recent-project-meta">
                   {getRecentProjectBoardName(project.boardId)}
                   <br />
-                  Last saved {formatProjectTime(project.updatedAt)} · {project.files.length} files
+                  Last saved {formatProjectTime(project.updatedAt)} ·{" "}
+                  {project.files.length} files
                 </div>
               </div>
               <button
@@ -241,20 +267,34 @@ function getRecentProjectBoardName(boardId: string) {
 
 function getBoardSummary(board: BoardCatalogItem) {
   if ("variants" in board) {
-    if (board.id === "arty-a7") return [board.vendor, "Artix-7", "XC7AxxT", "CSG324-1L"];
-    if (board.id === "tinyfpga") return [board.vendor, "iCE40 LP", board.device, "CM81"];
-    if (board.id === "colorlight-i5-family") return [board.vendor, "ECP5", "LFE5U-25F", "CABGA"];
-    if (board.id === "butterstick") return [board.vendor, "ECP5", "LFE5UM5G", "BG381C"];
-    if (board.id === "ecpix-5") return [board.vendor, "ECP5", "LFE5UM5G", "BG554I"];
-    if (board.id === "tang-nano") return [board.vendor, "Gowin", "9K / 20K", "QN88"];
-    if (board.id === "icebreaker-bitsy") return [board.vendor, "iCE40 UltraPlus", "UP5K", "SG48"];
-    if (board.id === "icepi-zero") return [board.vendor, "ECP5", "25F / 45F", "BG256C"];
-    if (board.id === "kosagi-netv2") return [board.vendor, "Artix-7", "A7-35 / A7-100", "FGG484"];
-    if (board.id === "sqrl-acorn") return [board.vendor, "Artix-7", "A100T / A200T", "FGG/FBG484"];
+    if (board.id === "arty-a7")
+      return [board.vendor, "Artix-7", "XC7AxxT", "CSG324-1L"];
+    if (board.id === "tinyfpga")
+      return [board.vendor, "iCE40 LP", board.device, "CM81"];
+    if (board.id === "colorlight-i5-family")
+      return [board.vendor, "ECP5", "LFE5U-25F", "CABGA"];
+    if (board.id === "butterstick")
+      return [board.vendor, "ECP5", "LFE5UM5G", "BG381C"];
+    if (board.id === "ecpix-5")
+      return [board.vendor, "ECP5", "LFE5UM5G", "BG554I"];
+    if (board.id === "tang-nano")
+      return [board.vendor, "Gowin", "9K / 20K", "QN88"];
+    if (board.id === "icebreaker-bitsy")
+      return [board.vendor, "iCE40 UltraPlus", "UP5K", "SG48"];
+    if (board.id === "icepi-zero")
+      return [board.vendor, "ECP5", "25F / 45F", "BG256C"];
+    if (board.id === "kosagi-netv2")
+      return [board.vendor, "Artix-7", "A7-35 / A7-100", "FGG484"];
+    if (board.id === "sqrl-acorn")
+      return [board.vendor, "Artix-7", "A100T / A200T", "FGG/FBG484"];
 
     const boardDefinitions = getBoardDefinitions(board);
-    const families = [...new Set(boardDefinitions.map((definition) => definition.family))];
-    const devices = [...new Set(boardDefinitions.map((definition) => definition.device))];
+    const families = [
+      ...new Set(boardDefinitions.map((definition) => definition.family)),
+    ];
+    const devices = [
+      ...new Set(boardDefinitions.map((definition) => definition.device)),
+    ];
 
     return [
       board.vendor,

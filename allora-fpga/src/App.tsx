@@ -3,11 +3,20 @@ import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import Dashboard from "./pages/Dashboard";
 import { getBoardById } from "./data/boards";
-import { createProject, getSavedProject, getSavedProjects, saveProject } from "./data/projects";
+import {
+  createProject,
+  getSavedProject,
+  getSavedProjects,
+  saveProject,
+} from "./data/projects";
 import type { SavedProject } from "./data/projects";
 import { getSettings, saveSettings } from "./data/settings";
 import type { AppSettings } from "./data/settings";
-import { createProjectWorkspace, pickExistingProjectDirectory, readProjectWorkspace } from "./lib/projectWorkspace";
+import {
+  createProjectWorkspace,
+  pickExistingProjectDirectory,
+  readProjectWorkspace,
+} from "./lib/projectWorkspace";
 import "./App.css";
 
 type AppStage = "board-select" | "project-setup" | "dashboard";
@@ -54,13 +63,15 @@ function App() {
           ...savedProject,
           files,
           activeFileName:
-            savedProject.activeFileName && files.some((file) => file.name === savedProject.activeFileName)
+            savedProject.activeFileName &&
+            files.some((file) => file.name === savedProject.activeFileName)
               ? savedProject.activeFileName
-              : files[0]?.name ?? null,
+              : (files[0]?.name ?? null),
           topLevelFileName:
-            savedProject.topLevelFileName && files.some((file) => file.name === savedProject.topLevelFileName)
+            savedProject.topLevelFileName &&
+            files.some((file) => file.name === savedProject.topLevelFileName)
               ? savedProject.topLevelFileName
-              : files.find((file) => isHdlFile(file.name))?.name ?? null,
+              : (files.find((file) => isHdlFile(file.name))?.name ?? null),
           updatedAt: new Date().toISOString(),
         };
         saveProject(nextProject);
@@ -68,7 +79,7 @@ function App() {
       } catch {
         nextProject = savedProject;
         setProjectWarning(
-          "The project folder could not be read. File contents live on disk, so reconnect the folder to edit this project."
+          "The project folder could not be read. File contents live on disk, so reconnect the folder to edit this project.",
         );
       }
     }
@@ -83,37 +94,58 @@ function App() {
     if (!projectPath) return;
 
     const diskFiles = await readProjectWorkspace(projectPath);
-    const metadataFile = diskFiles.find((file) => file.name === "allora-project.json");
+    const metadataFile = diskFiles.find(
+      (file) => file.name === "allora-project.json",
+    );
     if (!metadataFile || metadataFile.isBinary) {
-      throw new Error("This folder does not look like an Allora FPGA project. Choose the top-level folder that contains allora-project.json.");
+      throw new Error(
+        "This folder does not look like an Allora FPGA project. Choose the top-level folder that contains allora-project.json.",
+      );
     }
 
     let metadata: ProjectMetadata;
     try {
       metadata = JSON.parse(metadataFile.content) as ProjectMetadata;
     } catch {
-      throw new Error("The project metadata file could not be read. Check allora-project.json and try again.");
+      throw new Error(
+        "The project metadata file could not be read. Check allora-project.json and try again.",
+      );
     }
 
     const boardId = metadata.boardId;
     const board = boardId ? getBoardById(boardId) : undefined;
     if (!boardId || !board) {
-      throw new Error("This project references a board that is not available in this version of Allora FPGA.");
+      throw new Error(
+        "This project references a board that is not available in this version of Allora FPGA.",
+      );
     }
 
-    const existingProject = getSavedProjects().find((savedProject) => savedProject.projectPath === projectPath);
-    const name = metadata.name?.trim() || folderNameFromPath(projectPath) || "Untitled Project";
+    const existingProject = getSavedProjects().find(
+      (savedProject) => savedProject.projectPath === projectPath,
+    );
+    const name =
+      metadata.name?.trim() ||
+      folderNameFromPath(projectPath) ||
+      "Untitled Project";
     const activeFileName =
-      existingProject?.activeFileName && diskFiles.some((file) => file.name === existingProject.activeFileName)
+      existingProject?.activeFileName &&
+      diskFiles.some((file) => file.name === existingProject.activeFileName)
         ? existingProject.activeFileName
-        : findTopModuleFile(diskFiles, metadata.topModule) ?? diskFiles.find((file) => isHdlFile(file.name))?.name ?? diskFiles[0]?.name ?? null;
+        : (findTopModuleFile(diskFiles, metadata.topModule) ??
+          diskFiles.find((file) => isHdlFile(file.name))?.name ??
+          diskFiles[0]?.name ??
+          null);
     const topLevelFileName =
-      existingProject?.topLevelFileName && diskFiles.some((file) => file.name === existingProject.topLevelFileName)
+      existingProject?.topLevelFileName &&
+      diskFiles.some((file) => file.name === existingProject.topLevelFileName)
         ? existingProject.topLevelFileName
-        : findTopModuleFile(diskFiles, metadata.topModule) ?? diskFiles.find((file) => isHdlFile(file.name))?.name ?? null;
+        : (findTopModuleFile(diskFiles, metadata.topModule) ??
+          diskFiles.find((file) => isHdlFile(file.name))?.name ??
+          null);
     const now = new Date().toISOString();
     const nextProject: SavedProject = {
-      id: existingProject?.id ?? window.crypto?.randomUUID?.() ?? `${Date.now()}`,
+      id:
+        existingProject?.id ?? window.crypto?.randomUUID?.() ?? `${Date.now()}`,
       name,
       boardId,
       files: diskFiles,
@@ -133,8 +165,8 @@ function App() {
   }
 
   const selectedBoard = selectedBoardId
-  ? getBoardById(selectedBoardId)
-  : undefined;
+    ? getBoardById(selectedBoardId)
+    : undefined;
 
   if (stage === "board-select") {
     return (
@@ -157,7 +189,12 @@ function App() {
         board={selectedBoard}
         settings={settings}
         onBack={() => setStage("board-select")}
-        onCreateProject={async (name, language, parentDirectory, templateId) => {
+        onCreateProject={async (
+          name,
+          language,
+          parentDirectory,
+          templateId,
+        ) => {
           const workspace = await createProjectWorkspace({
             projectName: name,
             board: selectedBoard,
@@ -174,7 +211,9 @@ function App() {
             projectPath: workspace.projectPath,
             language,
             activeFileName: workspace.activeFileName,
-            topLevelFileName: workspace.files.find((file) => isHdlFile(file.name))?.name ?? null,
+            topLevelFileName:
+              workspace.files.find((file) => isHdlFile(file.name))?.name ??
+              null,
           });
 
           setProject(nextProject);
@@ -241,11 +280,13 @@ function findTopModuleFile(files: SavedProject["files"], topModule?: string) {
 
 function orderFilesLikeSaved(
   diskFiles: SavedProject["files"],
-  savedFiles: SavedProject["files"]
+  savedFiles: SavedProject["files"],
 ) {
   if (savedFiles.length === 0) return diskFiles;
 
-  const savedOrder = new Map(savedFiles.map((file, index) => [file.name, index]));
+  const savedOrder = new Map(
+    savedFiles.map((file, index) => [file.name, index]),
+  );
 
   return [...diskFiles].sort((left, right) => {
     const leftOrder = savedOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER;

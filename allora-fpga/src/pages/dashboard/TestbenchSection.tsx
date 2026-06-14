@@ -1,9 +1,25 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { BoardDefinition } from "../../data/boards";
-import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import {
+  createTauriChannel,
+  hasTauriInvoke,
+  invokeTauri,
+} from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { createSuggestedMappings, findPorts, type HdlPort } from "./pinMappingUtils";
-import VirtualBoard, { type BoardSignalStates } from "../../components/VirtualBoard";
+import {
+  createSuggestedMappings,
+  findPorts,
+  type HdlPort,
+} from "./pinMappingUtils";
+import VirtualBoard, {
+  type BoardSignalStates,
+} from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
 
 type SimulateTestbenchResponse = {
@@ -66,38 +82,54 @@ export default function TestbenchSection({
     }
   }, [logs]);
 
-  const hdlFiles = files.filter((file) => isHdlFile(file.name) && !isVhdlFile(file.name));
+  const hdlFiles = files.filter(
+    (file) => isHdlFile(file.name) && !isVhdlFile(file.name),
+  );
   const inferredTopLevel =
     topLevelFileName && hdlFiles.some((file) => file.name === topLevelFileName)
       ? topLevelFileName
       : inferDesignFileName(hdlFiles);
-  const selectedTopLevel =
-    inferredTopLevel
-      ? hdlFiles.find((file) => file.name === inferredTopLevel) ?? null
-      : null;
+  const selectedTopLevel = inferredTopLevel
+    ? (hdlFiles.find((file) => file.name === inferredTopLevel) ?? null)
+    : null;
   const topModule = useMemo(
     () => findTopModule(selectedTopLevel ? [selectedTopLevel] : hdlFiles),
-    [hdlFiles, selectedTopLevel]
+    [hdlFiles, selectedTopLevel],
   );
-  const testbenchFiles = hdlFiles.filter((file) => isTestbenchFile(file, topModule));
-  const vcdFiles = files.filter((file) => file.name.toLowerCase().endsWith(".vcd") && !file.isBinary);
-  const inferredTestbench = inferTestbenchFile(testbenchFiles, topModule, selectedTopLevel?.name);
+  const testbenchFiles = hdlFiles.filter((file) =>
+    isTestbenchFile(file, topModule),
+  );
+  const vcdFiles = files.filter(
+    (file) => file.name.toLowerCase().endsWith(".vcd") && !file.isBinary,
+  );
+  const inferredTestbench = inferTestbenchFile(
+    testbenchFiles,
+    topModule,
+    selectedTopLevel?.name,
+  );
   const selectedTestbench =
     testbenchFiles.find((file) => file.name === selectedTestbenchName) ??
     inferredTestbench ??
     null;
-  const designFiles = hdlFiles.filter((file) => file.name !== selectedTestbench?.name);
+  const designFiles = hdlFiles.filter(
+    (file) => file.name !== selectedTestbench?.name,
+  );
   const testbenchTopModule = useMemo(
     () => findTopModule(selectedTestbench ? [selectedTestbench] : []),
-    [selectedTestbench]
+    [selectedTestbench],
   );
   const topLevelPorts = useMemo(
-    () => findPorts(selectedTopLevel && !isVhdlFile(selectedTopLevel.name) ? [selectedTopLevel] : []),
-    [selectedTopLevel]
+    () =>
+      findPorts(
+        selectedTopLevel && !isVhdlFile(selectedTopLevel.name)
+          ? [selectedTopLevel]
+          : [],
+      ),
+    [selectedTopLevel],
   );
   const waveform = useMemo(
     () => parseVcd(waveformText || vcdFiles[0]?.content || ""),
-    [vcdFiles, waveformText]
+    [vcdFiles, waveformText],
   );
   const canRun = Boolean(selectedTestbench && designFiles.length > 0);
 
@@ -106,7 +138,11 @@ export default function TestbenchSection({
     const extension = projectName.toLowerCase().endsWith("sv") ? "sv" : "sv";
     const baseName = `${moduleName}_tb.${extension}`;
     const fileName = uniqueFileName(baseName, files);
-    const content = createTestbenchTemplate(moduleName, board.name, topLevelPorts);
+    const content = createTestbenchTemplate(
+      moduleName,
+      board.name,
+      topLevelPorts,
+    );
     onCreateTestbench(fileName, content);
     setSelectedTestbenchName(fileName);
   }
@@ -118,12 +154,16 @@ export default function TestbenchSection({
     }
 
     if (designFiles.length === 0) {
-      setErrorMessage("No Verilog/SystemVerilog design files found to simulate.");
+      setErrorMessage(
+        "No Verilog/SystemVerilog design files found to simulate.",
+      );
       return;
     }
 
     if (!hasTauriInvoke()) {
-      setErrorMessage("Launch the Tauri desktop app to run the real simulator.");
+      setErrorMessage(
+        "Launch the Tauri desktop app to run the real simulator.",
+      );
       return;
     }
 
@@ -140,22 +180,25 @@ export default function TestbenchSection({
     });
 
     try {
-      const result = await invokeTauri<SimulateTestbenchResponse>("simulate_testbench", {
-        onLog: logChannel,
-        request: {
-          projectName,
-          sourceFiles: designFiles.map((file) => ({
-            name: file.name,
-            content: file.content,
-          })),
-          testbenchFile: {
-            name: selectedTestbench.name,
-            content: selectedTestbench.content,
+      const result = await invokeTauri<SimulateTestbenchResponse>(
+        "simulate_testbench",
+        {
+          onLog: logChannel,
+          request: {
+            projectName,
+            sourceFiles: designFiles.map((file) => ({
+              name: file.name,
+              content: file.content,
+            })),
+            testbenchFile: {
+              name: selectedTestbench.name,
+              content: selectedTestbench.content,
+            },
+            topModule: testbenchTopModule,
+            projectPath,
           },
-          topModule: testbenchTopModule,
-          projectPath,
         },
-      });
+      );
 
       setLogs(result.logs);
       setWaveformText(result.vcd);
@@ -166,7 +209,11 @@ export default function TestbenchSection({
       });
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
-      setLogs((current) => [...current, "[simulation] Failed", getErrorMessage(error)]);
+      setLogs((current) => [
+        ...current,
+        "[simulation] Failed",
+        getErrorMessage(error),
+      ]);
     } finally {
       setIsRunning(false);
     }
@@ -237,44 +284,90 @@ export default function TestbenchSection({
           <div className="testbench-status error">{errorMessage}</div>
         ) : (
           <div className="testbench-status">
-            Real simulation uses local `iverilog` and `vvp`, then renders the generated VCD waveform.
+            Real simulation uses local `iverilog` and `vvp`, then renders the
+            generated VCD waveform.
           </div>
         )}
 
         <WaveformViewer waveform={waveform} />
 
-        <BoardPlayback board={board} waveform={waveform} ports={topLevelPorts} />
+        <BoardPlayback
+          board={board}
+          waveform={waveform}
+          ports={topLevelPorts}
+        />
       </InfoCard>
 
       <div className="testbench-side">
-        <InfoCard title="Setup" style={{ padding: "14px", borderRadius: "16px" }} compact>
-          <InfoRow label="Design Top" value={topModule ?? "Not found"} compact />
-          <InfoRow label="TB Top" value={testbenchTopModule ?? "Not found"} compact />
-          <InfoRow label="Design Files" value={String(designFiles.length)} compact />
-          <InfoRow label="Testbenches" value={String(testbenchFiles.length)} compact />
-          <InfoRow label="Waveforms" value={String(vcdFiles.length + (waveformText ? 1 : 0))} compact />
+        <InfoCard
+          title="Setup"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
+          <InfoRow
+            label="Design Top"
+            value={topModule ?? "Not found"}
+            compact
+          />
+          <InfoRow
+            label="TB Top"
+            value={testbenchTopModule ?? "Not found"}
+            compact
+          />
+          <InfoRow
+            label="Design Files"
+            value={String(designFiles.length)}
+            compact
+          />
+          <InfoRow
+            label="Testbenches"
+            value={String(testbenchFiles.length)}
+            compact
+          />
+          <InfoRow
+            label="Waveforms"
+            value={String(vcdFiles.length + (waveformText ? 1 : 0))}
+            compact
+          />
         </InfoCard>
 
-        <InfoCard title="Files" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Files"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <div className="testbench-file-list">
             {[...testbenchFiles, ...vcdFiles].map((file) => (
-              <button key={file.name} type="button" onClick={() => onOpenFile(file.name)}>
+              <button
+                key={file.name}
+                type="button"
+                onClick={() => onOpenFile(file.name)}
+              >
                 {file.name}
               </button>
             ))}
             {testbenchFiles.length === 0 && vcdFiles.length === 0 ? (
-              <div className="testbench-empty">No testbench or waveform files yet.</div>
+              <div className="testbench-empty">
+                No testbench or waveform files yet.
+              </div>
             ) : null}
           </div>
         </InfoCard>
 
         <InfoCard
           title="Simulator Log"
-          style={{ padding: "14px", borderRadius: "16px", minHeight: 0, overflow: "hidden" }}
+          style={{
+            padding: "14px",
+            borderRadius: "16px",
+            minHeight: 0,
+            overflow: "hidden",
+          }}
           compact
         >
           <pre className="testbench-log" ref={logRef}>
-            {logs.length ? logs.join("\n") : "Run a simulation to see compiler and runtime output."}
+            {logs.length
+              ? logs.join("\n")
+              : "Run a simulation to see compiler and runtime output."}
           </pre>
         </InfoCard>
       </div>
@@ -303,7 +396,7 @@ function BoardPlayback({
 
   const resolvers = useMemo(
     () => buildPinResolvers(board, waveform, ports),
-    [board, waveform, ports]
+    [board, waveform, ports],
   );
 
   useEffect(() => {
@@ -378,7 +471,7 @@ function BoardPlayback({
 function buildPinResolvers(
   board: BoardDefinition,
   waveform: Waveform | null,
-  ports: HdlPort[]
+  ports: HdlPort[],
 ) {
   const resolvers = new Map<string, (time: number) => boolean | undefined>();
   if (!waveform) return resolvers;
@@ -413,13 +506,15 @@ function findWaveSignal(signals: WaveSignal[], baseName: string) {
 
   // Prefer the shallowest scope (the testbench-level wire over dut internals).
   return candidates.reduce((best, candidate) =>
-    candidate.name.split(".").length < best.name.split(".").length ? candidate : best
+    candidate.name.split(".").length < best.name.split(".").length
+      ? candidate
+      : best,
   );
 }
 
 function getSignalValueAt(
   values: WaveSignal["values"],
-  time: number
+  time: number,
 ): string | null {
   if (values.length === 0) return null;
 
@@ -443,7 +538,7 @@ function getSignalValueAt(
 function interpretSignalBit(
   value: string,
   width: number,
-  bitIndex: number | undefined
+  bitIndex: number | undefined,
 ): boolean | undefined {
   const normalized = value.toLowerCase();
 
@@ -466,10 +561,14 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
   const visibleSignals = waveform?.signals.slice(0, 18) ?? [];
   const endTime = Math.max(waveform?.endTime ?? 1, 1);
   const clockPeriod = waveform ? inferClockPeriod(waveform.signals) : null;
-  const defaultWindow = clockPeriod ? Math.min(endTime, clockPeriod * 20) : endTime;
+  const defaultWindow = clockPeriod
+    ? Math.min(endTime, clockPeriod * 20)
+    : endTime;
   const autoScale = Math.max(1, endTime / Math.max(defaultWindow, 1));
   const timeWidth = Math.round(980 * autoScale * zoom);
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => Math.round(endTime * ratio));
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
+    Math.round(endTime * ratio),
+  );
   const zoomLabel = `${Math.round(autoScale * zoom * 100)}%`;
 
   if (!waveform || visibleSignals.length === 0) {
@@ -477,7 +576,9 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
       <div className="waveform-shell waveform-empty">
         <div>
           <strong>No waveform loaded</strong>
-          <span>Run a testbench or import a `.vcd` file with `$dumpvars` data.</span>
+          <span>
+            Run a testbench or import a `.vcd` file with `$dumpvars` data.
+          </span>
         </div>
       </div>
     );
@@ -490,13 +591,19 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
           <span>{clockPeriod ? `20 cycles/window` : "Full timeline"}</span>
           <strong>{zoomLabel}</strong>
         </div>
-        <button type="button" onClick={() => setZoom((current) => Math.max(0.25, current / 1.35))}>
+        <button
+          type="button"
+          onClick={() => setZoom((current) => Math.max(0.25, current / 1.35))}
+        >
           Zoom Out
         </button>
         <button type="button" onClick={() => setZoom(1)}>
           Reset
         </button>
-        <button type="button" onClick={() => setZoom((current) => Math.min(12, current * 1.35))}>
+        <button
+          type="button"
+          onClick={() => setZoom((current) => Math.min(12, current * 1.35))}
+        >
           Zoom In
         </button>
       </div>
@@ -505,7 +612,8 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
         className="waveform-shell"
         style={{ "--wave-time-width": `${timeWidth}px` } as CSSProperties}
         onWheel={(event) => {
-          const isVerticalZoom = Math.abs(event.deltaY) >= Math.abs(event.deltaX);
+          const isVerticalZoom =
+            Math.abs(event.deltaY) >= Math.abs(event.deltaX);
           if (!isVerticalZoom) {
             return;
           }
@@ -531,10 +639,18 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
             <div className="waveform-row" key={signal.id}>
               <div className="waveform-signal-name">
                 <span title={signal.name}>{signal.shortName}</span>
-                {signal.name !== signal.shortName ? <em>{signal.name}</em> : null}
-                <small>{signal.width > 1 ? `${signal.width} bits` : "1 bit"}</small>
+                {signal.name !== signal.shortName ? (
+                  <em>{signal.name}</em>
+                ) : null}
+                <small>
+                  {signal.width > 1 ? `${signal.width} bits` : "1 bit"}
+                </small>
               </div>
-              <SignalWave signal={signal} endTime={endTime} timeWidth={timeWidth} />
+              <SignalWave
+                signal={signal}
+                endTime={endTime}
+                timeWidth={timeWidth}
+              />
             </div>
           ))}
         </div>
@@ -552,21 +668,28 @@ function SignalWave({
   endTime: number;
   timeWidth: number;
 }) {
-  const segments = signal.values.map((value, index) => {
-    const nextTime = signal.values[index + 1]?.time ?? endTime;
-    const widthPercent = Math.max(((nextTime - value.time) / endTime) * 100, 0);
-    const widthPx = (widthPercent / 100) * timeWidth;
-    const displayValue = formatSignalValue(signal, value.value);
-    return {
-      ...value,
-      displayValue,
-      left: `${(value.time / endTime) * 100}%`,
-      width: `${widthPercent}%`,
-      leftPx: (value.time / endTime) * timeWidth,
-      widthPx,
-      showLabel: signal.width > 1 && widthPx >= Math.max(8, 4 * Math.max(1, displayValue.length) + 2),
-    };
-  }).filter((segment) => Number.parseFloat(segment.width) > 0.05);
+  const segments = signal.values
+    .map((value, index) => {
+      const nextTime = signal.values[index + 1]?.time ?? endTime;
+      const widthPercent = Math.max(
+        ((nextTime - value.time) / endTime) * 100,
+        0,
+      );
+      const widthPx = (widthPercent / 100) * timeWidth;
+      const displayValue = formatSignalValue(signal, value.value);
+      return {
+        ...value,
+        displayValue,
+        left: `${(value.time / endTime) * 100}%`,
+        width: `${widthPercent}%`,
+        leftPx: (value.time / endTime) * timeWidth,
+        widthPx,
+        showLabel:
+          signal.width > 1 &&
+          widthPx >= Math.max(8, 4 * Math.max(1, displayValue.length) + 2),
+      };
+    })
+    .filter((segment) => Number.parseFloat(segment.width) > 0.05);
   const transitions =
     signal.width === 1
       ? segments
@@ -581,13 +704,15 @@ function SignalWave({
           .filter(
             (segment, index) =>
               segment.value !== segments[index]?.value &&
-              segment.leftPx - segments[index].leftPx >= 12
+              segment.leftPx - segments[index].leftPx >= 12,
           )
           .map((segment) => ({ left: segment.left, time: segment.time }))
       : [];
 
   return (
-    <div className={`waveform-lane ${signal.width > 1 ? "bus-lane" : "bit-lane"}`}>
+    <div
+      className={`waveform-lane ${signal.width > 1 ? "bus-lane" : "bit-lane"}`}
+    >
       {transitions.map((transition) => (
         <span
           className="waveform-transition"
@@ -613,7 +738,9 @@ function SignalWave({
               high ? "high" : "",
               unknown ? "unknown" : "",
               signal.width > 1 ? "bus" : "",
-            ].filter(Boolean).join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
             key={`${segment.time}-${index}`}
             style={{ left: segment.left, width: segment.width }}
             title={`${signal.name} = ${segment.value} @ ${segment.time}`}
@@ -648,8 +775,9 @@ function formatSignalValue(signal: WaveSignal, value: string) {
 }
 
 function inferClockPeriod(signals: WaveSignal[]) {
-  const clockSignal = signals.find((signal) =>
-    signal.width === 1 && /(^|[._])(clk|clock|sysclk)$/i.test(signal.name)
+  const clockSignal = signals.find(
+    (signal) =>
+      signal.width === 1 && /(^|[._])(clk|clock|sysclk)$/i.test(signal.name),
   );
   if (!clockSignal) return null;
 
@@ -708,7 +836,11 @@ function parseVcd(content: string): Waveform | null {
     if (!line) continue;
 
     if (line.startsWith("$timescale")) {
-      timescale = line.replace("$timescale", "").replace("$end", "").trim().replace(/\s+/g, "");
+      timescale = line
+        .replace("$timescale", "")
+        .replace("$end", "")
+        .trim()
+        .replace(/\s+/g, "");
       continue;
     }
 
@@ -730,7 +862,9 @@ function parseVcd(content: string): Waveform | null {
       const shortName = parts.slice(4, -1).join(" ");
       const scopedName = [...scopes, shortName].filter(Boolean).join(".");
       variables.set(id, { name: scopedName || shortName, width });
-      values.set(id, [{ time: 0, value: width > 1 ? "x".repeat(Math.min(width, 8)) : "x" }]);
+      values.set(id, [
+        { time: 0, value: width > 1 ? "x".repeat(Math.min(width, 8)) : "x" },
+      ]);
       continue;
     }
 
@@ -792,14 +926,16 @@ function pushValue(
   values: Map<string, { time: number; value: string }[]>,
   id: string | undefined,
   time: number,
-  value: string
+  value: string,
 ) {
   if (!id || !values.has(id)) return;
   values.get(id)?.push({ time, value });
 }
 
 function compactValues(values: { time: number; value: string }[]) {
-  return values.filter((value, index) => index === 0 || values[index - 1].value !== value.value);
+  return values.filter(
+    (value, index) => index === 0 || values[index - 1].value !== value.value,
+  );
 }
 
 function mergeSameTimeValues(values: { time: number; value: string }[]) {
@@ -817,21 +953,31 @@ function mergeSameTimeValues(values: { time: number; value: string }[]) {
   return merged;
 }
 
-function createTestbenchTemplate(moduleName: string, boardName: string, ports: HdlPort[]) {
+function createTestbenchTemplate(
+  moduleName: string,
+  boardName: string,
+  ports: HdlPort[],
+) {
   const signals = createTestbenchSignals(ports);
   const declarations = signals.length
     ? signals
         .map((signal) =>
-          `  ${signal.direction === "input" ? "reg" : "wire"}${signal.range ? ` ${signal.range}` : ""} ${signal.name} = ${signal.direction === "input" ? `${signal.width}'d0` : ""};`
-            .replace(" = ;", ";")
+          `  ${signal.direction === "input" ? "reg" : "wire"}${signal.range ? ` ${signal.range}` : ""} ${signal.name} = ${signal.direction === "input" ? `${signal.width}'d0` : ""};`.replace(
+            " = ;",
+            ";",
+          ),
         )
         .join("\n")
     : "  reg clk = 0;\n  reg rst = 1;";
   const connections = signals.length
     ? signals.map((signal) => `    .${signal.name}(${signal.name})`).join(",\n")
     : "    .clk(clk),\n    .rst(rst)";
-  const clockSignal = signals.find((signal) => /^(clk|clock|sysclk)$/i.test(signal.name));
-  const resetSignal = signals.find((signal) => /^(rst|reset|rst_n|reset_n)$/i.test(signal.name));
+  const clockSignal = signals.find((signal) =>
+    /^(clk|clock|sysclk)$/i.test(signal.name),
+  );
+  const resetSignal = signals.find((signal) =>
+    /^(rst|reset|rst_n|reset_n)$/i.test(signal.name),
+  );
   const resetAssert = resetSignal
     ? `    #20 ${resetSignal.name} = ${resetSignal.name.endsWith("_n") ? "1" : "0"};`
     : "    #20;";
@@ -861,11 +1007,17 @@ endmodule
 }
 
 function createTestbenchSignals(ports: HdlPort[]) {
-  const grouped = new Map<string, { direction: HdlPort["direction"]; indexes: number[] }>();
+  const grouped = new Map<
+    string,
+    { direction: HdlPort["direction"]; indexes: number[] }
+  >();
 
   for (const port of ports) {
     const name = port.baseName ?? port.name;
-    const current = grouped.get(name) ?? { direction: port.direction, indexes: [] };
+    const current = grouped.get(name) ?? {
+      direction: port.direction,
+      indexes: [],
+    };
     if (port.index !== undefined) {
       current.indexes.push(port.index);
     }
@@ -927,23 +1079,33 @@ function inferDesignFileName(files: ProjectFile[]) {
 function inferTestbenchFile(
   files: ProjectFile[],
   topModule: string | null,
-  designFileName?: string
+  designFileName?: string,
 ) {
   if (files.length === 0) return null;
 
   const normalizedTop = topModule ? normalizeName(topModule) : "";
-  const designStem = designFileName ? normalizeName(stripExtension(designFileName)) : "";
+  const designStem = designFileName
+    ? normalizeName(stripExtension(designFileName))
+    : "";
 
   return (
     files.find((file) => {
       const stem = normalizeName(stripExtension(file.name));
-      return Boolean(normalizedTop && (stem === `${normalizedTop}tb` || stem === `tb${normalizedTop}`));
+      return Boolean(
+        normalizedTop &&
+        (stem === `${normalizedTop}tb` || stem === `tb${normalizedTop}`),
+      );
     }) ??
     files.find((file) => {
       const stem = normalizeName(stripExtension(file.name));
-      return Boolean(designStem && (stem === `${designStem}tb` || stem === `tb${designStem}`));
+      return Boolean(
+        designStem &&
+        (stem === `${designStem}tb` || stem === `tb${designStem}`),
+      );
     }) ??
-    files.find((file) => /(^|[_\-.])(tb|testbench)([_\-.]|$)/i.test(file.name)) ??
+    files.find((file) =>
+      /(^|[_\-.])(tb|testbench)([_\-.]|$)/i.test(file.name),
+    ) ??
     files[0]
   );
 }

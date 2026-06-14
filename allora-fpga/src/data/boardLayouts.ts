@@ -89,13 +89,27 @@ function buildUlx3sLayout(board: BoardDefinition): BoardLayout {
     { kind: "usb", x: 0, y: 34, w: 7, h: 9, label: "US2" },
     { kind: "header", x: 10, y: 0.5, w: 74, h: 4, label: "GPIO J1" },
     { kind: "header", x: 10, y: 46.5, w: 74, h: 4, label: "GPIO J2" },
-    { kind: "chip", x: 40, y: 17, w: 16, h: 16, label: "ECP5", sublabel: board.device },
+    {
+      kind: "chip",
+      x: 40,
+      y: 17,
+      w: 16,
+      h: 16,
+      label: "ECP5",
+      sublabel: board.device,
+    },
     { kind: "header", x: 86, y: 18, w: 7, h: 14, label: "SD" },
   ];
 
   const clock = board.clocks[0];
   if (clock) {
-    components.push({ kind: "clock", x: 34, y: 22, clockName: clock.name, label: "25 MHz" });
+    components.push({
+      kind: "clock",
+      x: 34,
+      y: 22,
+      clockName: clock.name,
+      label: "25 MHz",
+    });
   }
 
   // 8 user LEDs in a row left of the FPGA, matching the real board's strip.
@@ -140,7 +154,15 @@ function buildUlx3sLayout(board: BoardDefinition): BoardLayout {
 function buildIcebreakerLayout(board: BoardDefinition): BoardLayout {
   const components: LayoutComponent[] = [
     { kind: "usb", x: 0, y: 17, w: 7, h: 10, label: "USB" },
-    { kind: "chip", x: 26, y: 15, w: 13, h: 13, label: "iCE40", sublabel: "UP5K" },
+    {
+      kind: "chip",
+      x: 26,
+      y: 15,
+      w: 13,
+      h: 13,
+      label: "iCE40",
+      sublabel: "UP5K",
+    },
     { kind: "chip", x: 14, y: 32, w: 8, h: 6, label: "FLASH" },
     { kind: "header", x: 69, y: 3, w: 6, h: 16, label: "PMOD 1A" },
     { kind: "header", x: 69, y: 25, w: 6, h: 16, label: "PMOD 1B" },
@@ -149,7 +171,13 @@ function buildIcebreakerLayout(board: BoardDefinition): BoardLayout {
 
   const clock = board.clocks[0];
   if (clock) {
-    components.push({ kind: "clock", x: 22, y: 10, clockName: clock.name, label: "12 MHz" });
+    components.push({
+      kind: "clock",
+      x: 22,
+      y: 10,
+      clockName: clock.name,
+      label: "12 MHz",
+    });
   }
 
   // RGB LED cluster center-right of the FPGA.
@@ -187,7 +215,15 @@ function buildOrangeCrabLayout(board: BoardDefinition): BoardLayout {
   // Feather form factor: long and narrow, USB-C on the short edge.
   const components: LayoutComponent[] = [
     { kind: "usb", x: 0, y: 8.5, w: 6, h: 8, label: "USB-C" },
-    { kind: "chip", x: 18, y: 6, w: 13, h: 13, label: "ECP5", sublabel: board.device },
+    {
+      kind: "chip",
+      x: 18,
+      y: 6,
+      w: 13,
+      h: 13,
+      label: "ECP5",
+      sublabel: board.device,
+    },
     { kind: "chip", x: 35, y: 8, w: 9, h: 9, label: "DDR3" },
     { kind: "header", x: 8, y: 0.5, w: 40, h: 3.5, label: "IO" },
     { kind: "header", x: 8, y: 21, w: 40, h: 3.5, label: "IO" },
@@ -195,7 +231,13 @@ function buildOrangeCrabLayout(board: BoardDefinition): BoardLayout {
 
   const clock = board.clocks[0];
   if (clock) {
-    components.push({ kind: "clock", x: 14, y: 17, clockName: clock.name, label: "48 MHz" });
+    components.push({
+      kind: "clock",
+      x: 14,
+      y: 17,
+      clockName: clock.name,
+      label: "48 MHz",
+    });
   }
 
   const ledColors: Record<string, LedColor> = {
@@ -246,12 +288,25 @@ function buildTinyFpgaBxLayout(board: BoardDefinition): BoardLayout {
 
   const clock = board.clocks[0];
   if (clock) {
-    components.push({ kind: "clock", x: 4, y: 9, clockName: clock.name, label: "16 MHz" });
+    components.push({
+      kind: "clock",
+      x: 4,
+      y: 9,
+      clockName: clock.name,
+      label: "16 MHz",
+    });
   }
 
   const led = board.leds[0];
   if (led) {
-    components.push({ kind: "led", x: 12.5, y: 8.5, pinName: led.name, label: "LED", color: "green" });
+    components.push({
+      kind: "led",
+      x: 12.5,
+      y: 8.5,
+      pinName: led.name,
+      label: "LED",
+      color: "green",
+    });
   }
 
   return { width: 18, height: 36, handcrafted: true, components };
@@ -260,7 +315,10 @@ function buildTinyFpgaBxLayout(board: BoardDefinition): BoardLayout {
 const HAND_LAYOUTS: LayoutBuilder[] = [
   { matches: (id) => id.startsWith("ulx3s"), build: buildUlx3sLayout },
   { matches: (id) => id === "icebreaker", build: buildIcebreakerLayout },
-  { matches: (id) => id.startsWith("orangecrab"), build: buildOrangeCrabLayout },
+  {
+    matches: (id) => id.startsWith("orangecrab"),
+    build: buildOrangeCrabLayout,
+  },
   { matches: (id) => id === "tinyfpga-bx", build: buildTinyFpgaBxLayout },
 ];
 
@@ -300,7 +358,9 @@ export function buildAutoLayout(board: BoardDefinition): BoardLayout {
       x: 19,
       y: height / 2 + 4,
       clockName: clock.name,
-      label: clock.frequency ? `${Math.round(clock.frequency / 1_000_000)} MHz` : undefined,
+      label: clock.frequency
+        ? `${Math.round(clock.frequency / 1_000_000)} MHz`
+        : undefined,
     });
   }
 
@@ -338,7 +398,8 @@ function ledLabel(led: BoardPin, index: number) {
 }
 
 function buttonLabel(button: BoardPin, index: number) {
-  const text = `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
+  const text =
+    `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
   if (text.includes("rst") || text.includes("reset")) return "RST";
   const compact = button.name.replace(/[^a-zA-Z0-9]/g, "");
   if (compact.length <= 4) return compact.toUpperCase();
@@ -346,10 +407,17 @@ function buttonLabel(button: BoardPin, index: number) {
 }
 
 function inferLedColor(led: BoardPin): LedColor {
-  const text = `${led.name} ${led.signal ?? ""} ${led.group ?? ""}`.toLowerCase();
-  if (/(^|[^a-z])r(ed)?([^a-z]|$)|_r$|red/.test(text) && text.includes("rgb")) return "red";
+  const text =
+    `${led.name} ${led.signal ?? ""} ${led.group ?? ""}`.toLowerCase();
+  if (/(^|[^a-z])r(ed)?([^a-z]|$)|_r$|red/.test(text) && text.includes("rgb"))
+    return "red";
   if (text.includes("red")) return "red";
   if (text.includes("blue")) return "blue";
-  if (text.includes("amber") || text.includes("orange") || text.includes("yellow")) return "amber";
+  if (
+    text.includes("amber") ||
+    text.includes("orange") ||
+    text.includes("yellow")
+  )
+    return "amber";
   return "green";
 }

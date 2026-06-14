@@ -122,7 +122,11 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
   border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 22px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(255, 255, 255, 0.34)
+    ),
     rgba(248, 250, 252, 0.46);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
@@ -149,10 +153,18 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
   overflow-x: hidden !important;
   overflow-y: auto !important;
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.82), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.82),
+      transparent 34%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.14), transparent 42%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.12), transparent 50%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(255, 255, 255, 0.34)
+    ),
     rgba(248, 250, 252, 0.5) !important;
 }
 
@@ -197,8 +209,16 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
 
 .glass-page {
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.7), transparent 34%),
-    linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(226, 232, 240, 0.76)) !important;
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.7),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.96),
+      rgba(226, 232, 240, 0.76)
+    ) !important;
 }
 
 .welcome-page {
@@ -216,7 +236,11 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
 
 .home-rail {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(248, 250, 252, 0.3)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.58),
+      rgba(248, 250, 252, 0.3)
+    ),
     rgba(255, 255, 255, 0.32) !important;
   border-right-color: rgba(255, 255, 255, 0.48) !important;
   box-shadow:
@@ -638,7 +662,11 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
   z-index: -1;
   border-radius: 21px;
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.88), transparent 32%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.88),
+      transparent 32%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.16), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.14), transparent 44%);
   pointer-events: none;
@@ -703,7 +731,11 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
   border-radius: 999px;
   border: 1px solid rgba(37, 99, 235, 0.12);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(219, 234, 254, 0.42)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(219, 234, 254, 0.42)
+    ),
     rgba(37, 99, 235, 0.1);
   color: #2563eb;
   display: inline-flex;
@@ -733,14 +765,22 @@ html[data-theme="black-ice"] .liquid-board-menu {
 
 html[data-theme="black-ice"] .liquid-board-menu::before {
   background:
-    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.16), transparent 30%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(59, 130, 246, 0.16),
+      transparent 30%
+    ),
     linear-gradient(120deg, rgba(37, 99, 235, 0.14), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.1), transparent 44%) !important;
 }
 
 html[data-theme="black-ice"] .board-available-menu {
   background:
-    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.16), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(59, 130, 246, 0.16),
+      transparent 34%
+    ),
     linear-gradient(120deg, rgba(37, 99, 235, 0.14), transparent 42%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.1), transparent 50%),
     linear-gradient(145deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.38)),
@@ -749,7 +789,11 @@ html[data-theme="black-ice"] .board-available-menu {
 
 html[data-theme="black-ice"] .board-family-menu {
   background:
-    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.16), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(59, 130, 246, 0.16),
+      transparent 34%
+    ),
     linear-gradient(120deg, rgba(37, 99, 235, 0.14), transparent 42%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.1), transparent 50%),
     linear-gradient(145deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.38)),
@@ -769,7 +813,9 @@ html[data-theme="black-ice"] .liquid-board-meta {
   color: #cbd5e1 !important;
 }
 
-html[data-theme="black-ice"] .board-available-section + .board-available-section {
+html[data-theme="black-ice"]
+  .board-available-section
+  + .board-available-section {
   border-top-color: rgba(148, 163, 184, 0.22);
 }
 
@@ -811,7 +857,11 @@ html[data-theme="black-ice"] .home-rail {
   isolation: isolate;
   border: 1px solid rgba(255, 255, 255, 0.52) !important;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.28)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(255, 255, 255, 0.28)
+    ),
     rgba(248, 250, 252, 0.42) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.74),
@@ -827,7 +877,11 @@ html[data-theme="black-ice"] .home-rail {
   isolation: isolate;
   border-color: rgba(226, 232, 240, 0.72) !important;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.5)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(248, 250, 252, 0.5)
+    ),
     rgba(255, 255, 255, 0.56) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.58),
@@ -839,18 +893,29 @@ html[data-theme="black-ice"] .home-rail {
 .dashboard-workspace {
   --dashboard-surface-border: rgba(226, 232, 240, 0.72);
   --dashboard-surface-bg:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(248, 250, 252, 0.56)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(248, 250, 252, 0.56)
+    ),
     rgba(255, 255, 255, 0.62);
   --dashboard-surface-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.68),
-    0 8px 20px rgba(15, 23, 42, 0.045);
+    inset 0 1px 0 rgba(255, 255, 255, 0.68), 0 8px 20px rgba(15, 23, 42, 0.045);
   --dashboard-control-border: rgba(219, 228, 240, 0.92);
   --dashboard-control-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(248, 250, 252, 0.72)
+    ),
     #f8fafc;
   --dashboard-control-active-border: rgba(37, 99, 235, 0.78);
   --dashboard-control-active-bg:
-    linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.76)),
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.98),
+      rgba(219, 234, 254, 0.76)
+    ),
     #eff6ff;
   --dashboard-preview-header-bg: rgba(248, 250, 252, 0.72);
   --dashboard-text: #0f172a;
@@ -858,7 +923,11 @@ html[data-theme="black-ice"] .home-rail {
   --dashboard-muted-text: #64748b;
   --dashboard-preview-text: #334155;
   background:
-    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.56), transparent 32%),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(255, 255, 255, 0.56),
+      transparent 32%
+    ),
     linear-gradient(135deg, rgba(248, 250, 252, 0.92), rgba(226, 232, 240, 0.7)) !important;
 }
 
@@ -902,7 +971,11 @@ html[data-theme="black-ice"] .home-rail {
   appearance: none;
   -webkit-appearance: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(248, 250, 252, 0.72)
+    ),
     #ffffff;
   color: #0f172a;
   padding: 0 34px 0 13px;
@@ -915,7 +988,11 @@ html[data-theme="black-ice"] .home-rail {
   background-image:
     linear-gradient(45deg, transparent 50%, currentColor 50%),
     linear-gradient(135deg, currentColor 50%, transparent 50%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72));
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(248, 250, 252, 0.72)
+    );
   background-position:
     calc(100% - 18px) 18px,
     calc(100% - 13px) 18px,
@@ -951,8 +1028,7 @@ html[data-theme="black-ice"] .home-rail {
 
 .synthesis-generate-button {
   border: none;
-  background:
-    linear-gradient(135deg, #2563eb, #0ea5e9);
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
   color: #ffffff;
   padding: 0 18px;
   box-shadow:
@@ -977,7 +1053,11 @@ html[data-theme="black-ice"] .home-rail {
 .synthesis-secondary-button {
   border: 1px solid rgba(203, 213, 225, 0.72);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(248, 250, 252, 0.72)
+    ),
     #ffffff;
   color: #475569;
   padding: 0 14px;
@@ -991,7 +1071,11 @@ html[data-theme="black-ice"] .home-rail {
 
 .editor-tab-bar {
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.72), rgba(241, 245, 249, 0.46)),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.72),
+      rgba(241, 245, 249, 0.46)
+    ),
     rgba(255, 255, 255, 0.22) !important;
   border-bottom-color: rgba(226, 232, 240, 0.66) !important;
   backdrop-filter: blur(16px) saturate(1.1);
@@ -1006,7 +1090,11 @@ html[data-theme="black-ice"] .home-rail {
 
 .editor-file-tab.active {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.46)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(248, 250, 252, 0.46)
+    ),
     rgba(255, 255, 255, 0.34) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
 }
@@ -1055,7 +1143,11 @@ html[data-theme="black-ice"] .home-rail {
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.68)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(248, 250, 252, 0.68)
+    ),
     rgba(255, 255, 255, 0.72);
   color: #64748b;
   padding: 0 12px;
@@ -1109,7 +1201,11 @@ html[data-theme="black-ice"] .home-rail {
   border: 1px solid rgba(203, 213, 225, 0.78);
   border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(248, 250, 252, 0.4)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(248, 250, 252, 0.4)
+    ),
     rgba(255, 255, 255, 0.5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
   padding: 8px;
@@ -1120,7 +1216,11 @@ html[data-theme="black-ice"] .home-rail {
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.68)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(248, 250, 252, 0.68)
+    ),
     rgba(255, 255, 255, 0.72);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   padding: 12px 14px;
@@ -1140,7 +1240,11 @@ html[data-theme="black-ice"] .home-rail {
   transform: translateY(-1px);
   border-color: rgba(147, 197, 253, 0.9);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.7)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(239, 246, 255, 0.7)
+    ),
     rgba(248, 251, 255, 0.85);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -1178,7 +1282,11 @@ html[data-theme="black-ice"] .home-rail {
   border: 1px solid #cbd5e1;
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(241, 245, 249, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.92),
+      rgba(241, 245, 249, 0.72)
+    ),
     rgba(241, 245, 249, 0.6);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
@@ -1394,7 +1502,11 @@ html[data-theme="dark"] .pin-tile {
 html[data-theme="ice"] .pin-board-list {
   border-color: rgba(191, 219, 254, 0.82);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(219, 234, 254, 0.28)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(219, 234, 254, 0.28)
+    ),
     rgba(239, 246, 255, 0.42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -1413,7 +1525,11 @@ html[data-theme="ice"] .pin-summary-pill {
 html[data-theme="ice"] .pin-board-item:hover {
   border-color: rgba(147, 197, 253, 0.95);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(191, 219, 254, 0.36)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(191, 219, 254, 0.36)
+    ),
     rgba(239, 246, 255, 0.68);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -1424,7 +1540,11 @@ html[data-theme="ice"] .pin-board-item:hover {
 html[data-theme="ice"] .pin-board-item.selected {
   border-color: #2563eb;
   background:
-    linear-gradient(180deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 0.6)),
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.95),
+      rgba(219, 234, 254, 0.6)
+    ),
     rgba(239, 246, 255, 0.8);
 }
 
@@ -1435,7 +1555,11 @@ html[data-theme="ice"] .pin-group-header {
 html[data-theme="solar"] .pin-board-list {
   border-color: rgba(251, 191, 36, 0.38);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(254, 240, 138, 0.16)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.7),
+      rgba(254, 240, 138, 0.16)
+    ),
     rgba(255, 247, 237, 0.5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -1446,7 +1570,11 @@ html[data-theme="solar"] .pin-tile,
 html[data-theme="solar"] .pin-summary-pill {
   border-color: rgba(251, 191, 36, 0.42);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.18)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(254, 240, 138, 0.18)
+    ),
     rgba(255, 247, 237, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -1454,7 +1582,11 @@ html[data-theme="solar"] .pin-summary-pill {
 html[data-theme="solar"] .pin-board-item:hover {
   border-color: rgba(217, 119, 6, 0.5);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(254, 240, 138, 0.26)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(254, 240, 138, 0.26)
+    ),
     rgba(255, 247, 237, 0.72);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
@@ -1465,7 +1597,11 @@ html[data-theme="solar"] .pin-board-item:hover {
 html[data-theme="solar"] .pin-board-item.selected {
   border-color: #d97706;
   background:
-    linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 240, 138, 0.4)),
+    linear-gradient(
+      180deg,
+      rgba(255, 251, 235, 0.96),
+      rgba(254, 240, 138, 0.4)
+    ),
     rgba(255, 247, 237, 0.8);
 }
 
@@ -1519,7 +1655,11 @@ html[data-theme="solar"] .pin-group-header {
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.68)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(248, 250, 252, 0.68)
+    ),
     rgba(255, 255, 255, 0.72);
   color: #475569;
   padding: 0 10px 0 12px;
@@ -1553,10 +1693,18 @@ html[data-theme="solar"] .pin-group-header {
   max-height: calc((38px * 8) + 16px);
   overflow-y: auto;
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.82), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.82),
+      transparent 34%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.14), transparent 42%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.12), transparent 50%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(255, 255, 255, 0.34)
+    ),
     rgba(248, 250, 252, 0.5) !important;
 }
 
@@ -1727,7 +1875,11 @@ html[data-theme="solar"] .pin-group-header {
   z-index: -1;
   border-radius: inherit;
   background:
-    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.58), transparent 30%),
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(255, 255, 255, 0.58),
+      transparent 30%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.085), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.07), transparent 44%);
   pointer-events: none;
@@ -1740,7 +1892,11 @@ html[data-theme="solar"] .pin-group-header {
   z-index: -1;
   border-radius: inherit;
   background:
-    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.34), transparent 28%),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(255, 255, 255, 0.34),
+      transparent 28%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.04), transparent 36%);
   pointer-events: none;
 }
@@ -1856,7 +2012,11 @@ html[data-theme="solar"] .pin-group-header {
 
 .waveform-scale-readout strong {
   color: var(--dashboard-strong-text, #0f172a);
-  font-family: JetBrains Mono, SFMono-Regular, Consolas, monospace;
+  font-family:
+    JetBrains Mono,
+    SFMono-Regular,
+    Consolas,
+    monospace;
   font-size: 11px;
   font-weight: 900;
 }
@@ -1888,7 +2048,11 @@ html[data-theme="solar"] .pin-group-header {
   border: 1px solid var(--dashboard-surface-border, #e2e8f0);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.86), rgba(241, 245, 249, 0.52)),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.86),
+      rgba(241, 245, 249, 0.52)
+    ),
     var(--dashboard-surface-bg, #ffffff);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
 }
@@ -1924,7 +2088,11 @@ html[data-theme="solar"] .pin-group-header {
   z-index: 2;
   border-bottom: 1px solid var(--dashboard-surface-border, #e2e8f0);
   background:
-    linear-gradient(180deg, rgba(241, 245, 249, 0.96), rgba(226, 232, 240, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(241, 245, 249, 0.96),
+      rgba(226, 232, 240, 0.72)
+    ),
     var(--dashboard-preview-header-bg, rgba(248, 250, 252, 0.92));
   color: var(--dashboard-muted-text, #64748b);
   font-size: 10px;
@@ -1943,7 +2111,11 @@ html[data-theme="solar"] .pin-group-header {
   left: 0;
   z-index: 1;
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.88), rgba(241, 245, 249, 0.58)),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.88),
+      rgba(241, 245, 249, 0.58)
+    ),
     var(--dashboard-surface-bg, #ffffff);
 }
 
@@ -1955,7 +2127,11 @@ html[data-theme="solar"] .pin-group-header {
   display: flex;
   justify-content: space-between;
   border-left: 1px solid var(--dashboard-surface-border, #e2e8f0);
-  font-family: JetBrains Mono, SFMono-Regular, Consolas, monospace;
+  font-family:
+    JetBrains Mono,
+    SFMono-Regular,
+    Consolas,
+    monospace;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1974,7 +2150,8 @@ html[data-theme="solar"] .pin-group-header {
 
 .waveform-row {
   min-height: 54px;
-  border-bottom: 1px solid var(--dashboard-control-border, rgba(226, 232, 240, 0.72));
+  border-bottom: 1px solid
+    var(--dashboard-control-border, rgba(226, 232, 240, 0.72));
 }
 
 .waveform-signal-name {
@@ -2016,14 +2193,13 @@ html[data-theme="solar"] .pin-group-header {
   position: relative;
   min-height: 54px;
   overflow: hidden;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent calc(25% - 1px),
-      rgba(100, 116, 139, 0.15) calc(25% - 1px),
-      rgba(100, 116, 139, 0.15) 25%
-    );
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(25% - 1px),
+    rgba(100, 116, 139, 0.15) calc(25% - 1px),
+    rgba(100, 116, 139, 0.15) 25%
+  );
 }
 
 .waveform-lane.bus-lane::before {
@@ -2117,7 +2293,11 @@ html[data-theme="solar"] .pin-group-header {
   border-bottom: 2px solid rgba(37, 99, 235, 0.7);
   background: transparent;
   color: #1e40af;
-  font-family: JetBrains Mono, SFMono-Regular, Consolas, monospace;
+  font-family:
+    JetBrains Mono,
+    SFMono-Regular,
+    Consolas,
+    monospace;
   font-size: 10px;
   font-weight: 900;
   line-height: 1;
@@ -2178,7 +2358,11 @@ html[data-theme="solar"] .pin-group-header {
   overflow: auto;
   margin: 0;
   color: var(--dashboard-preview-text, #334155);
-  font-family: JetBrains Mono, SFMono-Regular, Consolas, monospace;
+  font-family:
+    JetBrains Mono,
+    SFMono-Regular,
+    Consolas,
+    monospace;
   font-size: 11px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -2189,7 +2373,11 @@ html[data-theme="solar"] .pin-group-header {
   transform: translateY(-3px);
   border-color: rgba(255, 255, 255, 0.68) !important;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.34)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(255, 255, 255, 0.34)
+    ),
     rgba(248, 250, 252, 0.5) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -2309,8 +2497,7 @@ html[data-theme="black-ice"] .dashboard-workspace {
     linear-gradient(145deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.48)),
     rgba(15, 23, 42, 0.58);
   --dashboard-surface-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 16px 34px rgba(0, 0, 0, 0.32);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 34px rgba(0, 0, 0, 0.32);
   --dashboard-control-border: rgba(148, 163, 184, 0.3);
   --dashboard-control-bg:
     linear-gradient(180deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.58)),
@@ -2373,7 +2560,11 @@ html[data-theme="black-ice"] .project-setup-card::before,
 html[data-theme="black-ice"] .variant-modal::before,
 html[data-theme="black-ice"] .variant-card::before {
   background:
-    radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.08), transparent 30%),
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(59, 130, 246, 0.08),
+      transparent 30%
+    ),
     linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 38%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.05), transparent 44%) !important;
 }
@@ -2532,7 +2723,11 @@ html[data-theme="black-ice"] .board-empty-state {
   border: 1px solid rgba(203, 213, 225, 0.58);
   border-radius: 16px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(248, 250, 252, 0.18)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.38),
+      rgba(248, 250, 252, 0.18)
+    ),
     rgba(255, 255, 255, 0.16);
   color: #0f172a;
   padding: 0 12px;
@@ -2551,9 +2746,16 @@ select.setting-control {
   -webkit-appearance: none;
   padding-right: 38px;
   background:
-    linear-gradient(45deg, transparent 50%, #64748b 50%) calc(100% - 19px) 50% / 5px 5px no-repeat,
-    linear-gradient(135deg, #64748b 50%, transparent 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
-    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(248, 250, 252, 0.18)) 0 0 / 100% 100% no-repeat,
+    linear-gradient(45deg, transparent 50%, #64748b 50%) calc(100% - 19px) 50% /
+      5px 5px no-repeat,
+    linear-gradient(135deg, #64748b 50%, transparent 50%) calc(100% - 14px)
+      50% / 5px 5px no-repeat,
+    linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.38),
+        rgba(248, 250, 252, 0.18)
+      )
+      0 0 / 100% 100% no-repeat,
     rgba(255, 255, 255, 0.16) !important;
   color-scheme: light;
 }
@@ -2582,7 +2784,11 @@ select.setting-control {
   border: 1px solid rgba(203, 213, 225, 0.58);
   border-radius: 14px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(248, 250, 252, 0.22)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.42),
+      rgba(248, 250, 252, 0.22)
+    ),
     rgba(255, 255, 255, 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
 }
@@ -2611,9 +2817,12 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-control {
 
 html:is([data-theme="dark"], [data-theme="black-ice"]) select.setting-control {
   background:
-    linear-gradient(45deg, transparent 50%, #cbd5e1 50%) calc(100% - 19px) 50% / 5px 5px no-repeat,
-    linear-gradient(135deg, #cbd5e1 50%, transparent 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
-    linear-gradient(145deg, rgba(31, 41, 55, 0.36), rgba(17, 24, 39, 0.24)) 0 0 / 100% 100% no-repeat,
+    linear-gradient(45deg, transparent 50%, #cbd5e1 50%) calc(100% - 19px) 50% /
+      5px 5px no-repeat,
+    linear-gradient(135deg, #cbd5e1 50%, transparent 50%) calc(100% - 14px)
+      50% / 5px 5px no-repeat,
+    linear-gradient(145deg, rgba(31, 41, 55, 0.36), rgba(17, 24, 39, 0.24)) 0
+      0 / 100% 100% no-repeat,
     rgba(17, 24, 39, 0.18) !important;
   color-scheme: dark;
 }
@@ -2654,7 +2863,9 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .setting-toggle {
   padding: 24px;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .variant-card:hover {
@@ -2744,7 +2955,11 @@ html[data-theme="ice"] .variant-card,
 html[data-theme="ice"] .liquid-board-menu {
   border-color: rgba(255, 255, 255, 0.68) !important;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.32)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.76),
+      rgba(255, 255, 255, 0.32)
+    ),
     rgba(238, 246, 255, 0.5) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
@@ -2758,23 +2973,47 @@ html[data-theme="ice"] .liquid-board-menu {
 html[data-theme="ice"] .board-available-menu,
 html[data-theme="ice"] .board-family-menu {
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.86), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.86),
+      transparent 34%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.17), transparent 42%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.14), transparent 50%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.32)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.76),
+      rgba(255, 255, 255, 0.32)
+    ),
     rgba(238, 246, 255, 0.54) !important;
 }
 
 html[data-theme="ice"] .glass-page {
   background:
-    radial-gradient(circle at 10% 0%, rgba(219, 234, 254, 0.52), transparent 30%),
-    radial-gradient(circle at 92% 8%, rgba(186, 230, 253, 0.28), transparent 34%),
-    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 239, 255, 0.76)) !important;
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(219, 234, 254, 0.52),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 92% 8%,
+      rgba(186, 230, 253, 0.28),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.98),
+      rgba(226, 239, 255, 0.76)
+    ) !important;
 }
 
 html[data-theme="ice"] .home-rail {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(219, 234, 254, 0.24)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.62),
+      rgba(219, 234, 254, 0.24)
+    ),
     rgba(239, 246, 255, 0.26) !important;
   border-right-color: rgba(255, 255, 255, 0.58) !important;
 }
@@ -2785,14 +3024,22 @@ html[data-theme="ice"] .board-family-trigger,
 html[data-theme="ice"] .board-clear-filters {
   border-color: rgba(191, 219, 254, 0.82);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.38)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(219, 234, 254, 0.38)
+    ),
     rgba(239, 246, 255, 0.52);
 }
 
 html[data-theme="ice"] .board-count-pill {
   border-color: rgba(96, 165, 250, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(219, 234, 254, 0.46)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.76),
+      rgba(219, 234, 254, 0.46)
+    ),
     rgba(219, 234, 254, 0.62);
 }
 
@@ -2803,8 +3050,16 @@ html[data-theme="ice"] .board-icon-badge {
 html[data-theme="ice"] .dashboard-glass-card {
   border-color: rgba(255, 255, 255, 0.66) !important;
   background:
-    radial-gradient(circle at 8% 0%, rgba(219, 234, 254, 0.72), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(219, 234, 254, 0.46)),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(219, 234, 254, 0.72),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.8),
+      rgba(219, 234, 254, 0.46)
+    ),
     rgba(238, 246, 255, 0.58) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.76),
@@ -2818,36 +3073,67 @@ html[data-theme="ice"] .dashboard-glass-card {
 html[data-theme="ice"] .dashboard-workspace {
   --dashboard-surface-border: rgba(191, 219, 254, 0.72);
   --dashboard-surface-bg:
-    radial-gradient(circle at 8% 0%, rgba(219, 234, 254, 0.58), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.46)),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(219, 234, 254, 0.58),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(219, 234, 254, 0.46)
+    ),
     rgba(238, 246, 255, 0.58);
   --dashboard-surface-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.74),
-    0 10px 24px rgba(37, 99, 235, 0.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.74), 0 10px 24px rgba(37, 99, 235, 0.07);
   --dashboard-control-border: rgba(191, 219, 254, 0.84);
   --dashboard-control-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(219, 234, 254, 0.48)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.86),
+      rgba(219, 234, 254, 0.48)
+    ),
     rgba(239, 246, 255, 0.62);
   --dashboard-control-active-border: rgba(96, 165, 250, 0.56);
   --dashboard-control-active-bg:
-    linear-gradient(180deg, rgba(219, 234, 254, 0.96), rgba(191, 219, 254, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(219, 234, 254, 0.96),
+      rgba(191, 219, 254, 0.72)
+    ),
     rgba(219, 234, 254, 0.7);
   --dashboard-preview-header-bg: rgba(219, 234, 254, 0.44);
   background:
-    radial-gradient(circle at 8% 0%, rgba(191, 219, 254, 0.62), transparent 30%),
-    linear-gradient(135deg, rgba(248, 250, 252, 0.94), rgba(219, 234, 254, 0.78)) !important;
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(191, 219, 254, 0.62),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(248, 250, 252, 0.94),
+      rgba(219, 234, 254, 0.78)
+    ) !important;
 }
 
 html[data-theme="ice"] .dashboard-glass-card::before {
   background:
-    radial-gradient(circle at 9% 0%, rgba(255, 255, 255, 0.44), transparent 30%),
+    radial-gradient(
+      circle at 9% 0%,
+      rgba(255, 255, 255, 0.44),
+      transparent 30%
+    ),
     linear-gradient(120deg, rgba(59, 130, 246, 0.105), transparent 40%),
     linear-gradient(300deg, rgba(14, 165, 233, 0.075), transparent 48%) !important;
 }
 
 html[data-theme="ice"] .editor-tab-bar {
   background:
-    linear-gradient(180deg, rgba(239, 246, 255, 0.78), rgba(219, 234, 254, 0.38)),
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.78),
+      rgba(219, 234, 254, 0.38)
+    ),
     rgba(255, 255, 255, 0.24) !important;
   border-bottom-color: rgba(191, 219, 254, 0.72) !important;
 }
@@ -2859,7 +3145,11 @@ html[data-theme="ice"] .editor-add-tab {
 
 html[data-theme="ice"] .editor-file-tab.active {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.5)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(219, 234, 254, 0.5)
+    ),
     rgba(239, 246, 255, 0.46) !important;
 }
 
@@ -2872,8 +3162,16 @@ html[data-theme="ice"] .editor-shell .monaco-editor .margin {
 
 html[data-theme="ice"] .synthesis-control-bar {
   background:
-    radial-gradient(circle at 8% 0%, rgba(219, 234, 254, 0.62), transparent 36%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.42)),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(219, 234, 254, 0.62),
+      transparent 36%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(219, 234, 254, 0.42)
+    ),
     rgba(238, 246, 255, 0.56) !important;
 }
 
@@ -2881,15 +3179,31 @@ html[data-theme="ice"] .synthesis-top-level-select,
 html[data-theme="ice"] .synthesis-secondary-button {
   border-color: rgba(191, 219, 254, 0.82);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(219, 234, 254, 0.46)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.86),
+      rgba(219, 234, 254, 0.46)
+    ),
     rgba(239, 246, 255, 0.58);
 }
 
 html[data-theme="solar"] .glass-page {
   background:
-    radial-gradient(circle at 10% 0%, rgba(254, 240, 138, 0.26), transparent 30%),
-    radial-gradient(circle at 92% 10%, rgba(252, 211, 77, 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(255, 253, 244, 0.98), rgba(254, 243, 199, 0.66)) !important;
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(254, 240, 138, 0.26),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 92% 10%,
+      rgba(252, 211, 77, 0.14),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 253, 244, 0.98),
+      rgba(254, 243, 199, 0.66)
+    ) !important;
 }
 
 html[data-theme="solar"] .home-rail,
@@ -2901,8 +3215,16 @@ html[data-theme="solar"] .variant-card,
 html[data-theme="solar"] .liquid-board-menu {
   border-color: rgba(251, 191, 36, 0.32) !important;
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.82), transparent 30%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 243, 199, 0.34)),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.82),
+      transparent 30%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(254, 243, 199, 0.34)
+    ),
     rgba(255, 251, 235, 0.82) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -2920,17 +3242,29 @@ html[data-theme="solar"] .project-setup-card::before,
 html[data-theme="solar"] .variant-modal::before,
 html[data-theme="solar"] .variant-card::before {
   background:
-    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.58), transparent 28%),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(255, 255, 255, 0.58),
+      transparent 28%
+    ),
     linear-gradient(120deg, rgba(245, 158, 11, 0.07), transparent 38%),
     linear-gradient(300deg, rgba(234, 179, 8, 0.06), transparent 44%) !important;
 }
 
 html[data-theme="solar"] .board-card:hover,
 html[data-theme="solar"] .variant-card:hover {
-  border-color: rgba(245, 158, 11, 0.30) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.9), transparent 32%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.26)),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.9),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(254, 240, 138, 0.26)
+    ),
     rgba(255, 251, 235, 0.88) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
@@ -2941,16 +3275,28 @@ html[data-theme="solar"] .variant-card:hover {
 html[data-theme="solar"] .board-available-menu,
 html[data-theme="solar"] .board-family-menu {
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.86), transparent 34%),
-    linear-gradient(120deg, rgba(245, 158, 11, 0.10), transparent 42%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.86),
+      transparent 34%
+    ),
+    linear-gradient(120deg, rgba(245, 158, 11, 0.1), transparent 42%),
     linear-gradient(300deg, rgba(234, 179, 8, 0.08), transparent 50%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 243, 199, 0.36)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(254, 243, 199, 0.36)
+    ),
     rgba(255, 251, 235, 0.86) !important;
 }
 
 html[data-theme="solar"] .home-rail {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(254, 240, 138, 0.22)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(254, 240, 138, 0.22)
+    ),
     rgba(255, 247, 237, 0.42) !important;
   border-right-color: rgba(251, 191, 36, 0.34) !important;
 }
@@ -2963,7 +3309,11 @@ html[data-theme="solar"] .setting-control,
 html[data-theme="solar"] .setting-toggle {
   border-color: rgba(251, 191, 36, 0.42);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.22)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(254, 240, 138, 0.22)
+    ),
     rgba(255, 247, 237, 0.72);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -2972,8 +3322,12 @@ html[data-theme="solar"] .board-count-pill,
 html[data-theme="solar"] .board-filter-group button.active {
   border-color: rgba(234, 88, 12, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(253, 224, 71, 0.28)),
-    rgba(245, 158, 11, 0.10);
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.84),
+      rgba(253, 224, 71, 0.28)
+    ),
+    rgba(245, 158, 11, 0.1);
   color: #a16207;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -2985,32 +3339,63 @@ html[data-theme="solar"] .board-icon-badge {
 html[data-theme="solar"] .dashboard-workspace {
   --dashboard-surface-border: rgba(245, 158, 11, 0.22);
   --dashboard-surface-bg:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(254, 240, 138, 0.22)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(254, 240, 138, 0.22)
+    ),
     rgba(255, 251, 235, 0.72);
   --dashboard-surface-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    0 12px 28px rgba(217, 119, 6, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 12px 28px rgba(217, 119, 6, 0.08);
   --dashboard-control-border: rgba(245, 158, 11, 0.24);
   --dashboard-control-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(254, 240, 138, 0.28)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(254, 240, 138, 0.28)
+    ),
     rgba(255, 251, 235, 0.78);
   --dashboard-control-active-border: rgba(217, 119, 6, 0.36);
   --dashboard-control-active-bg:
-    linear-gradient(180deg, rgba(254, 243, 199, 0.96), rgba(253, 224, 71, 0.34)),
+    linear-gradient(
+      180deg,
+      rgba(254, 243, 199, 0.96),
+      rgba(253, 224, 71, 0.34)
+    ),
     rgba(254, 243, 199, 0.76);
   --dashboard-preview-header-bg: rgba(254, 240, 138, 0.24);
   --dashboard-muted-text: #92400e;
   background:
-    radial-gradient(circle at 8% 0%, rgba(254, 240, 138, 0.34), transparent 30%),
-    radial-gradient(circle at 88% 12%, rgba(253, 224, 71, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(255, 253, 244, 0.96), rgba(254, 243, 199, 0.62)) !important;
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(254, 240, 138, 0.34),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 88% 12%,
+      rgba(253, 224, 71, 0.16),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 253, 244, 0.96),
+      rgba(254, 243, 199, 0.62)
+    ) !important;
 }
 
 html[data-theme="solar"] .dashboard-glass-card {
   border-color: rgba(251, 191, 36, 0.34) !important;
   background:
-    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.72), transparent 32%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 240, 138, 0.24)),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(255, 255, 255, 0.72),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(254, 240, 138, 0.24)
+    ),
     rgba(255, 247, 237, 0.76) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
@@ -3023,14 +3408,22 @@ html[data-theme="solar"] .dashboard-glass-card {
 
 html[data-theme="solar"] .dashboard-glass-card::before {
   background:
-    radial-gradient(circle at 9% 0%, rgba(255, 255, 255, 0.42), transparent 30%),
+    radial-gradient(
+      circle at 9% 0%,
+      rgba(255, 255, 255, 0.42),
+      transparent 30%
+    ),
     linear-gradient(120deg, rgba(245, 158, 11, 0.06), transparent 40%),
     linear-gradient(300deg, rgba(234, 179, 8, 0.055), transparent 48%) !important;
 }
 
 html[data-theme="solar"] .editor-tab-bar {
   background:
-    linear-gradient(180deg, rgba(255, 247, 237, 0.9), rgba(254, 240, 138, 0.22)),
+    linear-gradient(
+      180deg,
+      rgba(255, 247, 237, 0.9),
+      rgba(254, 240, 138, 0.22)
+    ),
     rgba(255, 255, 255, 0.28) !important;
   border-bottom-color: rgba(251, 191, 36, 0.42) !important;
 }
@@ -3042,7 +3435,11 @@ html[data-theme="solar"] .editor-add-tab {
 
 html[data-theme="solar"] .editor-file-tab.active {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(254, 240, 138, 0.24)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(254, 240, 138, 0.24)
+    ),
     rgba(255, 247, 237, 0.56) !important;
 }
 
@@ -3055,8 +3452,16 @@ html[data-theme="solar"] .editor-shell .monaco-editor .margin {
 
 html[data-theme="solar"] .synthesis-control-bar {
   background:
-    radial-gradient(circle at 8% 0%, rgba(254, 240, 138, 0.34), transparent 36%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(254, 240, 138, 0.24)),
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(254, 240, 138, 0.34),
+      transparent 36%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(254, 240, 138, 0.24)
+    ),
     rgba(255, 251, 235, 0.74) !important;
 }
 
@@ -3064,14 +3469,21 @@ html[data-theme="solar"] .synthesis-top-level-select,
 html[data-theme="solar"] .synthesis-secondary-button {
   border-color: rgba(251, 191, 36, 0.42);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 240, 138, 0.22)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(254, 240, 138, 0.22)
+    ),
     rgba(255, 251, 235, 0.74);
 }
 
 html[data-theme="solar"] .primary-action:not(:disabled),
 html[data-theme="solar"] .synthesis-generate-button:not(:disabled) {
-  background:
-    linear-gradient(180deg, hsl(35 78% 58%) 0%, hsl(27 72% 50%) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    hsl(35 78% 58%) 0%,
+    hsl(27 72% 50%) 100%
+  ) !important;
   color: #ffffff !important;
   box-shadow: 0 10px 22px rgba(217, 119, 6, 0.14) !important;
 }
@@ -3088,14 +3500,17 @@ html[data-theme="solar"] .sidebarNavButton.active {
 }
 
 html[data-theme="solar"] .sidebarNavButton:hover {
-  background: rgba(245, 158, 11, 0.10) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
   color: #a16207 !important;
 }
 
 html[data-theme="solar"] .project-file-import {
   border-color: rgba(217, 119, 6, 0.24) !important;
-  background:
-    linear-gradient(180deg, hsl(43 72% 62%) 0%, hsl(27 72% 50%) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    hsl(43 72% 62%) 0%,
+    hsl(27 72% 50%) 100%
+  ) !important;
   box-shadow: 0 6px 14px rgba(217, 119, 6, 0.12);
 }
 
@@ -3108,8 +3523,11 @@ html[data-theme="solar"] .project-tree-file:hover {
 }
 
 html[data-theme="solar"] .project-tree-file.active {
-  background:
-    linear-gradient(90deg, rgba(254, 243, 199, 0.86), rgba(255, 251, 235, 0.42)) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(254, 243, 199, 0.86),
+    rgba(255, 251, 235, 0.42)
+  ) !important;
   color: #a16207 !important;
 }
 
@@ -3123,7 +3541,9 @@ html[data-theme="solar"] .project-tree-open-indicator {
 }
 
 html[data-theme="solar"] .project-tree-file.active .project-tree-open-indicator,
-html[data-theme="solar"] .project-tree-file.drag-target .project-tree-open-indicator {
+html[data-theme="solar"]
+  .project-tree-file.drag-target
+  .project-tree-open-indicator {
   background: hsl(35 78% 56%) !important;
   border-color: hsl(27 72% 50%) !important;
 }
@@ -3275,7 +3695,8 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .sidebarNavButton {
   color: #cbd5e1 !important;
 }
 
-html:is([data-theme="dark"], [data-theme="black-ice"]) .sidebarNavButton.active {
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .sidebarNavButton.active {
   color: #93c5fd !important;
 }
 
@@ -3306,8 +3727,7 @@ html[data-theme="dark"] .synthesis-top-level-field {
 html[data-theme="dark"] .synthesis-top-level-select,
 html[data-theme="dark"] .synthesis-secondary-button {
   border-color: #374151;
-  background:
-    linear-gradient(180deg, #1f2937, #111827);
+  background: linear-gradient(180deg, #1f2937, #111827);
   color: #f8fafc;
   box-shadow: none;
 }
@@ -3392,8 +3812,7 @@ html[data-theme="black-ice"] .synthesis-secondary-button:hover {
 }
 
 html[data-theme="black-ice"] .synthesis-generate-button {
-  background:
-    linear-gradient(135deg, #1d4ed8, #0284c7);
+  background: linear-gradient(135deg, #1d4ed8, #0284c7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 8px 18px rgba(37, 99, 235, 0.18);
@@ -3736,7 +4155,9 @@ html[data-theme="black-ice"] .editor-lint-chip.has-errors {
   cursor: pointer;
   display: grid;
   gap: 5px;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .template-card:hover:not(.disabled) {

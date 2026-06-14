@@ -87,7 +87,9 @@ export function useSaveProject({
           await Promise.all(
             snapshot.files
               .filter((file) => file.path && !file.isBinary)
-              .map((file) => writeProjectFile(file.path as string, file.content)),
+              .map((file) =>
+                writeProjectFile(file.path as string, file.content),
+              ),
           );
         }
         setLastSavedAt(now);
@@ -104,7 +106,10 @@ export function useSaveProject({
 
   useEffect(() => {
     function handleSaveShortcut(event: KeyboardEvent) {
-      if (event.key.toLowerCase() !== "s" || (!event.metaKey && !event.ctrlKey)) {
+      if (
+        event.key.toLowerCase() !== "s" ||
+        (!event.metaKey && !event.ctrlKey)
+      ) {
         return;
       }
 
@@ -120,11 +125,7 @@ export function useSaveProject({
     if (!project || !autoSave || saveStatus !== "unsaved") return;
 
     const delay =
-      autoSaveInterval === "5s"
-        ? 5000
-        : autoSaveInterval === "30s"
-          ? 30000
-          : 0;
+      autoSaveInterval === "5s" ? 5000 : autoSaveInterval === "30s" ? 30000 : 0;
 
     if (delay === 0) {
       void saveCurrentProject();
@@ -160,8 +161,7 @@ export function useSaveProject({
     // and let Dashboard handle dirtyFileNames updates
   }
 
-  const showManualSaveButton =
-    !autoSave || autoSaveInterval !== "immediate";
+  const showManualSaveButton = !autoSave || autoSaveInterval !== "immediate";
 
   return {
     saveStatus,

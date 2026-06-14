@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import type { BoardDefinition, BoardPin } from "../data/boards";
-import { getBoardLayout, type LayoutComponent, type LedColor } from "../data/boardLayouts";
+import {
+  getBoardLayout,
+  type LayoutComponent,
+  type LedColor,
+} from "../data/boardLayouts";
 
 /** Keyed by board pin name (e.g. "led0", "rgb_red", "btn1"); true = driven high/active. */
 export type BoardSignalStates = Record<string, boolean | undefined>;
@@ -16,13 +20,14 @@ type VirtualBoardProps = {
   showCaption?: boolean;
 };
 
-const LED_PALETTE: Record<LedColor, { on: string; off: string; glow: string }> = {
-  green: { on: "#4ade80", off: "#14532d", glow: "rgba(74,222,128,0.55)" },
-  red: { on: "#f87171", off: "#7f1d1d", glow: "rgba(248,113,113,0.55)" },
-  blue: { on: "#60a5fa", off: "#1e3a8a", glow: "rgba(96,165,250,0.55)" },
-  amber: { on: "#fbbf24", off: "#78350f", glow: "rgba(251,191,36,0.55)" },
-  white: { on: "#f8fafc", off: "#475569", glow: "rgba(248,250,252,0.55)" },
-};
+const LED_PALETTE: Record<LedColor, { on: string; off: string; glow: string }> =
+  {
+    green: { on: "#4ade80", off: "#14532d", glow: "rgba(74,222,128,0.55)" },
+    red: { on: "#f87171", off: "#7f1d1d", glow: "rgba(248,113,113,0.55)" },
+    blue: { on: "#60a5fa", off: "#1e3a8a", glow: "rgba(96,165,250,0.55)" },
+    amber: { on: "#fbbf24", off: "#78350f", glow: "rgba(251,191,36,0.55)" },
+    white: { on: "#f8fafc", off: "#475569", glow: "rgba(248,250,252,0.55)" },
+  };
 
 export default function VirtualBoard({
   board,
@@ -42,7 +47,10 @@ export default function VirtualBoard({
     }
     return map;
   }, [board]);
-  const mappedKeys = useMemo(() => new Set(mappedPinKeys ?? []), [mappedPinKeys]);
+  const mappedKeys = useMemo(
+    () => new Set(mappedPinKeys ?? []),
+    [mappedPinKeys],
+  );
 
   const fontSize = Math.min(2.6, Math.max(1.7, layout.width / 36));
 
@@ -52,13 +60,20 @@ export default function VirtualBoard({
       return pin ? `pin:${pin.name}:${pin.pin}` : null;
     }
     if (component.kind === "clock") {
-      const clock = board.clocks.find((entry) => entry.name === component.clockName);
+      const clock = board.clocks.find(
+        (entry) => entry.name === component.clockName,
+      );
       return clock?.pin ? `clock:${clock.name}` : null;
     }
     return null;
   }
 
-  function renderSelectionRing(x: number, y: number, radius: number, key: string | null) {
+  function renderSelectionRing(
+    x: number,
+    y: number,
+    radius: number,
+    key: string | null,
+  ) {
     if (!key) return null;
     const isSelected = selectedPinKey === key;
     const isMapped = mappedKeys.has(key);
@@ -122,7 +137,13 @@ export default function VirtualBoard({
           rx={1.7}
           fill="none"
         />
-        <text className="vboard-board-name" x={layout.width - 1.6} y={layout.height - 1.8} textAnchor="end" fontSize={fontSize * 0.92}>
+        <text
+          className="vboard-board-name"
+          x={layout.width - 1.6}
+          y={layout.height - 1.8}
+          textAnchor="end"
+          fontSize={fontSize * 0.92}
+        >
           {board.name}
         </text>
 
@@ -191,7 +212,11 @@ export default function VirtualBoard({
                 <text
                   className="vboard-chip-label"
                   x={component.x + component.w / 2}
-                  y={component.y + component.h / 2 - (component.sublabel ? fontSize * 0.25 : -fontSize * 0.35)}
+                  y={
+                    component.y +
+                    component.h / 2 -
+                    (component.sublabel ? fontSize * 0.25 : -fontSize * 0.35)
+                  }
                   textAnchor="middle"
                   fontSize={fontSize * 0.95}
                 >
@@ -216,9 +241,17 @@ export default function VirtualBoard({
             const key = pinKeyFor(component);
             const label = component.label ?? component.clockName;
             return (
-              <g key={index} {...interactiveProps(component, `clock ${component.clockName}`)}>
+              <g
+                key={index}
+                {...interactiveProps(component, `clock ${component.clockName}`)}
+              >
                 <title>{`${component.clockName} (clock)`}</title>
-                {renderSelectionRing(component.x + 2.1, component.y + 1.3, 3.2, key)}
+                {renderSelectionRing(
+                  component.x + 2.1,
+                  component.y + 1.3,
+                  3.2,
+                  key,
+                )}
                 <rect
                   className="vboard-clock"
                   x={component.x}
@@ -250,10 +283,20 @@ export default function VirtualBoard({
             const label = component.label ?? pin.name;
 
             return (
-              <g key={index} {...interactiveProps(component, `LED ${pin.name}`)}>
+              <g
+                key={index}
+                {...interactiveProps(component, `LED ${pin.name}`)}
+              >
                 <title>{`${pin.name} (LED, pin ${pin.pin})`}</title>
                 {renderSelectionRing(component.x, component.y, 2.5, key)}
-                {isOn ? <circle cx={component.x} cy={component.y} r={2.6} fill={palette.glow} /> : null}
+                {isOn ? (
+                  <circle
+                    cx={component.x}
+                    cy={component.y}
+                    r={2.6}
+                    fill={palette.glow}
+                  />
+                ) : null}
                 <circle
                   className="vboard-led"
                   cx={component.x}
@@ -279,12 +322,17 @@ export default function VirtualBoard({
           if (!pin) return null;
           const key = pinKeyFor(component);
           const rawState = signalStates?.[pin.name];
-          const isPressed = pin.activeLow ? rawState === false : rawState === true;
+          const isPressed = pin.activeLow
+            ? rawState === false
+            : rawState === true;
           const label = component.label ?? pin.name;
           const size = 4;
 
           return (
-            <g key={index} {...interactiveProps(component, `button ${pin.name}`)}>
+            <g
+              key={index}
+              {...interactiveProps(component, `button ${pin.name}`)}
+            >
               <title>{`${pin.name} (button, pin ${pin.pin})`}</title>
               {renderSelectionRing(component.x, component.y, 3.1, key)}
               <rect

@@ -3,7 +3,11 @@ import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import { resolveBoardProgrammer } from "../../data/boardProgrammers";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import {
+  createTauriChannel,
+  hasTauriInvoke,
+  invokeTauri,
+} from "../../lib/tauri";
 import type { ProjectFile } from "./types";
 
 type ProgrammingSectionProps = {
@@ -46,12 +50,17 @@ export default function ProgrammingSection({
   board,
   files,
 }: ProgrammingSectionProps) {
-  const [programmerStatus, setProgrammerStatus] = useState<ProgrammerStatus | null>(null);
-  const [boardStatus, setBoardStatus] = useState<BoardConnectionStatus | null>(null);
+  const [programmerStatus, setProgrammerStatus] =
+    useState<ProgrammerStatus | null>(null);
+  const [boardStatus, setBoardStatus] = useState<BoardConnectionStatus | null>(
+    null,
+  );
   const [isDetectingProgrammer, setIsDetectingProgrammer] = useState(false);
   const [isDetectingBoard, setIsDetectingBoard] = useState(false);
   const [isProgramming, setIsProgramming] = useState(false);
-  const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
+  const [programResult, setProgramResult] = useState<ProgramResult | null>(
+    null,
+  );
   const [selectedBitstream, setSelectedBitstream] = useState<string>("");
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   const consoleRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +75,9 @@ export default function ProgrammingSection({
   const programmer = resolveBoardProgrammer(board);
   const bitstreamFiles = files.filter((file) => {
     const ext = file.name.split(".").pop()?.toLowerCase();
-    return ext && (programmer?.bitstreamExtensions ?? ["bin", "bit"]).includes(ext);
+    return (
+      ext && (programmer?.bitstreamExtensions ?? ["bin", "bit"]).includes(ext)
+    );
   });
 
   async function detectProgrammer() {
@@ -95,13 +106,16 @@ export default function ProgrammingSection({
 
     setIsDetectingBoard(true);
     try {
-      const result = await invokeTauri<BoardConnectionStatus>("detect_connected_board", {
-        request: {
-          programmerCommand: programmer.command,
-          usbVendorId: programmer.usbVendorId,
-          usbProductId: programmer.usbProductId,
+      const result = await invokeTauri<BoardConnectionStatus>(
+        "detect_connected_board",
+        {
+          request: {
+            programmerCommand: programmer.command,
+            usbVendorId: programmer.usbVendorId,
+            usbProductId: programmer.usbProductId,
+          },
         },
-      });
+      );
       setBoardStatus(result);
     } catch {
       setBoardStatus({
@@ -119,12 +133,15 @@ export default function ProgrammingSection({
   async function handleProgramFpga() {
     if (!programmer || !selectedBitstream || !hasTauriInvoke()) return;
 
-    const bitstreamFile = bitstreamFiles.find((f) => f.name === selectedBitstream);
+    const bitstreamFile = bitstreamFiles.find(
+      (f) => f.name === selectedBitstream,
+    );
     if (!bitstreamFile?.path) {
       setProgramResult({
         success: false,
         logs: [],
-        message: "Bitstream file path is not available. Generate a bitstream first.",
+        message:
+          "Bitstream file path is not available. Generate a bitstream first.",
       });
       return;
     }
@@ -199,17 +216,32 @@ export default function ProgrammingSection({
           Program a connected FPGA board directly with the generated bitstream.
         </p>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "22px", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginTop: "22px",
+            flexWrap: "wrap",
+          }}
+        >
           <button
             className="primary-action"
             type="button"
             onClick={handleProgramFpga}
-            disabled={!capabilities.programming.supported || bitstreamFiles.length === 0 || isProgramming || !selectedBitstream}
+            disabled={
+              !capabilities.programming.supported ||
+              bitstreamFiles.length === 0 ||
+              isProgramming ||
+              !selectedBitstream
+            }
             style={{
               border: "none",
               borderRadius: "14px",
               background:
-                capabilities.programming.supported && bitstreamFiles.length > 0 && !isProgramming && selectedBitstream
+                capabilities.programming.supported &&
+                bitstreamFiles.length > 0 &&
+                !isProgramming &&
+                selectedBitstream
                   ? "#2563eb"
                   : "#cbd5e1",
               color: "#ffffff",
@@ -217,7 +249,10 @@ export default function ProgrammingSection({
               fontSize: "15px",
               fontWeight: 800,
               cursor:
-                capabilities.programming.supported && bitstreamFiles.length > 0 && !isProgramming && selectedBitstream
+                capabilities.programming.supported &&
+                bitstreamFiles.length > 0 &&
+                !isProgramming &&
+                selectedBitstream
                   ? "pointer"
                   : "not-allowed",
             }}
@@ -237,7 +272,10 @@ export default function ProgrammingSection({
               padding: "13px 18px",
               fontSize: "15px",
               fontWeight: 800,
-              cursor: programmer && !isDetectingProgrammer ? "pointer" : "not-allowed",
+              cursor:
+                programmer && !isDetectingProgrammer
+                  ? "pointer"
+                  : "not-allowed",
             }}
           >
             {isDetectingProgrammer ? "Checking..." : "Check Tool"}
@@ -255,7 +293,8 @@ export default function ProgrammingSection({
               padding: "13px 18px",
               fontSize: "15px",
               fontWeight: 800,
-              cursor: programmer && !isDetectingBoard ? "pointer" : "not-allowed",
+              cursor:
+                programmer && !isDetectingBoard ? "pointer" : "not-allowed",
             }}
           >
             {isDetectingBoard ? "Scanning..." : "Detect Board"}
@@ -360,7 +399,7 @@ export default function ProgrammingSection({
           >
             {consoleLogs.length
               ? consoleLogs.join("\n")
-              : "No programming output yet.\n\nSelect a bitstream and click \"Program FPGA\" to begin."}
+              : 'No programming output yet.\n\nSelect a bitstream and click "Program FPGA" to begin.'}
           </div>
         </div>
       </InfoCard>
@@ -375,20 +414,34 @@ export default function ProgrammingSection({
           overflow: "hidden",
         }}
       >
-        <InfoCard title="Board" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Board"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <InfoRow label="Name" value={board.name} compact />
           <InfoRow label="Device" value={board.fpgaId} compact />
           <InfoRow label="Family" value={board.family} compact />
           <InfoRow
             label="Connection"
-            value={boardStatus ? (boardStatus.connected ? "Connected" : "Not detected") : "Unknown"}
+            value={
+              boardStatus
+                ? boardStatus.connected
+                  ? "Connected"
+                  : "Not detected"
+                : "Unknown"
+            }
             compact
           />
           {boardStatus?.usbDevices?.map((device, index) => (
             <div key={index} style={{ marginTop: "6px" }}>
               <InfoRow label="Device" value={device.name} compact />
               {device.possibleBoards.length > 0 ? (
-                <InfoRow label="Possible Boards" value={device.possibleBoards.join(", ")} compact />
+                <InfoRow
+                  label="Possible Boards"
+                  value={device.possibleBoards.join(", ")}
+                  compact
+                />
               ) : null}
             </div>
           ))}
@@ -401,20 +454,42 @@ export default function ProgrammingSection({
           ) : null}
         </InfoCard>
 
-        <InfoCard title="Programmer" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Programmer"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <InfoRow label="Tool" value={programmer?.command ?? "None"} compact />
-          <InfoRow label="Backend" value={programmer?.backend ?? "N/A"} compact />
+          <InfoRow
+            label="Backend"
+            value={programmer?.backend ?? "N/A"}
+            compact
+          />
           <InfoRow
             label="Status"
-            value={programmerStatus ? (programmerStatus.installed ? "Installed" : "Not found") : "Unknown"}
+            value={
+              programmerStatus
+                ? programmerStatus.installed
+                  ? "Installed"
+                  : "Not found"
+                : "Unknown"
+            }
             compact
           />
           {programmerStatus?.versionOutput ? (
-            <InfoRow label="Version" value={programmerStatus.versionOutput} compact />
+            <InfoRow
+              label="Version"
+              value={programmerStatus.versionOutput}
+              compact
+            />
           ) : null}
         </InfoCard>
 
-        <InfoCard title="Bitstream" style={{ padding: "14px", borderRadius: "16px" }} compact>
+        <InfoCard
+          title="Bitstream"
+          style={{ padding: "14px", borderRadius: "16px" }}
+          compact
+        >
           <InfoRow
             label="Available"
             value={String(bitstreamFiles.length)}
@@ -427,7 +502,9 @@ export default function ProgrammingSection({
           />
           <InfoRow
             label="Format"
-            value={programmer?.bitstreamExtensions.join(", ").toUpperCase() ?? "N/A"}
+            value={
+              programmer?.bitstreamExtensions.join(", ").toUpperCase() ?? "N/A"
+            }
             compact
           />
         </InfoCard>

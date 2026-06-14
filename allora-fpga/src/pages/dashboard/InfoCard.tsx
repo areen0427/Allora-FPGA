@@ -7,7 +7,12 @@ type InfoCardProps = {
   compact?: boolean;
 };
 
-export default function InfoCard({ title, children, style, compact = false }: InfoCardProps) {
+export default function InfoCard({
+  title,
+  children,
+  style,
+  compact = false,
+}: InfoCardProps) {
   return (
     <div
       className="dashboard-glass-card"

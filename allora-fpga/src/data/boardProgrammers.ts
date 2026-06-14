@@ -1,4 +1,8 @@
-import type { BoardDefinition, BoardProgrammer, ProgrammerBackend } from "./boardTypes";
+import type {
+  BoardDefinition,
+  BoardProgrammer,
+  ProgrammerBackend,
+} from "./boardTypes";
 
 const PROGRAMMER_COMMANDS: Record<string, BoardProgrammer> = {
   iceprog: {
@@ -108,7 +112,9 @@ const PROGRAMMER_COMMANDS: Record<string, BoardProgrammer> = {
   },
 };
 
-export function resolveBoardProgrammer(board: BoardDefinition): BoardProgrammer | null {
+export function resolveBoardProgrammer(
+  board: BoardDefinition,
+): BoardProgrammer | null {
   if (board.programmer) {
     return board.programmer;
   }
@@ -131,15 +137,19 @@ export function resolveBoardProgrammer(board: BoardDefinition): BoardProgrammer 
   };
 }
 
-export function getProgrammerBackendForCommand(command: string): ProgrammerBackend | null {
+export function getProgrammerBackendForCommand(
+  command: string,
+): ProgrammerBackend | null {
   const normalized = command.toLowerCase().trim();
 
   if (normalized.includes("iceprog")) return "iceprog";
   if (normalized.includes("ecpprog")) return "ecpprog";
   if (normalized.includes("openfpgaloader")) return "openFPGALoader";
-  if (normalized.includes("fujprog") || normalized.includes("ujprog")) return "ujprog";
+  if (normalized.includes("fujprog") || normalized.includes("ujprog"))
+    return "ujprog";
   if (normalized.includes("vivado")) return "vivado_hw_manager";
-  if (normalized.includes("quartus") || normalized.includes("usb-blaster")) return "quartus_pgm";
+  if (normalized.includes("quartus") || normalized.includes("usb-blaster"))
+    return "quartus_pgm";
   if (normalized.includes("gowin")) return "gowin_programmer";
   if (normalized.includes("openocd")) return "ftdi_jtag";
   if (normalized.includes("dfu")) return "iceprog";

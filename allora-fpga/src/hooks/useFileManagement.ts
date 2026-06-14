@@ -10,8 +10,14 @@ import {
 } from "../lib/projectWorkspace";
 import { moveFileToTop, getErrorMessage } from "./utils";
 
-type RenameResult = { error: string } | { oldName: string; newName: string } | undefined;
-type DeleteResult = { error: string } | { remainingFiles: ProjectFile[] } | undefined;
+type RenameResult =
+  | { error: string }
+  | { oldName: string; newName: string }
+  | undefined;
+type DeleteResult =
+  | { error: string }
+  | { remainingFiles: ProjectFile[] }
+  | undefined;
 
 export function useFileManagement(project: SavedProject | null) {
   const projectPath = project?.projectPath;
@@ -29,7 +35,9 @@ export function useFileManagement(project: SavedProject | null) {
           ? "vhd"
           : "v";
 
-    while (files.some((file) => file.name === `untitled-${index}.${extension}`)) {
+    while (
+      files.some((file) => file.name === `untitled-${index}.${extension}`)
+    ) {
       index++;
     }
 
@@ -45,7 +53,9 @@ export function useFileManagement(project: SavedProject | null) {
       {
         name: resolvedName,
         content: content ?? "",
-        path: projectPath ? buildProjectFilePath(projectPath, resolvedName) : undefined,
+        path: projectPath
+          ? buildProjectFilePath(projectPath, resolvedName)
+          : undefined,
       },
     ]);
     return resolvedName;
@@ -78,7 +88,9 @@ export function useFileManagement(project: SavedProject | null) {
 
     setFiles((currentFiles) =>
       currentFiles.map((file) =>
-        file.name === oldName ? { ...file, name: newName, path: nextPath } : file,
+        file.name === oldName
+          ? { ...file, name: newName, path: nextPath }
+          : file,
       ),
     );
 
@@ -107,8 +119,12 @@ export function useFileManagement(project: SavedProject | null) {
     if (sourceFileName === targetFileName) return;
 
     setFiles((currentFiles) => {
-      const sourceIndex = currentFiles.findIndex((f) => f.name === sourceFileName);
-      const targetIndex = currentFiles.findIndex((f) => f.name === targetFileName);
+      const sourceIndex = currentFiles.findIndex(
+        (f) => f.name === sourceFileName,
+      );
+      const targetIndex = currentFiles.findIndex(
+        (f) => f.name === targetFileName,
+      );
       if (sourceIndex === -1 || targetIndex === -1) return currentFiles;
 
       const nextFiles = [...currentFiles];
@@ -144,9 +160,7 @@ export function useFileManagement(project: SavedProject | null) {
       const currentFile = currentFiles.find((f) => f.name === fileName);
       if (currentFile) {
         return currentFiles.map((f) =>
-          f.name === fileName
-            ? { ...f, content, path: f.path ?? nextPath }
-            : f,
+          f.name === fileName ? { ...f, content, path: f.path ?? nextPath } : f,
         );
       }
       return [...currentFiles, { name: fileName, content, path: nextPath }];
@@ -154,9 +168,7 @@ export function useFileManagement(project: SavedProject | null) {
     return {};
   }
 
-  function importFiles(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  function importFiles(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
 
     selectedFiles.forEach((file) => {
@@ -186,7 +198,10 @@ export function useFileManagement(project: SavedProject | null) {
                 : f,
             );
           }
-          return [...currentFiles, { name: file.name, content, path: nextPath }];
+          return [
+            ...currentFiles,
+            { name: file.name, content, path: nextPath },
+          ];
         });
       };
 

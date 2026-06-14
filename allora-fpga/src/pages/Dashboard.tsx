@@ -142,9 +142,7 @@ export default function Dashboard({
 
     fileMgmt.setFiles((currentFiles) =>
       currentFiles.map((file) =>
-        file.name === activeTabs.activeFileName
-          ? { ...file, content }
-          : file,
+        file.name === activeTabs.activeFileName ? { ...file, content } : file,
       ),
     );
     markWorkspaceUnsaved(activeTabs.activeFileName);
@@ -205,10 +203,7 @@ export default function Dashboard({
     markWorkspaceUnsaved();
   }
 
-  async function handleUpdateConstraintFile(
-    fileName: string,
-    content: string,
-  ) {
+  async function handleUpdateConstraintFile(fileName: string, content: string) {
     const result = await fileMgmt.updateConstraintFile(fileName, content);
     if (result.error) {
       saveProject.setSaveStatus("error");
@@ -284,17 +279,16 @@ export default function Dashboard({
           overflow: "hidden",
           minWidth: "250px",
           maxWidth: "285px",
-          background:
-        "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+          background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
 
-        border: "1px solid rgba(226,232,240,0.5)",
+          border: "1px solid rgba(226,232,240,0.5)",
 
-        borderRadius: "24px",
+          borderRadius: "24px",
 
-        boxShadow:
-        "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08)",
+          boxShadow:
+            "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08)",
 
-        padding: "14px 12px",
+          padding: "14px 12px",
           position: "sticky",
           top: "24px",
           display: "flex",
@@ -302,63 +296,62 @@ export default function Dashboard({
         }}
       >
         <div style={{ marginBottom: "14px" }}>
-        <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "12px",
-  }}
->
-  <button
-    type="button"
-    aria-label="Go to home page"
-    title="Home"
-    onClick={onHome}
-    style={{
-      width: "32px",
-      height: "32px",
-      borderRadius: "10px",
-      border: "none",
-      background:
-        "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
-      flexShrink: 0,
-      cursor: "pointer",
-      padding: 0,
-    }}
-  >
-    <BoardHomeIcon size={18} color="white" strokeWidth={2.2} />
-  </button>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "12px",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Go to home page"
+              title="Home"
+              onClick={onHome}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "10px",
+                border: "none",
+                background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
+                flexShrink: 0,
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <BoardHomeIcon size={18} color="white" strokeWidth={2.2} />
+            </button>
 
-  <div style={{ minWidth: 0 }}>
-    <div
-      style={{
-        fontSize: "15px",
-        fontWeight: 800,
-        color: "#0f172a",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {projectName || "Untitled Project"}
-    </div>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: "15px",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {projectName || "Untitled Project"}
+              </div>
 
-    <div
-      style={{
-        fontSize: "12px",
-        color: "#64748b",
-        fontWeight: 600,
-      }}
-    >
-      FPGA Project
-    </div>
-  </div>
-</div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#64748b",
+                  fontWeight: 600,
+                }}
+              >
+                FPGA Project
+              </div>
+            </div>
+          </div>
         </div>
 
         <nav
@@ -369,30 +362,75 @@ export default function Dashboard({
             gap: "6px",
           }}
         >
-          <SidebarButton label="Editor" icon={<Code2 size={16} />} active={activeSection === "editor"} onClick={() => setActiveSection("editor")} />
-          <SidebarButton label="Board" icon={<CircuitBoard size={16} />} active={activeSection === "board"} onClick={() => setActiveSection("board")} />
-          <SidebarButton label="Synthesis" icon={<Binary size={16} />} active={activeSection === "synthesis"} onClick={() => setActiveSection("synthesis")} />
-          <SidebarButton label="Testbench" icon={<Waves size={16} />} active={activeSection === "testbench"} onClick={() => setActiveSection("testbench")} />
-          <SidebarButton label="Pins" icon={<MapPinned size={16} />} active={activeSection === "pin-mapping"} onClick={() => setActiveSection("pin-mapping")} />
-          <SidebarButton label="Health" icon={<Activity size={16} />} active={activeSection === "health"} onClick={() => setActiveSection("health")} />
-          <SidebarButton label="Bitstream" icon={<SquareTerminal size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
-          <SidebarButton label="Program" icon={<Cpu size={16} />} active={activeSection === "programming"} onClick={() => setActiveSection("programming")} />
-          <SidebarButton label="Serial" icon={<Usb size={16} />} active={activeSection === "serial"} onClick={() => setActiveSection("serial")} />
+          <SidebarButton
+            label="Editor"
+            icon={<Code2 size={16} />}
+            active={activeSection === "editor"}
+            onClick={() => setActiveSection("editor")}
+          />
+          <SidebarButton
+            label="Board"
+            icon={<CircuitBoard size={16} />}
+            active={activeSection === "board"}
+            onClick={() => setActiveSection("board")}
+          />
+          <SidebarButton
+            label="Synthesis"
+            icon={<Binary size={16} />}
+            active={activeSection === "synthesis"}
+            onClick={() => setActiveSection("synthesis")}
+          />
+          <SidebarButton
+            label="Testbench"
+            icon={<Waves size={16} />}
+            active={activeSection === "testbench"}
+            onClick={() => setActiveSection("testbench")}
+          />
+          <SidebarButton
+            label="Pins"
+            icon={<MapPinned size={16} />}
+            active={activeSection === "pin-mapping"}
+            onClick={() => setActiveSection("pin-mapping")}
+          />
+          <SidebarButton
+            label="Health"
+            icon={<Activity size={16} />}
+            active={activeSection === "health"}
+            onClick={() => setActiveSection("health")}
+          />
+          <SidebarButton
+            label="Bitstream"
+            icon={<SquareTerminal size={16} />}
+            active={activeSection === "bitstream"}
+            onClick={() => setActiveSection("bitstream")}
+          />
+          <SidebarButton
+            label="Program"
+            icon={<Cpu size={16} />}
+            active={activeSection === "programming"}
+            onClick={() => setActiveSection("programming")}
+          />
+          <SidebarButton
+            label="Serial"
+            icon={<Usb size={16} />}
+            active={activeSection === "serial"}
+            onClick={() => setActiveSection("serial")}
+          />
         </nav>
 
         <div
-            style={{
-                marginTop: "16px",
-                paddingTop: "14px",
-                borderTop: "1px solid #e2e8f0",
+          style={{
+            marginTop: "16px",
+            paddingTop: "14px",
+            borderTop: "1px solid #e2e8f0",
 
-                flex: 1,
-                minHeight: 0,
+            flex: 1,
+            minHeight: 0,
 
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-            }}
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
         >
           <div
             style={{
@@ -401,17 +439,17 @@ export default function Dashboard({
               alignItems: "center",
               justifyContent: "space-between",
               gap: "8px",
-              }}
-            >
-              <div
-                style={{
-                  color: "#64748b",
+            }}
+          >
+            <div
+              style={{
+                color: "#64748b",
                 fontSize: "12px",
                 fontWeight: 900,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                }}
-              >
+              }}
+            >
               Files
             </div>
 
@@ -472,34 +510,34 @@ export default function Dashboard({
               </label>
             </div>
           </div>
-            <div
-                style={{
-                    overflowY: "auto",
-                    flex: 1,
-                    minHeight: 0,
-                    paddingRight: "4px",
-                }}
-            >
-          <ProjectTree
-            files={fileMgmt.files}
-            projectPath={projectPath}
-            activeFileName={activeTabs.activeFileName}
-            openFileNames={activeTabs.openFileNames}
-            dirtyFileNames={activeTabs.dirtyFileNames}
-            topLevelFileName={activeTabs.topLevelFileName}
-            draggedFileName={fileMgmt.draggedFileName}
-            dragOverFileName={fileMgmt.dragOverFileName}
-            onOpenFile={handleOpenFile}
-            onCloseFile={handleCloseOpenFile}
-            onDragStartFile={fileMgmt.setDraggedFileName}
-            onDragOverFile={fileMgmt.setDragOverFileName}
-            onDropFile={handleSidebarDrop}
-            onSetTopLevelFile={handleMakeTopLevelFile}
-            onOpenContextMenu={(fileName, x, y) =>
-              setContextMenu({ fileName, x, y })
-            }
-          />
-        </div>
+          <div
+            style={{
+              overflowY: "auto",
+              flex: 1,
+              minHeight: 0,
+              paddingRight: "4px",
+            }}
+          >
+            <ProjectTree
+              files={fileMgmt.files}
+              projectPath={projectPath}
+              activeFileName={activeTabs.activeFileName}
+              openFileNames={activeTabs.openFileNames}
+              dirtyFileNames={activeTabs.dirtyFileNames}
+              topLevelFileName={activeTabs.topLevelFileName}
+              draggedFileName={fileMgmt.draggedFileName}
+              dragOverFileName={fileMgmt.dragOverFileName}
+              onOpenFile={handleOpenFile}
+              onCloseFile={handleCloseOpenFile}
+              onDragStartFile={fileMgmt.setDraggedFileName}
+              onDragOverFile={fileMgmt.setDragOverFileName}
+              onDropFile={handleSidebarDrop}
+              onSetTopLevelFile={handleMakeTopLevelFile}
+              onOpenContextMenu={(fileName, x, y) =>
+                setContextMenu({ fileName, x, y })
+              }
+            />
+          </div>
         </div>
 
         <div
@@ -523,19 +561,63 @@ export default function Dashboard({
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
-            title={saveProject.saveErrorMessage || getSaveStatusLabel(saveProject.saveStatus, saveProject.lastSavedAt)}
+            title={
+              saveProject.saveErrorMessage ||
+              getSaveStatusLabel(
+                saveProject.saveStatus,
+                saveProject.lastSavedAt,
+              )
+            }
           >
-            {getSaveStatusLabel(saveProject.saveStatus, saveProject.lastSavedAt)}
+            {getSaveStatusLabel(
+              saveProject.saveStatus,
+              saveProject.lastSavedAt,
+            )}
           </div>
 
           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-          {saveProject.showManualSaveButton ? (
+            {saveProject.showManualSaveButton ? (
+              <button
+                type="button"
+                aria-label="Save now"
+                title="Save now"
+                disabled={
+                  saveProject.saveStatus === "saving" ||
+                  saveProject.saveStatus === "saved"
+                }
+                onClick={() => void saveProject.saveCurrentProject()}
+                style={{
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#475569",
+                  borderRadius: "10px",
+                  width: "30px",
+                  height: "30px",
+                  cursor:
+                    saveProject.saveStatus === "saving" ||
+                    saveProject.saveStatus === "saved"
+                      ? "not-allowed"
+                      : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  opacity:
+                    saveProject.saveStatus === "saving" ||
+                    saveProject.saveStatus === "saved"
+                      ? 0.56
+                      : 1,
+                }}
+              >
+                <span style={{ fontSize: "12px", fontWeight: 900 }}>S</span>
+              </button>
+            ) : null}
+
             <button
               type="button"
-              aria-label="Save now"
-              title="Save now"
-              disabled={saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved"}
-              onClick={() => void saveProject.saveCurrentProject()}
+              aria-label="Settings"
+              title="Settings"
+              onClick={() => setShowSettings(true)}
               style={{
                 border: "1px solid #e2e8f0",
                 background: "#ffffff",
@@ -543,64 +625,37 @@ export default function Dashboard({
                 borderRadius: "10px",
                 width: "30px",
                 height: "30px",
-                cursor:
-                  saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved"
-                    ? "not-allowed"
-                    : "pointer",
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 0,
-                opacity: saveProject.saveStatus === "saving" || saveProject.saveStatus === "saved" ? 0.56 : 1,
               }}
             >
-              <span style={{ fontSize: "12px", fontWeight: 900 }}>S</span>
+              <Settings size={14} />
             </button>
-          ) : null}
 
-          <button
-            type="button"
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => setShowSettings(true)}
-            style={{
-              border: "1px solid #e2e8f0",
-              background: "#ffffff",
-              color: "#475569",
-              borderRadius: "10px",
-              width: "30px",
-              height: "30px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-          >
-            <Settings size={14} />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Back to project setup"
-            title="Back to project setup"
-            onClick={onBack}
-            style={{
-              border: "1px solid #e2e8f0",
-              background: "#ffffff",
-              color: "#475569",
-              borderRadius: "10px",
-              width: "30px",
-              height: "30px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-          >
-            <ArrowLeft size={14} />
-          </button>
+            <button
+              type="button"
+              aria-label="Back to project setup"
+              title="Back to project setup"
+              onClick={onBack}
+              style={{
+                border: "1px solid #e2e8f0",
+                background: "#ffffff",
+                color: "#475569",
+                borderRadius: "10px",
+                width: "30px",
+                height: "30px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              }}
+            >
+              <ArrowLeft size={14} />
+            </button>
           </div>
         </div>
 
@@ -646,8 +701,10 @@ export default function Dashboard({
         ) : null}
 
         {activeSection === "editor" && (
-        <EditorSection
-            openFiles={fileMgmt.files.filter((file) => activeTabs.openFileNames.includes(file.name))}
+          <EditorSection
+            openFiles={fileMgmt.files.filter((file) =>
+              activeTabs.openFileNames.includes(file.name),
+            )}
             projectFiles={fileMgmt.files}
             activeFileName={activeTabs.activeFileName}
             setActiveFileName={handleOpenFile}
@@ -685,14 +742,19 @@ export default function Dashboard({
             projectName={projectName}
             projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
-            onCreateTestbench={(fileName, content) => handleCreateNewFile(fileName, content)}
+            onCreateTestbench={(fileName, content) =>
+              handleCreateNewFile(fileName, content)
+            }
             onOpenFile={handleOpenFile}
             onAddArtifact={async ({ fileName, content, path }) => {
               const artifactPath =
-                path ?? (projectPath ? `${projectPath}/sim/${fileName}` : undefined);
+                path ??
+                (projectPath ? `${projectPath}/sim/${fileName}` : undefined);
 
               fileMgmt.setFiles((currentFiles) => {
-                const existing = currentFiles.find((file) => file.name === fileName);
+                const existing = currentFiles.find(
+                  (file) => file.name === fileName,
+                );
                 if (existing) {
                   return currentFiles.map((file) =>
                     file.name === fileName
@@ -732,7 +794,9 @@ export default function Dashboard({
                 : undefined;
 
               fileMgmt.setFiles((currentFiles) => {
-                const existing = currentFiles.find((file) => file.name === fileName);
+                const existing = currentFiles.find(
+                  (file) => file.name === fileName,
+                );
                 if (existing) {
                   return currentFiles.map((file) =>
                     file.name === fileName
@@ -809,7 +873,9 @@ export default function Dashboard({
               padding: "10px 12px",
               fontSize: "14px",
               fontWeight: 700,
-              cursor: isHdlFile(contextMenu.fileName) ? "pointer" : "not-allowed",
+              cursor: isHdlFile(contextMenu.fileName)
+                ? "pointer"
+                : "not-allowed",
             }}
           >
             Set as Top Level
@@ -839,7 +905,10 @@ export default function Dashboard({
       ) : null}
 
       {deletingFileName ? (
-        <div className="modal-backdrop" onClick={() => setDeletingFileName(null)}>
+        <div
+          className="modal-backdrop"
+          onClick={() => setDeletingFileName(null)}
+        >
           <div
             className="variant-modal"
             onClick={(event) => event.stopPropagation()}
@@ -850,7 +919,9 @@ export default function Dashboard({
               <button onClick={() => setDeletingFileName(null)}>×</button>
             </div>
 
-            <div style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}>
+            <div
+              style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}
+            >
               Delete <strong>{deletingFileName}</strong> from the project?
             </div>
 
@@ -1046,7 +1117,8 @@ function ProjectTreeNode({
   const isDirty = dirtyFileNames.includes(node.name);
   const isTopLevel = node.name === topLevelFileName;
   const isDragged = node.name === draggedFileName;
-  const isDragTarget = node.name === dragOverFileName && node.name !== draggedFileName;
+  const isDragTarget =
+    node.name === dragOverFileName && node.name !== draggedFileName;
 
   return (
     <div
@@ -1056,7 +1128,9 @@ function ProjectTreeNode({
         "project-tree-file",
         isActive ? "active" : "",
         isDragTarget ? "drag-target" : "",
-      ].filter(Boolean).join(" ")}
+      ]
+        .filter(Boolean)
+        .join(" ")}
       draggable
       onClick={() => onOpenFile(node.name)}
       onKeyDown={(event) => {
@@ -1084,7 +1158,8 @@ function ProjectTreeNode({
         onDragOverFile(node.name);
       }}
       onDragLeave={(event) => {
-        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        if (event.currentTarget.contains(event.relatedTarget as Node | null))
+          return;
         if (dragOverFileName === node.name) {
           onDragOverFile(null);
         }
@@ -1192,8 +1267,20 @@ function ProjectTreeNode({
 }
 
 type TreeNode =
-  | { type: "directory"; name: string; path: string; order: number; children: TreeNode[] }
-  | { type: "file"; name: string; path: string; order: number; isTopLevel: boolean };
+  | {
+      type: "directory";
+      name: string;
+      path: string;
+      order: number;
+      children: TreeNode[];
+    }
+  | {
+      type: "file";
+      name: string;
+      path: string;
+      order: number;
+      isTopLevel: boolean;
+    };
 
 function buildProjectTree(
   files: ProjectFile[],
@@ -1322,18 +1409,101 @@ function SettingsModal({
           <button onClick={onClose}>×</button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <SettingSelect label="Theme" value={settings.theme} onChange={(value) => updateSetting("theme", value as AppSettings["theme"])} options={["light", "ice", "solar", "dark", "black-ice"]} />
-          <SettingSelect label="Default HDL" value={settings.defaultLanguage} onChange={(value) => updateSetting("defaultLanguage", value as AppSettings["defaultLanguage"])} options={["Verilog", "SystemVerilog", "VHDL"]} />
-          <SettingSelect label="Project Name" value={settings.defaultProjectNamePattern} onChange={(value) => updateSetting("defaultProjectNamePattern", value as AppSettings["defaultProjectNamePattern"])} options={["my_fpga_project", "{board}_project"]} />
-          <SettingSelect label="Auto-save Interval" value={settings.autoSaveInterval} onChange={(value) => updateSetting("autoSaveInterval", value as AppSettings["autoSaveInterval"])} options={["immediate", "5s", "30s"]} />
-          <SettingNumber label="Editor Font Size" value={settings.editorFontSize} min={11} max={24} onChange={(value) => updateSetting("editorFontSize", value)} />
-          <SettingNumber label="Editor Tab Size" value={settings.editorTabSize} min={2} max={8} onChange={(value) => updateSetting("editorTabSize", value)} />
-          <SettingSelect label="Pin Mapping Mode" value={settings.defaultPinMappingMode} onChange={(value) => updateSetting("defaultPinMappingMode", value as AppSettings["defaultPinMappingMode"])} options={["simple", "advanced"]} />
-          <SettingNumber label="Recent Projects Limit" value={settings.recentProjectsLimit} min={1} max={12} onChange={(value) => updateSetting("recentProjectsLimit", value)} />
-          <SettingToggle label="Auto-save" checked={settings.autoSave} onChange={(value) => updateSetting("autoSave", value)} />
-          <SettingToggle label="Editor Word Wrap" checked={settings.editorWordWrap} onChange={(value) => updateSetting("editorWordWrap", value)} />
-          <SettingToggle label="Confirm Delete" checked={settings.confirmBeforeDelete} onChange={(value) => updateSetting("confirmBeforeDelete", value)} />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "16px",
+          }}
+        >
+          <SettingSelect
+            label="Theme"
+            value={settings.theme}
+            onChange={(value) =>
+              updateSetting("theme", value as AppSettings["theme"])
+            }
+            options={["light", "ice", "solar", "dark", "black-ice"]}
+          />
+          <SettingSelect
+            label="Default HDL"
+            value={settings.defaultLanguage}
+            onChange={(value) =>
+              updateSetting(
+                "defaultLanguage",
+                value as AppSettings["defaultLanguage"],
+              )
+            }
+            options={["Verilog", "SystemVerilog", "VHDL"]}
+          />
+          <SettingSelect
+            label="Project Name"
+            value={settings.defaultProjectNamePattern}
+            onChange={(value) =>
+              updateSetting(
+                "defaultProjectNamePattern",
+                value as AppSettings["defaultProjectNamePattern"],
+              )
+            }
+            options={["my_fpga_project", "{board}_project"]}
+          />
+          <SettingSelect
+            label="Auto-save Interval"
+            value={settings.autoSaveInterval}
+            onChange={(value) =>
+              updateSetting(
+                "autoSaveInterval",
+                value as AppSettings["autoSaveInterval"],
+              )
+            }
+            options={["immediate", "5s", "30s"]}
+          />
+          <SettingNumber
+            label="Editor Font Size"
+            value={settings.editorFontSize}
+            min={11}
+            max={24}
+            onChange={(value) => updateSetting("editorFontSize", value)}
+          />
+          <SettingNumber
+            label="Editor Tab Size"
+            value={settings.editorTabSize}
+            min={2}
+            max={8}
+            onChange={(value) => updateSetting("editorTabSize", value)}
+          />
+          <SettingSelect
+            label="Pin Mapping Mode"
+            value={settings.defaultPinMappingMode}
+            onChange={(value) =>
+              updateSetting(
+                "defaultPinMappingMode",
+                value as AppSettings["defaultPinMappingMode"],
+              )
+            }
+            options={["simple", "advanced"]}
+          />
+          <SettingNumber
+            label="Recent Projects Limit"
+            value={settings.recentProjectsLimit}
+            min={1}
+            max={12}
+            onChange={(value) => updateSetting("recentProjectsLimit", value)}
+          />
+          <SettingToggle
+            label="Auto-save"
+            checked={settings.autoSave}
+            onChange={(value) => updateSetting("autoSave", value)}
+          />
+          <SettingToggle
+            label="Editor Word Wrap"
+            checked={settings.editorWordWrap}
+            onChange={(value) => updateSetting("editorWordWrap", value)}
+          />
+          <SettingToggle
+            label="Confirm Delete"
+            checked={settings.confirmBeforeDelete}
+            onChange={(value) => updateSetting("confirmBeforeDelete", value)}
+          />
         </div>
       </div>
     </div>
@@ -1354,9 +1524,15 @@ function SettingSelect({
   return (
     <label className="setting-field">
       {label}
-      <select className="setting-control" value={value} onChange={(event) => onChange(event.target.value)}>
+      <select
+        className="setting-control"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
-          <option key={option} value={option}>{formatSettingOption(option)}</option>
+          <option key={option} value={option}>
+            {formatSettingOption(option)}
+          </option>
         ))}
       </select>
     </label>
@@ -1379,7 +1555,14 @@ function SettingNumber({
   return (
     <label className="setting-field">
       {label}
-      <input className="setting-control" type="number" value={value} min={min} max={max} onChange={(event) => onChange(Number(event.target.value))} />
+      <input
+        className="setting-control"
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
     </label>
   );
 }
@@ -1395,7 +1578,11 @@ function SettingToggle({
 }) {
   return (
     <label className="setting-toggle">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
       {label}
     </label>
   );

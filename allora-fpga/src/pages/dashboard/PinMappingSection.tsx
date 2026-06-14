@@ -28,17 +28,22 @@ export default function PinMappingSection({
   const [mode, setMode] = useState<PinMappingMode>(defaultMode);
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
   const ports = useMemo(
-    () => findPorts(topLevelFileName ? files.filter((file) => file.name === topLevelFileName) : []),
-    [files, topLevelFileName]
+    () =>
+      findPorts(
+        topLevelFileName
+          ? files.filter((file) => file.name === topLevelFileName)
+          : [],
+      ),
+    [files, topLevelFileName],
   );
   const suggestedMappings = useMemo(
     () => createSuggestedMappings(ports, board.pins, board.clocks),
-    [ports, board.pins, board.clocks]
+    [ports, board.pins, board.clocks],
   );
   const [overrides, setOverrides] = useState<Record<string, string>>({});
 
   const mappedCount = ports.filter(
-    (port) => overrides[port.name] ?? suggestedMappings[port.name]
+    (port) => overrides[port.name] ?? suggestedMappings[port.name],
   ).length;
 
   function getSelectedPin(portName: string) {
@@ -84,7 +89,14 @@ export default function PinMappingSection({
             flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
             <div
               style={{
                 display: "inline-flex",
@@ -110,7 +122,9 @@ export default function PinMappingSection({
                     cursor: "pointer",
                     textTransform: "capitalize",
                     boxShadow:
-                      mode === option ? "0 1px 3px rgba(15,23,42,0.08)" : "none",
+                      mode === option
+                        ? "0 1px 3px rgba(15,23,42,0.08)"
+                        : "none",
                   }}
                 >
                   {option}
@@ -126,9 +140,15 @@ export default function PinMappingSection({
               }}
             >
               <SummaryPill label="Ports" value={String(ports.length)} />
-              <SummaryPill label="Mapped" value={`${mappedCount}/${ports.length}`} />
+              <SummaryPill
+                label="Mapped"
+                value={`${mappedCount}/${ports.length}`}
+              />
               <SummaryPill label="Pins" value={String(board.pins.length)} />
-              <SummaryPill label="Constraints" value={`.${board.constraintsFile}`} />
+              <SummaryPill
+                label="Constraints"
+                value={`.${board.constraintsFile}`}
+              />
             </div>
           </div>
 
@@ -140,11 +160,13 @@ export default function PinMappingSection({
               border: "1px solid #dbe4f0",
               borderRadius: "11px",
               background: "#ffffff",
-              color: Object.keys(overrides).length === 0 ? "#94a3b8" : "#475569",
+              color:
+                Object.keys(overrides).length === 0 ? "#94a3b8" : "#475569",
               padding: "8px 11px",
               fontSize: "13px",
               fontWeight: 850,
-              cursor: Object.keys(overrides).length === 0 ? "not-allowed" : "pointer",
+              cursor:
+                Object.keys(overrides).length === 0 ? "not-allowed" : "pointer",
             }}
           >
             Reset
@@ -200,7 +222,8 @@ function SummaryPill({ label, value }: { label: string; value: string }) {
       style={{
         minWidth: "72px",
         borderRadius: "12px",
-        border: "1px solid var(--dashboard-control-border, rgba(203, 213, 225, 0.78))",
+        border:
+          "1px solid var(--dashboard-control-border, rgba(203, 213, 225, 0.78))",
         background: "var(--dashboard-control-bg, rgba(255,255,255,0.68))",
         padding: "7px 10px",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
@@ -332,7 +355,9 @@ function SimplePinMapper({
 
               <select
                 value={selectedPin}
-                onChange={(event) => setPortMapping(port.name, event.target.value)}
+                onChange={(event) =>
+                  setPortMapping(port.name, event.target.value)
+                }
                 style={{
                   width: "100%",
                   minWidth: 0,
@@ -391,11 +416,15 @@ function BoardPinMapper({
 
     // Move on to the next unmapped port so a whole module can be mapped
     // with consecutive clicks on the board.
-    const currentIndex = ports.findIndex((port) => port.name === selectedPort.name);
+    const currentIndex = ports.findIndex(
+      (port) => port.name === selectedPort.name,
+    );
     const nextUnmapped =
-      ports.slice(currentIndex + 1).find((port) => !getSelectedPin(port.name)) ??
+      ports
+        .slice(currentIndex + 1)
+        .find((port) => !getSelectedPin(port.name)) ??
       ports.find(
-        (port) => port.name !== selectedPort.name && !getSelectedPin(port.name)
+        (port) => port.name !== selectedPort.name && !getSelectedPin(port.name),
       );
     if (nextUnmapped) {
       setSelectedPortName(nextUnmapped.name);
@@ -463,7 +492,9 @@ function BoardPinMapper({
           }}
         >
           {mappedCount}/{ports.length} mapped ·{" "}
-          {selectedPinOption ? selectedPinOption.shortLabel : "click a component"}
+          {selectedPinOption
+            ? selectedPinOption.shortLabel
+            : "click a component"}
         </div>
       </div>
 
@@ -503,7 +534,11 @@ function ResourcePinMapper({
   const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
   const mappedPorts = ports.filter((port) => getSelectedPin(port.name));
   const resourceGroups = getResourceGroups(board);
-  const constraintPreview = createConstraintPreview(board, ports, getSelectedPin);
+  const constraintPreview = createConstraintPreview(
+    board,
+    ports,
+    getSelectedPin,
+  );
 
   function assignPin(pinKey: string) {
     if (!selectedPort) return;
@@ -517,7 +552,8 @@ function ResourcePinMapper({
         flex: "1 1 auto",
         minHeight: 0,
         display: "grid",
-        gridTemplateRows: ports.length === 0 ? "auto" : "auto minmax(0, 1fr) auto",
+        gridTemplateRows:
+          ports.length === 0 ? "auto" : "auto minmax(0, 1fr) auto",
         gap: "14px",
       }}
     >
@@ -567,7 +603,8 @@ function ResourcePinMapper({
                 whiteSpace: "nowrap",
               }}
             >
-              {ports.filter((port) => getSelectedPin(port.name)).length}/{ports.length} mapped
+              {ports.filter((port) => getSelectedPin(port.name)).length}/
+              {ports.length} mapped
             </div>
           </div>
 
@@ -620,13 +657,39 @@ function ResourcePinMapper({
                   padding: "14px",
                 }}
               >
-                <div style={{ color: "var(--dashboard-muted-text, #64748b)", fontSize: "11px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div
+                  style={{
+                    color: "var(--dashboard-muted-text, #64748b)",
+                    fontSize: "11px",
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
                   Current Assignment
                 </div>
-                <div style={{ marginTop: "8px", color: "var(--dashboard-strong-text, #0f172a)", fontSize: "15px", fontWeight: 900, overflowWrap: "anywhere" }}>
+                <div
+                  style={{
+                    marginTop: "8px",
+                    color: "var(--dashboard-strong-text, #0f172a)",
+                    fontSize: "15px",
+                    fontWeight: 900,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {selectedPort?.name ?? "No port selected"}
                 </div>
-                <div style={{ marginTop: "6px", color: selectedPinOption ? "var(--dashboard-control-active-border, #2563eb)" : "var(--dashboard-muted-text, #94a3b8)", fontSize: "13px", fontWeight: 800, lineHeight: 1.35 }}>
+                <div
+                  style={{
+                    marginTop: "6px",
+                    color: selectedPinOption
+                      ? "var(--dashboard-control-active-border, #2563eb)"
+                      : "var(--dashboard-muted-text, #94a3b8)",
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    lineHeight: 1.35,
+                  }}
+                >
                   {selectedPinOption
                     ? selectedPinOption.label
                     : "Choose a board resource to map this port."}
@@ -657,7 +720,9 @@ function ResourcePinMapper({
                   }}
                 >
                   <span>Constraint Preview</span>
-                  <span>{mappedPorts.length}/{ports.length}</span>
+                  <span>
+                    {mappedPorts.length}/{ports.length}
+                  </span>
                 </div>
                 <pre
                   className="pin-map-preview-code"
@@ -669,7 +734,8 @@ function ResourcePinMapper({
                     fontSize: "12px",
                     lineHeight: 1.5,
                     whiteSpace: "pre-wrap",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                    fontFamily:
+                      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                   }}
                 >
                   {constraintPreview}
@@ -677,7 +743,6 @@ function ResourcePinMapper({
               </div>
             </div>
           </div>
-
         </>
       )}
     </div>
@@ -717,12 +782,25 @@ function ResourceGroupCard({
         minWidth: 0,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "10px",
+        }}
+      >
         <div>
           <div style={{ color: "#0f172a", fontSize: "15px", fontWeight: 900 }}>
             {group.title}
           </div>
-          <div style={{ marginTop: "4px", color: "#64748b", fontSize: "12px", fontWeight: 750 }}>
+          <div
+            style={{
+              marginTop: "4px",
+              color: "#64748b",
+              fontSize: "12px",
+              fontWeight: 750,
+            }}
+          >
             {group.detail}
           </div>
         </div>
@@ -776,10 +854,27 @@ function ResourceGroupCard({
               >
                 {pin.symbol}
               </span>
-              <span style={{ fontSize: "12px", fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {pin.pin}
               </span>
-              <span style={{ color: "#64748b", fontSize: "10px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  color: "#64748b",
+                  fontSize: "10px",
+                  fontWeight: 750,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {pin.detail ?? pin.name}
               </span>
             </button>
@@ -793,7 +888,11 @@ function ResourceGroupCard({
 function getResourceGroups(board: BoardDefinition): ResourceGroup[] {
   const groups = new Map<string, ResourceGroup>();
 
-  function addPin(groupTitle: string, groupDetail: string, pin: ResourceGroup["pins"][number]) {
+  function addPin(
+    groupTitle: string,
+    groupDetail: string,
+    pin: ResourceGroup["pins"][number],
+  ) {
     const group = groups.get(groupTitle) ?? {
       title: groupTitle,
       detail: groupDetail,
@@ -814,7 +913,7 @@ function getResourceGroups(board: BoardDefinition): ResourceGroup[] {
         type: "clock",
         symbol: "CLK",
         detail: `${Math.round(clock.frequency / 1_000_000)} MHz`,
-      })
+      }),
     );
 
   board.pins.forEach((pin) => {
@@ -829,7 +928,9 @@ function getResourceGroups(board: BoardDefinition): ResourceGroup[] {
     });
   });
 
-  return Array.from(groups.values()).sort((a, b) => getResourceOrder(a.title) - getResourceOrder(b.title));
+  return Array.from(groups.values()).sort(
+    (a, b) => getResourceOrder(a.title) - getResourceOrder(b.title),
+  );
 }
 
 function getResourceGroupTitle(pin: BoardPin) {
@@ -838,7 +939,10 @@ function getResourceGroupTitle(pin: BoardPin) {
   if (pin.type === "uart") return "UART";
   if (pin.type === "spi" || pin.type === "flash") return "SPI / Flash";
   if (pin.type === "i2c") return "I2C";
-  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+  if (
+    pin.group?.toLowerCase().includes("usb") ||
+    pin.signal?.toLowerCase().includes("usb")
+  ) {
     return "USB / Special";
   }
   if (pin.type === "gpio") return pin.group ?? "GPIO";
@@ -868,7 +972,10 @@ function getResourceSymbol(pin: BoardPin) {
   if (pin.type === "uart") return "URT";
   if (pin.type === "spi" || pin.type === "flash") return "SPI";
   if (pin.type === "i2c") return "I2C";
-  if (pin.group?.toLowerCase().includes("usb") || pin.signal?.toLowerCase().includes("usb")) {
+  if (
+    pin.group?.toLowerCase().includes("usb") ||
+    pin.signal?.toLowerCase().includes("usb")
+  ) {
     return "USB";
   }
   if (pin.type === "gpio") return "IO";
@@ -888,10 +995,12 @@ function getPinTypeLabel(type: string) {
 function createConstraintPreview(
   board: BoardDefinition,
   ports: HdlPort[],
-  getSelectedPin: (portName: string) => string
+  getSelectedPin: (portName: string) => string,
 ) {
   const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
-  const lines = [`# ${board.name} ${board.constraintsFile.toUpperCase()} preview`];
+  const lines = [
+    `# ${board.name} ${board.constraintsFile.toUpperCase()} preview`,
+  ];
 
   if (ports.length === 0) {
     lines.push("# No top-level ports detected.");
@@ -908,7 +1017,9 @@ function createConstraintPreview(
     }
 
     if (board.constraintsFile === "xdc") {
-      lines.push(`set_property PACKAGE_PIN ${pin.pin} [get_ports ${port.name}]`);
+      lines.push(
+        `set_property PACKAGE_PIN ${pin.pin} [get_ports ${port.name}]`,
+      );
       lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);

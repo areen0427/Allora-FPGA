@@ -30,16 +30,13 @@ const ULX3S_BUTTONS: BoardPin[] = [
   { name: "btn6", pin: "H16", type: "button", verified: false },
 ];
 
-const ULX3S_PINS: BoardPin[] = [
-  ...ULX3S_LEDS,
-  ...ULX3S_BUTTONS,
-];
+const ULX3S_PINS: BoardPin[] = [...ULX3S_LEDS, ...ULX3S_BUTTONS];
 
 function createUlx3sVariant(
   id: string,
   name: string,
   device: string,
-  fpgaId: string
+  fpgaId: string,
 ): BoardDefinition {
   return {
     id,
@@ -70,28 +67,28 @@ export const ulx3s12f = createUlx3sVariant(
   "ulx3s-12f",
   "ULX3S 12F",
   "LFE5U-12F",
-  "lfe5u-12f-cabga381"
+  "lfe5u-12f-cabga381",
 );
 
 export const ulx3s25f = createUlx3sVariant(
   "ulx3s-25f",
   "ULX3S 25F",
   "LFE5U-25F",
-  "lfe5u-25f-cabga381"
+  "lfe5u-25f-cabga381",
 );
 
 export const ulx3s45f = createUlx3sVariant(
   "ulx3s-45f",
   "ULX3S 45F",
   "LFE5U-45F",
-  "lfe5u-45f-cabga381"
+  "lfe5u-45f-cabga381",
 );
 
 export const ulx3s85f = createUlx3sVariant(
   "ulx3s-85f",
   "ULX3S 85F",
   "LFE5U-85F",
-  "lfe5u-85f-cabga381"
+  "lfe5u-85f-cabga381",
 );
 
 export const ULX3S_BOARDS: BoardDefinition[] = [

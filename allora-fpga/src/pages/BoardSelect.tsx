@@ -5,7 +5,10 @@ import {
   getBuildSupportedBoards,
   getPinMappingOnlyBoards,
 } from "../data/boardSupport";
-import type { BoardCatalogItem, VariantBoardCatalogItem } from "../data/boardSupport";
+import type {
+  BoardCatalogItem,
+  VariantBoardCatalogItem,
+} from "../data/boardSupport";
 import { HomeView } from "./welcome/HomeView";
 import { PinMappingBrowser } from "./welcome/PinMappingBrowser";
 import { SettingsModal } from "./welcome/SettingsModal";
@@ -28,11 +31,13 @@ export default function BoardSelect({
   onOpenProject,
   onOpenExistingProject,
 }: BoardSelectProps) {
-  const [selectedVariantBoard, setSelectedVariantBoard] = useState<VariantBoardCatalogItem | null>(null);
+  const [selectedVariantBoard, setSelectedVariantBoard] =
+    useState<VariantBoardCatalogItem | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
   const [showAllBoards, setShowAllBoards] = useState(false);
-  const [isOpeningExistingProject, setIsOpeningExistingProject] = useState(false);
+  const [isOpeningExistingProject, setIsOpeningExistingProject] =
+    useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
   const [activeView, setActiveView] = useState<WelcomeView>("home");
   const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
@@ -41,7 +46,9 @@ export default function BoardSelect({
   const supportedBoards = useMemo(() => getBuildSupportedBoards(), []);
   const pinMappingBoards = useMemo(() => getPinMappingOnlyBoards(), []);
   const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
-  const visibleBoards = showAllBoards ? supportedBoards : supportedBoards.slice(0, 8);
+  const visibleBoards = showAllBoards
+    ? supportedBoards
+    : supportedBoards.slice(0, 8);
 
   function handleSelectBoard(board: BoardCatalogItem) {
     if ("variants" in board) {
@@ -65,7 +72,9 @@ export default function BoardSelect({
       await onOpenExistingProject();
     } catch (error) {
       setOpenExistingProjectError(
-        error instanceof Error ? error.message : "Unable to open that project folder."
+        error instanceof Error
+          ? error.message
+          : "Unable to open that project folder.",
       );
     } finally {
       setIsOpeningExistingProject(false);

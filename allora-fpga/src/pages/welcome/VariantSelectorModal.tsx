@@ -6,13 +6,22 @@ type VariantSelectorModalProps = {
   onClose: () => void;
 };
 
-export function VariantSelectorModal({ board, onSelectVariant, onClose }: VariantSelectorModalProps) {
+export function VariantSelectorModal({
+  board,
+  onSelectVariant,
+  onClose,
+}: VariantSelectorModalProps) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="variant-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="variant-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="variant-modal-header">
           <h2>Select {board.name} Variant</h2>
-          <button type="button" onClick={onClose}>×</button>
+          <button type="button" onClick={onClose}>
+            ×
+          </button>
         </div>
 
         <div className="variant-grid">

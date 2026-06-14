@@ -56,13 +56,12 @@ export default function SynthesisSection({
   const [showAdvancedLog, setShowAdvancedLog] = useState(false);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
-  const selectedTopLevelFile =
-    topLevelFileName
-      ? hdlFiles.find((file) => file.name === topLevelFileName) ?? null
-      : null;
+  const selectedTopLevelFile = topLevelFileName
+    ? (hdlFiles.find((file) => file.name === topLevelFileName) ?? null)
+    : null;
   const topModule = useMemo(
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
-    [selectedTopLevelFile]
+    [selectedTopLevelFile],
   );
   const capabilities = getBoardCapabilities(board);
   const status: SynthesisStatus = !capabilities.synthesisDiagram.supported
@@ -79,7 +78,10 @@ export default function SynthesisSection({
       return;
     }
 
-    if (!topLevelFileName || !hdlFiles.some((file) => file.name === topLevelFileName)) {
+    if (
+      !topLevelFileName ||
+      !hdlFiles.some((file) => file.name === topLevelFileName)
+    ) {
       onTopLevelFileNameChange(hdlFiles[0]?.name ?? null);
     }
   }, [hdlFiles, onTopLevelFileNameChange, topLevelFileName]);
@@ -87,10 +89,7 @@ export default function SynthesisSection({
   async function runSynthesis() {
     if (status === "unsupported") {
       setDiagram(null);
-      setLog([
-        "[synthesis] Unsupported",
-        capabilities.synthesisDiagram.detail,
-      ]);
+      setLog(["[synthesis] Unsupported", capabilities.synthesisDiagram.detail]);
       return;
     }
 
@@ -134,7 +133,7 @@ export default function SynthesisSection({
             topModule,
             files: hdlFiles,
           },
-        }
+        },
       );
 
       setDiagram(result);
@@ -142,10 +141,7 @@ export default function SynthesisSection({
       setShowAdvancedLog(false);
     } catch (error) {
       setDiagram(null);
-      setLog([
-        "[synthesis] Failed",
-        getErrorMessage(error),
-      ]);
+      setLog(["[synthesis] Failed", getErrorMessage(error)]);
     } finally {
       setIsRunning(false);
     }
@@ -170,7 +166,8 @@ export default function SynthesisSection({
             lineHeight: 1.55,
           }}
         >
-          Run real synthesis through the local Tauri tool runner and inspect the generated hardware graph.
+          Run real synthesis through the local Tauri tool runner and inspect the
+          generated hardware graph.
         </p>
 
         <div
@@ -179,14 +176,14 @@ export default function SynthesisSection({
             marginTop: "24px",
           }}
         >
-          <label
-            className="synthesis-top-level-field"
-          >
+          <label className="synthesis-top-level-field">
             <span>Top level</span>
             <select
               className="synthesis-top-level-select"
               value={topLevelFileName ?? ""}
-              onChange={(event) => onTopLevelFileNameChange(event.target.value || null)}
+              onChange={(event) =>
+                onTopLevelFileNameChange(event.target.value || null)
+              }
             >
               {hdlFiles.map((file) => (
                 <option key={file.name} value={file.name}>
@@ -281,7 +278,8 @@ export default function SynthesisSection({
                   color: "#334155",
                   minHeight: "220px",
                   padding: "18px",
-                  fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+                  fontFamily:
+                    "JetBrains Mono, SFMono-Regular, Consolas, monospace",
                   fontSize: "13px",
                   lineHeight: 1.55,
                   whiteSpace: "pre-wrap",
@@ -303,25 +301,37 @@ export default function SynthesisSection({
           minWidth: 0,
         }}
       >
-        <InfoCard title="Target" style={{ padding: "20px", borderRadius: "20px" }} compact>
+        <InfoCard
+          title="Target"
+          style={{ padding: "20px", borderRadius: "20px" }}
+          compact
+        >
           <InfoRow label="Board" value={board.name} compact />
           <InfoRow label="Device" value={board.fpgaId} compact />
           <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
-          <InfoRow label="Status" value={capabilities.synthesisDiagram.label} compact />
+          <InfoRow
+            label="Status"
+            value={capabilities.synthesisDiagram.label}
+            compact
+          />
         </InfoCard>
 
-        <InfoCard title="Inputs" style={{ padding: "20px", borderRadius: "20px" }} compact>
+        <InfoCard
+          title="Inputs"
+          style={{ padding: "20px", borderRadius: "20px" }}
+          compact
+        >
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Top Module"
-            value={
-              diagram?.topModule ??
-              topModule ??
-              "Not found"
-            }
+            value={diagram?.topModule ?? topModule ?? "Not found"}
             compact
           />
-          <InfoRow label="Output Netlist" value={`${diagram?.outputName ?? outputName}.json`} compact />
+          <InfoRow
+            label="Output Netlist"
+            value={`${diagram?.outputName ?? outputName}.json`}
+            compact
+          />
         </InfoCard>
       </div>
     </div>
@@ -364,11 +374,11 @@ function HardwareDiagram({ diagram }: { diagram: SynthesisDiagramResponse }) {
           </div>
         </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
             color: "#64748b",
             fontSize: "12px",
             fontWeight: 700,
@@ -445,7 +455,11 @@ function GateNode({
   const centerX = node.width / 2;
   const centerY = node.height / 2;
 
-  if (gate.kind === "input" || gate.kind === "output" || gate.kind === "constant") {
+  if (
+    gate.kind === "input" ||
+    gate.kind === "output" ||
+    gate.kind === "constant"
+  ) {
     return (
       <>
         <rect
@@ -671,20 +685,49 @@ function createDiagramLayout(diagram: SynthesisDiagramResponse) {
     .filter((node) => node.kind === "cell")
     .sort((a, b) => gateSortKey(a).localeCompare(gateSortKey(b)));
 
-  const inputs = reorderZoneNodes(inputNodes, gateNodes, aggregatedEdges, "left");
-  const gates = reorderZoneNodes(gateNodes, [...inputs, ...outputNodes], aggregatedEdges, "middle");
-  const outputs = reorderZoneNodes(outputNodes, gates, aggregatedEdges, "right");
+  const inputs = reorderZoneNodes(
+    inputNodes,
+    gateNodes,
+    aggregatedEdges,
+    "left",
+  );
+  const gates = reorderZoneNodes(
+    gateNodes,
+    [...inputs, ...outputNodes],
+    aggregatedEdges,
+    "middle",
+  );
+  const outputs = reorderZoneNodes(
+    outputNodes,
+    gates,
+    aggregatedEdges,
+    "right",
+  );
 
-  const leftZone = buildZoneLayout(inputs, nodeWidth, nodeHeight, rowGap, columnGap, 6);
+  const leftZone = buildZoneLayout(
+    inputs,
+    nodeWidth,
+    nodeHeight,
+    rowGap,
+    columnGap,
+    6,
+  );
   const middleZone = buildZoneLayout(
     gates,
     nodeWidth,
     nodeHeight,
     rowGap,
     columnGap,
-    gates.length > 12 ? 5 : 6
+    gates.length > 12 ? 5 : 6,
   );
-  const rightZone = buildZoneLayout(outputs, nodeWidth, nodeHeight, rowGap, columnGap, 6);
+  const rightZone = buildZoneLayout(
+    outputs,
+    nodeWidth,
+    nodeHeight,
+    rowGap,
+    columnGap,
+    6,
+  );
 
   const width =
     marginX * 2 +
@@ -695,11 +738,26 @@ function createDiagramLayout(diagram: SynthesisDiagramResponse) {
     rightZone.width;
   const height =
     marginY * 2 +
-    Math.max(leftZone.height, middleZone.height, rightZone.height, nodeHeight, 360);
+    Math.max(
+      leftZone.height,
+      middleZone.height,
+      rightZone.height,
+      nodeHeight,
+      360,
+    );
 
   const positions = new Map<
     string,
-    { x: number; y: number; width: number; height: number; fill: string; stroke: string; label: string; detail: string }
+    {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      fill: string;
+      stroke: string;
+      label: string;
+      detail: string;
+    }
   >();
 
   const zones = [
@@ -763,7 +821,9 @@ function createDiagramLayout(diagram: SynthesisDiagramResponse) {
   };
 }
 
-function aggregateEdges(edges: SynthesisDiagramEdge[]): AggregatedDiagramEdge[] {
+function aggregateEdges(
+  edges: SynthesisDiagramEdge[],
+): AggregatedDiagramEdge[] {
   const grouped = new Map<string, AggregatedDiagramEdge>();
 
   for (const edge of edges) {
@@ -817,7 +877,7 @@ function buildZoneLayout(
   nodeHeight: number,
   rowGap: number,
   columnGap: number,
-  maxRows: number
+  maxRows: number,
 ) {
   const rowCount = Math.max(1, Math.min(maxRows, nodes.length || 1));
   const columnCount = Math.max(1, Math.ceil((nodes.length || 1) / rowCount));
@@ -834,10 +894,8 @@ function buildZoneLayout(
 
   return {
     items,
-    width:
-      columnCount * nodeWidth + Math.max(columnCount - 1, 0) * columnGap,
-    height:
-      rowCount * nodeHeight + Math.max(rowCount - 1, 0) * rowGap,
+    width: columnCount * nodeWidth + Math.max(columnCount - 1, 0) * columnGap,
+    height: rowCount * nodeHeight + Math.max(rowCount - 1, 0) * rowGap,
   };
 }
 
@@ -845,7 +903,7 @@ function reorderZoneNodes(
   primaryNodes: SynthesisDiagramNode[],
   referenceNodes: SynthesisDiagramNode[],
   edges: AggregatedDiagramEdge[],
-  side: "left" | "middle" | "right"
+  side: "left" | "middle" | "right",
 ) {
   const referenceIndex = new Map<string, number>();
   referenceNodes.forEach((node, index) => {
@@ -864,12 +922,14 @@ function averageReferenceIndex(
   nodeId: string,
   referenceIndex: Map<string, number>,
   edges: AggregatedDiagramEdge[],
-  side: "left" | "middle" | "right"
+  side: "left" | "middle" | "right",
 ) {
   const related = edges
     .map((edge) => {
-      if (side === "left" && edge.from === nodeId) return referenceIndex.get(edge.to);
-      if (side === "right" && edge.to === nodeId) return referenceIndex.get(edge.from);
+      if (side === "left" && edge.from === nodeId)
+        return referenceIndex.get(edge.to);
+      if (side === "right" && edge.to === nodeId)
+        return referenceIndex.get(edge.from);
       if (side === "middle") {
         if (edge.from === nodeId) return referenceIndex.get(edge.to);
         if (edge.to === nodeId) return referenceIndex.get(edge.from);
@@ -890,9 +950,12 @@ function gateSortKey(node: SynthesisDiagramNode) {
 function classifyGate(label: string, detail: string) {
   const source = `${label} ${detail}`.toLowerCase();
 
-  if (source.includes("input port")) return { kind: "input", shape: "port", text: label };
-  if (source.includes("output port")) return { kind: "output", shape: "port", text: label };
-  if (source.includes("constant")) return { kind: "constant", shape: "port", text: label };
+  if (source.includes("input port"))
+    return { kind: "input", shape: "port", text: label };
+  if (source.includes("output port"))
+    return { kind: "output", shape: "port", text: label };
+  if (source.includes("constant"))
+    return { kind: "constant", shape: "port", text: label };
   if (source.includes("not") || source.includes("inv")) {
     return { kind: "gate", shape: "triangle", text: "NOT", bubbled: true };
   }
@@ -906,16 +969,40 @@ function classifyGate(label: string, detail: string) {
     return { kind: "gate", shape: "and", text: "AND", bubbled: false };
   }
   if (source.includes("xnor")) {
-    return { kind: "gate", shape: "or", text: "XNOR", bubbled: true, xor: true };
+    return {
+      kind: "gate",
+      shape: "or",
+      text: "XNOR",
+      bubbled: true,
+      xor: true,
+    };
   }
   if (source.includes("xor")) {
-    return { kind: "gate", shape: "or", text: "XOR", bubbled: false, xor: true };
+    return {
+      kind: "gate",
+      shape: "or",
+      text: "XOR",
+      bubbled: false,
+      xor: true,
+    };
   }
   if (source.includes("nor")) {
-    return { kind: "gate", shape: "or", text: "NOR", bubbled: true, xor: false };
+    return {
+      kind: "gate",
+      shape: "or",
+      text: "NOR",
+      bubbled: true,
+      xor: false,
+    };
   }
   if (source.includes("or")) {
-    return { kind: "gate", shape: "or", text: "OR", bubbled: false, xor: false };
+    return {
+      kind: "gate",
+      shape: "or",
+      text: "OR",
+      bubbled: false,
+      xor: false,
+    };
   }
   if (source.includes("mux")) {
     return { kind: "gate", shape: "rect", text: "MUX" };
@@ -933,7 +1020,11 @@ function classifyGate(label: string, detail: string) {
     return { kind: "gate", shape: "rect", text: "SUB" };
   }
 
-  return { kind: "gate", shape: "rect", text: label.toUpperCase().slice(0, 8) || "LOGIC" };
+  return {
+    kind: "gate",
+    shape: "rect",
+    text: label.toUpperCase().slice(0, 8) || "LOGIC",
+  };
 }
 
 function getErrorMessage(error: unknown) {
@@ -946,12 +1037,19 @@ function getErrorMessage(error: unknown) {
 }
 
 function isHdlFile(fileName: string) {
-  return fileName.endsWith(".v") || fileName.endsWith(".sv") || fileName.endsWith(".vhd") || fileName.endsWith(".vhdl");
+  return (
+    fileName.endsWith(".v") ||
+    fileName.endsWith(".sv") ||
+    fileName.endsWith(".vhd") ||
+    fileName.endsWith(".vhdl")
+  );
 }
 
 function findTopModule(files: ProjectFile[]) {
   for (const file of files) {
-    const match = file.content.match(/\b(module|entity)\s+([a-zA-Z_][a-zA-Z0-9_$]*)/i);
+    const match = file.content.match(
+      /\b(module|entity)\s+([a-zA-Z_][a-zA-Z0-9_$]*)/i,
+    );
     if (match) return match[2];
   }
 
@@ -959,5 +1057,10 @@ function findTopModule(files: ProjectFile[]) {
 }
 
 function sanitizeName(name: string) {
-  return name.trim().replace(/[^a-zA-Z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "allora_project";
+  return (
+    name
+      .trim()
+      .replace(/[^a-zA-Z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "allora_project"
+  );
 }

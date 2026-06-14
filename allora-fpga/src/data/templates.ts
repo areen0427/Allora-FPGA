@@ -26,7 +26,10 @@ export type ProjectTemplate = {
   /** Returns null when the board supports this template, otherwise the reason. */
   unavailableReason: (board: BoardDefinition) => string | null;
   /** Not defined for "blinky", which uses the classic starter generator. */
-  generate?: (options: { board: BoardDefinition; topModule: string }) => TemplateResult;
+  generate?: (options: {
+    board: BoardDefinition;
+    topModule: string;
+  }) => TemplateResult;
 };
 
 // ── Board resource helpers ───────────────────────────────────────────────
@@ -37,7 +40,8 @@ function getClock(board: BoardDefinition) {
 
 function getUserButton(board: BoardDefinition): BoardPin | null {
   const preferred = board.buttons.find((button) => {
-    const text = `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
+    const text =
+      `${button.name} ${button.signal ?? ""} ${button.group ?? ""}`.toLowerCase();
     return !/rst|reset|pwr|power/.test(text);
   });
   return preferred ?? board.buttons[0] ?? null;
@@ -58,14 +62,16 @@ function getUartTx(board: BoardDefinition): BoardPin | null {
 export function createConstraintLines(
   board: BoardDefinition,
   topModule: string,
-  mappings: TemplateMapping[]
+  mappings: TemplateMapping[],
 ) {
   const lines = [`# ${board.name} constraints for ${topModule}`];
 
   for (const { port, pin } of mappings) {
     if (board.constraintsFile === "xdc") {
       const portRef = port.includes("[") ? `{${port}}` : port;
-      lines.push(`set_property PACKAGE_PIN ${pin.split("/")[0]} [get_ports ${portRef}]`);
+      lines.push(
+        `set_property PACKAGE_PIN ${pin.split("/")[0]} [get_ports ${portRef}]`,
+      );
       lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${portRef}]`);
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port} ${pin}`);
@@ -85,7 +91,13 @@ export function createConstraintLines(
 
 // ── Template sources ─────────────────────────────────────────────────────
 
-function generateCounter({ board, topModule }: { board: BoardDefinition; topModule: string }): TemplateResult {
+function generateCounter({
+  board,
+  topModule,
+}: {
+  board: BoardDefinition;
+  topModule: string;
+}): TemplateResult {
   const clock = getClock(board);
   const leds = board.leds.slice(0, 8);
   const width = leds.length;
@@ -119,7 +131,13 @@ function generateCounter({ board, topModule }: { board: BoardDefinition; topModu
   return { source, mappings };
 }
 
-function generatePwmBreathe({ board, topModule }: { board: BoardDefinition; topModule: string }): TemplateResult {
+function generatePwmBreathe({
+  board,
+  topModule,
+}: {
+  board: BoardDefinition;
+  topModule: string;
+}): TemplateResult {
   const clock = getClock(board);
   const led = board.leds[0];
 
@@ -161,7 +179,13 @@ function generatePwmBreathe({ board, topModule }: { board: BoardDefinition; topM
   return { source, mappings };
 }
 
-function generateButtonToggle({ board, topModule }: { board: BoardDefinition; topModule: string }): TemplateResult {
+function generateButtonToggle({
+  board,
+  topModule,
+}: {
+  board: BoardDefinition;
+  topModule: string;
+}): TemplateResult {
   const clock = getClock(board);
   const button = getUserButton(board);
   const led = board.leds[0];
@@ -206,7 +230,13 @@ function generateButtonToggle({ board, topModule }: { board: BoardDefinition; to
   return { source, mappings };
 }
 
-function generateUartHello({ board, topModule }: { board: BoardDefinition; topModule: string }): TemplateResult {
+function generateUartHello({
+  board,
+  topModule,
+}: {
+  board: BoardDefinition;
+  topModule: string;
+}): TemplateResult {
   const clock = getClock(board);
   const tx = getUartTx(board);
   const clockHz = clock?.frequency ?? 12_000_000;
@@ -214,7 +244,10 @@ function generateUartHello({ board, topModule }: { board: BoardDefinition; topMo
 
   const messageCase = [...message].map((character, index) => {
     const code = character.charCodeAt(0);
-    const display = code < 32 ? `8'h${code.toString(16).padStart(2, "0").toUpperCase()}` : `"${character}"`;
+    const display =
+      code < 32
+        ? `8'h${code.toString(16).padStart(2, "0").toUpperCase()}`
+        : `"${character}"`;
     return `      5'd${index}: message_byte = ${display};`;
   });
 
@@ -290,14 +323,16 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
     id: "blinky",
     name: "Blinky",
-    description: "A counter that blinks the first user LED. The classic hardware hello-world.",
+    description:
+      "A counter that blinks the first user LED. The classic hardware hello-world.",
     languages: ["Verilog", "SystemVerilog", "VHDL"],
     unavailableReason: () => null,
   },
   {
     id: "counter",
     name: "Binary Counter",
-    description: "Counts up on the board's LED bank so you can watch the bits ripple.",
+    description:
+      "Counts up on the board's LED bank so you can watch the bits ripple.",
     languages: ["Verilog", "SystemVerilog"],
     unavailableReason: (board) => {
       if (!getClock(board)) return "No clock pin in the board database.";
@@ -334,7 +369,8 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
     id: "uart-hello",
     name: "UART Hello",
-    description: "Transmits \"Hello from Allora!\" at 115200 baud — pair it with the Serial monitor.",
+    description:
+      'Transmits "Hello from Allora!" at 115200 baud — pair it with the Serial monitor.',
     languages: ["Verilog", "SystemVerilog"],
     unavailableReason: (board) => {
       const clock = getClock(board);
@@ -354,7 +390,7 @@ export function getTemplateById(id: string) {
 export function getTemplateUnavailableReason(
   template: ProjectTemplate,
   board: BoardDefinition,
-  language: TemplateLanguage
+  language: TemplateLanguage,
 ) {
   if (!template.languages.includes(language)) {
     return `Not available for ${language}.`;

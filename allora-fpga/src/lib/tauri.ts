@@ -1,4 +1,7 @@
-type TauriInvoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
+type TauriInvoke = <T>(
+  command: string,
+  args?: Record<string, unknown>,
+) => Promise<T>;
 
 export type TauriChannel<T> = {
   onmessage: (message: T) => void;
@@ -19,7 +22,7 @@ export function hasTauriInvoke() {
 
 export async function invokeTauri<T>(
   command: string,
-  args?: Record<string, unknown>
+  args?: Record<string, unknown>,
 ) {
   const invoke = (window as TauriWindow).__TAURI__?.core?.invoke;
 
@@ -35,7 +38,7 @@ export async function invokeTauri<T>(
  * (build logs, serial output). Returns null outside the Tauri runtime.
  */
 export function createTauriChannel<T>(
-  onMessage: (message: T) => void
+  onMessage: (message: T) => void,
 ): TauriChannel<T> | null {
   const Channel = (window as TauriWindow).__TAURI__?.core?.Channel;
   if (!Channel) return null;
