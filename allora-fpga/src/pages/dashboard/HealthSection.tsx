@@ -1,5 +1,10 @@
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
+import {
+  getDisplayUtilization,
+  readBuildHistory,
+  type BuildRecord,
+} from "../../lib/buildHistory";
 import InfoCard from "./InfoCard";
 import type { ProjectFile } from "./types";
 
@@ -96,6 +101,8 @@ export default function HealthSection({
         </div>
       </InfoCard>
 
+      <BuildHistoryCard files={files} />
+
       <InfoCard title="Readiness">
         <div
           style={{
@@ -128,6 +135,177 @@ export default function HealthSection({
       </InfoCard>
     </div>
   );
+}
+
+function BuildHistoryCard({ files }: { files: ProjectFile[] }) {
+  const records = readBuildHistory(files);
+  if (records.length === 0) return null;
+
+  const latest = records[records.length - 1];
+  const latestWithMetrics = [...records].reverse().find(
+    (record) => (record.utilization?.length ?? 0) > 0
+  );
+  const utilization = getDisplayUtilization(latestWithMetrics?.utilization ?? []);
+  const fmaxSeries = records
+    .filter((record) => typeof record.fmaxMhz === "number")
+    .slice(-20);
+  const recent = [...records].slice(-6).reverse();
+
+  return (
+    <InfoCard title="Build History">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "16px",
+          alignItems: "start",
+        }}
+      >
+        <div>
+          <div className="build-history-heading">
+            Device Utilization
+            {latestWithMetrics ? (
+              <span className="build-history-subtle">
+                {" "}
+                · {formatRecordTime(latestWithMetrics.timestamp)}
+              </span>
+            ) : null}
+          </div>
+          {utilization.length === 0 ? (
+            <div className="build-history-empty">
+              No utilization metrics parsed yet. Generate a bitstream to populate this.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: "10px", marginTop: "12px" }}>
+              {utilization.map((entry) => {
+                const percent = Math.min(100, (entry.used / entry.total) * 100);
+                return (
+                  <div key={entry.resource}>
+                    <div className="build-history-bar-label">
+                      <span>{entry.label}</span>
+                      <span className="build-history-subtle">
+                        {entry.used.toLocaleString()} / {entry.total.toLocaleString()} ({percent.toFixed(percent < 10 ? 1 : 0)}%)
+                      </span>
+                    </div>
+                    <div className="build-history-bar-track">
+                      <div
+                        className={`build-history-bar-fill${percent > 90 ? " hot" : ""}`}
+                        style={{ width: `${Math.max(percent, 1.5)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="build-history-heading">Max Frequency Trend</div>
+          {fmaxSeries.length < 2 ? (
+            <div className="build-history-empty">
+              {fmaxSeries.length === 1
+                ? `Latest: ${fmaxSeries[0].fmaxMhz?.toFixed(2)} MHz. Build again to see a trend.`
+                : "Run at least two builds with timing analysis to see a trend."}
+            </div>
+          ) : (
+            <FmaxSparkline records={fmaxSeries} />
+          )}
+
+          <div className="build-history-heading" style={{ marginTop: "16px" }}>
+            Recent Builds
+          </div>
+          <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
+            {recent.map((record) => (
+              <div key={record.id} className="build-history-row">
+                <span
+                  className={`build-history-dot${record.success ? " success" : " failure"}`}
+                />
+                <span className="build-history-row-time">
+                  {formatRecordTime(record.timestamp)}
+                </span>
+                <span className="build-history-subtle">
+                  {record.fmaxMhz ? `${record.fmaxMhz.toFixed(1)} MHz` : record.success ? "—" : "failed"}
+                </span>
+                <span className="build-history-subtle" style={{ marginLeft: "auto" }}>
+                  {formatDuration(record.durationMs)}
+                </span>
+              </div>
+            ))}
+          </div>
+          {latest && !latest.success && latest.message ? (
+            <div className="build-history-failure-note">{latest.message}</div>
+          ) : null}
+        </div>
+      </div>
+    </InfoCard>
+  );
+}
+
+function FmaxSparkline({ records }: { records: BuildRecord[] }) {
+  const width = 280;
+  const height = 64;
+  const padding = 6;
+  const values = records.map((record) => record.fmaxMhz ?? 0);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 0.01);
+
+  const points = values.map((value, index) => {
+    const x =
+      padding + (index / Math.max(values.length - 1, 1)) * (width - padding * 2);
+    const y =
+      height - padding - ((value - min) / range) * (height - padding * 2);
+    return { x, y };
+  });
+
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ width: "100%", height: "auto", display: "block" }}
+        aria-label="Max frequency trend"
+      >
+        <polyline
+          className="build-history-sparkline"
+          fill="none"
+          strokeWidth={2}
+          points={points.map((point) => `${point.x},${point.y}`).join(" ")}
+        />
+        {points.map((point, index) => (
+          <circle
+            key={index}
+            className="build-history-sparkline-dot"
+            cx={point.x}
+            cy={point.y}
+            r={index === points.length - 1 ? 3.4 : 2.2}
+          />
+        ))}
+      </svg>
+      <div className="build-history-bar-label">
+        <span className="build-history-subtle">{min.toFixed(1)} MHz min</span>
+        <span className="build-history-subtle">{max.toFixed(1)} MHz max</span>
+      </div>
+    </div>
+  );
+}
+
+function formatRecordTime(timestamp: string) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatDuration(durationMs: number) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return "";
+  if (durationMs < 1000) return `${durationMs} ms`;
+  if (durationMs < 60_000) return `${(durationMs / 1000).toFixed(1)} s`;
+  return `${Math.floor(durationMs / 60_000)}m ${Math.round((durationMs % 60_000) / 1000)}s`;
 }
 
 function HealthMetricCard({ metric }: { metric: HealthMetric }) {

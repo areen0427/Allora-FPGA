@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../../data/boards";
 import InfoCard from "./InfoCard";
+import VirtualBoard from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
 import {
   createSuggestedMappings,
@@ -8,6 +9,8 @@ import {
   getPinOptions,
   type HdlPort,
 } from "./pinMappingUtils";
+
+type PinMappingMode = "simple" | "advanced" | "board";
 
 type PinMappingSectionProps = {
   board: BoardDefinition;
@@ -22,7 +25,7 @@ export default function PinMappingSection({
   defaultMode,
   topLevelFileName,
 }: PinMappingSectionProps) {
-  const [mode, setMode] = useState<"simple" | "advanced">(defaultMode);
+  const [mode, setMode] = useState<PinMappingMode>(defaultMode);
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
   const ports = useMemo(
     () => findPorts(topLevelFileName ? files.filter((file) => file.name === topLevelFileName) : []),
@@ -91,7 +94,7 @@ export default function PinMappingSection({
                 background: "#f1f5f9",
               }}
             >
-              {(["simple", "advanced"] as const).map((option) => (
+              {(["simple", "advanced", "board"] as const).map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -164,6 +167,15 @@ export default function PinMappingSection({
             board={board}
             ports={ports}
             suggestedMappings={suggestedMappings}
+            getSelectedPin={getSelectedPin}
+            setPortMapping={setPortMapping}
+          />
+        ) : mode === "board" ? (
+          <BoardPinMapper
+            board={board}
+            ports={ports}
+            selectedPortName={selectedPortName}
+            setSelectedPortName={setSelectedPortName}
             getSelectedPin={getSelectedPin}
             setPortMapping={setPortMapping}
           />
@@ -344,6 +356,127 @@ function SimplePinMapper({
           );
         })
       )}
+    </div>
+  );
+}
+
+function BoardPinMapper({
+  board,
+  ports,
+  selectedPortName,
+  setSelectedPortName,
+  getSelectedPin,
+  setPortMapping,
+}: {
+  board: BoardDefinition;
+  ports: HdlPort[];
+  selectedPortName: string | null;
+  setSelectedPortName: (portName: string | null) => void;
+  getSelectedPin: (portName: string) => string;
+  setPortMapping: (portName: string, pinKey: string) => void;
+}) {
+  const selectedPort =
+    ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
+  const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
+  const pinOptions = getPinOptions(board);
+  const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
+  const mappedPinKeys = ports
+    .map((port) => getSelectedPin(port.name))
+    .filter(Boolean);
+  const mappedCount = mappedPinKeys.length;
+
+  function assignPin(pinKey: string) {
+    if (!selectedPort) return;
+    setPortMapping(selectedPort.name, pinKey);
+
+    // Move on to the next unmapped port so a whole module can be mapped
+    // with consecutive clicks on the board.
+    const currentIndex = ports.findIndex((port) => port.name === selectedPort.name);
+    const nextUnmapped =
+      ports.slice(currentIndex + 1).find((port) => !getSelectedPin(port.name)) ??
+      ports.find(
+        (port) => port.name !== selectedPort.name && !getSelectedPin(port.name)
+      );
+    if (nextUnmapped) {
+      setSelectedPortName(nextUnmapped.name);
+    }
+  }
+
+  if (ports.length === 0) {
+    return <EmptyPortState />;
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: "18px",
+        flex: "1 1 auto",
+        minHeight: 0,
+        display: "grid",
+        gridTemplateRows: "auto minmax(0, 1fr)",
+        gap: "14px",
+        overflow: "auto",
+      }}
+    >
+      <div
+        className="pin-map-assignment-card"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) auto",
+          gap: "12px",
+          alignItems: "center",
+          padding: "12px",
+          border: "1px solid var(--dashboard-surface-border, #e2e8f0)",
+          borderRadius: "16px",
+          background: "var(--dashboard-surface-bg, #f8fafc)",
+        }}
+      >
+        <select
+          value={selectedPort?.name ?? ""}
+          onChange={(event) => setSelectedPortName(event.target.value)}
+          style={{
+            width: "100%",
+            minWidth: 0,
+            border: "1px solid #cbd5e1",
+            borderRadius: "12px",
+            background: "#ffffff",
+            color: "#0f172a",
+            padding: "10px 12px",
+            fontSize: "14px",
+            fontWeight: 800,
+          }}
+        >
+          {ports.map((port) => (
+            <option key={port.name} value={port.name}>
+              {port.name} - {port.direction}
+              {getSelectedPin(port.name) ? " ✓" : ""}
+            </option>
+          ))}
+        </select>
+
+        <div
+          style={{
+            color: "var(--dashboard-muted-text, #64748b)",
+            fontSize: "12px",
+            fontWeight: 850,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {mappedCount}/{ports.length} mapped ·{" "}
+          {selectedPinOption ? selectedPinOption.shortLabel : "click a component"}
+        </div>
+      </div>
+
+      <div style={{ minHeight: 0, overflow: "auto" }}>
+        <VirtualBoard
+          board={board}
+          selectable
+          selectedPinKey={selectedPin || null}
+          mappedPinKeys={mappedPinKeys}
+          onSelectPin={assignPin}
+          maxHeight={460}
+        />
+      </div>
     </div>
   );
 }

@@ -36,11 +36,28 @@ export function getSavedProject(projectId: string) {
 export function saveProject(project: SavedProject) {
   const projects = getSavedProjects();
   const nextProjects = [
-    project,
+    toPersistedProject(project),
     ...projects.filter((currentProject) => currentProject.id !== project.id),
   ];
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
+}
+
+// Projects with a workspace folder keep their file contents on disk only.
+// localStorage stores lightweight records (name/path) so recents render and
+// the ~5MB quota is never consumed by HDL sources, waveforms, or bitstreams.
+function toPersistedProject(project: SavedProject): SavedProject {
+  if (!project.projectPath) return project;
+
+  return {
+    ...project,
+    files: project.files.map((file) => ({
+      name: file.name,
+      path: file.path,
+      isBinary: file.isBinary,
+      content: "",
+    })),
+  };
 }
 
 export function removeSavedProject(projectId: string) {

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import { resolveBoardProgrammer } from "../../data/boardProgrammers";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
 
 type ProgrammingSectionProps = {
@@ -54,6 +54,13 @@ export default function ProgrammingSection({
   const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
   const [selectedBitstream, setSelectedBitstream] = useState<string>("");
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
+  const consoleRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleLogs]);
 
   const capabilities = getBoardCapabilities(board);
   const programmer = resolveBoardProgrammer(board);
@@ -126,8 +133,13 @@ export default function ProgrammingSection({
     setProgramResult(null);
     setConsoleLogs(["[programming] Starting FPGA programming..."]);
 
+    const logChannel = createTauriChannel<string>((line) => {
+      setConsoleLogs((current) => [...current, line]);
+    });
+
     try {
       const result = await invokeTauri<ProgramResult>("program_fpga", {
+        onLog: logChannel,
         request: {
           programmerCommand: programmer.command,
           bitstreamPath: bitstreamFile.path,
@@ -329,6 +341,7 @@ export default function ProgrammingSection({
           }}
         >
           <div
+            ref={consoleRef}
             className="dashboard-glass-card"
             style={{
               border: "1px solid #e2e8f0",

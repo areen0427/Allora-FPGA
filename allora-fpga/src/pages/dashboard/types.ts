@@ -6,7 +6,8 @@ export type DashboardSection =
   | "pin-mapping"
   | "health"
   | "bitstream"
-  | "programming";
+  | "programming"
+  | "serial";
 
 export type ProjectFile = {
   name: string;

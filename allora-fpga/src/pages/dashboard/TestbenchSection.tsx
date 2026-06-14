@@ -1,8 +1,9 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { BoardDefinition } from "../../data/boards";
-import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { findPorts, type HdlPort } from "./pinMappingUtils";
+import { createSuggestedMappings, findPorts, type HdlPort } from "./pinMappingUtils";
+import VirtualBoard, { type BoardSignalStates } from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
 
 type SimulateTestbenchResponse = {
@@ -57,6 +58,13 @@ export default function TestbenchSection({
   const [logs, setLogs] = useState<string[]>([]);
   const [waveformText, setWaveformText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const logRef = useRef<HTMLPreElement | null>(null);
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name) && !isVhdlFile(file.name));
   const inferredTopLevel =
@@ -127,8 +135,13 @@ export default function TestbenchSection({
       `Testbench: ${selectedTestbench.name}`,
     ]);
 
+    const logChannel = createTauriChannel<string>((line) => {
+      setLogs((current) => [...current, line]);
+    });
+
     try {
       const result = await invokeTauri<SimulateTestbenchResponse>("simulate_testbench", {
+        onLog: logChannel,
         request: {
           projectName,
           sourceFiles: designFiles.map((file) => ({
@@ -229,6 +242,8 @@ export default function TestbenchSection({
         )}
 
         <WaveformViewer waveform={waveform} />
+
+        <BoardPlayback board={board} waveform={waveform} ports={topLevelPorts} />
       </InfoCard>
 
       <div className="testbench-side">
@@ -258,13 +273,192 @@ export default function TestbenchSection({
           style={{ padding: "14px", borderRadius: "16px", minHeight: 0, overflow: "hidden" }}
           compact
         >
-          <pre className="testbench-log">
+          <pre className="testbench-log" ref={logRef}>
             {logs.length ? logs.join("\n") : "Run a simulation to see compiler and runtime output."}
           </pre>
         </InfoCard>
       </div>
     </div>
   );
+}
+
+const PLAYBACK_SECONDS = 10;
+
+/**
+ * Replays the simulated waveform onto the virtual board: LEDs light up with
+ * the values their mapped top-level signals had at the playback cursor.
+ */
+function BoardPlayback({
+  board,
+  waveform,
+  ports,
+}: {
+  board: BoardDefinition;
+  waveform: Waveform | null;
+  ports: HdlPort[];
+}) {
+  const [fraction, setFraction] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+
+  const resolvers = useMemo(
+    () => buildPinResolvers(board, waveform, ports),
+    [board, waveform, ports]
+  );
+
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    let last = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const delta = (now - last) / 1000;
+      last = now;
+      setFraction((current) => {
+        const next = current + (delta * speed) / PLAYBACK_SECONDS;
+        return next >= 1 ? next - Math.floor(next) : next;
+      });
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [isPlaying, speed]);
+
+  if (!waveform || resolvers.size === 0) return null;
+
+  const endTime = Math.max(waveform.endTime, 1);
+  const time = fraction * endTime;
+  const signalStates: BoardSignalStates = {};
+  for (const [pinName, resolve] of resolvers) {
+    signalStates[pinName] = resolve(time);
+  }
+
+  return (
+    <div className="board-playback">
+      <div className="board-playback-controls">
+        <button
+          type="button"
+          className="synthesis-secondary-button"
+          onClick={() => setIsPlaying((current) => !current)}
+        >
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <input
+          className="board-playback-slider"
+          type="range"
+          min={0}
+          max={1000}
+          value={Math.round(fraction * 1000)}
+          onChange={(event) => {
+            setFraction(Number(event.target.value) / 1000);
+          }}
+          aria-label="Playback position"
+        />
+        <select
+          className="board-playback-speed"
+          value={speed}
+          onChange={(event) => setSpeed(Number(event.target.value))}
+          aria-label="Playback speed"
+        >
+          <option value={0.25}>0.25x</option>
+          <option value={0.5}>0.5x</option>
+          <option value={1}>1x</option>
+          <option value={2}>2x</option>
+          <option value={4}>4x</option>
+        </select>
+        <span className="board-playback-time">
+          {formatWaveTick(Math.round(time), waveform.timescale)}
+        </span>
+      </div>
+      <VirtualBoard board={board} signalStates={signalStates} maxHeight={230} />
+    </div>
+  );
+}
+
+function buildPinResolvers(
+  board: BoardDefinition,
+  waveform: Waveform | null,
+  ports: HdlPort[]
+) {
+  const resolvers = new Map<string, (time: number) => boolean | undefined>();
+  if (!waveform) return resolvers;
+
+  const suggested = createSuggestedMappings(ports, board.pins, board.clocks);
+
+  for (const port of ports) {
+    const mappingKey = suggested[port.name];
+    if (!mappingKey?.startsWith("pin:")) continue;
+
+    const pinName = mappingKey.split(":")[1];
+    if (!pinName || resolvers.has(pinName)) continue;
+
+    const baseName = port.baseName ?? port.name;
+    const signal = findWaveSignal(waveform.signals, baseName);
+    if (!signal) continue;
+
+    const bitIndex = port.index;
+    resolvers.set(pinName, (time) => {
+      const value = getSignalValueAt(signal.values, time);
+      if (!value) return undefined;
+      return interpretSignalBit(value, signal.width, bitIndex);
+    });
+  }
+
+  return resolvers;
+}
+
+function findWaveSignal(signals: WaveSignal[], baseName: string) {
+  const candidates = signals.filter((signal) => signal.shortName === baseName);
+  if (candidates.length === 0) return null;
+
+  // Prefer the shallowest scope (the testbench-level wire over dut internals).
+  return candidates.reduce((best, candidate) =>
+    candidate.name.split(".").length < best.name.split(".").length ? candidate : best
+  );
+}
+
+function getSignalValueAt(
+  values: WaveSignal["values"],
+  time: number
+): string | null {
+  if (values.length === 0) return null;
+
+  let low = 0;
+  let high = values.length - 1;
+  let result = values[0].value;
+
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle].time <= time) {
+      result = values[middle].value;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return result;
+}
+
+function interpretSignalBit(
+  value: string,
+  width: number,
+  bitIndex: number | undefined
+): boolean | undefined {
+  const normalized = value.toLowerCase();
+
+  let bit: string;
+  if (bitIndex === undefined || width <= 1) {
+    bit = normalized[normalized.length - 1] ?? "";
+  } else {
+    // VCD bus values are msb-first and may omit leading zeros.
+    const position = normalized.length - 1 - bitIndex;
+    bit = position >= 0 ? normalized[position] : "0";
+  }
+
+  if (bit === "1") return true;
+  if (bit === "0") return false;
+  return undefined;
 }
 
 function WaveformViewer({ waveform }: { waveform: Waveform | null }) {

@@ -46,11 +46,10 @@ function App() {
 
     if (savedProject.projectPath) {
       try {
+        // The workspace folder is the source of truth for file contents;
+        // the saved record only contributes ordering and selection state.
         const diskFiles = await readProjectWorkspace(savedProject.projectPath);
-        const files =
-          savedProject.files.length > 0
-            ? mergeSavedFilesWithDiskPaths(savedProject.files, diskFiles)
-            : diskFiles;
+        const files = orderFilesLikeSaved(diskFiles, savedProject.files);
         nextProject = {
           ...savedProject,
           files,
@@ -69,7 +68,7 @@ function App() {
       } catch {
         nextProject = savedProject;
         setProjectWarning(
-          "The project folder could not be read, so this workspace opened from the saved snapshot."
+          "The project folder could not be read. File contents live on disk, so reconnect the folder to edit this project."
         );
       }
     }
@@ -158,12 +157,13 @@ function App() {
         board={selectedBoard}
         settings={settings}
         onBack={() => setStage("board-select")}
-        onCreateProject={async (name, language, parentDirectory) => {
+        onCreateProject={async (name, language, parentDirectory, templateId) => {
           const workspace = await createProjectWorkspace({
             projectName: name,
             board: selectedBoard,
             language: language as "Verilog" | "SystemVerilog" | "VHDL",
             parentDirectory,
+            templateId,
           });
 
           const nextProject = createProject({
@@ -239,23 +239,17 @@ function findTopModuleFile(files: SavedProject["files"], topModule?: string) {
   );
 }
 
-function mergeSavedFilesWithDiskPaths(
-  savedFiles: SavedProject["files"],
-  diskFiles: SavedProject["files"]
+function orderFilesLikeSaved(
+  diskFiles: SavedProject["files"],
+  savedFiles: SavedProject["files"]
 ) {
-  const diskFileByName = new Map(diskFiles.map((file) => [file.name, file]));
-  const savedFileNames = new Set(savedFiles.map((file) => file.name));
-  const mergedFiles = savedFiles.map((file) => {
-    const diskFile = diskFileByName.get(file.name);
-    return {
-      ...file,
-      path: diskFile?.path ?? file.path,
-      isBinary: diskFile?.isBinary ?? file.isBinary,
-    };
-  });
+  if (savedFiles.length === 0) return diskFiles;
 
-  return [
-    ...mergedFiles,
-    ...diskFiles.filter((file) => !savedFileNames.has(file.name)),
-  ];
+  const savedOrder = new Map(savedFiles.map((file, index) => [file.name, index]));
+
+  return [...diskFiles].sort((left, right) => {
+    const leftOrder = savedOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = savedOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder;
+  });
 }

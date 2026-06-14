@@ -321,6 +321,8 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
 }
 
 .welcome-home-layout {
+  /* Title (26px * 1.2) + subtitle (8px margin + 16px * 1.45) + 18px margin. */
+  --welcome-section-header-height: 80.4px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
@@ -339,6 +341,7 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
   margin: 0;
   color: #0f172a;
   font-size: 26px;
+  line-height: 1.2;
   font-weight: 850;
   letter-spacing: -0.03em;
 }
@@ -368,7 +371,10 @@ html[data-theme="black-ice"] .sidebarNavButton:hover {
 }
 
 .welcome-home-sidebar {
-  margin-top: 0;
+  /* Offset by the "New Project" section header (title + subtitle + 18px
+     margin) so the Open Existing Project card aligns with the board cards
+     rather than the header. */
+  margin-top: var(--welcome-section-header-height);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -3408,4 +3414,476 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-project-meta,
 html:is([data-theme="dark"], [data-theme="black-ice"]) .liquid-board-meta,
 html:is([data-theme="dark"], [data-theme="black-ice"]) .variant-card p {
   color: #cbd5e1 !important;
+}
+
+/* ── Virtual board ──────────────────────────────────────────────────────
+   The PCB is rendered with fixed "physical" colors on purpose: it reads as
+   a real green board in every app theme. Text around it uses theme vars. */
+
+.vboard-shell {
+  width: 100%;
+}
+
+.vboard-pcb {
+  fill: #1b5e3b;
+  stroke: #134e2c;
+  stroke-width: 0.5;
+}
+
+.vboard-pcb-inner {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 0.3;
+}
+
+.vboard-board-name {
+  fill: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.vboard-silk {
+  fill: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.vboard-chip {
+  fill: #1f2937;
+  stroke: #0b1220;
+  stroke-width: 0.3;
+}
+
+.vboard-chip-label {
+  fill: #e5e7eb;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.vboard-chip-sublabel {
+  fill: #9ca3af;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.vboard-connector {
+  fill: #111827;
+  stroke: #374151;
+  stroke-width: 0.25;
+}
+
+.vboard-usb {
+  fill: #9ca3af;
+  stroke: #6b7280;
+  stroke-width: 0.3;
+}
+
+.vboard-clock {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+  stroke-width: 0.25;
+}
+
+.vboard-led {
+  stroke: rgba(15, 23, 42, 0.55);
+  stroke-width: 0.2;
+}
+
+.vboard-button-base {
+  fill: #374151;
+  stroke: #1f2937;
+  stroke-width: 0.25;
+}
+
+.vboard-button-cap {
+  fill: #d1d5db;
+  stroke: #6b7280;
+  stroke-width: 0.2;
+}
+
+.vboard-button-cap.pressed {
+  fill: #60a5fa;
+  stroke: #2563eb;
+}
+
+.vboard-ring-selected {
+  stroke: #38bdf8;
+}
+
+.vboard-ring-mapped {
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+.vboard-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.vboard-clickable:hover .vboard-button-cap,
+.vboard-clickable:focus-visible .vboard-button-cap {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-clickable:hover .vboard-led,
+.vboard-clickable:focus-visible .vboard-led {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-clickable:hover .vboard-clock,
+.vboard-clickable:focus-visible .vboard-clock {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-caption {
+  margin-top: 8px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Waveform board playback ──────────────────────────────────────────── */
+
+.board-playback {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dashboard-surface-border, #e2e8f0);
+}
+
+.board-playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.board-playback-slider {
+  flex: 1 1 160px;
+  min-width: 120px;
+  accent-color: #2563eb;
+}
+
+.board-playback-speed {
+  border: 1px solid var(--dashboard-control-border, #cbd5e1);
+  border-radius: 10px;
+  background: var(--dashboard-control-bg, #ffffff);
+  color: var(--dashboard-text, #0f172a);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.board-playback-time {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ── Build history ────────────────────────────────────────────────────── */
+
+.build-history-heading {
+  color: var(--dashboard-strong-text, #0f172a);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.build-history-subtle {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.build-history-empty {
+  margin-top: 10px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.build-history-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--dashboard-text, #0f172a);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.build-history-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+
+.build-history-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.build-history-bar-fill.hot {
+  background: linear-gradient(90deg, #f59e0b, #dc2626);
+}
+
+.build-history-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--dashboard-surface-border, #e2e8f0);
+}
+
+.build-history-row-time {
+  color: var(--dashboard-text, #0f172a);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.build-history-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.build-history-dot.success {
+  background: #22c55e;
+}
+
+.build-history-dot.failure {
+  background: #ef4444;
+}
+
+.build-history-failure-note {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme="dark"] .build-history-failure-note,
+html[data-theme="black-ice"] .build-history-failure-note {
+  color: #fca5a5;
+}
+
+.build-history-sparkline {
+  stroke: var(--dashboard-control-active-border, #2563eb);
+}
+
+.build-history-sparkline-dot {
+  fill: var(--dashboard-control-active-border, #2563eb);
+}
+
+/* ── Editor lint chip ─────────────────────────────────────────────────── */
+
+.editor-lint-chip {
+  margin-left: auto;
+  align-self: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.editor-lint-chip.has-errors {
+  background: rgba(220, 38, 38, 0.14);
+  color: #b91c1c;
+}
+
+html[data-theme="dark"] .editor-lint-chip,
+html[data-theme="black-ice"] .editor-lint-chip {
+  color: #fbbf24;
+}
+
+html[data-theme="dark"] .editor-lint-chip.has-errors,
+html[data-theme="black-ice"] .editor-lint-chip.has-errors {
+  color: #fca5a5;
+}
+
+/* ── Template gallery (project setup page) ────────────────────────────── */
+
+.template-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.template-card {
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.template-card:hover:not(.disabled) {
+  border-color: #93c5fd;
+}
+
+.template-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.template-card.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.template-card-name {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.template-card-desc {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+html[data-theme="dark"] .template-card,
+html[data-theme="black-ice"] .template-card {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+html[data-theme="dark"] .template-card.selected,
+html[data-theme="black-ice"] .template-card.selected {
+  border-color: rgba(96, 165, 250, 0.85);
+  background: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16);
+}
+
+html[data-theme="dark"] .template-card-name,
+html[data-theme="black-ice"] .template-card-name {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .template-card-desc,
+html[data-theme="black-ice"] .template-card-desc {
+  color: #94a3b8;
+}
+
+html[data-theme="ice"] .template-card,
+html[data-theme="solar"] .template-card {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+html[data-theme="ice"] .template-card.selected {
+  background: rgba(239, 246, 255, 0.92);
+}
+
+html[data-theme="solar"] .template-card.selected {
+  border-color: #d97706;
+  background: rgba(255, 251, 235, 0.92);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+}
+
+/* ── Serial monitor ───────────────────────────────────────────────────── */
+
+.serial-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.serial-control {
+  border: 1px solid var(--dashboard-control-border, #cbd5e1);
+  border-radius: 12px;
+  background: var(--dashboard-control-bg, #ffffff);
+  color: var(--dashboard-text, #0f172a);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 750;
+  min-width: 0;
+}
+
+.serial-toolbar .serial-control:first-child {
+  flex: 1 1 220px;
+}
+
+.serial-status {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--dashboard-surface-border, #e2e8f0);
+  background: var(--dashboard-control-bg, #f8fafc);
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.serial-status.error {
+  border-color: rgba(220, 38, 38, 0.35);
+  color: #b91c1c;
+}
+
+html[data-theme="dark"] .serial-status.error,
+html[data-theme="black-ice"] .serial-status.error {
+  color: #fca5a5;
+}
+
+.serial-console {
+  margin: 0;
+  flex: 1 1 0;
+  min-height: 140px;
+  overflow: auto;
+  border: 1px solid var(--dashboard-surface-border, #e2e8f0);
+  border-radius: 14px;
+  background: var(--dashboard-control-bg, #f8fafc);
+  color: var(--dashboard-preview-text, #334155);
+  padding: 14px;
+  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.serial-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.serial-input {
+  flex: 1 1 200px;
+  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+}
+
+.serial-tip {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-weight: 650;
 }

@@ -8,6 +8,7 @@ import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
 import ProgrammingSection from "./dashboard/ProgrammingSection";
+import SerialMonitorSection from "./dashboard/SerialMonitorSection";
 import HealthSection from "./dashboard/HealthSection";
 import SidebarButton from "./dashboard/SidebarButton";
 import type { DashboardSection, ProjectFile } from "./dashboard/types";
@@ -24,6 +25,7 @@ import {
   Plus,
   Settings,
   Upload,
+  Usb,
 } from "lucide-react";
 import { getBoardIconForBoardId } from "./boardIcons";
 import type { SavedProject } from "../data/projects";
@@ -375,6 +377,7 @@ export default function Dashboard({
           <SidebarButton label="Health" icon={<Activity size={16} />} active={activeSection === "health"} onClick={() => setActiveSection("health")} />
           <SidebarButton label="Bitstream" icon={<SquareTerminal size={16} />} active={activeSection === "bitstream"} onClick={() => setActiveSection("bitstream")} />
           <SidebarButton label="Program" icon={<Cpu size={16} />} active={activeSection === "programming"} onClick={() => setActiveSection("programming")} />
+          <SidebarButton label="Serial" icon={<Usb size={16} />} active={activeSection === "serial"} onClick={() => setActiveSection("serial")} />
         </nav>
 
         <div
@@ -645,6 +648,7 @@ export default function Dashboard({
         {activeSection === "editor" && (
         <EditorSection
             openFiles={fileMgmt.files.filter((file) => activeTabs.openFileNames.includes(file.name))}
+            projectFiles={fileMgmt.files}
             activeFileName={activeTabs.activeFileName}
             setActiveFileName={handleOpenFile}
             activeFile={activeTabs.activeFile}
@@ -759,6 +763,7 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
+        {activeSection === "serial" && <SerialMonitorSection board={board} />}
       </main>
 
       {showSettings ? (

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import type { BoardDefinition } from "../data/boards";
 import type { AppSettings } from "../data/settings";
+import {
+  PROJECT_TEMPLATES,
+  getTemplateUnavailableReason,
+  type TemplateLanguage,
+} from "../data/templates";
 import { hasTauriInvoke } from "../lib/tauri";
 import { pickProjectParentDirectory } from "../lib/projectWorkspace";
 
@@ -23,7 +28,8 @@ type ProjectSetupProps = {
   onCreateProject: (
     projectName: string,
     language: string,
-    parentDirectory: string | null
+    parentDirectory: string | null,
+    templateId: string
   ) => Promise<void> | void;
 };
 
@@ -42,6 +48,15 @@ export default function ProjectSetup({
   const [isCreating, setIsCreating] = useState(false);
   const [parentDirectory, setParentDirectory] = useState<string | null>(null);
   const [isChoosingLocation, setIsChoosingLocation] = useState(false);
+  const [templateId, setTemplateId] = useState("blinky");
+
+  function changeLanguage(nextLanguage: TemplateLanguage) {
+    setLanguage(nextLanguage);
+    const selected = PROJECT_TEMPLATES.find((template) => template.id === templateId);
+    if (selected && getTemplateUnavailableReason(selected, board, nextLanguage)) {
+      setTemplateId("blinky");
+    }
+  }
 
   return (
     <div
@@ -124,7 +139,7 @@ export default function ProjectSetup({
         <select
           value={language}
           onChange={(e) =>
-            setLanguage(e.target.value as "Verilog" | "SystemVerilog" | "VHDL")
+            changeLanguage(e.target.value as "Verilog" | "SystemVerilog" | "VHDL")
           }
           style={{
             background: "#ffffff",
@@ -135,6 +150,40 @@ export default function ProjectSetup({
           <option>SystemVerilog</option>
           <option>VHDL</option>
         </select>
+
+        <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
+          Starter template
+        </label>
+
+        <div className="template-grid">
+          {PROJECT_TEMPLATES.map((template) => {
+            const reason = getTemplateUnavailableReason(template, board, language);
+            const disabled = Boolean(reason);
+            const selected = templateId === template.id;
+
+            return (
+              <button
+                type="button"
+                key={template.id}
+                disabled={disabled}
+                className={[
+                  "template-card",
+                  selected ? "selected" : "",
+                  disabled ? "disabled" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                title={reason ?? template.description}
+                onClick={() => setTemplateId(template.id)}
+              >
+                <span className="template-card-name">{template.name}</span>
+                <span className="template-card-desc">
+                  {reason ?? template.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
           Project location
@@ -207,7 +256,8 @@ export default function ProjectSetup({
               await onCreateProject(
                 projectName,
                 language,
-                parentDirectory
+                parentDirectory,
+                templateId
               );
             } finally {
               setIsCreating(false);

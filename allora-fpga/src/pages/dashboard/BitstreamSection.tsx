@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import { createTauriChannel, hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import {
+  appendBuildRecord,
+  createBuildRecordId,
+  parseBuildMetrics,
+  persistBuildHistory,
+  type BuildRecord,
+} from "../../lib/buildHistory";
 import type { ProjectFile } from "./types";
 import {
   createSuggestedMappings,
@@ -57,7 +64,15 @@ export default function BitstreamSection({
   const [artifact, setArtifact] = useState<BitstreamArtifact | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [liveLogs, setLiveLogs] = useState<string[]>([]);
+  const logPanelRef = useRef<HTMLDivElement | null>(null);
   const capabilities = getBoardCapabilities(board);
+
+  useEffect(() => {
+    if (logPanelRef.current) {
+      logPanelRef.current.scrollTop = logPanelRef.current.scrollHeight;
+    }
+  }, [liveLogs]);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const selectedTopLevelFile =
@@ -140,11 +155,37 @@ export default function BitstreamSection({
 
     setIsGenerating(true);
     setErrorMessage(null);
+    setLiveLogs([]);
+
+    const startedAt = Date.now();
+    const streamedLogs: string[] = [];
+    const logChannel = createTauriChannel<string>((line) => {
+      streamedLogs.push(line);
+      setLiveLogs((current) => [...current, line]);
+    });
+
+    async function recordBuild(record: Omit<BuildRecord, "id" | "timestamp" | "durationMs">) {
+      try {
+        const { fileName, content } = appendBuildRecord(files, {
+          ...record,
+          id: createBuildRecordId(),
+          timestamp: new Date().toISOString(),
+          durationMs: Date.now() - startedAt,
+        });
+        if (projectPath) {
+          await persistBuildHistory(projectPath, content);
+        }
+        await onAddArtifact?.({ fileName, content });
+      } catch {
+        // Build history is best-effort; never fail the build because of it.
+      }
+    }
 
     try {
       const result = await invokeTauri<GenerateBitstreamResponse>(
         "generate_bitstream",
         {
+          onLog: logChannel,
           request: {
             projectName,
             boardName: board.name,
@@ -189,6 +230,7 @@ export default function BitstreamSection({
       };
 
       setArtifact(nextArtifact);
+      setLiveLogs(result.logs);
       if (generatedConstraintContent) {
         await onUpdateConstraints?.(constraintFileName, generatedConstraintContent);
       }
@@ -206,9 +248,29 @@ export default function BitstreamSection({
           topModule: result.topModule,
         }),
       });
+
+      const metrics = parseBuildMetrics(result.logs);
+      await recordBuild({
+        success: true,
+        topModule: result.topModule,
+        bytes: bytes.length,
+        fmaxMhz: metrics.fmaxMhz,
+        timingPass: metrics.timingPass,
+        utilization: metrics.utilization,
+      });
     } catch (error) {
       setArtifact(null);
       setErrorMessage(getErrorMessage(error));
+
+      const metrics = parseBuildMetrics(streamedLogs);
+      await recordBuild({
+        success: false,
+        topModule: topModule ?? undefined,
+        fmaxMhz: metrics.fmaxMhz,
+        timingPass: metrics.timingPass,
+        utilization: metrics.utilization,
+        message: getErrorMessage(error),
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -368,7 +430,7 @@ export default function BitstreamSection({
               background: "#f8fafc",
               color: "#334155",
               minHeight: "150px",
-              flex: artifact?.logs.length ? "1 1 0" : "1 1 auto",
+              flex: liveLogs.length ? "1 1 0" : "1 1 auto",
               padding: "18px",
               fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
               fontSize: "13px",
@@ -379,13 +441,16 @@ export default function BitstreamSection({
           >
             {artifact
               ? artifact.preview
-              : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
-                  projectName || "allora_project"
-                )}.${extension}`}
+              : isGenerating
+                ? "Building..."
+                : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
+                    projectName || "allora_project"
+                  )}.${extension}`}
           </div>
 
-          {artifact?.logs.length ? (
+          {liveLogs.length ? (
             <div
+              ref={logPanelRef}
               className="dashboard-glass-card"
               style={{
                 border: "1px solid #e2e8f0",
@@ -397,11 +462,11 @@ export default function BitstreamSection({
                 fontSize: "12px",
                 lineHeight: 1.55,
                 whiteSpace: "pre-wrap",
-                flex: "0 0 150px",
+                flex: isGenerating ? "1 1 200px" : "0 0 150px",
                 overflow: "auto",
               }}
             >
-              {artifact.logs.join("\n")}
+              {liveLogs.join("\n")}
             </div>
           ) : null}
         </div>

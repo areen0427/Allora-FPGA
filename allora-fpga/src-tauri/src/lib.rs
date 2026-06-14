@@ -3,9 +3,15 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io;
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tauri::ipc::Channel;
+use tauri::State;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -659,8 +665,9 @@ fn detect_programmer(
 }
 
 #[tauri::command]
-fn program_fpga(
+async fn program_fpga(
   request: ProgramFpgaRequest,
+  on_log: Channel<String>,
 ) -> Result<ProgramFpgaResponse, ErrorPayload> {
   let command = request.programmer_command.trim();
   if command.is_empty() {
@@ -711,17 +718,14 @@ fn program_fpga(
     args.extend(extra.iter().cloned());
   }
 
-  let mut logs = vec![
-    format!("[programming] Board: {}", request.board_name),
-    format!("[programming] Programmer: {command}"),
-    format!("[programming] Bitstream: {}", bitstream_path.display()),
-    format!("[programming] Command: {command} {}", args.join(" ")),
-  ];
+  let mut logs = Vec::new();
+  send_log(&on_log, &mut logs, format!("[programming] Board: {}", request.board_name));
+  send_log(&on_log, &mut logs, format!("[programming] Programmer: {command}"));
+  send_log(&on_log, &mut logs, format!("[programming] Bitstream: {}", bitstream_path.display()));
+  send_log(&on_log, &mut logs, format!("[programming] Command: {command} {}", args.join(" ")));
 
-  let output = Command::new(&tool_path)
-    .args(&args)
-    .output()
-    .map_err(|err| {
+  let (status, stdout_bytes, stderr_bytes) =
+    run_command_streaming(&tool_path, &args, None, &on_log).map_err(|err| {
       if err.kind() == io::ErrorKind::NotFound {
         error(&format!(
           "{command} is not installed or is not available on PATH. Install it to enable FPGA programming."
@@ -731,33 +735,20 @@ fn program_fpga(
       }
     })?;
 
-  let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-  let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+  append_command_logs(&mut logs, &stdout_bytes, &stderr_bytes);
 
-  if !stdout.trim().is_empty() {
-    logs.push(String::new());
-    logs.push("[stdout]".to_string());
-    logs.extend(stdout.lines().map(ToOwned::to_owned));
-  }
-
-  if !stderr.trim().is_empty() {
-    logs.push(String::new());
-    logs.push("[stderr]".to_string());
-    logs.extend(stderr.lines().map(ToOwned::to_owned));
-  }
-
-  if output.status.success() {
-    logs.push(String::new());
-    logs.push("[programming] ✓ Programming completed successfully.".to_string());
+  if status.success() {
+    send_log(&on_log, &mut logs, "");
+    send_log(&on_log, &mut logs, "[programming] ✓ Programming completed successfully.");
     Ok(ProgramFpgaResponse {
       success: true,
       logs,
       message: format!("Successfully programmed {} with {}.", request.board_name, request.bitstream_path),
     })
   } else {
-    let error_details = format_command_error(command, &output.stdout, &output.stderr);
-    logs.push(String::new());
-    logs.push(format!("[programming] ✗ {error_details}"));
+    let error_details = format_command_error(command, &stdout_bytes, &stderr_bytes);
+    send_log(&on_log, &mut logs, "");
+    send_log(&on_log, &mut logs, format!("[programming] ✗ {error_details}"));
     Ok(ProgramFpgaResponse {
       success: false,
       logs,
@@ -809,7 +800,7 @@ struct ErrorPayload {
 }
 
 #[tauri::command]
-fn generate_synthesis_diagram(
+async fn generate_synthesis_diagram(
   request: GenerateSynthesisDiagramRequest,
 ) -> Result<GenerateSynthesisDiagramResponse, ErrorPayload> {
   if request.files.is_empty() {
@@ -925,8 +916,9 @@ fn generate_synthesis_diagram(
 }
 
 #[tauri::command]
-fn generate_bitstream(
+async fn generate_bitstream(
   request: GenerateBitstreamRequest,
+  on_log: Channel<String>,
 ) -> Result<GenerateBitstreamResponse, ErrorPayload> {
   if request.source_files.is_empty() {
     return Err(error("No HDL files were provided."));
@@ -985,33 +977,33 @@ fn generate_bitstream(
   fs::write(&script_path, &script)
     .map_err(|err| error(&format!("Unable to write bitstream.ys: {err}")))?;
 
-  let mut logs = vec![
-    format!("[bitstream] Board: {}", request.board_name),
-    format!("[bitstream] Device: {}", request.fpga_id),
-    format!("[bitstream] Package: {}", request.board_package),
-    format!("[bitstream] Input files: {}", request.source_files.len()),
-  ];
+  let mut logs = Vec::new();
+  send_log(&on_log, &mut logs, format!("[bitstream] Board: {}", request.board_name));
+  send_log(&on_log, &mut logs, format!("[bitstream] Device: {}", request.fpga_id));
+  send_log(&on_log, &mut logs, format!("[bitstream] Package: {}", request.board_package));
+  send_log(&on_log, &mut logs, format!("[bitstream] Input files: {}", request.source_files.len()));
 
   let top_module = request
     .top_module
     .clone()
     .unwrap_or_else(|| "top".to_string());
-  logs.push(format!("[bitstream] Top module: {top_module}"));
+  send_log(&on_log, &mut logs, format!("[bitstream] Top module: {top_module}"));
 
-  let yosys_output = Command::new(tool_command("yosys"))
-    .arg("-q")
-    .arg("-s")
-    .arg(script_path.as_os_str())
-    .current_dir(&temp_dir)
-    .output()
-    .map_err(|err| command_launch_error("yosys", &err))?;
-  logs.push(String::new());
-  logs.push("[yosys] Command".to_string());
-  logs.push("yosys -q -s bitstream.ys".to_string());
-  append_command_logs(&mut logs, &yosys_output.stdout, &yosys_output.stderr);
-  if !yosys_output.status.success() {
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, "[yosys] Command");
+  send_log(&on_log, &mut logs, "yosys -q -s bitstream.ys");
+  let yosys_args = vec![
+    "-q".to_string(),
+    "-s".to_string(),
+    script_path.to_string_lossy().to_string(),
+  ];
+  let (yosys_status, yosys_stdout, yosys_stderr) =
+    run_command_streaming(&tool_command("yosys"), &yosys_args, Some(&temp_dir), &on_log)
+      .map_err(|err| command_launch_error("yosys", &err))?;
+  append_command_logs(&mut logs, &yosys_stdout, &yosys_stderr);
+  if !yosys_status.success() {
     let _ = fs::remove_dir_all(&temp_dir);
-    let error_details = format_command_error("Yosys", &yosys_output.stdout, &yosys_output.stderr);
+    let error_details = format_command_error("Yosys", &yosys_stdout, &yosys_stderr);
     return Err(error(&error_details));
   }
 
@@ -1024,35 +1016,31 @@ fn generate_bitstream(
     &pnr_path,
   )?;
 
-  let pnr_output = Command::new(tool_command(&pnr_command))
-    .args(&pnr_args)
-    .current_dir(&temp_dir)
-    .output()
-    .map_err(|err| command_launch_error(&pnr_command, &err))?;
-  logs.push(String::new());
-  logs.push("[place-and-route] Command".to_string());
-  logs.push(format!("{pnr_command} {}", pnr_args.join(" ")));
-  append_command_logs(&mut logs, &pnr_output.stdout, &pnr_output.stderr);
-  if !pnr_output.status.success() {
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, "[place-and-route] Command");
+  send_log(&on_log, &mut logs, format!("{pnr_command} {}", pnr_args.join(" ")));
+  let (pnr_status, pnr_stdout, pnr_stderr) =
+    run_command_streaming(&tool_command(&pnr_command), &pnr_args, Some(&temp_dir), &on_log)
+      .map_err(|err| command_launch_error(&pnr_command, &err))?;
+  append_command_logs(&mut logs, &pnr_stdout, &pnr_stderr);
+  if !pnr_status.success() {
     let _ = fs::remove_dir_all(&temp_dir);
-    let error_details = format_command_error(&pnr_command, &pnr_output.stdout, &pnr_output.stderr);
+    let error_details = format_command_error(&pnr_command, &pnr_stdout, &pnr_stderr);
     return Err(error(&error_details));
   }
 
   let (pack_command, pack_args) =
     build_pack_command(&request.board_family, &pnr_path, &artifact_path_tmp)?;
-  let pack_output = Command::new(tool_command(&pack_command))
-    .args(&pack_args)
-    .current_dir(&temp_dir)
-    .output()
-    .map_err(|err| command_launch_error(&pack_command, &err))?;
-  logs.push(String::new());
-  logs.push("[pack] Command".to_string());
-  logs.push(format!("{pack_command} {}", pack_args.join(" ")));
-  append_command_logs(&mut logs, &pack_output.stdout, &pack_output.stderr);
-  if !pack_output.status.success() {
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, "[pack] Command");
+  send_log(&on_log, &mut logs, format!("{pack_command} {}", pack_args.join(" ")));
+  let (pack_status, pack_stdout, pack_stderr) =
+    run_command_streaming(&tool_command(&pack_command), &pack_args, Some(&temp_dir), &on_log)
+      .map_err(|err| command_launch_error(&pack_command, &err))?;
+  append_command_logs(&mut logs, &pack_stdout, &pack_stderr);
+  if !pack_status.success() {
     let _ = fs::remove_dir_all(&temp_dir);
-    let error_details = format_command_error(&pack_command, &pack_output.stdout, &pack_output.stderr);
+    let error_details = format_command_error(&pack_command, &pack_stdout, &pack_stderr);
     return Err(error(&error_details));
   }
 
@@ -1071,13 +1059,10 @@ fn generate_bitstream(
     None
   };
 
-  logs.push(String::new());
-  logs.push(format!(
-    "[output] Generated {} bytes",
-    bytes.len()
-  ));
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, format!("[output] Generated {} bytes", bytes.len()));
   if let Some(path) = &project_artifact_path {
-    logs.push(format!("[output] Saved to {path}"));
+    send_log(&on_log, &mut logs, format!("[output] Saved to {path}"));
   }
 
   let _ = fs::remove_dir_all(&temp_dir);
@@ -1092,8 +1077,9 @@ fn generate_bitstream(
 }
 
 #[tauri::command]
-fn simulate_testbench(
+async fn simulate_testbench(
   request: SimulateTestbenchRequest,
+  on_log: Channel<String>,
 ) -> Result<SimulateTestbenchResponse, ErrorPayload> {
   if request.source_files.is_empty() {
     return Err(error("No design HDL files were provided."));
@@ -1146,12 +1132,11 @@ fn simulate_testbench(
     .clone()
     .or_else(|| find_first_verilog_module(&request.testbench_file.content))
     .unwrap_or_else(|| "testbench".to_string());
-  let mut logs = vec![
-    format!("[simulation] Project: {}", request.project_name),
-    format!("[simulation] Testbench: {}", request.testbench_file.name),
-    format!("[simulation] Design files: {}", request.source_files.len()),
-    format!("[simulation] Top hint: {requested_top}"),
-  ];
+  let mut logs = Vec::new();
+  send_log(&on_log, &mut logs, format!("[simulation] Project: {}", request.project_name));
+  send_log(&on_log, &mut logs, format!("[simulation] Testbench: {}", request.testbench_file.name));
+  send_log(&on_log, &mut logs, format!("[simulation] Design files: {}", request.source_files.len()));
+  send_log(&on_log, &mut logs, format!("[simulation] Top hint: {requested_top}"));
 
   let mut iverilog_args = vec![
     "-g2012".to_string(),
@@ -1166,35 +1151,32 @@ fn simulate_testbench(
       .map(|path| path.to_string_lossy().to_string()),
   );
 
-  let compile_output = Command::new(tool_command("iverilog"))
-    .args(&iverilog_args)
-    .current_dir(&temp_dir)
-    .output()
-    .map_err(|err| command_launch_error("iverilog", &err))?;
-  logs.push(String::new());
-  logs.push("[iverilog] Command".to_string());
-  logs.push(format!("iverilog {}", iverilog_args.join(" ")));
-  append_command_logs(&mut logs, &compile_output.stdout, &compile_output.stderr);
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, "[iverilog] Command");
+  send_log(&on_log, &mut logs, format!("iverilog {}", iverilog_args.join(" ")));
+  let (compile_status, compile_stdout, compile_stderr) =
+    run_command_streaming(&tool_command("iverilog"), &iverilog_args, Some(&temp_dir), &on_log)
+      .map_err(|err| command_launch_error("iverilog", &err))?;
+  append_command_logs(&mut logs, &compile_stdout, &compile_stderr);
 
-  if !compile_output.status.success() {
+  if !compile_status.success() {
     let _ = fs::remove_dir_all(&temp_dir);
-    let error_details = format_command_error("Icarus Verilog", &compile_output.stdout, &compile_output.stderr);
+    let error_details = format_command_error("Icarus Verilog", &compile_stdout, &compile_stderr);
     return Err(error(&error_details));
   }
 
-  let run_output = Command::new(tool_command("vvp"))
-    .arg(executable_path.as_os_str())
-    .current_dir(&temp_dir)
-    .output()
-    .map_err(|err| command_launch_error("vvp", &err))?;
-  logs.push(String::new());
-  logs.push("[vvp] Command".to_string());
-  logs.push("vvp simulation.out".to_string());
-  append_command_logs(&mut logs, &run_output.stdout, &run_output.stderr);
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, "[vvp] Command");
+  send_log(&on_log, &mut logs, "vvp simulation.out");
+  let vvp_args = vec![executable_path.to_string_lossy().to_string()];
+  let (run_status, run_stdout, run_stderr) =
+    run_command_streaming(&tool_command("vvp"), &vvp_args, Some(&temp_dir), &on_log)
+      .map_err(|err| command_launch_error("vvp", &err))?;
+  append_command_logs(&mut logs, &run_stdout, &run_stderr);
 
-  if !run_output.status.success() {
+  if !run_status.success() {
     let _ = fs::remove_dir_all(&temp_dir);
-    let error_details = format_command_error("vvp", &run_output.stdout, &run_output.stderr);
+    let error_details = format_command_error("vvp", &run_stdout, &run_stderr);
     return Err(error(&error_details));
   }
 
@@ -1221,10 +1203,10 @@ fn simulate_testbench(
     None
   };
 
-  logs.push(String::new());
-  logs.push(format!("[output] Waveform bytes: {}", vcd.len()));
+  send_log(&on_log, &mut logs, "");
+  send_log(&on_log, &mut logs, format!("[output] Waveform bytes: {}", vcd.len()));
   if let Some(path) = &project_waveform_path {
-    logs.push(format!("[output] Saved to {path}"));
+    send_log(&on_log, &mut logs, format!("[output] Saved to {path}"));
   }
 
   let _ = fs::remove_dir_all(&temp_dir);
@@ -1847,6 +1829,64 @@ fn append_command_logs(logs: &mut Vec<String>, stdout: &[u8], stderr: &[u8]) {
   }
 }
 
+/// Push a log line into the response log buffer and stream it to the frontend.
+fn send_log(on_log: &Channel<String>, logs: &mut Vec<String>, line: impl Into<String>) {
+  let line = line.into();
+  let _ = on_log.send(line.clone());
+  logs.push(line);
+}
+
+/// Run a command with stdout/stderr streamed line-by-line over the channel
+/// while also collecting the full output for the final response.
+fn run_command_streaming(
+  program: &Path,
+  args: &[String],
+  cwd: Option<&Path>,
+  on_log: &Channel<String>,
+) -> io::Result<(std::process::ExitStatus, Vec<u8>, Vec<u8>)> {
+  let mut command = Command::new(program);
+  command.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
+  if let Some(cwd) = cwd {
+    command.current_dir(cwd);
+  }
+
+  let mut child = command.spawn()?;
+  let stdout = child.stdout.take();
+  let stderr = child.stderr.take();
+
+  let stdout_channel = on_log.clone();
+  let stdout_thread = thread::spawn(move || {
+    let mut collected = Vec::new();
+    if let Some(stream) = stdout {
+      for line in BufReader::new(stream).lines().map_while(Result::ok) {
+        let _ = stdout_channel.send(line.clone());
+        collected.extend_from_slice(line.as_bytes());
+        collected.push(b'\n');
+      }
+    }
+    collected
+  });
+
+  let stderr_channel = on_log.clone();
+  let stderr_thread = thread::spawn(move || {
+    let mut collected = Vec::new();
+    if let Some(stream) = stderr {
+      for line in BufReader::new(stream).lines().map_while(Result::ok) {
+        let _ = stderr_channel.send(line.clone());
+        collected.extend_from_slice(line.as_bytes());
+        collected.push(b'\n');
+      }
+    }
+    collected
+  });
+
+  let status = child.wait()?;
+  let stdout_bytes = stdout_thread.join().unwrap_or_default();
+  let stderr_bytes = stderr_thread.join().unwrap_or_default();
+
+  Ok((status, stdout_bytes, stderr_bytes))
+}
+
 fn sanitize_constraint_name(name: &str) -> String {
   let path = PathBuf::from(name);
   path
@@ -2016,9 +2056,310 @@ fn pick_project_parent_directory() -> Result<Option<String>, ErrorPayload> {
   }
 }
 
+// ── HDL Linting ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LintHdlRequest {
+  files: Vec<SynthesisInputFile>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LintDiagnostic {
+  file_name: String,
+  line: u32,
+  severity: String,
+  message: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LintHdlResponse {
+  available: bool,
+  diagnostics: Vec<LintDiagnostic>,
+}
+
+#[tauri::command]
+async fn lint_hdl(request: LintHdlRequest) -> Result<LintHdlResponse, ErrorPayload> {
+  if request.files.is_empty() {
+    return Ok(LintHdlResponse {
+      available: true,
+      diagnostics: Vec::new(),
+    });
+  }
+
+  let temp_dir = create_work_dir("lint")?;
+  let source_dir = temp_dir.join("src");
+  fs::create_dir_all(&source_dir)
+    .map_err(|err| error(&format!("Unable to create lint workspace: {err}")))?;
+
+  let mut file_args = Vec::new();
+  for file in &request.files {
+    let relative = normalize_relative_path(&file.name)?;
+    let path = source_dir.join(&relative);
+    if let Some(parent) = path.parent() {
+      fs::create_dir_all(parent)
+        .map_err(|err| error(&format!("Unable to create lint folder: {err}")))?;
+    }
+    fs::write(&path, &file.content)
+      .map_err(|err| error(&format!("Unable to write {}: {err}", file.name)))?;
+    file_args.push(format!("src/{}", file.name));
+  }
+
+  let mut args = vec!["-t".to_string(), "null".to_string(), "-g2012".to_string()];
+  args.extend(file_args);
+
+  let output = Command::new(tool_command("iverilog"))
+    .args(&args)
+    .current_dir(&temp_dir)
+    .output();
+
+  let _ = fs::remove_dir_all(&temp_dir);
+
+  match output {
+    Ok(result) => {
+      let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&result.stdout),
+        String::from_utf8_lossy(&result.stderr)
+      );
+      Ok(LintHdlResponse {
+        available: true,
+        diagnostics: parse_iverilog_diagnostics(&combined),
+      })
+    }
+    Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(LintHdlResponse {
+      available: false,
+      diagnostics: Vec::new(),
+    }),
+    Err(err) => Err(error(&format!("Unable to run iverilog: {err}"))),
+  }
+}
+
+fn parse_iverilog_diagnostics(output: &str) -> Vec<LintDiagnostic> {
+  let mut diagnostics = Vec::new();
+  let mut seen = BTreeSet::new();
+
+  for line in output.lines() {
+    // Expected shape: "src/counter.v:12: error: message" or "src/counter.v:3: syntax error"
+    let mut parts = line.splitn(3, ':');
+    let Some(raw_path) = parts.next() else { continue };
+    let Some(raw_line) = parts.next() else { continue };
+    let Some(raw_message) = parts.next() else { continue };
+
+    let Ok(line_number) = raw_line.trim().parse::<u32>() else {
+      continue;
+    };
+
+    let file_name = raw_path
+      .trim()
+      .trim_start_matches("src/")
+      .to_string();
+    let message = raw_message.trim().to_string();
+    if message.is_empty() {
+      continue;
+    }
+
+    let lower = message.to_lowercase();
+    let severity = if lower.starts_with("warning") || lower.contains("sorry") {
+      "warning"
+    } else {
+      "error"
+    };
+    let message = message
+      .trim_start_matches("error:")
+      .trim_start_matches("warning:")
+      .trim()
+      .to_string();
+
+    let key = (file_name.clone(), line_number, message.clone());
+    if seen.insert(key) {
+      diagnostics.push(LintDiagnostic {
+        file_name,
+        line: line_number,
+        severity: severity.to_string(),
+        message,
+      });
+    }
+  }
+
+  diagnostics
+}
+
+// ── Serial Monitor ───────────────────────────────────────────────────────
+
+struct SerialSession {
+  port: Box<dyn serialport::SerialPort>,
+  stop: Arc<AtomicBool>,
+}
+
+#[derive(Default)]
+struct SerialState {
+  sessions: Mutex<HashMap<u32, SerialSession>>,
+  next_id: AtomicU32,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SerialPortRecord {
+  port_name: String,
+  description: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenSerialMonitorRequest {
+  port_name: String,
+  baud_rate: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WriteSerialMonitorRequest {
+  session_id: u32,
+  data: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CloseSerialMonitorRequest {
+  session_id: u32,
+}
+
+#[tauri::command]
+fn list_serial_ports() -> Result<Vec<SerialPortRecord>, ErrorPayload> {
+  let ports = serialport::available_ports()
+    .map_err(|err| error(&format!("Unable to list serial ports: {err}")))?;
+
+  Ok(
+    ports
+      .into_iter()
+      .map(|port| {
+        let description = match &port.port_type {
+          serialport::SerialPortType::UsbPort(info) => {
+            let manufacturer = info.manufacturer.clone().unwrap_or_default();
+            let product = info.product.clone().unwrap_or_default();
+            let text = format!("{manufacturer} {product}").trim().to_string();
+            if text.is_empty() {
+              "USB serial device".to_string()
+            } else {
+              text
+            }
+          }
+          serialport::SerialPortType::BluetoothPort => "Bluetooth".to_string(),
+          serialport::SerialPortType::PciPort => "PCI".to_string(),
+          serialport::SerialPortType::Unknown => String::new(),
+        };
+
+        SerialPortRecord {
+          port_name: port.port_name,
+          description,
+        }
+      })
+      .collect(),
+  )
+}
+
+#[tauri::command]
+fn open_serial_monitor(
+  request: OpenSerialMonitorRequest,
+  on_data: Channel<String>,
+  state: State<'_, SerialState>,
+) -> Result<u32, ErrorPayload> {
+  let port = serialport::new(&request.port_name, request.baud_rate)
+    .timeout(Duration::from_millis(100))
+    .open()
+    .map_err(|err| error(&format!("Unable to open {}: {err}", request.port_name)))?;
+
+  let mut reader = port
+    .try_clone()
+    .map_err(|err| error(&format!("Unable to read from {}: {err}", request.port_name)))?;
+
+  let stop = Arc::new(AtomicBool::new(false));
+  let session_id = state.next_id.fetch_add(1, Ordering::SeqCst) + 1;
+
+  state
+    .sessions
+    .lock()
+    .map_err(|_| error("Serial session state is unavailable."))?
+    .insert(
+      session_id,
+      SerialSession {
+        port,
+        stop: stop.clone(),
+      },
+    );
+
+  thread::spawn(move || {
+    let mut buffer = [0u8; 1024];
+    loop {
+      if stop.load(Ordering::SeqCst) {
+        break;
+      }
+
+      match reader.read(&mut buffer) {
+        Ok(0) => {}
+        Ok(count) => {
+          let _ = on_data.send(String::from_utf8_lossy(&buffer[..count]).to_string());
+        }
+        Err(err) if err.kind() == io::ErrorKind::TimedOut => {}
+        Err(err) if err.kind() == io::ErrorKind::Interrupted => {}
+        Err(_) => {
+          if !stop.load(Ordering::SeqCst) {
+            let _ = on_data.send("\n[serial] Connection lost.\n".to_string());
+          }
+          break;
+        }
+      }
+    }
+  });
+
+  Ok(session_id)
+}
+
+#[tauri::command]
+fn write_serial_monitor(
+  request: WriteSerialMonitorRequest,
+  state: State<'_, SerialState>,
+) -> Result<(), ErrorPayload> {
+  let mut sessions = state
+    .sessions
+    .lock()
+    .map_err(|_| error("Serial session state is unavailable."))?;
+  let session = sessions
+    .get_mut(&request.session_id)
+    .ok_or_else(|| error("The serial connection is no longer open."))?;
+
+  session
+    .port
+    .write_all(request.data.as_bytes())
+    .map_err(|err| error(&format!("Unable to write to the serial port: {err}")))?;
+  Ok(())
+}
+
+#[tauri::command]
+fn close_serial_monitor(
+  request: CloseSerialMonitorRequest,
+  state: State<'_, SerialState>,
+) -> Result<(), ErrorPayload> {
+  let session = state
+    .sessions
+    .lock()
+    .map_err(|_| error("Serial session state is unavailable."))?
+    .remove(&request.session_id);
+
+  if let Some(session) = session {
+    session.stop.store(true, Ordering::SeqCst);
+  }
+
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .manage(SerialState::default())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -2042,7 +2383,12 @@ pub fn run() {
       simulate_testbench,
       detect_programmer,
       detect_connected_board,
-      program_fpga
+      program_fpga,
+      lint_hdl,
+      list_serial_ports,
+      open_serial_monitor,
+      write_serial_monitor,
+      close_serial_monitor
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

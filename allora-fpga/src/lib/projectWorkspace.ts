@@ -1,4 +1,5 @@
 import type { BoardDefinition } from "../data/boards";
+import { createConstraintLines, getTemplateById } from "../data/templates";
 import { invokeTauri } from "./tauri";
 import type { ProjectFile } from "../pages/dashboard/types";
 
@@ -27,13 +28,15 @@ export async function createProjectWorkspace({
   board,
   language,
   parentDirectory,
+  templateId,
 }: {
   projectName: string;
   board: BoardDefinition;
   language: "Verilog" | "SystemVerilog" | "VHDL";
   parentDirectory?: string | null;
+  templateId?: string;
 }) {
-  const starterFiles = buildStarterFiles({ projectName, board, language });
+  const starterFiles = buildStarterFiles({ projectName, board, language, templateId });
   const folderName = sanitizeFolderName(projectName);
   const response = await invokeTauri<CreateProjectWorkspaceResponse>(
     "create_project_workspace",
@@ -128,10 +131,12 @@ function buildStarterFiles({
   projectName,
   board,
   language,
+  templateId,
 }: {
   projectName: string;
   board: BoardDefinition;
   language: "Verilog" | "SystemVerilog" | "VHDL";
+  templateId?: string;
 }) {
   const topModule = sanitizeModuleName(projectName || "top");
   const sourceExtension =
@@ -140,14 +145,26 @@ function buildStarterFiles({
   const constraintsRelativePath = `constraints/constraints.${board.constraintsFile}`;
   const projectRelativePath = "allora-project.json";
 
+  // "blinky" (and anything unknown) falls back to the classic starter, which
+  // also covers VHDL. Other templates generate Verilog pre-wired to the board.
+  const template = templateId ? getTemplateById(templateId) : undefined;
+  let sourceContent = createStarterSource({ topModule, board, language });
+  let constraintsContent = createConstraintsTemplate(board, topModule);
+
+  if (template?.generate && language !== "VHDL") {
+    const generated = template.generate({ board, topModule });
+    sourceContent = generated.source;
+    constraintsContent = createConstraintLines(board, topModule, generated.mappings);
+  }
+
   return [
     {
       relativePath: sourceRelativePath,
-      content: createStarterSource({ topModule, board, language }),
+      content: sourceContent,
     },
     {
       relativePath: constraintsRelativePath,
-      content: createConstraintsTemplate(board, topModule),
+      content: constraintsContent,
     },
     {
       relativePath: projectRelativePath,
@@ -158,6 +175,7 @@ function buildStarterFiles({
           boardName: board.name,
           language,
           topModule,
+          template: template?.id ?? "blinky",
         },
         null,
         2
