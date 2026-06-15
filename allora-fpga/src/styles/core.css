@@ -1,0 +1,213 @@
+.glass-page {
+  --ui-radius-xs: 10px;
+  --ui-radius-sm: 12px;
+  --ui-radius-md: 14px;
+  --ui-radius-lg: 16px;
+  --ui-radius-xl: 18px;
+  --ui-radius-2xl: 20px;
+  --ui-border-subtle: rgba(226, 232, 240, 0.72);
+  --ui-border-control: rgba(203, 213, 225, 0.72);
+  --ui-border-control-strong: rgba(203, 213, 225, 0.8);
+  --ui-blue: #2563eb;
+  --ui-blue-soft: rgba(37, 99, 235, 0.12);
+  --ui-cyan: #0ea5e9;
+  --ui-text: #0f172a;
+  --ui-text-muted: #64748b;
+  --ui-text-soft: #94a3b8;
+  --ui-surface-glass:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(255, 255, 255, 0.28)
+    ),
+    rgba(248, 250, 252, 0.42);
+  --ui-dashboard-glass:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(248, 250, 252, 0.5)
+    ),
+    rgba(255, 255, 255, 0.56);
+  --ui-control-bg:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(248, 250, 252, 0.72)
+    ),
+    #ffffff;
+  --ui-control-active-bg:
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.98),
+      rgba(219, 234, 254, 0.76)
+    ),
+    #eff6ff;
+  --ui-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  --ui-surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    inset 0 -22px 42px rgba(255, 255, 255, 0.18),
+    0 12px 30px rgba(15, 23, 42, 0.085),
+    0 4px 16px rgba(37, 99, 235, 0.045);
+  --ui-dashboard-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 10px 26px rgba(15, 23, 42, 0.055);
+  --ui-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+  --ui-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 8px 18px rgba(15, 23, 42, 0.08),
+    0 3px 8px rgba(37, 99, 235, 0.08);
+  --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  --ui-motion-fast: 0.15s ease;
+  --ui-motion-base: 0.18s ease;
+  --ui-lift-subtle: translateY(-1px);
+  --ui-lift-card: translateY(-3px);
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .glass-page {
+  --ui-border-subtle: rgba(148, 163, 184, 0.24);
+  --ui-border-control: rgba(148, 163, 184, 0.24);
+  --ui-border-control-strong: rgba(148, 163, 184, 0.28);
+  --ui-text: #e2e8f0;
+  --ui-text-muted: #94a3b8;
+  --ui-text-soft: #cbd5e1;
+  --ui-control-bg:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.64), rgba(15, 23, 42, 0.42)),
+    rgba(15, 23, 42, 0.5);
+  --ui-control-active-bg: rgba(37, 99, 235, 0.18);
+  --ui-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --ui-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --ui-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.28);
+  --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.glass-page button:focus-visible,
+.glass-page [role="button"]:focus-visible,
+.glass-page input:focus-visible,
+.glass-page select:focus-visible,
+.glass-page textarea:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--ui-focus-ring),
+    var(--ui-inset-highlight);
+}
+
+.project-tree-file .project-tree-close {
+  width: 0;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    opacity 0.15s ease,
+    width 0.15s ease,
+    color 0.15s ease;
+}
+
+.project-tree-file:hover .project-tree-close,
+.project-tree-file:focus-within .project-tree-close {
+  width: 16px;
+  opacity: 1;
+}
+
+.project-tree-file .project-tree-close:hover {
+  color: #2563eb;
+}
+
+html[data-theme="black-ice"] .project-tree-file .project-tree-close {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="black-ice"] .project-tree-file .project-tree-close:hover {
+  color: #bfdbfe !important;
+}
+
+.sidebarNavButton {
+  min-width: 0;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 4px;
+  color: #475569;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition:
+    background var(--ui-motion-fast, 0.15s ease),
+    color var(--ui-motion-fast, 0.15s ease),
+    box-shadow var(--ui-motion-fast, 0.15s ease);
+}
+
+.sidebarNavButton span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.sidebarNavButton.active {
+  color: #2563eb;
+  background: linear-gradient(
+    90deg,
+    rgba(219, 234, 254, 0.98) 0%,
+    rgba(219, 234, 254, 0.5) 30%,
+    rgba(219, 234, 254, 0) 64%
+  );
+}
+
+.sidebarNavButton:hover {
+  color: #2563eb;
+  background: rgba(219, 234, 254, 0.45);
+}
+
+html[data-theme="black-ice"] .sidebarNavButton {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="black-ice"] .sidebarNavButton.active {
+  color: #93c5fd !important;
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.38) 0%,
+    rgba(37, 99, 235, 0.22) 30%,
+    rgba(37, 99, 235, 0) 64%
+  ) !important;
+}
+
+html[data-theme="black-ice"] .sidebarNavButton:hover {
+  color: #bfdbfe !important;
+  background: rgba(37, 99, 235, 0.18) !important;
+}
+
+.glass-page {
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.7),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.96),
+      rgba(226, 232, 240, 0.76)
+    ) !important;
+}

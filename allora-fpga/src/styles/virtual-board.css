@@ -1,0 +1,186 @@
+/* ── Virtual board ──────────────────────────────────────────────────────
+   The PCB is rendered with fixed "physical" colors on purpose: it reads as
+   a real green board in every app theme. Text around it uses theme vars. */
+
+.vboard-shell {
+  width: 100%;
+}
+
+.vboard-pcb {
+  fill: #1b5e3b;
+  stroke: #134e2c;
+  stroke-width: 0.5;
+}
+
+.vboard-pcb-inner {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 0.3;
+}
+
+.vboard-board-name {
+  fill: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.vboard-silk {
+  fill: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.vboard-chip {
+  fill: #1f2937;
+  stroke: #0b1220;
+  stroke-width: 0.3;
+}
+
+.vboard-chip-label {
+  fill: #e5e7eb;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.vboard-chip-sublabel {
+  fill: #9ca3af;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.vboard-connector {
+  fill: #111827;
+  stroke: #374151;
+  stroke-width: 0.25;
+}
+
+.vboard-edge-connector-body {
+  fill: #111827;
+  stroke: #0b1220;
+  stroke-width: 0.22;
+}
+
+.vboard-edge-connector-finger {
+  fill: #d6a53c;
+  stroke: rgba(120, 53, 15, 0.45);
+  stroke-width: 0.08;
+}
+
+.vboard-edge-connector-notch {
+  fill: #1b5e3b;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.08;
+}
+
+.vboard-usb {
+  fill: #9ca3af;
+  stroke: #6b7280;
+  stroke-width: 0.3;
+}
+
+.vboard-clock {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+  stroke-width: 0.25;
+}
+
+.vboard-led {
+  stroke: rgba(15, 23, 42, 0.55);
+  stroke-width: 0.2;
+}
+
+.vboard-button-base {
+  fill: #374151;
+  stroke: #1f2937;
+  stroke-width: 0.25;
+}
+
+.vboard-button-cap {
+  fill: #d1d5db;
+  stroke: #6b7280;
+  stroke-width: 0.2;
+}
+
+.vboard-button-cap.pressed {
+  fill: #60a5fa;
+  stroke: #2563eb;
+}
+
+.vboard-ring-selected {
+  stroke: #38bdf8;
+}
+
+.vboard-ring-mapped {
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+.vboard-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.vboard-clickable:hover .vboard-button-cap,
+.vboard-clickable:focus-visible .vboard-button-cap {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-clickable:hover .vboard-led,
+.vboard-clickable:focus-visible .vboard-led {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-clickable:hover .vboard-clock,
+.vboard-clickable:focus-visible .vboard-clock {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.vboard-caption {
+  margin-top: 8px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Waveform board playback ──────────────────────────────────────────── */
+
+.board-playback {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dashboard-surface-border, #e2e8f0);
+}
+
+.board-playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.board-playback-slider {
+  flex: 1 1 160px;
+  min-width: 120px;
+  accent-color: #2563eb;
+}
+
+.board-playback-speed {
+  border: 1px solid var(--dashboard-control-border, #cbd5e1);
+  border-radius: 10px;
+  background: var(--dashboard-control-bg, #ffffff);
+  color: var(--dashboard-text, #0f172a);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.board-playback-time {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}

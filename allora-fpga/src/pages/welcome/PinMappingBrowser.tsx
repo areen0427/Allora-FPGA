@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Map as MapIcon } from "lucide-react";
+import { Cpu, Map as MapIcon } from "lucide-react";
+import VirtualBoard from "../../components/VirtualBoard";
 import { getBoardById } from "../../data/boards";
 import type { BoardDefinition } from "../../data/boards";
 import type { BoardCatalogItem } from "../../data/boardSupport";
@@ -26,36 +27,29 @@ export function PinMappingBrowser({
     : [];
 
   return (
-    <>
-      <header className="welcome-page-header pin-browser-header">
-        <div>
-          <div className="welcome-eyebrow">Pin Mapping Browser</div>
-          <h1 className="welcome-title">Board Pinouts</h1>
-          <p className="welcome-subtitle">
-            Browse pin mappings for boards that are not fully supported.
-          </p>
-        </div>
+    <div className="pin-browser-shell">
+      <div className="welcome-eyebrow pin-browser-eyebrow">
+        Pin Mapping Browser
+      </div>
+      <header className="pin-browser-heading">
+        <h1 className="welcome-title">Board Pinouts</h1>
+        <p className="welcome-subtitle">Browse pin mappings for boards.</p>
       </header>
 
-      <div className="pin-browser-layout">
-        <PinMappingBoardList
-          boards={filteredBoards}
-          search={search}
-          selectedBoardId={selectedBoardId}
-          onSearchChange={setSearch}
-          onSelectBoard={onSelectBoard}
-        />
+      <PinMappingBoardList
+        boards={filteredBoards}
+        search={search}
+        selectedBoardId={selectedBoardId}
+        onSearchChange={setSearch}
+        onSelectBoard={onSelectBoard}
+      />
 
-        {selectedBoard ? (
-          <PinMappingDetail
-            board={selectedBoard}
-            resourceGroups={resourceGroups}
-          />
-        ) : (
-          <PinMappingEmptyState />
-        )}
-      </div>
-    </>
+      {selectedBoard ? (
+        <PinMappingDetail board={selectedBoard} resourceGroups={resourceGroups} />
+      ) : (
+        <PinMappingEmptyState />
+      )}
+    </div>
   );
 }
 
@@ -134,13 +128,50 @@ function PinMappingDetail({
   board: BoardDefinition;
   resourceGroups: PinBrowserResourceGroup[];
 }) {
+  const [viewMode, setViewMode] = useState<"pinout" | "diagram">("pinout");
+
   return (
     <div className="dashboard-glass-card pin-detail-panel">
-      <div>
-        <h2>{board.name}</h2>
-        <p>
-          {board.vendor} · {board.family} · {board.device}
-        </p>
+      <div className="pin-detail-header">
+        <div>
+          <h2>{board.name}</h2>
+          <p>
+            {board.vendor} · {board.family} · {board.device}
+          </p>
+        </div>
+
+        <div
+          className="pin-browser-view-toggle"
+          role="group"
+          aria-label="Board pinout view"
+        >
+          <button
+            type="button"
+            className={
+              viewMode === "pinout"
+                ? "pin-browser-view-button active"
+                : "pin-browser-view-button"
+            }
+            aria-pressed={viewMode === "pinout"}
+            onClick={() => setViewMode("pinout")}
+          >
+            <MapIcon size={15} />
+            Pinout
+          </button>
+          <button
+            type="button"
+            className={
+              viewMode === "diagram"
+                ? "pin-browser-view-button active"
+                : "pin-browser-view-button"
+            }
+            aria-pressed={viewMode === "diagram"}
+            onClick={() => setViewMode("diagram")}
+          >
+            <Cpu size={15} />
+            Board Diagram
+          </button>
+        </div>
       </div>
 
       <div className="pin-summary-list">
@@ -152,48 +183,54 @@ function PinMappingDetail({
         />
       </div>
 
-      <div className="pin-group-scroll">
-        {resourceGroups.map((group) => (
-          <div key={group.title} className="pin-group-card">
-            <div className="pin-group-header">
-              <div>
-                <div className="pin-group-title">{group.title}</div>
-                <div className="pin-group-detail">{group.detail}</div>
+      {viewMode === "pinout" ? (
+        <div className="pin-group-scroll">
+          {resourceGroups.map((group) => (
+            <div key={group.title} className="pin-group-card">
+              <div className="pin-group-header">
+                <div>
+                  <div className="pin-group-title">{group.title}</div>
+                  <div className="pin-group-detail">{group.detail}</div>
+                </div>
+                <span className="pin-group-count">{group.pins.length}</span>
               </div>
-              <span className="pin-group-count">{group.pins.length}</span>
-            </div>
 
-            <div className="pin-grid">
-              {group.pins.map((pin) => {
-                const color = getPinTypeColor(pin.type);
+              <div className="pin-grid">
+                {group.pins.map((pin) => {
+                  const color = getPinTypeColor(pin.type);
 
-                return (
-                  <div key={pin.key} className="pin-tile">
-                    <span
-                      className="pin-tile-symbol"
-                      style={{
-                        background: color.background,
-                        color: color.color,
-                      }}
-                    >
-                      {pin.symbol}
-                    </span>
-                    <span className="pin-tile-pin" title={pin.pin}>
-                      {pin.pin}
-                    </span>
-                    <span
-                      className="pin-tile-detail"
-                      title={pin.detail ?? pin.name}
-                    >
-                      {pin.detail ?? pin.name}
-                    </span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={pin.key} className="pin-tile">
+                      <span
+                        className="pin-tile-symbol"
+                        style={{
+                          background: color.background,
+                          color: color.color,
+                        }}
+                      >
+                        {pin.symbol}
+                      </span>
+                      <span className="pin-tile-pin" title={pin.pin}>
+                        {pin.pin}
+                      </span>
+                      <span
+                        className="pin-tile-detail"
+                        title={pin.detail ?? pin.name}
+                      >
+                        {pin.detail ?? pin.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="pin-diagram-panel">
+          <VirtualBoard board={board} maxHeight={520} showCaption />
+        </div>
+      )}
     </div>
   );
 }

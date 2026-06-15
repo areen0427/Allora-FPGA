@@ -92,6 +92,63 @@ export default function VirtualBoard({
     );
   }
 
+  function isBottomEdgeConnector(component: LayoutComponent) {
+    return (
+      component.kind === "header" &&
+      component.w > layout.width * 0.45 &&
+      component.y + component.h > layout.height - 6
+    );
+  }
+
+  function renderEdgeConnector(component: Extract<LayoutComponent, { kind: "header" }>) {
+    const connectorWidth = Math.min(component.w * 0.62, layout.width * 0.58);
+    const connectorHeight = Math.min(2.4, Math.max(1.8, component.h * 0.58));
+    const x = (layout.width - connectorWidth) / 2;
+    const y = Math.min(
+      component.y + (component.h - connectorHeight) / 2,
+      layout.height - connectorHeight - 1.2,
+    );
+    const notchWidth = Math.max(1.1, connectorWidth * 0.035);
+    const toothCount = Math.max(10, Math.floor(connectorWidth / 3.2));
+    const toothGap = connectorWidth / toothCount;
+    const toothWidth = Math.max(0.65, toothGap * 0.44);
+
+    return (
+      <g>
+        <rect
+          className="vboard-edge-connector-body"
+          x={x}
+          y={y}
+          width={connectorWidth}
+          height={connectorHeight}
+          rx={0.35}
+        />
+        <rect
+          className="vboard-edge-connector-notch"
+          x={x + connectorWidth * 0.48}
+          y={y - 0.05}
+          width={notchWidth}
+          height={connectorHeight + 0.1}
+          rx={0.12}
+        />
+        {Array.from({ length: toothCount }, (_, toothIndex) => {
+          const toothX = x + toothIndex * toothGap + (toothGap - toothWidth) / 2;
+          return (
+            <rect
+              className="vboard-edge-connector-finger"
+              key={toothIndex}
+              x={toothX}
+              y={y + 0.32}
+              width={toothWidth}
+              height={connectorHeight - 0.64}
+              rx={0.08}
+            />
+          );
+        })}
+      </g>
+    );
+  }
+
   function interactiveProps(component: LayoutComponent, label: string) {
     const key = pinKeyFor(component);
     if (!selectable || !key || !onSelectPin) return { className: "" };
@@ -151,15 +208,19 @@ export default function VirtualBoard({
           if (component.kind === "header") {
             return (
               <g key={index}>
-                <rect
-                  className="vboard-connector"
-                  x={component.x}
-                  y={component.y}
-                  width={component.w}
-                  height={component.h}
-                  rx={0.6}
-                />
-                {component.label ? (
+                {isBottomEdgeConnector(component) ? (
+                  renderEdgeConnector(component)
+                ) : (
+                  <rect
+                    className="vboard-connector"
+                    x={component.x}
+                    y={component.y}
+                    width={component.w}
+                    height={component.h}
+                    rx={0.6}
+                  />
+                )}
+                {component.label && !isBottomEdgeConnector(component) ? (
                   <text
                     className="vboard-silk"
                     x={component.x + component.w / 2}
@@ -367,7 +428,7 @@ export default function VirtualBoard({
         <div className="vboard-caption">
           {layout.handcrafted
             ? "Stylized layout — placement follows the physical board."
-            : "Generic layout — this board does not have a hand-drawn view yet."}
+            : "Generic Layout."}
         </div>
       ) : null}
     </div>

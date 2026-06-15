@@ -1,0 +1,133 @@
+/* ── Build history ────────────────────────────────────────────────────── */
+
+.build-history-heading {
+  color: var(--dashboard-strong-text, #0f172a);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.build-history-subtle {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.build-history-empty {
+  margin-top: 10px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.build-history-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--dashboard-text, #0f172a);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.build-history-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+
+.build-history-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.build-history-bar-fill.hot {
+  background: linear-gradient(90deg, #f59e0b, #dc2626);
+}
+
+.build-history-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--dashboard-surface-border, #e2e8f0);
+}
+
+.build-history-row-time {
+  color: var(--dashboard-text, #0f172a);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.build-history-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.build-history-dot.success {
+  background: #22c55e;
+}
+
+.build-history-dot.failure {
+  background: #ef4444;
+}
+
+.build-history-failure-note {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme="dark"] .build-history-failure-note,
+html[data-theme="black-ice"] .build-history-failure-note {
+  color: #fca5a5;
+}
+
+.build-history-sparkline {
+  stroke: var(--dashboard-control-active-border, #2563eb);
+}
+
+.build-history-sparkline-dot {
+  fill: var(--dashboard-control-active-border, #2563eb);
+}
+
+/* ── Editor lint chip ─────────────────────────────────────────────────── */
+
+.editor-lint-chip {
+  margin-left: auto;
+  align-self: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.editor-lint-chip.has-errors {
+  background: rgba(220, 38, 38, 0.14);
+  color: #b91c1c;
+}
+
+html[data-theme="dark"] .editor-lint-chip,
+html[data-theme="black-ice"] .editor-lint-chip {
+  color: #fbbf24;
+}
+
+html[data-theme="dark"] .editor-lint-chip.has-errors,
+html[data-theme="black-ice"] .editor-lint-chip.has-errors {
+  color: #fca5a5;
+}
+

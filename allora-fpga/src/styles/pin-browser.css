@@ -1,0 +1,333 @@
+.settings-modal {
+  width: 640px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Single grid drives the whole page: the left column stacks eyebrow, heading
+   and the board list, while the right panel spans from the title row to the
+   bottom so its top aligns with "Board Pinouts". The welcome-main padding is
+   28px top + 36px bottom = 64px. */
+.pin-browser-shell {
+  height: calc(100vh - 64px);
+  min-height: 520px;
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: stretch;
+}
+
+.pin-browser-eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+  margin-bottom: 2px;
+}
+
+.pin-browser-heading {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0 0 18px;
+}
+
+.pin-browser-heading .welcome-title {
+  margin-top: 2px;
+}
+
+.pin-browser-sidebar {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pin-browser-empty-list {
+  padding: 20px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.pin-detail-panel {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pin-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pin-detail-panel h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 850;
+}
+
+.pin-detail-panel p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pin-summary-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pin-browser-view-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 12px;
+  background: var(--ui-control-bg);
+  box-shadow: var(--ui-inset-highlight);
+  padding: 4px;
+}
+
+.pin-browser-view-button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  transition:
+    background var(--ui-motion-base),
+    color var(--ui-motion-base),
+    box-shadow var(--ui-motion-base);
+}
+
+.pin-browser-view-button:hover {
+  background: var(--ui-control-active-bg);
+  color: #2563eb;
+}
+
+.pin-browser-view-button.active {
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.pin-group-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.pin-diagram-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 14px;
+  background: var(--ui-control-bg);
+  box-shadow: var(--ui-inset-highlight);
+  padding: 18px;
+  display: flex;
+}
+
+/* Fill the panel as a column; the SVG flexes to the remaining height and the
+   board scales to fit (preserveAspectRatio meet) so it stays centered without
+   overflowing or scrolling regardless of the board's aspect ratio. */
+.pin-diagram-panel .vboard-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pin-diagram-panel .vboard-svg {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100% !important;
+}
+
+.pin-board-list,
+.pin-group-scroll,
+.pin-diagram-panel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pin-board-list::-webkit-scrollbar,
+.pin-group-scroll::-webkit-scrollbar,
+.pin-diagram-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.pin-browser-empty-state {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  min-height: 0;
+  border-radius: 16px;
+  padding: 48px;
+  color: #64748b;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pin-browser-empty-state div {
+  color: #334155;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.pin-browser-empty-state p {
+  max-width: 400px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+html[data-theme="black-ice"] .pin-detail-panel h2,
+html[data-theme="dark"] .pin-detail-panel h2 {
+  color: #e2e8f0;
+}
+
+html[data-theme="black-ice"] .pin-detail-panel p,
+html[data-theme="dark"] .pin-detail-panel p {
+  color: #94a3b8;
+}
+
+html[data-theme="black-ice"] .pin-browser-view-toggle,
+html[data-theme="dark"] .pin-browser-view-toggle,
+html[data-theme="black-ice"] .pin-diagram-panel,
+html[data-theme="dark"] .pin-diagram-panel {
+  border-color: rgba(148, 163, 184, 0.22);
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.42)),
+    rgba(15, 23, 42, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="black-ice"] .pin-browser-view-button,
+html[data-theme="dark"] .pin-browser-view-button {
+  color: #94a3b8;
+}
+
+html[data-theme="black-ice"] .pin-browser-view-button:hover,
+html[data-theme="dark"] .pin-browser-view-button:hover,
+html[data-theme="black-ice"] .pin-browser-view-button.active,
+html[data-theme="dark"] .pin-browser-view-button.active {
+  background: rgba(37, 99, 235, 0.18);
+  color: #93c5fd;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.26);
+}
+
+html[data-theme="ice"] .pin-browser-view-toggle,
+html[data-theme="ice"] .pin-diagram-panel {
+  border-color: rgba(191, 219, 254, 0.82);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(219, 234, 254, 0.28)),
+    rgba(239, 246, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+html[data-theme="ice"] .pin-browser-view-button.active {
+  background:
+    linear-gradient(180deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 0.55)),
+    rgba(239, 246, 255, 0.82);
+}
+
+@media (max-width: 980px) {
+  .pin-browser-shell {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    row-gap: 12px;
+  }
+
+  .pin-browser-eyebrow,
+  .pin-browser-heading,
+  .pin-browser-sidebar,
+  .pin-detail-panel,
+  .pin-browser-empty-state {
+    grid-column: 1;
+  }
+
+  .pin-browser-eyebrow {
+    grid-row: 1;
+  }
+
+  .pin-browser-heading {
+    grid-row: 2;
+  }
+
+  .pin-browser-sidebar {
+    grid-row: 3;
+    height: min(620px, calc(100vh - 160px));
+  }
+
+  .pin-detail-panel,
+  .pin-browser-empty-state {
+    grid-row: 4;
+    height: min(620px, calc(100vh - 160px));
+  }
+}
+
+@media (max-width: 720px) {
+  .pin-detail-header {
+    flex-direction: column;
+  }
+
+  .pin-browser-view-toggle {
+    width: 100%;
+  }
+
+  .pin-browser-view-button {
+    flex: 1;
+  }
+}

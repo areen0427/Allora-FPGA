@@ -1,0 +1,43 @@
+html:is([data-theme="dark"], [data-theme="black-ice"]) .welcome-title,
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .welcome-section-header
+  h2,
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .recent-projects-header
+  h2 {
+  color: #f8fafc !important;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .welcome-eyebrow,
+html:is([data-theme="dark"], [data-theme="black-ice"]) .welcome-subtitle,
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .welcome-section-header
+  p,
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .recent-projects-header
+  p {
+  color: #cbd5e1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-page *,
+  .glass-page *::before,
+  .glass-page *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .board-card:hover,
+  .variant-card:hover,
+  .pin-board-item:hover,
+  .template-card:hover,
+  .synthesis-generate-button:not(:disabled):hover,
+  .project-create-button:hover,
+  .project-setup-back:hover,
+  .project-location-card button:hover:not(:disabled),
+  .variant-modal-header button:hover {
+    transform: none !important;
+  }
+}
