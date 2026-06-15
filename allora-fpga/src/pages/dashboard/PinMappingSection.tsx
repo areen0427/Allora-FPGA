@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../../data/boards";
+import DashboardSurfaceCard from "./DashboardSurfaceCard";
 import InfoCard from "./InfoCard";
 import VirtualBoard from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
@@ -648,13 +649,11 @@ function ResourcePinMapper({
                 gap: "12px",
               }}
             >
-              <div
+              <DashboardSurfaceCard
                 className="pin-map-assignment-card pin-map-current-assignment-card"
                 style={{
                   flexShrink: 0,
-                  border: "1px solid #e2e8f0",
                   borderRadius: "16px",
-                  color: "var(--dashboard-text, #0f172a)",
                   padding: "14px",
                 }}
               >
@@ -716,14 +715,13 @@ function ResourcePinMapper({
                     <PinInspectorFact label="I/O" value="LVCMOS33" />
                   </div>
                 ) : null}
-              </div>
+              </DashboardSurfaceCard>
 
-              <div
+              <DashboardSurfaceCard
                 className="pin-map-resource-card pin-map-validation-card"
                 style={{
                   flex: "1 1 auto",
                   minHeight: 0,
-                  border: "1px solid #e2e8f0",
                   borderRadius: "16px",
                   padding: "14px",
                   overflow: "hidden",
@@ -806,7 +804,7 @@ function ResourcePinMapper({
                     ))
                   )}
                 </div>
-              </div>
+              </DashboardSurfaceCard>
             </div>
           </div>
         </>
@@ -1033,17 +1031,15 @@ function ConstraintPreview({
   compact?: boolean;
 }) {
   return (
-    <div
+    <DashboardSurfaceCard
       className="pin-map-preview-card"
       style={{
         flex: compact ? "1 1 0" : undefined,
         minHeight: compact ? 0 : "100%",
-        border: "1px solid #e2e8f0",
         borderRadius: "16px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        background: "#ffffff",
       }}
     >
       <div
@@ -1081,7 +1077,7 @@ function ConstraintPreview({
       >
         {constraintPreview}
       </pre>
-    </div>
+    </DashboardSurfaceCard>
   );
 }
 
@@ -1146,10 +1142,9 @@ function ResourceGroupCard({
   onAssignPin: (pinKey: string) => void;
 }) {
   return (
-    <div
+    <DashboardSurfaceCard
       className="pin-map-resource-card"
       style={{
-        border: "1px solid #e2e8f0",
         borderRadius: "16px",
         padding: "14px",
         minWidth: 0,
@@ -1254,7 +1249,7 @@ function ResourceGroupCard({
           );
         })}
       </div>
-    </div>
+    </DashboardSurfaceCard>
   );
 }
 

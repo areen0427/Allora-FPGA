@@ -805,6 +805,7 @@ html:is([data-theme="ice"], [data-theme="black-ice"])
     .project-summary-item,
     .template-card,
     .template-inspector,
+    .dashboard-surface-card,
     .pin-map-resource-card,
     .pin-map-assignment-card,
     .pin-map-preview-card,
@@ -833,6 +834,7 @@ html:is([data-theme="ice"], [data-theme="black-ice"])
     .project-summary-item,
     .template-card,
     .template-inspector,
+    .dashboard-surface-card,
     .pin-map-resource-card,
     .pin-map-assignment-card,
     .pin-map-preview-card,
@@ -874,6 +876,7 @@ html[data-theme="black-ice"]
     .project-summary-item,
     .template-card,
     .template-inspector,
+    .dashboard-surface-card,
     .pin-map-resource-card,
     .pin-map-assignment-card,
     .pin-map-preview-card,
@@ -889,6 +892,9 @@ html[data-theme="black-ice"]
   opacity: 0.92;
 }
 
+/* Shared dashboard card surface. New dashboard cards should use this class
+   and keep only layout-specific values inline. */
+.dashboard-surface-card,
 .pin-map-resource-card,
 .pin-map-assignment-card,
 .pin-map-preview-card,
@@ -899,13 +905,6 @@ html[data-theme="black-ice"]
   background: var(--dashboard-surface-bg) !important;
   box-shadow: var(--dashboard-surface-shadow) !important;
   color: var(--dashboard-text) !important;
-}
-
-html[data-theme="black-ice"] .pin-map-current-assignment-card,
-html[data-theme="black-ice"] .pin-map-validation-card {
-  border-color: var(--dashboard-surface-border) !important;
-  background: var(--dashboard-surface-bg) !important;
-  box-shadow: var(--dashboard-surface-shadow) !important;
 }
 
 .pin-map-resource-button {
