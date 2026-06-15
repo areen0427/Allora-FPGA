@@ -901,6 +901,13 @@ html[data-theme="black-ice"]
   color: var(--dashboard-text) !important;
 }
 
+html[data-theme="black-ice"] .pin-map-current-assignment-card,
+html[data-theme="black-ice"] .pin-map-validation-card {
+  border-color: var(--dashboard-surface-border) !important;
+  background: var(--dashboard-surface-bg) !important;
+  box-shadow: var(--dashboard-surface-shadow) !important;
+}
+
 .pin-map-resource-button {
   border-color: var(--dashboard-control-border) !important;
   background: var(--dashboard-control-bg) !important;
@@ -949,4 +956,38 @@ html[data-theme="black-ice"]
 .pin-map-preview-card,
 .pin-map-preview-code {
   color: var(--dashboard-preview-text) !important;
+}
+
+.pin-map-detail-box {
+  border: 1px solid var(--dashboard-control-border);
+  background: var(--dashboard-control-bg);
+  box-shadow: var(--ui-control-shadow);
+  color: var(--dashboard-text) !important;
+}
+
+.pin-map-detail-box div {
+  color: inherit !important;
+}
+
+.pin-map-validation-message.warning {
+  border-color: rgba(251, 191, 36, 0.5);
+  color: #92400e !important;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"])
+  .pin-map-validation-message.warning {
+  color: #fde68a !important;
+}
+
+.pin-resource-list,
+.pin-map-preview-code,
+.pin-map-assignment-card {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pin-resource-list::-webkit-scrollbar,
+.pin-map-preview-code::-webkit-scrollbar,
+.pin-map-assignment-card::-webkit-scrollbar {
+  display: none;
 }

@@ -10,7 +10,7 @@ import {
   type HdlPort,
 } from "./pinMappingUtils";
 
-type PinMappingMode = "simple" | "advanced" | "board";
+type PinMappingMode = "simple" | "advanced";
 
 type PinMappingSectionProps = {
   board: BoardDefinition;
@@ -106,7 +106,7 @@ export default function PinMappingSection({
                 background: "#f1f5f9",
               }}
             >
-              {(["simple", "advanced", "board"] as const).map((option) => (
+              {(["simple", "advanced"] as const).map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -189,15 +189,6 @@ export default function PinMappingSection({
             board={board}
             ports={ports}
             suggestedMappings={suggestedMappings}
-            getSelectedPin={getSelectedPin}
-            setPortMapping={setPortMapping}
-          />
-        ) : mode === "board" ? (
-          <BoardPinMapper
-            board={board}
-            ports={ports}
-            selectedPortName={selectedPortName}
-            setSelectedPortName={setSelectedPortName}
             getSelectedPin={getSelectedPin}
             setPortMapping={setPortMapping}
           />
@@ -385,133 +376,6 @@ function SimplePinMapper({
   );
 }
 
-function BoardPinMapper({
-  board,
-  ports,
-  selectedPortName,
-  setSelectedPortName,
-  getSelectedPin,
-  setPortMapping,
-}: {
-  board: BoardDefinition;
-  ports: HdlPort[];
-  selectedPortName: string | null;
-  setSelectedPortName: (portName: string | null) => void;
-  getSelectedPin: (portName: string) => string;
-  setPortMapping: (portName: string, pinKey: string) => void;
-}) {
-  const selectedPort =
-    ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
-  const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
-  const pinOptions = getPinOptions(board);
-  const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
-  const mappedPinKeys = ports
-    .map((port) => getSelectedPin(port.name))
-    .filter(Boolean);
-  const mappedCount = mappedPinKeys.length;
-
-  function assignPin(pinKey: string) {
-    if (!selectedPort) return;
-    setPortMapping(selectedPort.name, pinKey);
-
-    // Move on to the next unmapped port so a whole module can be mapped
-    // with consecutive clicks on the board.
-    const currentIndex = ports.findIndex(
-      (port) => port.name === selectedPort.name,
-    );
-    const nextUnmapped =
-      ports
-        .slice(currentIndex + 1)
-        .find((port) => !getSelectedPin(port.name)) ??
-      ports.find(
-        (port) => port.name !== selectedPort.name && !getSelectedPin(port.name),
-      );
-    if (nextUnmapped) {
-      setSelectedPortName(nextUnmapped.name);
-    }
-  }
-
-  if (ports.length === 0) {
-    return <EmptyPortState />;
-  }
-
-  return (
-    <div
-      style={{
-        marginTop: "18px",
-        flex: "1 1 auto",
-        minHeight: 0,
-        display: "grid",
-        gridTemplateRows: "auto minmax(0, 1fr)",
-        gap: "14px",
-        overflow: "auto",
-      }}
-    >
-      <div
-        className="pin-map-assignment-card"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) auto",
-          gap: "12px",
-          alignItems: "center",
-          padding: "12px",
-          border: "1px solid var(--dashboard-surface-border, #e2e8f0)",
-          borderRadius: "16px",
-          background: "var(--dashboard-surface-bg, #f8fafc)",
-        }}
-      >
-        <select
-          value={selectedPort?.name ?? ""}
-          onChange={(event) => setSelectedPortName(event.target.value)}
-          style={{
-            width: "100%",
-            minWidth: 0,
-            border: "1px solid #cbd5e1",
-            borderRadius: "12px",
-            background: "#ffffff",
-            color: "#0f172a",
-            padding: "10px 12px",
-            fontSize: "14px",
-            fontWeight: 800,
-          }}
-        >
-          {ports.map((port) => (
-            <option key={port.name} value={port.name}>
-              {port.name} - {port.direction}
-              {getSelectedPin(port.name) ? " ✓" : ""}
-            </option>
-          ))}
-        </select>
-
-        <div
-          style={{
-            color: "var(--dashboard-muted-text, #64748b)",
-            fontSize: "12px",
-            fontWeight: 850,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {mappedCount}/{ports.length} mapped ·{" "}
-          {selectedPinOption
-            ? selectedPinOption.shortLabel
-            : "click a component"}
-        </div>
-      </div>
-
-      <div style={{ minHeight: 0, overflow: "auto" }}>
-        <VirtualBoard
-          board={board}
-          selectable
-          selectedPinKey={selectedPin || null}
-          mappedPinKeys={mappedPinKeys}
-          onSelectPin={assignPin}
-          maxHeight={460}
-        />
-      </div>
-    </div>
-  );
-}
-
 function ResourcePinMapper({
   board,
   ports,
@@ -531,6 +395,7 @@ function ResourcePinMapper({
     ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
   const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
   const pinOptions = getPinOptions(board);
+  const pinOptionMap = new Map(pinOptions.map((pin) => [pin.key, pin]));
   const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
   const mappedPorts = ports.filter((port) => getSelectedPin(port.name));
   const resourceGroups = getResourceGroups(board);
@@ -539,6 +404,37 @@ function ResourcePinMapper({
     ports,
     getSelectedPin,
   );
+  const [view, setView] = useState<
+    "assignments" | "resources" | "board" | "constraints"
+  >("assignments");
+  const [search, setSearch] = useState("");
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredPorts = normalizedSearch
+    ? ports.filter((port) => {
+        const pin = pinOptionMap.get(getSelectedPin(port.name));
+        return [port.name, port.direction, pin?.label, pin?.pin, pin?.type]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLowerCase().includes(normalizedSearch),
+          );
+      })
+    : ports;
+  const filteredResourceGroups = normalizedSearch
+    ? resourceGroups
+        .map((group) => ({
+          ...group,
+          pins: group.pins.filter((pin) =>
+            [group.title, group.detail, pin.name, pin.pin, pin.type, pin.detail]
+              .filter(Boolean)
+              .some((value) =>
+                String(value).toLowerCase().includes(normalizedSearch),
+              ),
+          ),
+        }))
+        .filter((group) => group.pins.length > 0)
+    : resourceGroups;
+  const validationItems = createPinMappingValidation(ports, getSelectedPin);
+  const mappedPinKeys = mappedPorts.map((port) => getSelectedPin(port.name));
 
   function assignPin(pinKey: string) {
     if (!selectedPort) return;
@@ -549,11 +445,14 @@ function ResourcePinMapper({
     <div
       style={{
         marginTop: "18px",
-        flex: "1 1 auto",
+        // Pure flexbox column down to the scrollable list. The system WKWebView
+        // (Tauri) does not reliably propagate available height through a grid
+        // minmax(0, 1fr) row sized by a flex parent, which left the pin list
+        // unbounded; flexbox height propagation is handled correctly there.
+        flex: "1 1 0",
         minHeight: 0,
-        display: "grid",
-        gridTemplateRows:
-          ports.length === 0 ? "auto" : "auto minmax(0, 1fr) auto",
+        display: "flex",
+        flexDirection: "column",
         gap: "14px",
       }}
     >
@@ -563,8 +462,9 @@ function ResourcePinMapper({
         <>
           <div
             style={{
+              flexShrink: 0,
               display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) auto",
+              gridTemplateColumns: "minmax(220px, 0.8fr) minmax(260px, 1fr) auto",
               gap: "12px",
               alignItems: "center",
               padding: "12px",
@@ -595,6 +495,32 @@ function ResourcePinMapper({
               ))}
             </select>
 
+            <label
+              style={{
+                minWidth: 0,
+                display: "block",
+              }}
+            >
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search ports, pins, resources"
+                type="search"
+                style={{
+                  width: "100%",
+                  minWidth: 0,
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "12px",
+                  background: "#ffffff",
+                  color: "#0f172a",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  fontWeight: 750,
+                  boxSizing: "border-box",
+                }}
+              />
+            </label>
+
             <div
               style={{
                 color: "#64748b",
@@ -610,49 +536,124 @@ function ResourcePinMapper({
 
           <div
             style={{
+              flexShrink: 0,
+              display: "flex",
+              gap: "6px",
+              flexWrap: "wrap",
+            }}
+          >
+            {(
+              [
+                ["assignments", "Assignments"],
+                ["resources", "Resources"],
+                ["board", "Board"],
+                ["constraints", "Constraints"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setView(key)}
+                style={{
+                  border:
+                    view === key ? "1px solid #2563eb" : "1px solid #dbe4f0",
+                  borderRadius: "11px",
+                  background: view === key ? "#eff6ff" : "#ffffff",
+                  color: view === key ? "#2563eb" : "#475569",
+                  padding: "8px 11px",
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div
+            style={{
+              flex: "1 1 0",
               minHeight: 0,
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1.35fr) minmax(280px, 0.65fr)",
+              display: "flex",
+              flexDirection: "row",
               gap: "14px",
               overflow: "hidden",
             }}
           >
             <div
+              className="pin-resource-list"
               style={{
+                flex: "1.35 1 0",
+                minWidth: 0,
                 minHeight: 0,
                 overflow: "auto",
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "12px",
                 paddingRight: "4px",
-                alignContent: "start",
               }}
             >
-              {resourceGroups.map((group) => (
-                <ResourceGroupCard
-                  key={group.title}
-                  group={group}
-                  selectedPin={selectedPin}
-                  selectedPort={selectedPort}
-                  onAssignPin={assignPin}
+              {view === "assignments" ? (
+                <AdvancedAssignmentTable
+                  ports={filteredPorts}
+                  pinOptions={pinOptions}
+                  pinOptionMap={pinOptionMap}
+                  selectedPortName={selectedPort?.name ?? null}
+                  getSelectedPin={getSelectedPin}
+                  setPortMapping={setPortMapping}
+                  setSelectedPortName={setSelectedPortName}
                 />
-              ))}
+              ) : view === "resources" ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: "12px",
+                    alignContent: "start",
+                  }}
+                >
+                  {filteredResourceGroups.map((group) => (
+                    <ResourceGroupCard
+                      key={group.title}
+                      group={group}
+                      selectedPin={selectedPin}
+                      selectedPort={selectedPort}
+                      onAssignPin={assignPin}
+                    />
+                  ))}
+                </div>
+              ) : view === "board" ? (
+                <VirtualBoard
+                  board={board}
+                  selectable
+                  selectedPinKey={selectedPin || null}
+                  mappedPinKeys={mappedPinKeys}
+                  onSelectPin={assignPin}
+                  maxHeight={520}
+                />
+              ) : (
+                <ConstraintPreview
+                  constraintPreview={constraintPreview}
+                  mappedCount={mappedPorts.length}
+                  totalCount={ports.length}
+                />
+              )}
             </div>
 
             <div
               style={{
+                flex: "0.65 1 0",
+                minWidth: "280px",
                 minHeight: 0,
-                display: "grid",
-                gridTemplateRows: "auto minmax(0, 1fr)",
+                display: "flex",
+                flexDirection: "column",
                 gap: "12px",
               }}
             >
               <div
-                className="pin-map-assignment-card"
+                className="pin-map-assignment-card pin-map-current-assignment-card"
                 style={{
-                  border: "1px solid var(--dashboard-surface-border, #e2e8f0)",
+                  flexShrink: 0,
+                  border: "1px solid #e2e8f0",
                   borderRadius: "16px",
-                  background: "var(--dashboard-surface-bg, #ffffff)",
                   color: "var(--dashboard-text, #0f172a)",
                   padding: "14px",
                 }}
@@ -694,52 +695,117 @@ function ResourcePinMapper({
                     ? selectedPinOption.label
                     : "Choose a board resource to map this port."}
                 </div>
+                {selectedPinOption ? (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: "8px",
+                    }}
+                  >
+                    <PinInspectorFact label="Pad" value={selectedPinOption.pin} />
+                    <PinInspectorFact
+                      label="Type"
+                      value={selectedPinOption.type.toUpperCase()}
+                    />
+                    <PinInspectorFact
+                      label="Format"
+                      value={`.${board.constraintsFile}`}
+                    />
+                    <PinInspectorFact label="I/O" value="LVCMOS33" />
+                  </div>
+                ) : null}
               </div>
 
               <div
-                className="pin-map-preview-card"
+                className="pin-map-resource-card pin-map-validation-card"
                 style={{
+                  flex: "1 1 auto",
                   minHeight: 0,
                   border: "1px solid #e2e8f0",
                   borderRadius: "16px",
+                  padding: "14px",
                   overflow: "hidden",
-                  display: "grid",
-                  gridTemplateRows: "auto minmax(0, 1fr)",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <div
-                  className="pin-map-preview-header"
                   style={{
-                    padding: "12px 14px",
-                    borderBottom: "1px solid rgba(148,163,184,0.22)",
                     display: "flex",
                     justifyContent: "space-between",
                     gap: "10px",
-                    fontSize: "12px",
-                    fontWeight: 900,
+                    alignItems: "center",
                   }}
                 >
-                  <span>Constraint Preview</span>
                   <span>
-                    {mappedPorts.length}/{ports.length}
+                    <span
+                      style={{
+                        color: "#0f172a",
+                        fontSize: "13px",
+                        fontWeight: 900,
+                      }}
+                    >
+                      Validation
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      color:
+                        validationItems.length === 0 ? "#15803d" : "#b45309",
+                      fontSize: "12px",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {validationItems.length === 0
+                      ? "Clean"
+                      : `${validationItems.length} item${
+                          validationItems.length === 1 ? "" : "s"
+                        }`}
                   </span>
                 </div>
-                <pre
-                  className="pin-map-preview-code"
+
+                <div
                   style={{
-                    margin: 0,
+                    marginTop: "10px",
+                    display: "grid",
+                    gap: "8px",
                     minHeight: 0,
                     overflow: "auto",
-                    padding: "14px",
-                    fontSize: "12px",
-                    lineHeight: 1.5,
-                    whiteSpace: "pre-wrap",
-                    fontFamily:
-                      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                   }}
                 >
-                  {constraintPreview}
-                </pre>
+                  {validationItems.length === 0 ? (
+                    <div
+                      className="pin-map-detail-box pin-map-validation-message success"
+                      style={{
+                        borderRadius: "12px",
+                        padding: "10px",
+                        fontSize: "12px",
+                        fontWeight: 800,
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      All detected ports have unique assignments.
+                    </div>
+                  ) : (
+                    validationItems.map((item) => (
+                      <div
+                        className="pin-map-detail-box pin-map-validation-message warning"
+                        key={`${item.kind}:${item.message}`}
+                        style={{
+                          borderRadius: "12px",
+                          padding: "10px",
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {item.message}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -747,6 +813,313 @@ function ResourcePinMapper({
       )}
     </div>
   );
+}
+
+type PinOption = ReturnType<typeof getPinOptions>[number];
+
+function AdvancedAssignmentTable({
+  ports,
+  pinOptions,
+  pinOptionMap,
+  selectedPortName,
+  getSelectedPin,
+  setPortMapping,
+  setSelectedPortName,
+}: {
+  ports: HdlPort[];
+  pinOptions: PinOption[];
+  pinOptionMap: Map<string, PinOption>;
+  selectedPortName: string | null;
+  getSelectedPin: (portName: string) => string;
+  setPortMapping: (portName: string, pinKey: string) => void;
+  setSelectedPortName: (portName: string | null) => void;
+}) {
+  if (ports.length === 0) {
+    return (
+      <div
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: "16px",
+          background: "#f8fafc",
+          color: "#64748b",
+          padding: "18px",
+          fontSize: "13px",
+          fontWeight: 800,
+        }}
+      >
+        No matching ports.
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        minWidth: "720px",
+        border: "1px solid #dbe4f0",
+        borderRadius: "16px",
+        overflow: "hidden",
+        background: "#ffffff",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
+          gap: "12px",
+          padding: "11px 14px",
+          background: "#eef2f7",
+          borderBottom: "1px solid #dbe4f0",
+          color: "#64748b",
+          fontSize: "11px",
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        }}
+      >
+        <div>Port</div>
+        <div>Direction</div>
+        <div>Assignment</div>
+        <div>Status</div>
+      </div>
+
+      {ports.map((port) => {
+        const selectedPin = getSelectedPin(port.name);
+        const pin = selectedPin ? pinOptionMap.get(selectedPin) : null;
+        const active = selectedPortName === port.name;
+
+        return (
+          <div
+            key={port.name}
+            role="button"
+            tabIndex={0}
+            onClick={() => setSelectedPortName(port.name)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setSelectedPortName(port.name);
+              }
+            }}
+            style={{
+              width: "100%",
+              border: "none",
+              borderTop: "1px solid #e2e8f0",
+              background: active ? "#eff6ff" : "#ffffff",
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
+              gap: "12px",
+              alignItems: "center",
+              padding: "12px 14px",
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+          >
+            <div
+              style={{
+                minWidth: 0,
+                color: active ? "#2563eb" : "#0f172a",
+                fontSize: "14px",
+                fontWeight: 900,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {port.name}
+            </div>
+            <div
+              style={{
+                color: "#475569",
+                fontSize: "13px",
+                fontWeight: 850,
+                textTransform: "capitalize",
+              }}
+            >
+              {port.direction}
+            </div>
+            <select
+              value={selectedPin}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                setPortMapping(port.name, event.target.value)
+              }
+              style={{
+                width: "100%",
+                minWidth: 0,
+                border: "1px solid #cbd5e1",
+                borderRadius: "11px",
+                background: "#ffffff",
+                color: "#0f172a",
+                padding: "9px 10px",
+                fontSize: "13px",
+                fontWeight: 750,
+              }}
+            >
+              <option value="">Unmapped</option>
+              {pinOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <span
+              style={{
+                justifySelf: "start",
+                borderRadius: "999px",
+                background: pin ? "#f0fdf4" : "#f8fafc",
+                color: pin ? "#15803d" : "#64748b",
+                border: pin ? "1px solid #bbf7d0" : "1px solid #dbe4f0",
+                padding: "4px 8px",
+                fontSize: "11px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {pin ? "Mapped" : "Open"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PinInspectorFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="pin-map-detail-box"
+      style={{
+        minWidth: 0,
+        border: "1px solid #e2e8f0",
+        borderRadius: "11px",
+        background: "#f8fafc",
+        padding: "8px",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: "10px",
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: "3px",
+          color: "#0f172a",
+          fontSize: "12px",
+          fontWeight: 900,
+          overflowWrap: "anywhere",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ConstraintPreview({
+  constraintPreview,
+  mappedCount,
+  totalCount,
+  compact = false,
+}: {
+  constraintPreview: string;
+  mappedCount: number;
+  totalCount: number;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className="pin-map-preview-card"
+      style={{
+        flex: compact ? "1 1 0" : undefined,
+        minHeight: compact ? 0 : "100%",
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        background: "#ffffff",
+      }}
+    >
+      <div
+        className="pin-map-preview-header"
+        style={{
+          flexShrink: 0,
+          padding: "12px 14px",
+          borderBottom: "1px solid rgba(148,163,184,0.22)",
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "10px",
+          fontSize: "12px",
+          fontWeight: 900,
+        }}
+      >
+        <span>Constraint Preview</span>
+        <span>
+          {mappedCount}/{totalCount}
+        </span>
+      </div>
+      <pre
+        className="pin-map-preview-code"
+        style={{
+          flex: "1 1 0",
+          margin: 0,
+          minHeight: compact ? 0 : "420px",
+          overflow: "auto",
+          padding: "14px",
+          fontSize: "12px",
+          lineHeight: 1.5,
+          whiteSpace: "pre-wrap",
+          fontFamily:
+            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        }}
+      >
+        {constraintPreview}
+      </pre>
+    </div>
+  );
+}
+
+function createPinMappingValidation(
+  ports: HdlPort[],
+  getSelectedPin: (portName: string) => string,
+) {
+  const items: Array<{ kind: "warning" | "info"; message: string }> = [];
+  const pinToPorts = new Map<string, string[]>();
+  const unmapped = ports.filter((port) => !getSelectedPin(port.name));
+
+  for (const port of ports) {
+    const pinKey = getSelectedPin(port.name);
+    if (!pinKey) continue;
+    const mapped = pinToPorts.get(pinKey) ?? [];
+    mapped.push(port.name);
+    pinToPorts.set(pinKey, mapped);
+  }
+
+  if (unmapped.length > 0) {
+    items.push({
+      kind: "info",
+      message: `${unmapped.length} port${
+        unmapped.length === 1 ? "" : "s"
+      } still unmapped.`,
+    });
+  }
+
+  for (const [pinKey, mappedPorts] of pinToPorts) {
+    if (mappedPorts.length <= 1) continue;
+    const physicalPin = pinKey.split(":").at(-1) ?? pinKey;
+    items.push({
+      kind: "warning",
+      message: `${physicalPin} is assigned to ${mappedPorts.join(", ")}.`,
+    });
+  }
+
+  return items;
 }
 type ResourceGroup = {
   title: string;
