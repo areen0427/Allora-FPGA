@@ -189,10 +189,10 @@ export default function BitstreamSection({
           timestamp: new Date().toISOString(),
           durationMs: Date.now() - startedAt,
         });
+        await onAddArtifact?.({ fileName, content });
         if (projectPath) {
           await persistBuildHistory(projectPath, content);
         }
-        await onAddArtifact?.({ fileName, content });
       } catch {
         // Build history is best-effort; never fail the build because of it.
       }

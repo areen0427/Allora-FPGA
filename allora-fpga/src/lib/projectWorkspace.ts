@@ -157,7 +157,10 @@ function buildStarterFiles({
   let sourceContent = createStarterSource({ topModule, board, language });
   let constraintsContent = createConstraintsTemplate(board, topModule);
 
-  if (template?.generate && language !== "VHDL") {
+  if (template?.id === "empty") {
+    sourceContent = createEmptySource({ topModule, language });
+    constraintsContent = createEmptyConstraints(board, topModule);
+  } else if (template?.generate && language !== "VHDL") {
     const generated = template.generate({ board, topModule });
     sourceContent = generated.source;
     constraintsContent = createConstraintLines(
@@ -192,6 +195,39 @@ function buildStarterFiles({
       ),
     },
   ];
+}
+
+function createEmptySource({
+  topModule,
+  language,
+}: {
+  topModule: string;
+  language: "Verilog" | "SystemVerilog" | "VHDL";
+}) {
+  if (language === "VHDL") {
+    return [
+      "library ieee;",
+      "use ieee.std_logic_1164.all;",
+      "",
+      `entity ${topModule} is`,
+      "end entity;",
+      "",
+      `architecture rtl of ${topModule} is`,
+      "begin",
+      "end architecture;",
+      "",
+    ].join("\n");
+  }
+
+  return [`module ${topModule};`, "", "endmodule", ""].join("\n");
+}
+
+function createEmptyConstraints(board: BoardDefinition, topModule: string) {
+  return [
+    `# ${board.name} constraints for ${topModule}`,
+    "# Add PACKAGE_PIN / set_io / LOCATE assignments as your design grows.",
+    "",
+  ].join("\n");
 }
 
 function createStarterSource({

@@ -89,10 +89,14 @@ export function parseBuildMetrics(logs: string[]) {
 
 const RESOURCE_LABELS: Array<{ pattern: RegExp; label: string }> = [
   {
-    pattern: /^(ICESTORM_LC|TRELLIS_SLICE|TRELLIS_COMB|SLICE)$/,
-    label: "Logic",
+    pattern: /^(ICESTORM_LC|TRELLIS_SLICE|TRELLIS_COMB|SLICE|LUT[0-9]?|LUTS?)$/,
+    label: "LUT",
   },
-  { pattern: /^(ICESTORM_RAM|DP16KD|EBR)$/, label: "Block RAM" },
+  {
+    pattern: /^(TRELLIS_FF|DFF|DFFE|FF|REGISTERS?|FLIP[-_ ]?FLOPS?)$/,
+    label: "FF",
+  },
+  { pattern: /^(ICESTORM_RAM|DP16KD|EBR|BRAM|BLOCKRAM|BLOCK_RAM)$/, label: "BRAM" },
   { pattern: /^(ICESTORM_DSP|MULT18X18D|DSP)$/, label: "DSP" },
   { pattern: /^(ICESTORM_PLL|EHXPLLL|PLL)$/, label: "PLL" },
   { pattern: /^(SB_IO|TRELLIS_IO|IO)$/, label: "I/O" },

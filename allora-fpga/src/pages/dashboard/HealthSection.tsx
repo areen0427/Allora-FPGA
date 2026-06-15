@@ -21,6 +21,15 @@ type HealthMetric = {
   detail: string;
 };
 
+type ParsedBuildReport = {
+  timing?: string;
+  timingDetail?: string;
+  maxFrequency?: string;
+  maxFrequencyDetail?: string;
+  utilization?: string;
+  utilizationDetail?: string;
+};
+
 export default function HealthSection({
   board,
   files,
@@ -34,7 +43,11 @@ export default function HealthSection({
   const bitstreamFile = files.find((file) =>
     /\.(bit|bin|fs|svf|jed)$/i.test(file.name),
   );
-  const buildReport = parseBuildReports(files);
+  const buildRecords = readBuildHistory(files);
+  const buildReport = combineBuildReports(
+    getLatestBuildHistoryReport(buildRecords),
+    parseBuildReports(files),
+  );
   const bitstreamSize = bitstreamFile
     ? formatBytes(
         bitstreamFile.isBinary
@@ -463,7 +476,79 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function parseBuildReports(files: ProjectFile[]) {
+function combineBuildReports(
+  historyReport: ParsedBuildReport,
+  fileReport: ParsedBuildReport,
+): ParsedBuildReport {
+  return {
+    timing: historyReport.timing ?? fileReport.timing,
+    timingDetail: historyReport.timingDetail ?? fileReport.timingDetail,
+    maxFrequency: historyReport.maxFrequency ?? fileReport.maxFrequency,
+    maxFrequencyDetail:
+      historyReport.maxFrequencyDetail ?? fileReport.maxFrequencyDetail,
+    utilization: historyReport.utilization ?? fileReport.utilization,
+    utilizationDetail:
+      historyReport.utilizationDetail ?? fileReport.utilizationDetail,
+  };
+}
+
+function getLatestBuildHistoryReport(records: BuildRecord[]): ParsedBuildReport {
+  const record = [...records]
+    .reverse()
+    .find(
+      (candidate) =>
+        candidate.timingPass !== undefined ||
+        typeof candidate.fmaxMhz === "number" ||
+        (candidate.utilization?.length ?? 0) > 0,
+    );
+
+  if (!record) return {};
+
+  const utilization = formatBuildUtilization(record.utilization ?? []);
+
+  return {
+    timing:
+      record.timingPass === undefined
+        ? undefined
+        : record.timingPass
+          ? "Met"
+          : "Failed",
+    timingDetail:
+      record.timingPass === undefined
+        ? undefined
+        : "Parsed from latest bitstream build",
+    maxFrequency:
+      typeof record.fmaxMhz === "number"
+        ? `${record.fmaxMhz.toFixed(2)} MHz`
+        : undefined,
+    maxFrequencyDetail:
+      typeof record.fmaxMhz === "number"
+        ? "Parsed from latest bitstream build"
+        : undefined,
+    utilization,
+    utilizationDetail: utilization
+      ? "Parsed from latest bitstream build"
+      : undefined,
+  };
+}
+
+function formatBuildUtilization(entries: BuildRecord["utilization"]) {
+  const displayEntries = getDisplayUtilization(entries ?? []);
+  if (displayEntries.length === 0) return undefined;
+
+  return displayEntries
+    .slice(0, 4)
+    .map((entry) => {
+      const percent = (entry.used / entry.total) * 100;
+      const percentText = Number.isFinite(percent)
+        ? ` (${percent.toFixed(percent < 10 ? 1 : 0)}%)`
+        : "";
+      return `${entry.label} ${entry.used.toLocaleString()}/${entry.total.toLocaleString()}${percentText}`;
+    })
+    .join(" / ");
+}
+
+function parseBuildReports(files: ProjectFile[]): ParsedBuildReport {
   const reportText = files
     .filter((file) => /\.(log|rpt|report|txt|json)$/i.test(file.name))
     .map((file) => file.content)

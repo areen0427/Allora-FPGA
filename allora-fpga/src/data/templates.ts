@@ -321,6 +321,14 @@ function generateUartHello({
 
 export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
+    id: "empty",
+    name: "Empty Project",
+    description:
+      "Creates a bare top-level file and constraints placeholder for custom designs.",
+    languages: ["Verilog", "SystemVerilog", "VHDL"],
+    unavailableReason: () => null,
+  },
+  {
     id: "blinky",
     name: "Blinky",
     description:

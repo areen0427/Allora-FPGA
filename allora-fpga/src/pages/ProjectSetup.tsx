@@ -1,25 +1,28 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  CheckCircle2,
+  Cpu,
+  FileCode2,
+  FolderOpen,
+  Layers3,
+  Lightbulb,
+  ListChecks,
+  MemoryStick,
+  Zap,
+} from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
+import { getBoardCapabilities } from "../data/boardCapabilities";
 import type { AppSettings } from "../data/settings";
 import {
   PROJECT_TEMPLATES,
+  getTemplateById,
   getTemplateUnavailableReason,
   type TemplateLanguage,
 } from "../data/templates";
+import VirtualBoard from "../components/VirtualBoard";
 import { hasTauriInvoke } from "../lib/tauri";
 import { pickProjectParentDirectory } from "../lib/projectWorkspace";
-
-const formControlStyle = {
-  width: "100%",
-  marginTop: "10px",
-  minHeight: "56px",
-  height: "56px",
-  padding: "0 16px",
-  borderRadius: "14px",
-  border: "1px solid #cbd5e1",
-  fontSize: "16px",
-  boxSizing: "border-box" as const,
-};
 
 type ProjectSetupProps = {
   board: BoardDefinition;
@@ -49,6 +52,12 @@ export default function ProjectSetup({
   const [parentDirectory, setParentDirectory] = useState<string | null>(null);
   const [isChoosingLocation, setIsChoosingLocation] = useState(false);
   const [templateId, setTemplateId] = useState("blinky");
+  const capabilities = useMemo(() => getBoardCapabilities(board), [board]);
+  const selectedTemplate = getTemplateById(templateId) ?? PROJECT_TEMPLATES[0];
+  const projectPlan = getProjectPlan(projectName, language, board);
+  const availableTemplateCount = PROJECT_TEMPLATES.filter(
+    (template) => !getTemplateUnavailableReason(template, board, language),
+  ).length;
 
   function changeLanguage(nextLanguage: TemplateLanguage) {
     setLanguage(nextLanguage);
@@ -63,236 +72,310 @@ export default function ProjectSetup({
     }
   }
 
+  async function chooseLocation() {
+    if (!hasTauriInvoke() || isChoosingLocation) return;
+    setIsChoosingLocation(true);
+    try {
+      const nextDirectory = await pickProjectParentDirectory();
+      if (nextDirectory) {
+        setParentDirectory(nextDirectory);
+      }
+    } finally {
+      setIsChoosingLocation(false);
+    }
+  }
+
+  async function createProject() {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      await onCreateProject(projectName, language, parentDirectory, templateId);
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
   return (
-    <div
-      className="glass-page"
-      style={{
-        minHeight: "100vh",
-        background: "#f8fafc",
-        color: "#0f172a",
-        fontFamily:
-          "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-        padding: "40px",
-        boxSizing: "border-box",
-      }}
-    >
-      <button
-        onClick={onBack}
-        style={{
-          border: "none",
-          background: "transparent",
-          color: "#2563eb",
-          fontSize: "16px",
-          fontWeight: 600,
-          cursor: "pointer",
-          marginBottom: "40px",
-        }}
-      >
-        ← Back
-      </button>
+    <div className="glass-page project-setup-page">
+      <header className="project-setup-topbar">
+        <button className="project-setup-back" type="button" onClick={onBack}>
+          ← Back
+        </button>
 
-      <div
-        className="liquid-home-card project-setup-card"
-        style={{
-          maxWidth: "720px",
-          margin: "0 auto",
-          background: "#ffffff",
-          border: "1px solid #e2e8f0",
-          borderRadius: "28px",
-          padding: "40px",
-          boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-        }}
-      >
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "44px",
-            letterSpacing: "-0.04em",
-          }}
-        >
-          Create new project
-        </h1>
-
-        <p
-          style={{
-            marginTop: "12px",
-            fontSize: "18px",
-            color: "#64748b",
-          }}
-        >
-          {board.name} · {board.vendor} {board.device}
-        </p>
-
-        <label style={{ display: "block", marginTop: "36px", fontWeight: 700 }}>
-          Project name
-        </label>
-
-        <input
-          value={projectName}
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          onChange={(e) => setProjectName(e.target.value)}
-          placeholder="my_fpga_project"
-          style={formControlStyle}
-        />
-
-        <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
-          HDL language
-        </label>
-
-        <select
-          value={language}
-          onChange={(e) =>
-            changeLanguage(
-              e.target.value as "Verilog" | "SystemVerilog" | "VHDL",
-            )
-          }
-          style={{
-            background: "#ffffff",
-            ...formControlStyle,
-          }}
-        >
-          <option>Verilog</option>
-          <option>SystemVerilog</option>
-          <option>VHDL</option>
-        </select>
-
-        <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
-          Starter template
-        </label>
-
-        <div className="template-grid">
-          {PROJECT_TEMPLATES.map((template) => {
-            const reason = getTemplateUnavailableReason(
-              template,
-              board,
-              language,
-            );
-            const disabled = Boolean(reason);
-            const selected = templateId === template.id;
-
-            return (
-              <button
-                type="button"
-                key={template.id}
-                disabled={disabled}
-                className={[
-                  "template-card",
-                  selected ? "selected" : "",
-                  disabled ? "disabled" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                title={reason ?? template.description}
-                onClick={() => setTemplateId(template.id)}
-              >
-                <span className="template-card-name">{template.name}</span>
-                <span className="template-card-desc">
-                  {reason ?? template.description}
-                </span>
-              </button>
-            );
-          })}
+        <div className="project-setup-heading">
+          <div className="welcome-eyebrow">New Workspace</div>
+          <h1>Create new project</h1>
+          <p>
+            {board.name} · {board.vendor} · {board.device}
+          </p>
         </div>
+      </header>
 
-        <label style={{ display: "block", marginTop: "24px", fontWeight: 700 }}>
-          Project location
-        </label>
+      <main className="project-setup-layout">
+        <section className="liquid-home-card project-setup-card project-form-panel">
+          <div className="project-panel-title">
+            <FileCode2 size={18} />
+            Project Details
+          </div>
 
-        <div
-          style={{
-            marginTop: "10px",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) auto",
-            gap: "10px",
-            alignItems: "center",
-          }}
-        >
-          <div
-            style={{
-              ...formControlStyle,
-              marginTop: 0,
-              display: "flex",
-              alignItems: "center",
-              color: parentDirectory ? "#0f172a" : "#64748b",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            title={parentDirectory ?? "Documents/Allora FPGA Projects"}
-          >
-            {parentDirectory ?? "Documents/Allora FPGA Projects"}
+          <label className="project-setup-field">
+            <span>Project name</span>
+            <input
+              value={projectName}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(event) => setProjectName(event.target.value)}
+              placeholder="my_fpga_project"
+            />
+          </label>
+
+          <label className="project-setup-field">
+            <span>HDL language</span>
+            <select
+              value={language}
+              onChange={(event) =>
+                changeLanguage(event.target.value as TemplateLanguage)
+              }
+            >
+              <option>Verilog</option>
+              <option>SystemVerilog</option>
+              <option>VHDL</option>
+            </select>
+          </label>
+
+          <div className="project-location-card">
+            <div className="project-location-copy">
+              <FolderOpen size={18} />
+              <div>
+                <div>Project location</div>
+                <p title={parentDirectory ?? "Documents/Allora FPGA Projects"}>
+                  {parentDirectory ?? "Documents/Allora FPGA Projects"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={!hasTauriInvoke() || isChoosingLocation}
+              onClick={() => void chooseLocation()}
+            >
+              {isChoosingLocation ? "Choosing..." : "Change"}
+            </button>
+          </div>
+
+          <div className="project-detail-strip">
+            <MiniFact
+              icon={<FileCode2 size={14} />}
+              label="Top"
+              value={projectPlan.topModule}
+            />
+            <MiniFact
+              icon={<ListChecks size={14} />}
+              label="Source"
+              value={projectPlan.sourceFile}
+            />
+            <MiniFact
+              icon={<Zap size={14} />}
+              label="Constraints"
+              value={projectPlan.constraintsFile}
+            />
           </div>
 
           <button
+            className="project-create-button"
             type="button"
-            disabled={!hasTauriInvoke() || isChoosingLocation}
-            onClick={async () => {
-              if (!hasTauriInvoke() || isChoosingLocation) return;
-              setIsChoosingLocation(true);
-              try {
-                const nextDirectory = await pickProjectParentDirectory();
-                if (nextDirectory) {
-                  setParentDirectory(nextDirectory);
-                }
-              } finally {
-                setIsChoosingLocation(false);
-              }
-            }}
-            style={{
-              minHeight: "56px",
-              height: "56px",
-              padding: "0 16px",
-              borderRadius: "14px",
-              border: "1px solid #dbe4f0",
-              background: "#ffffff",
-              color: "#475569",
-              fontSize: "15px",
-              fontWeight: 700,
-              cursor:
-                !hasTauriInvoke() || isChoosingLocation
-                  ? "not-allowed"
-                  : "pointer",
-              opacity: !hasTauriInvoke() || isChoosingLocation ? 0.65 : 1,
-            }}
+            onClick={() => void createProject()}
           >
-            {isChoosingLocation ? "Choosing..." : "Choose Folder"}
+            {isCreating ? "Creating Project..." : "Create Project"}
           </button>
-        </div>
+        </section>
 
-        <button
-          onClick={async () => {
-            if (isCreating) return;
-            setIsCreating(true);
-            try {
-              await onCreateProject(
-                projectName,
+        <section className="liquid-home-card project-setup-card project-template-panel">
+          <div className="project-panel-title">
+            <Layers3 size={18} />
+            Starter Template
+          </div>
+
+          <div className="template-grid">
+            {PROJECT_TEMPLATES.map((template) => {
+              const reason = getTemplateUnavailableReason(
+                template,
+                board,
                 language,
-                parentDirectory,
-                templateId,
               );
-            } finally {
-              setIsCreating(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            marginTop: "36px",
-            padding: "18px",
-            borderRadius: "16px",
-            border: "none",
-            background: "#2563eb",
-            color: "#ffffff",
-            fontSize: "17px",
-            fontWeight: 700,
-            cursor: isCreating ? "progress" : "pointer",
-            opacity: isCreating ? 0.8 : 1,
-          }}
-        >
-          {isCreating ? "Creating Project..." : "Create Project"}
-        </button>
-      </div>
+              const disabled = Boolean(reason);
+              const selected = templateId === template.id;
+
+              return (
+                <button
+                  type="button"
+                  key={template.id}
+                  disabled={disabled}
+                  className={[
+                    "template-card",
+                    selected ? "selected" : "",
+                    disabled ? "disabled" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  title={reason ?? template.description}
+                  onClick={() => setTemplateId(template.id)}
+                >
+                  <span className="template-card-name">{template.name}</span>
+                  <span className="template-card-desc">
+                    {reason ?? template.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="project-template-note">
+            <CheckCircle2 size={15} />
+            <span>
+              {selectedTemplate.name} · {availableTemplateCount}/
+              {PROJECT_TEMPLATES.length} available
+            </span>
+          </div>
+
+          <div className="template-inspector">
+            <div>
+              <Lightbulb size={16} />
+              <span>Template Output</span>
+            </div>
+            <p>{selectedTemplate.description}</p>
+            <div className="template-meta-row">
+              <span>{language}</span>
+              <span>{selectedTemplate.generate ? "Pre-mapped I/O" : "Starter flow"}</span>
+              <span>{selectedTemplate.languages.join(" / ")}</span>
+            </div>
+          </div>
+        </section>
+
+        <aside className="project-setup-side">
+          <section className="liquid-home-card project-setup-card board-summary-panel">
+            <div className="project-panel-title">
+              <Cpu size={18} />
+              Board Summary
+            </div>
+
+            <div className="project-board-preview">
+              <VirtualBoard board={board} maxHeight={185} showCaption={false} />
+            </div>
+
+            <div className="board-resource-strip">
+              <MiniFact
+                icon={<MemoryStick size={14} />}
+                label="Pins"
+                value={String(board.pins.length)}
+              />
+              <MiniFact
+                icon={<Zap size={14} />}
+                label="Clocks"
+                value={String(board.clocks.length)}
+              />
+              <MiniFact
+                icon={<Lightbulb size={14} />}
+                label="LEDs"
+                value={String(board.leds.length)}
+              />
+              <MiniFact
+                icon={<ListChecks size={14} />}
+                label="Buttons"
+                value={String(board.buttons.length)}
+              />
+            </div>
+
+            <div className="capability-pill-list">
+              <CapabilityPill label="Synthesis" supported={capabilities.synthesisDiagram.supported} />
+              <CapabilityPill label="Bitstream" supported={capabilities.bitstream.supported} />
+              <CapabilityPill label="Pin Mapping" supported={capabilities.pinMapping.supported} />
+              <CapabilityPill label="Programming" supported={capabilities.programming.supported} />
+              <CapabilityPill label="Diagram" supported={capabilities.synthesisDiagram.supported} />
+            </div>
+
+            <div className="project-summary-grid">
+              <SummaryItem label="Family" value={board.family} />
+              <SummaryItem label="Device" value={board.device} />
+              <SummaryItem label="Package" value={board.package} />
+              <SummaryItem label="Toolchain" value={capabilities.toolchain} />
+              <SummaryItem label="Constraints" value={board.constraintsFile.toUpperCase()} />
+              <SummaryItem
+                label="Programmer"
+                value={board.programmer?.command ?? board.toolchain.program ?? "Not configured"}
+              />
+            </div>
+          </section>
+        </aside>
+      </main>
     </div>
   );
+}
+
+function MiniFact({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="project-mini-fact">
+      {icon}
+      <span>{label}</span>
+      <strong title={value}>{value}</strong>
+    </div>
+  );
+}
+
+function CapabilityPill({
+  label,
+  supported,
+}: {
+  label: string;
+  supported: boolean;
+}) {
+  return (
+    <span className={supported ? "capability-pill supported" : "capability-pill"}>
+      {label}
+    </span>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="project-summary-item">
+      <span>{label}</span>
+      <strong title={value}>{value}</strong>
+    </div>
+  );
+}
+
+function getProjectPlan(
+  projectName: string,
+  language: TemplateLanguage,
+  board: BoardDefinition,
+) {
+  const topModule = sanitizeModuleName(projectName || "top");
+  const sourceExtension =
+    language === "SystemVerilog" ? "sv" : language === "VHDL" ? "vhd" : "v";
+
+  return {
+    topModule,
+    sourceFile: `${topModule}.${sourceExtension}`,
+    constraintsFile: `constraints.${board.constraintsFile}`,
+  };
+}
+
+function sanitizeModuleName(name: string) {
+  const sanitized = name
+    .trim()
+    .replace(/[^a-zA-Z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!sanitized) return "top";
+  if (/^[0-9]/.test(sanitized)) return `top_${sanitized}`;
+  return sanitized;
 }
