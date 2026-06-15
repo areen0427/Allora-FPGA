@@ -147,6 +147,12 @@
   gap: 16px;
 }
 
+/* Keep each group card at its natural height; without this the flex column
+   shrinks the cards to fit and clips their last row instead of scrolling. */
+.pin-group-scroll > .pin-group-card {
+  flex-shrink: 0;
+}
+
 .pin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
@@ -165,39 +171,470 @@
   display: flex;
 }
 
-/* Fill the panel as a column; the SVG flexes to the remaining height and the
-   board scales to fit (preserveAspectRatio meet) so it stays centered without
-   overflowing or scrolling regardless of the board's aspect ratio. */
-.pin-diagram-panel .vboard-shell {
+/* ── Category board diagram ──────────────────────────────────────────────
+   Every pin category is a clickable circle laid out on a PCB. The grid wraps
+   to fit the panel so nodes/labels never run off the board edge, and the
+   board view itself never scrolls. */
+.board-diagram {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-.pin-diagram-panel .vboard-svg {
-  flex: 1 1 0;
+.board-diagram-board {
+  position: relative;
+  flex: 1;
   min-height: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 28px 28px 38px;
+  /* Copper mounting holes in each corner, a faint trace grid, a solder-mask
+     sheen and the green substrate — layered to read as a real PCB. */
+  background:
+    radial-gradient(
+      circle at 22px 22px,
+      rgba(0, 0, 0, 0.6) 0 3px,
+      #c1a049 3px 5.5px,
+      transparent 5.5px
+    ),
+    radial-gradient(
+      circle at calc(100% - 22px) 22px,
+      rgba(0, 0, 0, 0.6) 0 3px,
+      #c1a049 3px 5.5px,
+      transparent 5.5px
+    ),
+    radial-gradient(
+      circle at 22px calc(100% - 22px),
+      rgba(0, 0, 0, 0.6) 0 3px,
+      #c1a049 3px 5.5px,
+      transparent 5.5px
+    ),
+    radial-gradient(
+      circle at calc(100% - 22px) calc(100% - 22px),
+      rgba(0, 0, 0, 0.6) 0 3px,
+      #c1a049 3px 5.5px,
+      transparent 5.5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 39px,
+      rgba(150, 220, 180, 0.05) 39px 40px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 39px,
+      rgba(150, 220, 180, 0.045) 39px 40px
+    ),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.09), transparent 45%),
+    linear-gradient(160deg, #1f6b46, #123f25);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 44px rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Silkscreen outline inset from the board edge. */
+.board-diagram-board::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.board-diagram-silk {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  max-width: 45%;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Decorative gold edge-connector fingers along the bottom. */
+.board-diagram-fingers {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  width: min(56%, 420px);
+  height: 15px;
+  border-radius: 2px 2px 3px 3px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #d6a53c 0 7px,
+      #a9781f 7px 8px,
+      transparent 8px 12px
+    ),
+    #0b1220;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.board-diagram-grid {
   width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100% !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 20px 14px;
+  align-content: center;
+  justify-items: center;
+}
+
+.board-diagram-node {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 4px;
+  max-width: 132px;
+}
+
+.board-diagram-circle {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition:
+    transform var(--ui-motion-base),
+    box-shadow var(--ui-motion-base);
+}
+
+/* Silkscreen component outline printed around each pad. */
+.board-diagram-circle::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.board-diagram-node:hover .board-diagram-circle,
+.board-diagram-node:focus-visible .board-diagram-circle {
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.board-diagram-node:focus-visible {
+  outline: none;
+}
+
+.board-diagram-circle-symbol {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.board-diagram-circle-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 850;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-diagram-node-label {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  overflow-wrap: anywhere;
+}
+
+/* Compact preview variant (project setup / dashboard summary slots). */
+.board-diagram-compact .board-diagram-board {
+  padding: 16px;
+}
+
+.board-diagram-compact .board-diagram-board::before {
+  inset: 8px;
+}
+
+.board-diagram-compact .board-diagram-grid {
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 12px 10px;
+}
+
+.board-diagram-compact .board-diagram-node {
+  gap: 6px;
+  max-width: 96px;
+}
+
+.board-diagram-compact .board-diagram-circle {
+  width: 42px;
+  height: 42px;
+}
+
+.board-diagram-compact .board-diagram-circle-symbol {
+  font-size: 10px;
+}
+
+.board-diagram-compact .board-diagram-circle-count {
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
+
+.board-diagram-compact .board-diagram-node-label {
+  font-size: 10px;
+}
+
+.board-diagram-compact .board-diagram-silk {
+  top: 9px;
+  right: 12px;
+  font-size: 10px;
+}
+
+.board-diagram-hint {
+  flex: 0 0 auto;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* ── Category popup ───────────────────────────────────────────────────── */
+.board-diagram-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 24, 16, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: inherit;
+  animation: board-diagram-fade 0.12s ease;
+}
+
+.board-diagram-popup {
+  width: min(440px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 24px 60px rgba(8, 24, 16, 0.4),
+    0 2px 8px rgba(15, 23, 42, 0.18);
+  padding: 18px;
+  animation: board-diagram-pop 0.14s ease;
+}
+
+@keyframes board-diagram-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes board-diagram-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+.board-diagram-popup-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.board-diagram-popup-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.board-diagram-popup-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-diagram-popup-close:hover {
+  color: #2563eb;
+  border-color: #cbd5e1;
+}
+
+.board-diagram-breakdown-symbol {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.board-diagram-breakdown-title {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.board-diagram-breakdown-detail {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.board-diagram-pin-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+
+.board-diagram-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 8px 10px;
+}
+
+.board-diagram-pin-symbol {
+  flex: 0 0 auto;
+  min-width: 38px;
+  padding: 3px 7px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.board-diagram-pin-name {
+  flex: 1;
+  min-width: 0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-diagram-pin-pad {
+  flex: 0 0 auto;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Popup is self-contained (it can render inside .glass-page or
+   .dashboard-workspace), so its surface colors are explicit per theme. */
+html[data-theme="black-ice"] .board-diagram-popup,
+html[data-theme="dark"] .board-diagram-popup {
+  border-color: #374151;
+  background: linear-gradient(180deg, #243042, #1f2937);
+}
+
+html[data-theme="black-ice"] .board-diagram-popup-close,
+html[data-theme="dark"] .board-diagram-popup-close {
+  border-color: #374151;
+  background: #111827;
+  color: #cbd5e1;
+}
+
+html[data-theme="black-ice"] .board-diagram-pin-row,
+html[data-theme="dark"] .board-diagram-pin-row {
+  border-color: #374151;
+  background: #111827;
+}
+
+html[data-theme="black-ice"] .board-diagram-breakdown-title,
+html[data-theme="dark"] .board-diagram-breakdown-title,
+html[data-theme="black-ice"] .board-diagram-pin-pad,
+html[data-theme="dark"] .board-diagram-pin-pad {
+  color: #f1f5f9;
+}
+
+html[data-theme="black-ice"] .board-diagram-breakdown-detail,
+html[data-theme="dark"] .board-diagram-breakdown-detail,
+html[data-theme="black-ice"] .board-diagram-pin-name,
+html[data-theme="dark"] .board-diagram-pin-name {
+  color: #cbd5e1;
 }
 
 .pin-board-list,
 .pin-group-scroll,
-.pin-diagram-panel {
+.pin-diagram-panel,
+.board-diagram-pin-list {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
 .pin-board-list::-webkit-scrollbar,
 .pin-group-scroll::-webkit-scrollbar,
-.pin-diagram-panel::-webkit-scrollbar {
+.pin-diagram-panel::-webkit-scrollbar,
+.board-diagram-pin-list::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none;

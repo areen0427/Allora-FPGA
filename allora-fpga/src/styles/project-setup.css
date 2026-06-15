@@ -428,14 +428,11 @@
 }
 
 .project-board-preview {
+  height: 200px;
   min-height: 0;
   margin: -2px 0 12px;
   border-radius: 14px;
   overflow: hidden;
-}
-
-.project-board-preview .vboard-shell {
-  padding: 6px;
 }
 
 .capability-pill-list {

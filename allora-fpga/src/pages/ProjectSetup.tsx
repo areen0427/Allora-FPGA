@@ -20,7 +20,7 @@ import {
   getTemplateUnavailableReason,
   type TemplateLanguage,
 } from "../data/templates";
-import VirtualBoard from "../components/VirtualBoard";
+import BoardDiagram from "../components/BoardDiagram";
 import { hasTauriInvoke } from "../lib/tauri";
 import { pickProjectParentDirectory } from "../lib/projectWorkspace";
 
@@ -260,7 +260,7 @@ export default function ProjectSetup({
             </div>
 
             <div className="project-board-preview">
-              <VirtualBoard board={board} maxHeight={185} showCaption={false} />
+              <BoardDiagram board={board} compact />
             </div>
 
             <div className="board-resource-strip">

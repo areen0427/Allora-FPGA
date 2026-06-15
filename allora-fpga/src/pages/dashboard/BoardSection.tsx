@@ -1,7 +1,7 @@
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import InfoCard, { InfoRow } from "./InfoCard";
-import VirtualBoard from "../../components/VirtualBoard";
+import BoardDiagram from "../../components/BoardDiagram";
 
 export default function BoardSection({ board }: { board: BoardDefinition }) {
   const capabilities = getBoardCapabilities(board);
@@ -9,7 +9,9 @@ export default function BoardSection({ board }: { board: BoardDefinition }) {
   return (
     <div style={{ display: "grid", gap: "18px" }}>
       <InfoCard title="Board View">
-        <VirtualBoard board={board} maxHeight={360} />
+        <div style={{ height: 360 }}>
+          <BoardDiagram board={board} />
+        </div>
       </InfoCard>
 
       <InfoCard title="Board Information">
