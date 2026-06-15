@@ -106,3 +106,19 @@ export type BoardDefinition = {
   buttons: BoardPin[];
   notes?: string;
 };
+
+export type BoardVariant = {
+  id: string;
+  name: string;
+  fpga: string;
+};
+
+export type BoardGroupDefinition = {
+  id: string;
+  name: string;
+  vendor: string;
+  device: string;
+  variants: BoardVariant[];
+};
+
+export type BoardCatalogItem = BoardDefinition | BoardGroupDefinition;

@@ -1,4 +1,4 @@
-import type { BoardDefinition } from "./boardTypes";
+import type { BoardCatalogItem, BoardDefinition } from "./boardTypes";
 import { ac701 } from "./boards/ac701";
 import { ARTY_A7_BOARDS } from "./boards/artya7";
 import { COLORLIGHT_I5_BOARDS, colorlightI9Plus } from "./boards/colorlight";
@@ -40,12 +40,43 @@ export type {
   BoardToolchain,
   BoardCapability,
   BoardCapabilities,
+  BoardCatalogItem,
   BoardDefinition,
+  BoardGroupDefinition,
   BoardProgrammer,
+  BoardVariant,
   ProgrammerBackend,
 } from "./boardTypes";
 
-export const BOARDS = [
+export const REAL_BOARDS: BoardDefinition[] = [
+  ac701,
+  fomuPvt,
+  icebreaker,
+  iceVWireless,
+  latticeIce40Up5kEvn,
+  icesugarPro,
+  icesugarV15,
+  latticeEcp5Evn,
+  latticeVersaEcp5,
+  orangecrab,
+  sqrlFk33,
+  trellisBoard,
+  colorlightI9Plus,
+  ...butterstickBoards,
+  ...COLORLIGHT_I5_BOARDS,
+  ...ecpix5Boards,
+  ...icebreakerBitsyBoards,
+  ...icepiZeroBoards,
+  ...kosagiNetV2Boards,
+  ...litexCatalogBoards,
+  ...sqrlAcornBoards,
+  ...tangNanoBoards,
+  ...ARTY_A7_BOARDS,
+  ...ULX3S_BOARDS,
+  ...TINYFPGA_BOARDS,
+];
+
+export const BOARDS: BoardCatalogItem[] = [
   ac701,
   fomuPvt,
   icebreaker,
@@ -204,33 +235,8 @@ export const BOARDS = [
   },
 ];
 
-export function getBoardById(id: string): BoardDefinition | undefined {
-  if (id === ac701.id) return ac701;
-  if (id === fomuPvt.id) return fomuPvt;
-  if (id === icebreaker.id) return icebreaker;
-  if (id === iceVWireless.id) return iceVWireless;
-  if (id === latticeIce40Up5kEvn.id) return latticeIce40Up5kEvn;
-  if (id === icesugarPro.id) return icesugarPro;
-  if (id === icesugarV15.id) return icesugarV15;
-  if (id === latticeEcp5Evn.id) return latticeEcp5Evn;
-  if (id === latticeVersaEcp5.id) return latticeVersaEcp5;
-  if (id === orangecrab.id) return orangecrab;
-  if (id === sqrlFk33.id) return sqrlFk33;
-  if (id === trellisBoard.id) return trellisBoard;
-  if (id === colorlightI9Plus.id) return colorlightI9Plus;
+const BOARD_BY_ID = new Map(REAL_BOARDS.map((board) => [board.id, board]));
 
-  return [
-    ...butterstickBoards,
-    ...COLORLIGHT_I5_BOARDS,
-    ...ecpix5Boards,
-    ...icebreakerBitsyBoards,
-    ...icepiZeroBoards,
-    ...kosagiNetV2Boards,
-    ...litexCatalogBoards,
-    ...sqrlAcornBoards,
-    ...tangNanoBoards,
-    ...ARTY_A7_BOARDS,
-    ...ULX3S_BOARDS,
-    ...TINYFPGA_BOARDS,
-  ].find((board) => board.id === id);
+export function getBoardById(id: string): BoardDefinition | undefined {
+  return BOARD_BY_ID.get(id);
 }

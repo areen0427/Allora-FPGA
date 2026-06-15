@@ -1,12 +1,9 @@
 import { BOARDS, getBoardById } from "./boards";
 import { getBoardCapabilities } from "./boardCapabilities";
-import type { BoardDefinition } from "./boards";
+import type { BoardCatalogItem, BoardDefinition } from "./boards";
 
-export type BoardCatalogItem = (typeof BOARDS)[number];
-export type VariantBoardCatalogItem = Extract<
-  BoardCatalogItem,
-  { variants: unknown }
->;
+export type { BoardCatalogItem } from "./boards";
+export type VariantBoardCatalogItem = Extract<BoardCatalogItem, { variants: unknown }>;
 
 export function getBoardDefinitions(
   board: BoardCatalogItem,

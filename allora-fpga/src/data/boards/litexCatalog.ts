@@ -1,5 +1,6 @@
 import type {
   BoardDefinition,
+  BoardGroupDefinition,
   BoardPin,
   ConstraintFile,
   SynthesisFlow,
@@ -7765,7 +7766,7 @@ function makeCatalogGroup({
   vendor: string;
   device: string;
   boardIds: string[];
-}) {
+}): BoardGroupDefinition {
   return {
     id,
     name,
