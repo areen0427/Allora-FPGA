@@ -3,49 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Allora Suite</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Allora Platform — modern engineering software powered by open technologies. Home of Allora FPGA and the growing Allora ecosystem.">
+    <title>Allora Platform — Modern Engineering Software</title>
+    <link rel="icon" type="image/svg+xml" href="allora-mark.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="header">
-    <h1 class="logo">Allora Suite</h1>
-    <div class="navbar">
-        <a href="#home">Home</a>
-        <a href="#features">Features</a>
-        <a href="#documentation">Documentation</a>
-        <a href="#support">Support</a>
-        <a href="#about">About</a>
+    <!-- Atmospheric background light layers -->
+    <div class="aurora" aria-hidden="true">
+        <span class="aurora-orb aurora-orb--blue"></span>
+        <span class="aurora-orb aurora-orb--cyan"></span>
+        <span class="aurora-orb aurora-orb--violet"></span>
+        <span class="aurora-grid"></span>
     </div>
+
+    <!-- Navigation -->
+    <header class="site-header">
+        <nav class="nav glass">
+            <a class="nav-brand" href="#home">
+                <img src="allora-mark.svg" alt="" class="nav-brand-mark" width="28" height="27">
+                <span class="nav-brand-text">Allora<span class="nav-brand-accent">Platform</span></span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#featured">Allora FPGA</a></li>
+                <li><a href="#ecosystem">Ecosystem</a></li>
+                <li><a href="#why">Why Allora</a></li>
+                <li><a href="#download">Download</a></li>
+            </ul>
+            <a href="#download" class="btn btn-primary btn-sm">Get Allora FPGA</a>
+        </nav>
     </header>
 
-    <section class="hero">
-        <div class="hero-content">
-            <h2>Welcome to Allora FPGA</h2>
-            <p>The Allora IDE is the only tool you need for coding, testing,
-            synthesizing, and programming your favorite open-source Lattice FPGA boards.</p>
-        </div>
-    </section>
+    <main>
+        <!-- Hero -->
+        <section class="hero" id="home">
+            <div class="container hero-inner">
+                <span class="eyebrow">The Allora Platform</span>
+                <h1 class="hero-title">
+                    Modern engineering software,<br>
+                    <span class="gradient-text">powered by open technologies.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    A growing ecosystem of beautifully crafted tools for hardware,
+                    software, and beyond. Glassy, fast, and built on open standards —
+                    starting with the Allora FPGA development suite.
+                </p>
+                <div class="hero-actions">
+                    <a href="#download" class="btn btn-primary btn-lg">
+                        <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+                        Download Allora FPGA
+                    </a>
+                    <a href="#featured" class="btn btn-ghost btn-lg">Learn More</a>
+                </div>
 
-    <section class="features">
-        <div class="feature" id="feature1">
-            <div class="feature-glass"></div>
-            <h3>Feature 1: Yosys Support</h3>
-            <p>Develop FPGA designs using the open-source synthesis tool Yosys.</p>
-        </div>
-        <div class="feature" id="feature2">
-            <div class="feature-glass"></div>
-            <h3>Feature 2: NextPnr Integration</h3>
-            <p>Optimize and place your designs with the open-source routing tool NextPnr.</p>
-        </div>
-        <div class="feature" id="feature3">
-            <div class="feature-glass"></div>
-            <h3>Feature 3: Full FPGA Bring-Up</h3>
-            <p>Efficiently set up and configure FPGA boards with Allora's comprehensive support.</p>
-        </div>
-    </section>
+                <!-- Floating glass preview panel -->
+                <div class="hero-panel glass glass-card" aria-hidden="true">
+                    <div class="hero-panel-bar">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="hero-panel-title">Allora FPGA — Dashboard</span>
+                    </div>
+                    <div class="hero-panel-body">
+                        <aside class="hero-panel-rail">
+                            <span class="rail-chip active"></span>
+                            <span class="rail-chip"></span>
+                            <span class="rail-chip"></span>
+                            <span class="rail-chip"></span>
+                        </aside>
+                        <div class="hero-panel-grid">
+                            <div class="mini-card mini-card--wide">
+                                <span class="mini-label">Synthesis</span>
+                                <span class="mini-bar"><i style="width:82%"></i></span>
+                            </div>
+                            <div class="mini-card">
+                                <span class="mini-label">Pin Map</span>
+                                <span class="mini-pins"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            </div>
+                            <div class="mini-card">
+                                <span class="mini-label">Health</span>
+                                <span class="mini-pulse"></span>
+                            </div>
+                            <div class="mini-card mini-card--wide">
+                                <span class="mini-label">Bitstream</span>
+                                <span class="mini-bar"><i style="width:100%"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <footer class="footer">
-        <p>&copy; 2023 Allora Suite. All rights reserved.</p>
+        <!-- Featured product: Allora FPGA -->
+        <section class="section" id="featured">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Featured Product</span>
+                    <h2 class="section-title">Allora <span class="gradient-text">FPGA</span></h2>
+                    <p class="section-lead">
+                        The only tool you need for coding, simulating, synthesizing, and
+                        programming open-source FPGA boards — a complete bring-up workflow
+                        in one polished desktop application.
+                    </p>
+                </div>
+
+                <div class="card-grid card-grid--3">
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18 3 12l6-6m6 0 6 6-6 6"/></svg>
+                        </div>
+                        <h3>Open-Source Toolchains</h3>
+                        <p>Synthesize with Yosys and place &amp; route with nextpnr. A fully open flow with no proprietary lock-in.</p>
+                    </article>
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3"/></svg>
+                        </div>
+                        <h3>Visual Pin Mapping</h3>
+                        <p>Browse, search, and assign pins on an interactive board diagram with live constraint generation.</p>
+                    </article>
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10M2 21h20M9 9l3 3-3 3m4 0h3"/></svg>
+                        </div>
+                        <h3>Synthesis &amp; Bitstream</h3>
+                        <p>Compile, synthesize, and generate bitstreams with real-time logs and a clean, distraction-free editor.</p>
+                    </article>
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="4"/></svg>
+                        </div>
+                        <h3>Hardware Programming</h3>
+                        <p>Flash your design directly to the board with one click and supported programmers built right in.</p>
+                    </article>
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>
+                        </div>
+                        <h3>Health Monitoring</h3>
+                        <p>Live serial monitoring and board health insights keep your iteration loop tight and observable.</p>
+                    </article>
+                    <article class="glass glass-card feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="13" width="7" height="7" rx="1.5"/><rect x="14" y="13" width="7" height="7" rx="1.5"/></svg>
+                        </div>
+                        <h3>Multi-Board Support</h3>
+                        <p>iCEBreaker, ULX3S, OrangeCrab, Fomu, Colorlight and more — dozens of boards out of the box.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Platform ecosystem -->
+        <section class="section" id="ecosystem">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Platform Ecosystem</span>
+                    <h2 class="section-title">One platform, <span class="gradient-text">many tools</span></h2>
+                    <p class="section-lead">
+                        Allora is built to grow. Every product shares the same icy, glassy
+                        design language and the same commitment to open, modern workflows.
+                    </p>
+                </div>
+
+                <div class="card-grid card-grid--3">
+                    <article class="glass glass-card product">
+                        <span class="badge badge-live">Available now</span>
+                        <div class="product-mark"><img src="allora-mark.svg" alt="" width="34" height="33"></div>
+                        <h3>Allora FPGA</h3>
+                        <p>Complete open-source FPGA development — from RTL to bitstream to board.</p>
+                        <a href="#featured" class="link-arrow">Explore <span aria-hidden="true">→</span></a>
+                    </article>
+                    <article class="glass glass-card product">
+                        <span class="badge">Coming soon</span>
+                        <div class="product-mark product-mark--cyan">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5"/></svg>
+                        </div>
+                        <h3>Allora Trading</h3>
+                        <p>Modern, data-rich tooling for quantitative research and live market workflows.</p>
+                        <span class="link-arrow link-arrow--muted">In development</span>
+                    </article>
+                    <article class="glass glass-card product">
+                        <span class="badge">On the roadmap</span>
+                        <div class="product-mark product-mark--violet">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h3>Future Platform Tools</h3>
+                        <p>AI, developer, and hardware tools — all unified under the Allora ecosystem.</p>
+                        <span class="link-arrow link-arrow--muted">More to come</span>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Allora -->
+        <section class="section" id="why">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Why Allora</span>
+                    <h2 class="section-title">Engineering tools that <span class="gradient-text">feel premium</span></h2>
+                    <p class="section-lead">
+                        Professional workflows deserve professional software. Allora pairs
+                        serious engineering capability with a refined, modern interface.
+                    </p>
+                </div>
+
+                <div class="card-grid card-grid--2">
+                    <article class="glass glass-card value">
+                        <h3><span class="value-num">01</span> Modern UX</h3>
+                        <p>A polished, glassy desktop experience with thoughtful interactions and zero clutter.</p>
+                    </article>
+                    <article class="glass glass-card value">
+                        <h3><span class="value-num">02</span> Open Technologies</h3>
+                        <p>Built on open standards and open-source toolchains, so you stay in control of your stack.</p>
+                    </article>
+                    <article class="glass glass-card value">
+                        <h3><span class="value-num">03</span> Fast Iteration</h3>
+                        <p>Tight, observable feedback loops from edit to synthesis to hardware — no waiting around.</p>
+                    </article>
+                    <article class="glass glass-card value">
+                        <h3><span class="value-num">04</span> Beautiful Tooling</h3>
+                        <p>A consistent visual language across every product makes the whole platform feel like one.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download -->
+        <section class="section" id="download">
+            <div class="container">
+                <div class="glass glass-card download-panel">
+                    <div class="section-head section-head--tight">
+                        <span class="eyebrow">Download</span>
+                        <h2 class="section-title">Get <span class="gradient-text">Allora FPGA</span></h2>
+                        <p class="section-lead">Available for every major desktop platform. Free and open.</p>
+                    </div>
+                    <div class="card-grid card-grid--3 download-grid">
+                        <a href="#" class="glass download-os">
+                            <svg viewBox="0 0 24 24" class="os-icon" aria-hidden="true"><path d="M3 5.5 10 4.5v7H3v-6zm0 13L10 19.5v-7H3v6zM11 4.3 21 3v8.5H11V4.3zm0 15.4L21 21v-8.5H11v7.2z"/></svg>
+                            <span class="os-name">Windows</span>
+                            <span class="os-meta">.exe installer</span>
+                        </a>
+                        <a href="#" class="glass download-os">
+                            <svg viewBox="0 0 24 24" class="os-icon" aria-hidden="true"><path d="M16 3c0 1.5-.6 2.7-1.5 3.5C13.6 7.3 12.3 8 11 7.8c-.2-1.4.5-2.8 1.3-3.6C13.2 3.3 14.7 3 16 3zM20 16.5c-.5 1.2-.8 1.8-1.5 2.9-1 1.5-2.3 3.4-4 3.4-1.5 0-1.9-1-3.9-.9-2 0-2.5.9-4 .9-1.7 0-3-1.7-4-3.2-2.7-4.2-3-9.1-1.3-11.7C2.4 6.3 4 5.4 5.6 5.4c1.6 0 2.6 1 4 1 1.3 0 2.1-1 4-1 1.4 0 2.9.8 4 2.1-3.5 1.9-3 7 .8 9z"/></svg>
+                            <span class="os-name">macOS</span>
+                            <span class="os-meta">Universal .dmg</span>
+                        </a>
+                        <a href="#" class="glass download-os">
+                            <svg viewBox="0 0 24 24" class="os-icon" aria-hidden="true"><path d="M12 2c-2 0-3 1.7-3 4 0 1.3.4 2.2.4 3.2 0 1.4-2.4 2.8-3 5.3-.5 2 .2 3.3-.2 3.8-.5.6-1.5.5-1.5 1.3 0 .9 1.6 1 3 1 1.2 0 1.7-.5 1.8-1.2 1-.6 2-1 4-1s3 .4 4 1c.1.7.6 1.2 1.8 1.2 1.4 0 3-.1 3-1 0-.8-1-.7-1.5-1.3-.4-.5.3-1.8-.2-3.8-.6-2.5-3-3.9-3-5.3 0-1 .4-1.9.4-3.2 0-2.3-1-4-3-4z"/></svg>
+                            <span class="os-name">Linux</span>
+                            <span class="os-meta">.AppImage / .deb</span>
+                        </a>
+                    </div>
+                    <p class="download-note">Builds coming soon — downloads are placeholders for now.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <a class="nav-brand" href="#home">
+                    <img src="allora-mark.svg" alt="" class="nav-brand-mark" width="26" height="25">
+                    <span class="nav-brand-text">Allora<span class="nav-brand-accent">Platform</span></span>
+                </a>
+                <p class="footer-tagline">Modern engineering software, powered by open technologies.</p>
+            </div>
+            <nav class="footer-cols">
+                <div class="footer-col">
+                    <h4>Products</h4>
+                    <a href="#featured">Allora FPGA</a>
+                    <a href="#ecosystem">Allora Trading</a>
+                    <a href="#ecosystem">Ecosystem</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <a href="#why">Why Allora</a>
+                    <a href="#download">Download</a>
+                    <a href="#featured">Features</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <a href="#">Documentation</a>
+                    <a href="#">Support</a>
+                    <a href="#">GitHub</a>
+                </div>
+            </nav>
+        </div>
+        <div class="container footer-bottom">
+            <span>&copy; 2026 Allora Platform. All rights reserved.</span>
+            <span class="footer-built">Built on open technologies.</span>
+        </div>
     </footer>
 </body>
 </html>
