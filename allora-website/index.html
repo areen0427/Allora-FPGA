@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Allora Platform — modern engineering software powered by open technologies. Home of Allora FPGA and the growing Allora ecosystem.">
     <title>Allora Platform — Modern Engineering Software</title>
-    <link rel="icon" type="image/svg+xml" href="allora-mark.svg">
+    <link rel="icon" type="image/png" href="allora-platform.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
     <header class="site-header">
         <nav class="nav glass">
             <a class="nav-brand" href="#home">
-                <img src="allora-mark.svg" alt="" class="nav-brand-mark" width="28" height="27">
+                <img src="allora-platform.png" alt="" class="nav-brand-mark" width="42" height="42">
                 <span class="nav-brand-text">Allora<span class="nav-brand-accent">Platform</span></span>
             </a>
             <ul class="nav-links">
@@ -59,39 +59,64 @@
                     <a href="#featured" class="btn btn-ghost btn-lg">Learn More</a>
                 </div>
 
-                <!-- Floating glass preview panel -->
-                <div class="hero-panel glass glass-card" aria-hidden="true">
-                    <div class="hero-panel-bar">
-                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                        <span class="hero-panel-title">Allora FPGA — Dashboard</span>
-                    </div>
-                    <div class="hero-panel-body">
-                        <aside class="hero-panel-rail">
-                            <span class="rail-chip active"></span>
-                            <span class="rail-chip"></span>
-                            <span class="rail-chip"></span>
-                            <span class="rail-chip"></span>
-                        </aside>
-                        <div class="hero-panel-grid">
-                            <div class="mini-card mini-card--wide">
-                                <span class="mini-label">Synthesis</span>
-                                <span class="mini-bar"><i style="width:82%"></i></span>
+                <!-- Floating app preview carousel -->
+                <figure class="hero-figure">
+                    <p class="hero-shot-title" id="shotTitle">The Allora FPGA Editor</p>
+                    <div class="hero-stage">
+                        <div class="hero-scroller-spacer" aria-hidden="true"></div>
+                        <div class="hero-panel" id="heroPanel">
+                            <div class="hero-slide active" data-title="The Allora FPGA Editor" data-caption="Write Verilog in a fast, focused editor with a full project file tree.">
+                                <img src="hero-app.png" alt="The Allora FPGA Editor" class="hero-shot">
                             </div>
-                            <div class="mini-card">
-                                <span class="mini-label">Pin Map</span>
-                                <span class="mini-pins"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            <div class="hero-slide" data-title="Synthesis" data-caption="Synthesize your design with Yosys and follow real-time build logs.">
+                                <img src="hero-app.png" alt="Synthesis view" class="hero-shot">
                             </div>
-                            <div class="mini-card">
-                                <span class="mini-label">Health</span>
-                                <span class="mini-pulse"></span>
+                            <div class="hero-slide" data-title="Testbench" data-caption="Simulate and verify your modules before touching hardware.">
+                                <img src="hero-app.png" alt="Testbench view" class="hero-shot">
                             </div>
-                            <div class="mini-card mini-card--wide">
-                                <span class="mini-label">Bitstream</span>
-                                <span class="mini-bar"><i style="width:100%"></i></span>
+                            <div class="hero-slide" data-title="Pin mapping · Simple" data-caption="Assign pins fast with a clean, guided mapping view.">
+                                <img src="hero-app.png" alt="Simple pin mapping" class="hero-shot">
+                            </div>
+                            <div class="hero-slide" data-title="Pin mapping · Advanced" data-caption="Take full control of constraints with the advanced pin browser.">
+                                <img src="hero-app.png" alt="Advanced pin mapping" class="hero-shot">
+                            </div>
+                            <div class="hero-slide" data-title="Health Monitoring" data-caption="Keep an eye on live board health and diagnostics.">
+                                <img src="hero-app.png" alt="Health Monitoring" class="hero-shot">
+                            </div>
+                            <div class="hero-slide" data-title="Bitstream" data-caption="Place, route, and pack a bitstream with nextpnr.">
+                                <img src="hero-app.png" alt="Bitstream generation" class="hero-shot">
+                            </div>
+                            <div class="hero-slide" data-title="Program" data-caption="Flash your design to the board in a single click.">
+                                <img src="hero-app.png" alt="Programming the board" class="hero-shot">
+                            </div>
+                            <div class="hero-slide" data-title="Serial Monitor" data-caption="Watch live serial output as your design runs.">
+                                <img src="hero-app.png" alt="Serial Monitor" class="hero-shot">
                             </div>
                         </div>
+                        <div class="hero-scroller">
+                            <button class="scroll-btn" id="scrollUp" type="button" aria-label="Previous view">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+                            </button>
+                            <div class="scroll-lines" id="scrollLines">
+                                <button class="scroll-line active" type="button" aria-label="View 1"></button>
+                                <button class="scroll-line" type="button" aria-label="View 2"></button>
+                                <button class="scroll-line" type="button" aria-label="View 3"></button>
+                                <button class="scroll-line" type="button" aria-label="View 4"></button>
+                                <button class="scroll-line" type="button" aria-label="View 5"></button>
+                                <button class="scroll-line" type="button" aria-label="View 6"></button>
+                                <button class="scroll-line" type="button" aria-label="View 7"></button>
+                                <button class="scroll-line" type="button" aria-label="View 8"></button>
+                                <button class="scroll-line" type="button" aria-label="View 9"></button>
+                            </div>
+                            <button class="scroll-btn" id="scrollDown" type="button" aria-label="Next view">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                    <figcaption class="hero-caption" id="shotCaption">
+                        Write Verilog in a fast, focused editor with a full project file tree.
+                    </figcaption>
+                </figure>
             </div>
         </section>
 
@@ -142,7 +167,7 @@
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>
                         </div>
                         <h3>Health Monitoring</h3>
-                        <p>Live serial monitoring and board health insights keep your iteration loop tight and observable.</p>
+                        <p>Live Serial Monitoring and board health insights keep your iteration loop tight and observable.</p>
                     </article>
                     <article class="glass glass-card feature">
                         <div class="feature-icon">
@@ -170,7 +195,7 @@
                 <div class="card-grid card-grid--3">
                     <article class="glass glass-card product">
                         <span class="badge badge-live">Available now</span>
-                        <div class="product-mark"><img src="allora-mark.svg" alt="" width="34" height="33"></div>
+                        <div class="product-mark product-mark--icon"><img src="allora-fpga.png" alt="Allora FPGA logo" width="44" height="44"></div>
                         <h3>Allora FPGA</h3>
                         <p>Complete open-source FPGA development — from RTL to bitstream to board.</p>
                         <a href="#featured" class="link-arrow">Explore <span aria-hidden="true">→</span></a>
@@ -267,7 +292,7 @@
         <div class="container footer-inner">
             <div class="footer-brand">
                 <a class="nav-brand" href="#home">
-                    <img src="allora-mark.svg" alt="" class="nav-brand-mark" width="26" height="25">
+                    <img src="allora-platform.png" alt="" class="nav-brand-mark" width="38" height="38">
                     <span class="nav-brand-text">Allora<span class="nav-brand-accent">Platform</span></span>
                 </a>
                 <p class="footer-tagline">Modern engineering software, powered by open technologies.</p>
@@ -298,5 +323,38 @@
             <span class="footer-built">Built on open technologies.</span>
         </div>
     </footer>
+
+    <script>
+      (function () {
+        const panel = document.getElementById("heroPanel");
+        if (!panel) return;
+        const slides = Array.from(panel.querySelectorAll(".hero-slide"));
+        const lines = Array.from(document.querySelectorAll(".scroll-line"));
+        const titleEl = document.getElementById("shotTitle");
+        const captionEl = document.getElementById("shotCaption");
+        const upBtn = document.getElementById("scrollUp");
+        const downBtn = document.getElementById("scrollDown");
+        let current = 0;
+
+        function show(index) {
+          index = (index + slides.length) % slides.length;
+          if (index === current) return;
+          slides[current].classList.remove("active");
+          lines[current].classList.remove("active");
+          current = index;
+          const slide = slides[current];
+          slide.classList.add("active");
+          lines[current].classList.add("active");
+          if (titleEl) titleEl.textContent = slide.dataset.title || "";
+          if (captionEl) captionEl.textContent = slide.dataset.caption || "";
+        }
+
+        downBtn.addEventListener("click", () => show(current + 1));
+        upBtn.addEventListener("click", () => show(current - 1));
+        lines.forEach((line, i) =>
+          line.addEventListener("click", () => show(i))
+        );
+      })();
+    </script>
 </body>
 </html>
