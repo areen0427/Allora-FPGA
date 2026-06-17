@@ -45,6 +45,7 @@ html[data-theme="solar"] .variant-card {
   -webkit-backdrop-filter: none;
 }
 
+html[data-theme="solar"] .open-project-card::before,
 html[data-theme="solar"] .board-card::before,
 html[data-theme="solar"] .recent-projects-card::before,
 html[data-theme="solar"] .recent-project-empty::before,
@@ -61,6 +62,8 @@ html[data-theme="solar"] .variant-card::before {
     linear-gradient(300deg, rgba(234, 179, 8, 0.06), transparent 44%) !important;
 }
 
+html[data-theme="solar"] .open-project-card:not(.is-opening):hover,
+html[data-theme="solar"] .open-project-card:focus-within,
 html[data-theme="solar"] .board-card:hover,
 html[data-theme="solar"] .variant-card:hover {
   border-color: rgba(245, 158, 11, 0.3) !important;

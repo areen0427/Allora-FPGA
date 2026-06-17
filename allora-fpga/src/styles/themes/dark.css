@@ -43,6 +43,7 @@ html[data-theme="dark"] .setting-toggle {
   -webkit-backdrop-filter: none;
 }
 
+html[data-theme="dark"] .open-project-card::before,
 html[data-theme="dark"] .board-card::before,
 html[data-theme="dark"] .recent-projects-card::before,
 html[data-theme="dark"] .recent-project-empty::before,

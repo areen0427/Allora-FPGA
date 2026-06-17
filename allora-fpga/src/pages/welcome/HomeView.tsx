@@ -169,7 +169,13 @@ function OpenExistingProjectCard({
   onOpen: () => void;
 }) {
   return (
-    <section className="liquid-home-card open-project-card">
+    <section
+      className={
+        isOpening
+          ? "liquid-home-card open-project-card is-opening"
+          : "liquid-home-card open-project-card"
+      }
+    >
       <button
         type="button"
         className="open-project-button"

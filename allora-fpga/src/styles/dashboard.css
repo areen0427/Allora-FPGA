@@ -614,6 +614,7 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
+.open-project-card,
 .board-card,
 .variant-card {
   overflow: hidden;
@@ -1141,6 +1142,7 @@ html[data-theme="solar"] .pin-group-header {
   flex-shrink: 0;
 }
 
+.open-project-card::before,
 .board-card::before,
 .recent-projects-card::before,
 .recent-project-empty::before,

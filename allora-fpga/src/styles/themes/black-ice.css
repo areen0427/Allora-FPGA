@@ -89,6 +89,7 @@ html[data-theme="black-ice"] [title="Unsaved changes"] {
   box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.12);
 }
 
+html[data-theme="black-ice"] .open-project-card::before,
 html[data-theme="black-ice"] .board-card::before,
 html[data-theme="black-ice"] .recent-projects-card::before,
 html[data-theme="black-ice"] .recent-project-empty::before,
@@ -112,6 +113,8 @@ html[data-theme="black-ice"] .dashboard-glass-card::before {
     linear-gradient(300deg, rgba(14, 165, 233, 0.035), transparent 48%) !important;
 }
 
+html[data-theme="black-ice"] .open-project-card:not(.is-opening):hover,
+html[data-theme="black-ice"] .open-project-card:focus-within,
 html[data-theme="black-ice"] .board-card:hover,
 html[data-theme="black-ice"] .variant-card:hover {
   border-color: rgba(148, 163, 184, 0.3) !important;

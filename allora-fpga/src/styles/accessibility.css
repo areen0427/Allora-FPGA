@@ -29,6 +29,8 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
     transition-duration: 0.001ms !important;
   }
 
+  .open-project-card:not(.is-opening):hover,
+  .open-project-card:focus-within,
   .board-card:hover,
   .variant-card:hover,
   .pin-board-item:hover,

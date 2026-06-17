@@ -31,6 +31,7 @@ html[data-theme="light"] .setting-toggle {
   -webkit-backdrop-filter: none;
 }
 
+html[data-theme="light"] .open-project-card::before,
 html[data-theme="light"] .board-card::before,
 html[data-theme="light"] .recent-projects-card::before,
 html[data-theme="light"] .recent-project-empty::before,
