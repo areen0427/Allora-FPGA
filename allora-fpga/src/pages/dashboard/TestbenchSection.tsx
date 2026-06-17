@@ -612,9 +612,9 @@ function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
         className="waveform-shell"
         style={{ "--wave-time-width": `${timeWidth}px` } as CSSProperties}
         onWheel={(event) => {
-          const isVerticalZoom =
-            Math.abs(event.deltaY) >= Math.abs(event.deltaX);
-          if (!isVerticalZoom) {
+          // Only zoom when a modifier is held (Ctrl/Cmd), so a plain wheel
+          // gesture scrolls the page/signal list as expected.
+          if (!event.ctrlKey && !event.metaKey) {
             return;
           }
 

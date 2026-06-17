@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
 import BoardSection from "./dashboard/BoardSection";
@@ -37,6 +37,22 @@ import { useSaveProject } from "../hooks/useSaveProject";
 import { isHdlFile, getSaveStatusLabel } from "../hooks/utils";
 import { SettingsModal } from "../components/SettingsModal";
 
+// Keeps a section's component mounted (and therefore its state — generated
+// diagrams, bitstreams, testbench results, logs — alive) once it has been
+// visited, hiding it with CSS instead of unmounting when another tab is active.
+function KeepAliveSection({
+  active,
+  visited,
+  children,
+}: {
+  active: boolean;
+  visited: boolean;
+  children: ReactNode;
+}) {
+  if (!visited) return null;
+  return <div style={{ display: active ? "contents" : "none" }}>{children}</div>;
+}
+
 type DashboardProps = {
   board: BoardDefinition;
   project: SavedProject | null;
@@ -58,6 +74,11 @@ export default function Dashboard({
 }: DashboardProps) {
   const [activeSection, setActiveSection] =
     useState<DashboardSection>("editor");
+  // Track which sections have been opened so we can keep them mounted (and
+  // their generated output intact) after the user switches away.
+  const [visitedSections, setVisitedSections] = useState<Set<DashboardSection>>(
+    () => new Set<DashboardSection>(["editor"]),
+  );
   const [sidebarWidth, setSidebarWidth] = useState(270);
   const [showSettings, setShowSettings] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
@@ -66,6 +87,16 @@ export default function Dashboard({
     y: number;
   } | null>(null);
   const [deletingFileName, setDeletingFileName] = useState<string | null>(null);
+
+  // Mark the active section as visited so it stays mounted from now on.
+  useEffect(() => {
+    setVisitedSections((prev) => {
+      if (prev.has(activeSection)) return prev;
+      const next = new Set(prev);
+      next.add(activeSection);
+      return next;
+    });
+  }, [activeSection]);
 
   // --- File management hook ---
   const fileMgmt = useFileManagement(project);
@@ -727,7 +758,10 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
-        {activeSection === "synthesis" && (
+        <KeepAliveSection
+          active={activeSection === "synthesis"}
+          visited={visitedSections.has("synthesis")}
+        >
           <SynthesisSection
             board={board}
             files={fileMgmt.files}
@@ -735,8 +769,11 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
             onTopLevelFileNameChange={handleMakeTopLevelFile}
           />
-        )}
-        {activeSection === "testbench" && (
+        </KeepAliveSection>
+        <KeepAliveSection
+          active={activeSection === "testbench"}
+          visited={visitedSections.has("testbench")}
+        >
           <TestbenchSection
             board={board}
             files={fileMgmt.files}
@@ -772,7 +809,7 @@ export default function Dashboard({
               markWorkspaceUnsaved(fileName);
             }}
           />
-        )}
+        </KeepAliveSection>
         {activeSection === "pin-mapping" && (
           <PinMappingSection
             board={board}
@@ -781,7 +818,10 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
-        {activeSection === "bitstream" && (
+        <KeepAliveSection
+          active={activeSection === "bitstream"}
+          visited={visitedSections.has("bitstream")}
+        >
           <BitstreamSection
             board={board}
             files={fileMgmt.files}
@@ -818,7 +858,7 @@ export default function Dashboard({
               });
             }}
           />
-        )}
+        </KeepAliveSection>
         {activeSection === "programming" && (
           <ProgrammingSection
             board={board}

@@ -4,6 +4,7 @@ import { getBoardCapabilities } from "../../data/boardCapabilities";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
 import type { ProjectFile } from "./types";
+import { findTopModule, isHdlFile, isTestbenchFile } from "../../hooks/utils";
 
 type SynthesisStatus = "idle" | "ready" | "blocked" | "unsupported";
 
@@ -63,6 +64,20 @@ export default function SynthesisSection({
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile],
   );
+  // Synthesize only the design sources: the selected top level always comes
+  // first, and testbench files (which contain `$finish`/`initial` blocks that
+  // Yosys rejects) are excluded.
+  const synthesisFiles = useMemo(() => {
+    const designFiles = hdlFiles.filter(
+      (file) =>
+        file.name === topLevelFileName || !isTestbenchFile(file, topModule),
+    );
+    if (!selectedTopLevelFile) return designFiles;
+    return [
+      selectedTopLevelFile,
+      ...designFiles.filter((file) => file.name !== selectedTopLevelFile.name),
+    ];
+  }, [hdlFiles, topLevelFileName, topModule, selectedTopLevelFile]);
   const capabilities = getBoardCapabilities(board);
   const status: SynthesisStatus = !capabilities.synthesisDiagram.supported
     ? "unsupported"
@@ -117,7 +132,7 @@ export default function SynthesisSection({
       "[synthesis] Starting real synthesis run",
       `Target board: ${board.name}`,
       `Device: ${board.fpgaId}`,
-      `Input files: ${hdlFiles.map((file) => file.name).join(", ")}`,
+      `Input files: ${synthesisFiles.map((file) => file.name).join(", ")}`,
     ]);
 
     try {
@@ -131,7 +146,7 @@ export default function SynthesisSection({
             fpgaId: board.fpgaId,
             synthesisFlow: board.synthesisFlow,
             topModule,
-            files: hdlFiles,
+            files: synthesisFiles,
           },
         },
       );
@@ -1034,26 +1049,6 @@ function getErrorMessage(error: unknown) {
     if (typeof message === "string") return message;
   }
   return "Synthesis failed with an unknown error.";
-}
-
-function isHdlFile(fileName: string) {
-  return (
-    fileName.endsWith(".v") ||
-    fileName.endsWith(".sv") ||
-    fileName.endsWith(".vhd") ||
-    fileName.endsWith(".vhdl")
-  );
-}
-
-function findTopModule(files: ProjectFile[]) {
-  for (const file of files) {
-    const match = file.content.match(
-      /\b(module|entity)\s+([a-zA-Z_][a-zA-Z0-9_$]*)/i,
-    );
-    if (match) return match[2];
-  }
-
-  return null;
 }
 
 function sanitizeName(name: string) {

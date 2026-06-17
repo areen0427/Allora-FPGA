@@ -15,6 +15,7 @@ import {
   type BuildRecord,
 } from "../../lib/buildHistory";
 import type { ProjectFile } from "./types";
+import { findTopModule, isHdlFile, isTestbenchFile } from "../../hooks/utils";
 import {
   createSuggestedMappings,
   findPorts,
@@ -89,6 +90,19 @@ export default function BitstreamSection({
     () => findTopModule(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile],
   );
+  // Build only the design sources: the selected top level comes first, and
+  // testbench files (which Yosys rejects during synthesis) are excluded.
+  const synthesisFiles = useMemo(() => {
+    const designFiles = hdlFiles.filter(
+      (file) =>
+        file.name === topLevelFileName || !isTestbenchFile(file, topModule),
+    );
+    if (!selectedTopLevelFile) return designFiles;
+    return [
+      selectedTopLevelFile,
+      ...designFiles.filter((file) => file.name !== selectedTopLevelFile.name),
+    ];
+  }, [hdlFiles, topLevelFileName, topModule, selectedTopLevelFile]);
   const topLevelPorts = useMemo(
     () => findPorts(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile],
@@ -117,7 +131,7 @@ export default function BitstreamSection({
   const buildConstraintContent =
     generatedConstraintContent || (constraintFile?.content ?? "");
   const buildInputKey = [
-    hdlFiles
+    synthesisFiles
       .map((file) => `${file.name}:${file.content}`)
       .join("\n---hdl---\n"),
     constraintFileName,
@@ -211,7 +225,7 @@ export default function BitstreamSection({
             fpgaId: board.fpgaId,
             synthesisFlow: board.synthesisFlow,
             topModule,
-            sourceFiles: hdlFiles.map((file) => ({
+            sourceFiles: synthesisFiles.map((file) => ({
               name: file.name,
               content: file.content,
             })),
@@ -229,7 +243,7 @@ export default function BitstreamSection({
       const preview = createHexPreview(bytes, {
         board,
         topModule: result.topModule,
-        files: hdlFiles,
+        files: synthesisFiles,
         fileStem: result.outputName,
         extension,
       });
@@ -758,24 +772,6 @@ function createConstraintMappings(board: BoardDefinition, ports: HdlPort[]) {
       pin: selectedPin ? (pinOptions.get(selectedPin) ?? null) : null,
     };
   });
-}
-
-function isHdlFile(fileName: string) {
-  return (
-    fileName.endsWith(".v") ||
-    fileName.endsWith(".sv") ||
-    fileName.endsWith(".vhd") ||
-    fileName.endsWith(".vhdl")
-  );
-}
-
-function findTopModule(files: ProjectFile[]) {
-  for (const file of files) {
-    const match = file.content.match(/\bmodule\s+([a-zA-Z_][a-zA-Z0-9_$]*)/);
-    if (match) return match[1];
-  }
-
-  return null;
 }
 
 function sanitizeName(name: string) {
