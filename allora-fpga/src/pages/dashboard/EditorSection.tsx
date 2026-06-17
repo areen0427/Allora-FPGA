@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
+import { Sparkles } from "lucide-react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
+import CodexAssistantPanel from "./CodexAssistantPanel";
+import {
+  createAssistantMessage,
+  getCodexAuthState,
+  sendCodexMessage,
+  signInToCodex,
+  signOutOfCodex,
+  type AssistantAuthState,
+  type AssistantMode,
+  type AssistantMessage,
+} from "../../lib/codexAssistant";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 
 type LintDiagnostic = {
@@ -19,6 +31,7 @@ type LintHdlResponse = {
 type EditorSectionProps = {
   openFiles: ProjectFile[];
   projectFiles: ProjectFile[];
+  projectPath?: string;
   activeFileName: string | null;
   setActiveFileName: (fileName: string) => void;
   activeFile: ProjectFile | undefined;
@@ -27,6 +40,7 @@ type EditorSectionProps = {
   createNewFile: () => void;
   closeOpenFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => Promise<void> | void;
+  onWorkspaceChanged?: () => Promise<void> | void;
   settings: AppSettings;
 };
 
@@ -36,6 +50,7 @@ const LINT_RECORD_DELIMITER = String.fromCharCode(1);
 export default function EditorSection({
   openFiles,
   projectFiles,
+  projectPath,
   activeFileName,
   setActiveFileName,
   activeFile,
@@ -44,11 +59,24 @@ export default function EditorSection({
   createNewFile,
   closeOpenFile,
   renameFile,
+  onWorkspaceChanged,
   settings,
 }: EditorSectionProps) {
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [diagnostics, setDiagnostics] = useState<LintDiagnostic[]>([]);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantPrompt, setAssistantPrompt] = useState("");
+  const [assistantMode, setAssistantMode] = useState<AssistantMode>("ask");
+  const [assistantAuth, setAssistantAuth] = useState<AssistantAuthState>({
+    status: "signed-out",
+  });
+  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>(
+    [],
+  );
+  const [assistantSendError, setAssistantSendError] = useState<string | null>(
+    null,
+  );
   const monacoRef = useRef<Monaco | null>(null);
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
@@ -100,8 +128,106 @@ export default function EditorSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lintKey]);
 
+  useEffect(() => {
+    if (!assistantOpen) return;
+
+    let cancelled = false;
+    getCodexAuthState()
+      .then((nextAuthState) => {
+        if (!cancelled) setAssistantAuth(nextAuthState);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setAssistantAuth({
+            status: "auth-failed",
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to check Codex sign-in status.",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assistantOpen]);
+
   const errorCount = diagnostics.filter((d) => d.severity === "error").length;
   const warningCount = diagnostics.length - errorCount;
+  const isSigningIn = assistantAuth.status === "signing-in";
+  const isSending = assistantMessages.some(
+    (message) => message.status === "sending",
+  );
+
+  async function handleAssistantSignIn() {
+    setAssistantSendError(null);
+    setAssistantAuth({ status: "signing-in" });
+    try {
+      const nextAuthState = await signInToCodex();
+      setAssistantAuth(nextAuthState);
+    } catch (error) {
+      setAssistantAuth({
+        status: "auth-failed",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to start OpenAI sign-in.",
+      });
+    }
+  }
+
+  async function handleAssistantSignOut() {
+    setAssistantSendError(null);
+    setAssistantAuth(await signOutOfCodex());
+  }
+
+  async function handleAssistantSend() {
+    const prompt = assistantPrompt.trim();
+    if (!prompt || isSending || assistantAuth.status !== "signed-in") return;
+
+    const userMessage = createAssistantMessage("user", prompt);
+    const pendingMessage = createAssistantMessage(
+      "assistant",
+      "Waiting for Codex...",
+      "sending",
+    );
+    const nextMessages = [...assistantMessages, userMessage, pendingMessage];
+    setAssistantPrompt("");
+    setAssistantSendError(null);
+    setAssistantMessages(nextMessages);
+
+    try {
+      const result = await sendCodexMessage(assistantMessages, prompt, {
+        projectPath,
+        activeFileName,
+        mode: assistantMode,
+      });
+      setAssistantMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === pendingMessage.id ? result.message : message,
+        ),
+      );
+      if (result.workspaceChanged) {
+        await onWorkspaceChanged?.();
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Message failed to send.";
+      setAssistantSendError(message);
+      setAssistantMessages((currentMessages) =>
+        currentMessages.map((currentMessage) =>
+          currentMessage.id === pendingMessage.id
+            ? {
+                ...currentMessage,
+                content: message,
+                status: "failed",
+              }
+            : currentMessage,
+        ),
+      );
+    }
+  }
 
   return (
     <div
@@ -268,12 +394,22 @@ export default function EditorSection({
             {errorCount > 0 && warningCount > 0 ? " · " : ""}
             {warningCount > 0
               ? `${warningCount} warning${warningCount === 1 ? "" : "s"}`
-              : ""}
+            : ""}
           </div>
         ) : null}
+
+        <button
+          type="button"
+          className={`editor-codex-button${assistantOpen ? " active" : ""}`}
+          aria-label="Open Allora Codex assistant"
+          title="Allora Codex"
+          onClick={() => setAssistantOpen(true)}
+        >
+          <Sparkles size={16} />
+        </button>
       </div>
 
-      <div style={{ flex: 1 }}>
+      <div className="editor-body">
         <Editor
           height="100%"
           path={activeFile?.name}
@@ -349,6 +485,35 @@ export default function EditorSection({
               bottom: 20,
             },
           }}
+        />
+        <CodexAssistantPanel
+          isOpen={assistantOpen}
+          authState={assistantAuth}
+          messages={assistantMessages}
+          mode={assistantMode}
+          prompt={assistantPrompt}
+          isSigningIn={isSigningIn}
+          isSending={isSending}
+          sendError={assistantSendError}
+          onClose={() => setAssistantOpen(false)}
+          onModeChange={setAssistantMode}
+          onPromptChange={setAssistantPrompt}
+          onSignIn={handleAssistantSignIn}
+          onSignOut={handleAssistantSignOut}
+          onRefreshAuth={() => {
+            getCodexAuthState()
+              .then(setAssistantAuth)
+              .catch((error) => {
+                setAssistantAuth({
+                  status: "auth-failed",
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to refresh Codex status.",
+                });
+              });
+          }}
+          onSend={handleAssistantSend}
         />
       </div>
     </div>

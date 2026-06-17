@@ -26,10 +26,6 @@ function normalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function stripExtension(fileName: string) {
-  return fileName.replace(/\.(v|sv|vhd|vhdl)$/i, "");
-}
-
 function isLikelyTestbenchName(fileName: string) {
   return /(^|[_\-.])(tb|testbench)([_\-.]|$)/i.test(fileName);
 }
