@@ -29,9 +29,9 @@
             </a>
             <ul class="nav-links">
                 <li><a href="#featured">Allora FPGA</a></li>
-                <li><a href="#ecosystem">Instruments</a></li>
                 <li><a href="#why">Approach</a></li>
                 <li><a href="#workflow">Workflow</a></li>
+                <li><a href="#ecosystem">Instruments</a></li>
                 <li><a href="#download">Download</a></li>
             </ul>
             <a href="#download" class="btn btn-primary btn-sm">Get Allora FPGA</a>
@@ -58,72 +58,13 @@
                         <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
                         Download Allora FPGA
                     </a>
-                    <a href="#featured" class="btn btn-ghost btn-lg">See the workflow</a>
+                    <a href="#workflow" class="btn btn-ghost btn-lg">See the workflow</a>
                 </div>
                 <ul class="hero-specs" aria-hidden="true">
                     <li>RTL → Bitstream</li>
                     <li>Fully open toolchain</li>
                     <li>Native desktop</li>
                 </ul>
-
-                <!-- Floating app preview carousel -->
-                <figure class="hero-figure">
-                    <p class="hero-shot-title" id="shotTitle">The Allora FPGA Editor</p>
-                    <div class="hero-stage">
-                        <div class="hero-scroller-spacer" aria-hidden="true"></div>
-                        <div class="hero-panel" id="heroPanel">
-                            <div class="hero-slide active" data-title="The Allora FPGA Editor" data-caption="Write Verilog in a fast, focused editor with a full project file tree.">
-                                <img src="hero-app.png" alt="The Allora FPGA Editor" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Synthesis" data-caption="Drive Yosys synthesis and follow the build, stage by stage, in real time.">
-                                <img src="hero-synthesis.png" alt="Synthesis view" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Testbench" data-caption="Simulate and verify your modules in software before touching silicon.">
-                                <img src="hero-testbench.png" alt="Testbench view" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Pin Mapping · Guided" data-caption="Assign signals quickly on a clean, guided board view.">
-                                <img src="hero-pins-simple.png" alt="Guided pin mapping" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Pin Mapping · Advanced" data-caption="Take full control of constraints in the advanced pin browser.">
-                                <img src="hero-pins-advanced.png" alt="Advanced pin mapping" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Diagnostics" data-caption="Read live board health and status without leaving the bench.">
-                                <img src="hero-app.png" alt="Diagnostics" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Bitstream" data-caption="Place, route, and pack a bitstream with nextpnr.">
-                                <img src="hero-app.png" alt="Bitstream generation" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Program" data-caption="Flash your design to the board in a single action.">
-                                <img src="hero-app.png" alt="Programming the board" class="hero-shot">
-                            </div>
-                            <div class="hero-slide" data-title="Serial Monitor" data-caption="Watch live serial output as your design runs on hardware.">
-                                <img src="hero-app.png" alt="Serial Monitor" class="hero-shot">
-                            </div>
-                        </div>
-                        <div class="hero-scroller">
-                            <button class="scroll-btn" id="scrollUp" type="button" aria-label="Previous view">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
-                            </button>
-                            <div class="scroll-lines" id="scrollLines">
-                                <button class="scroll-line active" type="button" aria-label="View 1"></button>
-                                <button class="scroll-line" type="button" aria-label="View 2"></button>
-                                <button class="scroll-line" type="button" aria-label="View 3"></button>
-                                <button class="scroll-line" type="button" aria-label="View 4"></button>
-                                <button class="scroll-line" type="button" aria-label="View 5"></button>
-                                <button class="scroll-line" type="button" aria-label="View 6"></button>
-                                <button class="scroll-line" type="button" aria-label="View 7"></button>
-                                <button class="scroll-line" type="button" aria-label="View 8"></button>
-                                <button class="scroll-line" type="button" aria-label="View 9"></button>
-                            </div>
-                            <button class="scroll-btn" id="scrollDown" type="button" aria-label="Next view">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <figcaption class="hero-caption" id="shotCaption">
-                        Write Verilog in a fast, focused editor with a full project file tree.
-                    </figcaption>
-                </figure>
             </div>
         </section>
 
@@ -188,49 +129,6 @@
                         </div>
                         <h3>Built for Real Boards</h3>
                         <p>iCEBreaker, ULX3S, OrangeCrab, Fomu, Colorlight and more — dozens of supported boards, configured and ready out of the box.</p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <!-- Platform ecosystem -->
-        <section class="section" id="ecosystem">
-            <div class="container">
-                <div class="section-head">
-                    <span class="eyebrow">The Suite</span>
-                    <h2 class="section-title">One platform, a <span class="gradient-text">growing instrument set</span></h2>
-                    <p class="section-lead">
-                        Allora is designed to expand. Every tool inherits the same
-                        glass-clear interface and the same standard: open where it
-                        counts, exact where it matters.
-                    </p>
-                </div>
-
-                <div class="card-grid card-grid--3">
-                    <article class="glass glass-card product">
-                        <span class="badge badge-live">Shipping</span>
-                        <div class="product-mark product-mark--icon"><img src="allora-fpga.png" alt="Allora FPGA logo" width="44" height="44"></div>
-                        <h3>Allora FPGA</h3>
-                        <p>Open FPGA development from RTL to bitstream to board, in a single application.</p>
-                        <a href="#featured" class="link-arrow">Explore <span aria-hidden="true">→</span></a>
-                    </article>
-                    <article class="glass glass-card product">
-                        <span class="badge">In development</span>
-                        <div class="product-mark product-mark--cyan">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5"/></svg>
-                        </div>
-                        <h3>Allora Trading</h3>
-                        <p>Data-dense instruments for quantitative research and live market workflows.</p>
-                        <span class="link-arrow link-arrow--muted">In progress</span>
-                    </article>
-                    <article class="glass glass-card product">
-                        <span class="badge">On the roadmap</span>
-                        <div class="product-mark product-mark--violet">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                        </div>
-                        <h3>Future Instruments</h3>
-                        <p>More engineering, developer, and hardware tools, unified under one platform.</p>
-                        <span class="link-arrow link-arrow--muted">More to come</span>
                     </article>
                 </div>
             </div>
@@ -365,6 +263,118 @@
                         <li>Alchitry Au</li>
                         <li class="board-chips-more board-chips-more--muted">200+ more in the catalog</li>
                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- App showcase -->
+        <section class="section showcase" id="showcase">
+            <div class="section-head">
+                <span class="eyebrow">Inside the App</span>
+                <h2 class="section-title">See it <span class="gradient-text">in motion</span></h2>
+                <p class="section-lead">
+                    A walk through the Allora FPGA workspace, from the editor to the
+                    board.
+                </p>
+            </div>
+            <figure class="hero-figure">
+                <p class="hero-shot-title" id="shotTitle">The Allora FPGA Editor</p>
+                <div class="hero-stage">
+                    <div class="hero-scroller-spacer" aria-hidden="true"></div>
+                    <div class="hero-panel" id="heroPanel">
+                        <div class="hero-slide active" data-title="The Allora FPGA Editor" data-caption="Write Verilog in a fast, focused editor with a full project file tree.">
+                            <img src="hero-app.png" alt="The Allora FPGA Editor" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Synthesis" data-caption="Drive Yosys synthesis and follow the build, stage by stage, in real time.">
+                            <img src="hero-synthesis.png" alt="Synthesis view" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Testbench" data-caption="Simulate and verify your modules in software before touching silicon.">
+                            <img src="hero-testbench.png" alt="Testbench view" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Pin Mapping · Guided" data-caption="Assign signals quickly on a clean, guided board view.">
+                            <img src="hero-pins-simple.png" alt="Guided pin mapping" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Pin Mapping · Advanced" data-caption="Take full control of constraints in the advanced pin browser.">
+                            <img src="hero-pins-advanced.png" alt="Advanced pin mapping" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Diagnostics" data-caption="Read live board health and status without leaving the bench.">
+                            <img src="hero-app.png" alt="Diagnostics" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Bitstream" data-caption="Place, route, and pack a bitstream with nextpnr.">
+                            <img src="hero-app.png" alt="Bitstream generation" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Program" data-caption="Flash your design to the board in a single action.">
+                            <img src="hero-app.png" alt="Programming the board" class="hero-shot">
+                        </div>
+                        <div class="hero-slide" data-title="Serial Monitor" data-caption="Watch live serial output as your design runs on hardware.">
+                            <img src="hero-app.png" alt="Serial Monitor" class="hero-shot">
+                        </div>
+                    </div>
+                    <div class="hero-scroller">
+                        <button class="scroll-btn" id="scrollUp" type="button" aria-label="Previous view">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+                        </button>
+                        <div class="scroll-lines" id="scrollLines">
+                            <button class="scroll-line active" type="button" aria-label="View 1"></button>
+                            <button class="scroll-line" type="button" aria-label="View 2"></button>
+                            <button class="scroll-line" type="button" aria-label="View 3"></button>
+                            <button class="scroll-line" type="button" aria-label="View 4"></button>
+                            <button class="scroll-line" type="button" aria-label="View 5"></button>
+                            <button class="scroll-line" type="button" aria-label="View 6"></button>
+                            <button class="scroll-line" type="button" aria-label="View 7"></button>
+                            <button class="scroll-line" type="button" aria-label="View 8"></button>
+                            <button class="scroll-line" type="button" aria-label="View 9"></button>
+                        </div>
+                        <button class="scroll-btn" id="scrollDown" type="button" aria-label="Next view">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <figcaption class="hero-caption" id="shotCaption">
+                    Write Verilog in a fast, focused editor with a full project file tree.
+                </figcaption>
+            </figure>
+        </section>
+
+        <!-- Platform ecosystem -->
+        <section class="section" id="ecosystem">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">The Suite</span>
+                    <h2 class="section-title">One platform, a <span class="gradient-text">growing instrument set</span></h2>
+                    <p class="section-lead">
+                        Allora is designed to expand. Every tool inherits the same
+                        glass-clear interface and the same standard: open where it
+                        counts, exact where it matters.
+                    </p>
+                </div>
+
+                <div class="card-grid card-grid--3">
+                    <article class="glass glass-card product">
+                        <span class="badge badge-live">Shipping</span>
+                        <div class="product-mark product-mark--icon"><img src="allora-fpga.png" alt="Allora FPGA logo" width="44" height="44"></div>
+                        <h3>Allora FPGA</h3>
+                        <p>Open FPGA development from RTL to bitstream to board, in a single application.</p>
+                        <a href="#featured" class="link-arrow">Explore <span aria-hidden="true">→</span></a>
+                    </article>
+                    <article class="glass glass-card product">
+                        <span class="badge">In development</span>
+                        <div class="product-mark product-mark--cyan">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5"/></svg>
+                        </div>
+                        <h3>Allora Trading</h3>
+                        <p>Data-dense instruments for quantitative research and live market workflows.</p>
+                        <span class="link-arrow link-arrow--muted">In progress</span>
+                    </article>
+                    <article class="glass glass-card product">
+                        <span class="badge">On the roadmap</span>
+                        <div class="product-mark product-mark--violet">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h3>Future Instruments</h3>
+                        <p>More engineering, developer, and hardware tools, unified under one platform.</p>
+                        <span class="link-arrow link-arrow--muted">More to come</span>
+                    </article>
                 </div>
             </div>
         </section>
