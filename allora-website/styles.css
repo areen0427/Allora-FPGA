@@ -7,23 +7,28 @@
 /* ---- Design tokens ---------------------------------------------------- */
 :root {
   /* Brand & accent colors (matched to the Allora FPGA app) */
-  --blue: #2563eb;
-  --blue-bright: #3b82f6;
-  --blue-soft: #60a5fa;
-  --cyan: #0ea5e9;
-  --cyan-bright: #38bdf8;
+  --blue: #0a6fd4;
+  --blue-bright: #2b8ee8;
+  --blue-soft: #6cc3f0;
+  --cyan: #06b6d4;
+  --cyan-bright: #22d3ee;
   --violet: #863bff;
 
-  /* Light "ice" surface palette (mirrors the app's ice theme) */
-  --bg-0: #e3edfd;
-  --bg-1: #f6f9ff;
-  --text: #0f172a;
-  --text-strong: #0b1220;
-  --text-muted: #475569;
-  --text-soft: #64748b;
+  /* Cool "ice" surface palette (mirrors the app's ice theme) */
+  --bg-0: #dfeaf8;
+  --bg-1: #f4f8fe;
+  --text: #122231;
+  --text-strong: #08131f;
+  --text-muted: #3f5468;
+  --text-soft: #607589;
 
-  /* Accent tuned for contrast on light surfaces */
-  --accent: #0284c7;
+  /* Accent tuned for contrast on light surfaces — teal-leaning aqua */
+  --accent: #0b8aa6;
+
+  /* Type families: geometric display, neutral body, technical mono */
+  --font-display: "Space Grotesk", Inter, system-ui, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Glass surfaces (layered gradient + icy tint, as in the app's ice theme) */
   --glass-surface:
@@ -74,7 +79,7 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background:
     radial-gradient(circle at 8% -5%, rgba(37, 99, 235, 0.14), transparent 38%),
@@ -88,7 +93,7 @@ body {
 
 a { color: inherit; text-decoration: none; }
 img { display: block; }
-h1, h2, h3, h4 { margin: 0; letter-spacing: -0.03em; line-height: 1.1; }
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1.1; }
 p { margin: 0; }
 
 .container {
@@ -182,16 +187,25 @@ p { margin: 0; }
 
 /* ---- Typography helpers ---------------------------------------------- */
 .eyebrow {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+}
+.eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
 }
 .gradient-text {
-  background: linear-gradient(100deg, var(--blue), var(--cyan) 52%, #7c3aed);
+  background: linear-gradient(100deg, var(--blue) 8%, var(--cyan) 55%, #38bdf8);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -275,9 +289,10 @@ p { margin: 0; }
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-weight: 900;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 17px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 .nav-brand-mark { border-radius: 8px; filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.5)); }
 .nav-brand-accent { color: var(--accent); margin-left: 2px; }
@@ -304,8 +319,8 @@ p { margin: 0; }
 .hero-inner { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .hero-title {
   font-size: clamp(36px, 6.5vw, 70px);
-  font-weight: 900;
-  letter-spacing: -0.045em;
+  font-weight: 700;
+  letter-spacing: -0.035em;
   max-width: 16ch;
 }
 .hero-subtitle {
@@ -316,6 +331,33 @@ p { margin: 0; }
   line-height: 1.6;
 }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 36px; }
+
+/* Retro-futurist spec strip beneath the hero CTAs */
+.hero-specs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px 22px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+.hero-specs li { display: inline-flex; align-items: center; gap: 22px; }
+.hero-specs li + li::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(11, 138, 166, 0.6);
+}
 
 /* Floating app screenshot */
 .hero-figure {
@@ -338,9 +380,9 @@ p { margin: 0; }
   margin: 0 0 18px;
   text-align: center;
   color: var(--text-strong);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(22px, 2.6vw, 30px);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 .hero-caption {
   margin-top: 18px;
@@ -473,7 +515,7 @@ p { margin: 0; }
 .section { padding: clamp(56px, 9vw, 110px) 0; }
 .section-head { max-width: 720px; margin: 0 auto clamp(40px, 6vw, 64px); text-align: center; }
 .section-head--tight { margin-bottom: 36px; }
-.section-title { font-size: clamp(30px, 4.5vw, 48px); font-weight: 900; }
+.section-title { font-size: clamp(30px, 4.5vw, 48px); font-weight: 700; }
 .section-lead { margin-top: 18px; font-size: clamp(15px, 1.5vw, 18px); color: var(--text-muted); line-height: 1.6; }
 
 /* ---- Card grids (shared layout) -------------------------------------- */
@@ -483,7 +525,19 @@ p { margin: 0; }
 
 /* ---- Feature cards --------------------------------------------------- */
 .feature { padding: 30px 26px; }
-.feature h3 { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+.feature-tag {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-soft);
+  opacity: 0.65;
+}
+.feature-tag::before { content: "//"; margin-right: 5px; color: var(--accent); opacity: 0.7; }
+.feature h3 { font-size: 20px; font-weight: 600; margin-bottom: 10px; }
 .feature p { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
 .feature-icon {
   width: 52px; height: 52px;
@@ -498,7 +552,7 @@ p { margin: 0; }
 
 /* ---- Product (ecosystem) cards --------------------------------------- */
 .product { padding: 30px 26px; display: flex; flex-direction: column; align-items: flex-start; }
-.product h3 { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+.product h3 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
 .product p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 20px; flex: 1; }
 .product-mark {
   width: 60px; height: 60px;
@@ -523,9 +577,10 @@ p { margin: 0; }
   align-self: flex-start;
   padding: 5px 12px;
   border-radius: var(--r-pill);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-soft);
   background: rgba(148, 163, 184, 0.14);
@@ -533,9 +588,9 @@ p { margin: 0; }
   margin-bottom: 18px;
 }
 .badge-live {
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.32);
+  color: #0f766e;
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(13, 148, 136, 0.4);
 }
 .link-arrow { font-weight: 700; font-size: 14px; color: var(--accent); transition: gap var(--t-fast) var(--ease); display: inline-flex; gap: 7px; }
 .product:hover .link-arrow span { transform: translateX(4px); }
@@ -544,14 +599,135 @@ p { margin: 0; }
 
 /* ---- Value cards ----------------------------------------------------- */
 .value { padding: 32px 30px; }
-.value h3 { display: flex; align-items: baseline; gap: 14px; font-size: 21px; font-weight: 800; margin-bottom: 12px; }
+.value h3 { display: flex; align-items: baseline; gap: 14px; font-size: 21px; font-weight: 600; margin-bottom: 12px; }
 .value p { color: var(--text-muted); font-size: 15.5px; line-height: 1.6; }
 .value-num {
+  font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 900;
-  color: var(--blue);
+  font-weight: 700;
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Workflow pipeline ----------------------------------------------- */
+.pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(10px, 1.2vw, 14px);
+}
+.pipeline-step {
+  flex: 1 1 0;
+  min-width: 158px;
+  max-width: 215px;
+  padding: 26px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.pipeline-step h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+.pipeline-step p { color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
+.pipeline-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  opacity: 0.8;
+  margin-bottom: 14px;
+}
+.pipeline-icon {
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(43, 142, 232, 0.26), rgba(6, 182, 212, 0.18));
+  border: 1px solid rgba(108, 195, 240, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+.pipeline-icon svg { width: 24px; height: 24px; fill: none; stroke: var(--blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pipeline-arrow {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  opacity: 0.55;
+}
+.pipeline-arrow svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- Supported boards strip ------------------------------------------ */
+.boards { margin-top: clamp(40px, 6vw, 68px); text-align: center; }
+.boards-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 22px;
+}
+.board-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.board-chips li {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 17px;
+  border-radius: var(--r-pill);
+  color: var(--text-muted);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 6px 16px rgba(15, 23, 42, 0.06);
+  transition:
+    transform var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+.board-chips li:hover {
+  transform: translateY(-3px);
+  border-color: var(--glass-border-hover);
+  background: var(--glass-surface-hover);
+  color: var(--text-strong);
+}
+.board-chips-more { color: var(--accent) !important; }
+
+/* Secondary group: pin-mapping-only boards (toolchain not yet wired) */
+.boards--muted { margin-top: clamp(30px, 4vw, 44px); }
+.boards-note {
+  max-width: 56ch;
+  margin: 0 auto 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+.board-chips--muted li {
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.32);
+  border-style: dashed;
+  border-color: rgba(100, 116, 139, 0.4);
+  box-shadow: none;
+}
+.board-chips--muted li:hover {
+  color: var(--text-muted);
+  border-color: var(--glass-border-hover);
+  background: rgba(255, 255, 255, 0.5);
+}
+.board-chips-more--muted { color: var(--text-soft) !important; font-style: italic; }
 
 /* ---- Download -------------------------------------------------------- */
 .download-panel { padding: clamp(36px, 5vw, 60px) clamp(24px, 4vw, 56px); }
@@ -574,8 +750,8 @@ p { margin: 0; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), var(--glow-blue);
 }
 .os-icon { width: 38px; height: 38px; fill: var(--blue); margin-bottom: 6px; }
-.os-name { font-size: 18px; font-weight: 800; }
-.os-meta { font-size: 13px; color: var(--text-soft); font-weight: 600; }
+.os-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.os-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-soft); font-weight: 500; letter-spacing: 0.02em; }
 .download-note { margin-top: 26px; text-align: center; font-size: 13px; color: var(--text-soft); }
 
 /* ---- Footer ---------------------------------------------------------- */
@@ -596,7 +772,7 @@ p { margin: 0; }
 .footer-tagline { margin-top: 16px; color: var(--text-muted); font-size: 14.5px; line-height: 1.6; }
 .footer-cols { display: flex; flex-wrap: wrap; gap: clamp(36px, 6vw, 72px); }
 .footer-col { display: flex; flex-direction: column; gap: 12px; }
-.footer-col h4 { font-size: 13px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 4px; }
+.footer-col h4 { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 4px; }
 .footer-col a { font-size: 14.5px; color: var(--text-muted); transition: color var(--t-fast) var(--ease); }
 .footer-col a:hover { color: var(--accent); }
 .footer-bottom {
@@ -615,6 +791,12 @@ p { margin: 0; }
   .card-grid--3 { grid-template-columns: repeat(2, 1fr); }
   .nav-links { display: none; }
   .nav-brand { margin-right: auto; }
+}
+@media (max-width: 760px) {
+  /* Pipeline stacks vertically; rotate connectors to point downward */
+  .pipeline { flex-direction: column; align-items: center; }
+  .pipeline-step { max-width: 340px; width: 100%; }
+  .pipeline-arrow { transform: rotate(90deg); }
 }
 @media (max-width: 600px) {
   .card-grid--3,

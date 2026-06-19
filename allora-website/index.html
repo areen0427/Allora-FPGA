@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Allora Platform — modern engineering software powered by open technologies. Home of Allora FPGA and the growing Allora ecosystem.">
-    <title>Allora Platform — Modern Engineering Software</title>
+    <meta name="description" content="Allora is an engineering suite for the open-hardware era. Home of Allora FPGA — a complete, open-source FPGA bench — and the growing Allora instrument set.">
+    <title>Allora Platform — An Engineering Suite for Open Hardware</title>
     <link rel="icon" type="image/png" href="allora-platform.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -29,8 +29,9 @@
             </a>
             <ul class="nav-links">
                 <li><a href="#featured">Allora FPGA</a></li>
-                <li><a href="#ecosystem">Ecosystem</a></li>
-                <li><a href="#why">Why Allora</a></li>
+                <li><a href="#ecosystem">Instruments</a></li>
+                <li><a href="#why">Approach</a></li>
+                <li><a href="#workflow">Workflow</a></li>
                 <li><a href="#download">Download</a></li>
             </ul>
             <a href="#download" class="btn btn-primary btn-sm">Get Allora FPGA</a>
@@ -41,23 +42,29 @@
         <!-- Hero -->
         <section class="hero" id="home">
             <div class="container hero-inner">
-                <span class="eyebrow">The Allora Platform</span>
+                <span class="eyebrow">Allora · Engineering Suite</span>
                 <h1 class="hero-title">
-                    Modern engineering software,<br>
-                    <span class="gradient-text">powered by open technologies.</span>
+                    Instruments for the<br>
+                    <span class="gradient-text">open-hardware era.</span>
                 </h1>
                 <p class="hero-subtitle">
-                    A growing ecosystem of beautifully crafted tools for hardware,
-                    software, and beyond. Glassy, fast, and built on open standards —
-                    starting with the Allora FPGA development suite.
+                    Allora is a precision toolset for people who build real things.
+                    One coherent, glass-clear environment for hardware and the work
+                    around it — exact, fast, and entirely yours to own. The platform
+                    opens with Allora FPGA.
                 </p>
                 <div class="hero-actions">
                     <a href="#download" class="btn btn-primary btn-lg">
                         <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
                         Download Allora FPGA
                     </a>
-                    <a href="#featured" class="btn btn-ghost btn-lg">Learn More</a>
+                    <a href="#featured" class="btn btn-ghost btn-lg">See the workflow</a>
                 </div>
+                <ul class="hero-specs" aria-hidden="true">
+                    <li>RTL → Bitstream</li>
+                    <li>Fully open toolchain</li>
+                    <li>Native desktop</li>
+                </ul>
 
                 <!-- Floating app preview carousel -->
                 <figure class="hero-figure">
@@ -68,28 +75,28 @@
                             <div class="hero-slide active" data-title="The Allora FPGA Editor" data-caption="Write Verilog in a fast, focused editor with a full project file tree.">
                                 <img src="hero-app.png" alt="The Allora FPGA Editor" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Synthesis" data-caption="Synthesize your design with Yosys and follow real-time build logs.">
-                                <img src="hero-app.png" alt="Synthesis view" class="hero-shot">
+                            <div class="hero-slide" data-title="Synthesis" data-caption="Drive Yosys synthesis and follow the build, stage by stage, in real time.">
+                                <img src="hero-synthesis.png" alt="Synthesis view" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Testbench" data-caption="Simulate and verify your modules before touching hardware.">
-                                <img src="hero-app.png" alt="Testbench view" class="hero-shot">
+                            <div class="hero-slide" data-title="Testbench" data-caption="Simulate and verify your modules in software before touching silicon.">
+                                <img src="hero-testbench.png" alt="Testbench view" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Pin mapping · Simple" data-caption="Assign pins fast with a clean, guided mapping view.">
-                                <img src="hero-app.png" alt="Simple pin mapping" class="hero-shot">
+                            <div class="hero-slide" data-title="Pin Mapping · Guided" data-caption="Assign signals quickly on a clean, guided board view.">
+                                <img src="hero-pins-simple.png" alt="Guided pin mapping" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Pin mapping · Advanced" data-caption="Take full control of constraints with the advanced pin browser.">
-                                <img src="hero-app.png" alt="Advanced pin mapping" class="hero-shot">
+                            <div class="hero-slide" data-title="Pin Mapping · Advanced" data-caption="Take full control of constraints in the advanced pin browser.">
+                                <img src="hero-pins-advanced.png" alt="Advanced pin mapping" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Health Monitoring" data-caption="Keep an eye on live board health and diagnostics.">
-                                <img src="hero-app.png" alt="Health Monitoring" class="hero-shot">
+                            <div class="hero-slide" data-title="Diagnostics" data-caption="Read live board health and status without leaving the bench.">
+                                <img src="hero-app.png" alt="Diagnostics" class="hero-shot">
                             </div>
                             <div class="hero-slide" data-title="Bitstream" data-caption="Place, route, and pack a bitstream with nextpnr.">
                                 <img src="hero-app.png" alt="Bitstream generation" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Program" data-caption="Flash your design to the board in a single click.">
+                            <div class="hero-slide" data-title="Program" data-caption="Flash your design to the board in a single action.">
                                 <img src="hero-app.png" alt="Programming the board" class="hero-shot">
                             </div>
-                            <div class="hero-slide" data-title="Serial Monitor" data-caption="Watch live serial output as your design runs.">
+                            <div class="hero-slide" data-title="Serial Monitor" data-caption="Watch live serial output as your design runs on hardware.">
                                 <img src="hero-app.png" alt="Serial Monitor" class="hero-shot">
                             </div>
                         </div>
@@ -124,57 +131,63 @@
         <section class="section" id="featured">
             <div class="container">
                 <div class="section-head">
-                    <span class="eyebrow">Featured Product</span>
+                    <span class="eyebrow">Flagship · Allora FPGA</span>
                     <h2 class="section-title">Allora <span class="gradient-text">FPGA</span></h2>
                     <p class="section-lead">
-                        The only tool you need for coding, simulating, synthesizing, and
-                        programming open-source FPGA boards — a complete bring-up workflow
-                        in one polished desktop application.
+                        A complete bench for open FPGA development. Write RTL, simulate,
+                        synthesize, route, and program your board without ever leaving
+                        the application or reaching for a proprietary toolchain.
                     </p>
                 </div>
 
                 <div class="card-grid card-grid--3">
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">01</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18 3 12l6-6m6 0 6 6-6 6"/></svg>
                         </div>
-                        <h3>Open-Source Toolchains</h3>
-                        <p>Synthesize with Yosys and place &amp; route with nextpnr. A fully open flow with no proprietary lock-in.</p>
+                        <h3>Open Toolchain, End to End</h3>
+                        <p>Yosys for synthesis, nextpnr for place and route. A fully open flow with nothing proprietary in the path and nothing to lock you in.</p>
                     </article>
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">02</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3"/></svg>
                         </div>
                         <h3>Visual Pin Mapping</h3>
-                        <p>Browse, search, and assign pins on an interactive board diagram with live constraint generation.</p>
+                        <p>Assign signals on an interactive board diagram. Search, browse, and generate constraints as you go, in both guided and advanced views.</p>
                     </article>
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">03</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10M2 21h20M9 9l3 3-3 3m4 0h3"/></svg>
                         </div>
-                        <h3>Synthesis &amp; Bitstream</h3>
-                        <p>Compile, synthesize, and generate bitstreams with real-time logs and a clean, distraction-free editor.</p>
+                        <h3>Synthesis to Bitstream</h3>
+                        <p>Compile, synthesize, place, route, and pack a bitstream with live logs at every stage — all from one clean, focused editor.</p>
                     </article>
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">04</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="4"/></svg>
                         </div>
-                        <h3>Hardware Programming</h3>
-                        <p>Flash your design directly to the board with one click and supported programmers built right in.</p>
+                        <h3>One-Click Programming</h3>
+                        <p>Flash directly to your board with the right programmer detected for you. Source to running silicon in a single action.</p>
                     </article>
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">05</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>
                         </div>
-                        <h3>Health Monitoring</h3>
-                        <p>Live Serial Monitoring and board health insights keep your iteration loop tight and observable.</p>
+                        <h3>Live Diagnostics</h3>
+                        <p>Serial monitoring and board-health readouts keep every iteration observable, so you can see what the hardware is actually doing.</p>
                     </article>
                     <article class="glass glass-card feature">
+                        <span class="feature-tag">06</span>
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="13" width="7" height="7" rx="1.5"/><rect x="14" y="13" width="7" height="7" rx="1.5"/></svg>
                         </div>
-                        <h3>Multi-Board Support</h3>
-                        <p>iCEBreaker, ULX3S, OrangeCrab, Fomu, Colorlight and more — dozens of boards out of the box.</p>
+                        <h3>Built for Real Boards</h3>
+                        <p>iCEBreaker, ULX3S, OrangeCrab, Fomu, Colorlight and more — dozens of supported boards, configured and ready out of the box.</p>
                     </article>
                 </div>
             </div>
@@ -184,38 +197,39 @@
         <section class="section" id="ecosystem">
             <div class="container">
                 <div class="section-head">
-                    <span class="eyebrow">Platform Ecosystem</span>
-                    <h2 class="section-title">One platform, <span class="gradient-text">many tools</span></h2>
+                    <span class="eyebrow">The Suite</span>
+                    <h2 class="section-title">One platform, a <span class="gradient-text">growing instrument set</span></h2>
                     <p class="section-lead">
-                        Allora is built to grow. Every product shares the same icy, glassy
-                        design language and the same commitment to open, modern workflows.
+                        Allora is designed to expand. Every tool inherits the same
+                        glass-clear interface and the same standard: open where it
+                        counts, exact where it matters.
                     </p>
                 </div>
 
                 <div class="card-grid card-grid--3">
                     <article class="glass glass-card product">
-                        <span class="badge badge-live">Available now</span>
+                        <span class="badge badge-live">Shipping</span>
                         <div class="product-mark product-mark--icon"><img src="allora-fpga.png" alt="Allora FPGA logo" width="44" height="44"></div>
                         <h3>Allora FPGA</h3>
-                        <p>Complete open-source FPGA development — from RTL to bitstream to board.</p>
+                        <p>Open FPGA development from RTL to bitstream to board, in a single application.</p>
                         <a href="#featured" class="link-arrow">Explore <span aria-hidden="true">→</span></a>
                     </article>
                     <article class="glass glass-card product">
-                        <span class="badge">Coming soon</span>
+                        <span class="badge">In development</span>
                         <div class="product-mark product-mark--cyan">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5"/></svg>
                         </div>
                         <h3>Allora Trading</h3>
-                        <p>Modern, data-rich tooling for quantitative research and live market workflows.</p>
-                        <span class="link-arrow link-arrow--muted">In development</span>
+                        <p>Data-dense instruments for quantitative research and live market workflows.</p>
+                        <span class="link-arrow link-arrow--muted">In progress</span>
                     </article>
                     <article class="glass glass-card product">
                         <span class="badge">On the roadmap</span>
                         <div class="product-mark product-mark--violet">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                         </div>
-                        <h3>Future Platform Tools</h3>
-                        <p>AI, developer, and hardware tools — all unified under the Allora ecosystem.</p>
+                        <h3>Future Instruments</h3>
+                        <p>More engineering, developer, and hardware tools, unified under one platform.</p>
                         <span class="link-arrow link-arrow--muted">More to come</span>
                     </article>
                 </div>
@@ -226,31 +240,131 @@
         <section class="section" id="why">
             <div class="container">
                 <div class="section-head">
-                    <span class="eyebrow">Why Allora</span>
-                    <h2 class="section-title">Engineering tools that <span class="gradient-text">feel premium</span></h2>
+                    <span class="eyebrow">The Approach</span>
+                    <h2 class="section-title">Serious tools, <span class="gradient-text">without the friction</span></h2>
                     <p class="section-lead">
-                        Professional workflows deserve professional software. Allora pairs
-                        serious engineering capability with a refined, modern interface.
+                        Demanding work deserves software that respects it. Allora pairs
+                        real engineering capability with an interface that stays out of
+                        your way.
                     </p>
                 </div>
 
                 <div class="card-grid card-grid--2">
                     <article class="glass glass-card value">
-                        <h3><span class="value-num">01</span> Modern UX</h3>
-                        <p>A polished, glassy desktop experience with thoughtful interactions and zero clutter.</p>
+                        <h3><span class="value-num">01</span> Considered Interface</h3>
+                        <p>A calm, glass-clear desktop environment with deliberate interactions and nothing extraneous on screen.</p>
                     </article>
                     <article class="glass glass-card value">
-                        <h3><span class="value-num">02</span> Open Technologies</h3>
-                        <p>Built on open standards and open-source toolchains, so you stay in control of your stack.</p>
+                        <h3><span class="value-num">02</span> Open by Default</h3>
+                        <p>Built on open standards and open-source toolchains, so your stack stays inspectable and under your control.</p>
                     </article>
                     <article class="glass glass-card value">
-                        <h3><span class="value-num">03</span> Fast Iteration</h3>
-                        <p>Tight, observable feedback loops from edit to synthesis to hardware — no waiting around.</p>
+                        <h3><span class="value-num">03</span> Tight Feedback Loops</h3>
+                        <p>Edit, simulate, synthesize, and program in observable steps, with minimal waiting between them.</p>
                     </article>
                     <article class="glass glass-card value">
-                        <h3><span class="value-num">04</span> Beautiful Tooling</h3>
-                        <p>A consistent visual language across every product makes the whole platform feel like one.</p>
+                        <h3><span class="value-num">04</span> One Coherent System</h3>
+                        <p>A single visual language across every tool, so the whole platform reads as one instrument.</p>
                     </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow pipeline + supported boards -->
+        <section class="section" id="workflow">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">The Workflow</span>
+                    <h2 class="section-title">From RTL to a <span class="gradient-text">running board</span></h2>
+                    <p class="section-lead">
+                        One continuous pipeline, start to finish, without ever leaving
+                        the application or stitching together separate tools.
+                    </p>
+                </div>
+
+                <ol class="pipeline">
+                    <li class="glass glass-card pipeline-step">
+                        <span class="pipeline-num">01</span>
+                        <div class="pipeline-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        </div>
+                        <h3>Write</h3>
+                        <p>Author Verilog in a focused editor with a full project tree.</p>
+                    </li>
+                    <li class="pipeline-arrow" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg>
+                    </li>
+                    <li class="glass glass-card pipeline-step">
+                        <span class="pipeline-num">02</span>
+                        <div class="pipeline-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>
+                        </div>
+                        <h3>Simulate</h3>
+                        <p>Verify modules on the testbench before touching silicon.</p>
+                    </li>
+                    <li class="pipeline-arrow" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg>
+                    </li>
+                    <li class="glass glass-card pipeline-step">
+                        <span class="pipeline-num">03</span>
+                        <div class="pipeline-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+                        </div>
+                        <h3>Synthesize</h3>
+                        <p>Compile your design to a netlist with Yosys and live logs.</p>
+                    </li>
+                    <li class="pipeline-arrow" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg>
+                    </li>
+                    <li class="glass glass-card pipeline-step">
+                        <span class="pipeline-num">04</span>
+                        <div class="pipeline-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+                        </div>
+                        <h3>Route</h3>
+                        <p>Place, route, and pack a bitstream with nextpnr.</p>
+                    </li>
+                    <li class="pipeline-arrow" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg>
+                    </li>
+                    <li class="glass glass-card pipeline-step">
+                        <span class="pipeline-num">05</span>
+                        <div class="pipeline-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                        <h3>Program</h3>
+                        <p>Flash the bitstream to your board in a single action.</p>
+                    </li>
+                </ol>
+
+                <div class="boards">
+                    <p class="boards-label">Full flow &mdash; synthesize, route &amp; program</p>
+                    <ul class="board-chips">
+                        <li>iCEBreaker</li>
+                        <li>Fomu</li>
+                        <li>iCESugar</li>
+                        <li>ULX3S</li>
+                        <li>OrangeCrab</li>
+                        <li>Colorlight</li>
+                        <li class="board-chips-more">+ more iCE40 &amp; ECP5 boards</li>
+                    </ul>
+                </div>
+
+                <div class="boards boards--muted">
+                    <p class="boards-label">Map the pins on boards with unsupported toolchains</p>
+                    <p class="boards-note">Set up a project and assign pins today &mdash; synthesis and bitstream for these Vivado, Quartus, and Gowin boards are still being wired up.</p>
+                    <ul class="board-chips board-chips--muted">
+                        <li>Arty A7</li>
+                        <li>Basys 3</li>
+                        <li>Nexys 4 DDR</li>
+                        <li>Genesys 2</li>
+                        <li>Zedboard</li>
+                        <li>PYNQ-Z2</li>
+                        <li>DE10-Nano</li>
+                        <li>Tang Nano</li>
+                        <li>Alchitry Au</li>
+                        <li class="board-chips-more board-chips-more--muted">200+ more in the catalog</li>
+                    </ul>
                 </div>
             </div>
         </section>
@@ -262,7 +376,7 @@
                     <div class="section-head section-head--tight">
                         <span class="eyebrow">Download</span>
                         <h2 class="section-title">Get <span class="gradient-text">Allora FPGA</span></h2>
-                        <p class="section-lead">Available for every major desktop platform. Free and open.</p>
+                        <p class="section-lead">Native builds for every major desktop platform. Free and open.</p>
                     </div>
                     <div class="card-grid card-grid--3 download-grid">
                         <a href="#" class="glass download-os">
@@ -271,7 +385,7 @@
                             <span class="os-meta">.exe installer</span>
                         </a>
                         <a href="#" class="glass download-os">
-                            <svg viewBox="0 0 24 24" class="os-icon" aria-hidden="true"><path d="M16 3c0 1.5-.6 2.7-1.5 3.5C13.6 7.3 12.3 8 11 7.8c-.2-1.4.5-2.8 1.3-3.6C13.2 3.3 14.7 3 16 3zM20 16.5c-.5 1.2-.8 1.8-1.5 2.9-1 1.5-2.3 3.4-4 3.4-1.5 0-1.9-1-3.9-.9-2 0-2.5.9-4 .9-1.7 0-3-1.7-4-3.2-2.7-4.2-3-9.1-1.3-11.7C2.4 6.3 4 5.4 5.6 5.4c1.6 0 2.6 1 4 1 1.3 0 2.1-1 4-1 1.4 0 2.9.8 4 2.1-3.5 1.9-3 7 .8 9z"/></svg>
+                            <svg viewBox="0 0 24 24" class="os-icon" aria-hidden="true"><path d="M17.05 12.04c-.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.1-2.02-3.77-2.05-1.6-.16-3.13.94-3.94.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.58-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.66 3.23 2.61 1.29-.05 1.78-.84 3.34-.84 1.56 0 2.01.84 3.38.81 1.4-.02 2.28-1.28 3.13-2.54.99-1.46 1.4-2.87 1.42-2.94-.03-.01-2.72-1.05-2.75-4.16zM14.53 4.55c.72-.87 1.2-2.07 1.07-3.27-1.03.04-2.28.69-3.02 1.55-.66.77-1.24 2-1.08 3.18 1.15.09 2.32-.58 3.03-1.46z"/></svg>
                             <span class="os-name">macOS</span>
                             <span class="os-meta">Universal .dmg</span>
                         </a>
@@ -281,7 +395,7 @@
                             <span class="os-meta">.AppImage / .deb</span>
                         </a>
                     </div>
-                    <p class="download-note">Builds coming soon — downloads are placeholders for now.</p>
+                    <p class="download-note">Builds are on the way — these downloads are placeholders for now.</p>
                 </div>
             </div>
         </section>
@@ -295,20 +409,20 @@
                     <img src="allora-platform.png" alt="" class="nav-brand-mark" width="38" height="38">
                     <span class="nav-brand-text">Allora<span class="nav-brand-accent">Platform</span></span>
                 </a>
-                <p class="footer-tagline">Modern engineering software, powered by open technologies.</p>
+                <p class="footer-tagline">Engineering instruments for the open-hardware era.</p>
             </div>
             <nav class="footer-cols">
                 <div class="footer-col">
-                    <h4>Products</h4>
+                    <h4>Instruments</h4>
                     <a href="#featured">Allora FPGA</a>
                     <a href="#ecosystem">Allora Trading</a>
-                    <a href="#ecosystem">Ecosystem</a>
+                    <a href="#ecosystem">The Suite</a>
                 </div>
                 <div class="footer-col">
                     <h4>Platform</h4>
-                    <a href="#why">Why Allora</a>
+                    <a href="#why">Approach</a>
                     <a href="#download">Download</a>
-                    <a href="#featured">Features</a>
+                    <a href="#featured">Capabilities</a>
                 </div>
                 <div class="footer-col">
                     <h4>Resources</h4>
@@ -319,8 +433,8 @@
             </nav>
         </div>
         <div class="container footer-bottom">
-            <span>&copy; 2026 Allora Platform. All rights reserved.</span>
-            <span class="footer-built">Built on open technologies.</span>
+            <span>&copy; 2026 Allora.</span>
+            <span class="footer-built">Open where it counts.</span>
         </div>
     </footer>
 
