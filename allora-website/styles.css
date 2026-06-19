@@ -512,7 +512,7 @@ p { margin: 0; }
 }
 
 /* ---- Sections -------------------------------------------------------- */
-.section { padding: clamp(56px, 9vw, 110px) 0; }
+.section { padding: clamp(44px, 7vw, 88px) 0; }
 .section-head { max-width: 720px; margin: 0 auto clamp(40px, 6vw, 64px); text-align: center; }
 .section-head--tight { margin-bottom: 36px; }
 .section-title { font-size: clamp(30px, 4.5vw, 48px); font-weight: 700; }
@@ -806,7 +806,150 @@ p { margin: 0; }
   .hero-actions .btn { flex: 1; justify-content: center; }
 }
 
+/* =========================================================================
+   Decorative + interactive section connective tissue
+   (circuit-trace dividers · spec ticker · gutter glyphs · scroll reveal)
+   ========================================================================= */
+
+/* ---- Circuit-trace section dividers ---------------------------------- */
+/* A vertical PCB trace bridging two sections, with a glowing pulse of
+   "signal" travelling down it — the page itself routes like a board. */
+.section-divider {
+  display: flex;
+  justify-content: center;
+  padding: clamp(4px, 1.5vw, 16px) 0;
+}
+.section-divider svg {
+  width: 40px;
+  height: clamp(62px, 8vw, 94px);
+  overflow: visible;
+}
+.divider-trace {
+  fill: none;
+  stroke: rgba(11, 138, 166, 0.22);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The travelling signal is built from three stacked, co-moving strokes:
+   a wide soft halo, a mid cyan body, and a near-white hot core. */
+.divider-pulse,
+.divider-pulse-glow,
+.divider-pulse-core {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 26 540;
+  stroke-dashoffset: 566;
+  animation: divider-flow 3s linear infinite;
+}
+.divider-pulse-glow {
+  stroke: rgba(34, 211, 238, 0.5);
+  stroke-width: 9;
+  filter: blur(4px);
+}
+.divider-pulse {
+  stroke: var(--cyan-bright);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 7px rgba(34, 211, 238, 0.95));
+}
+.divider-pulse-core {
+  stroke: #f0feff;
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 4px rgba(186, 248, 255, 0.95));
+}
+.divider-pad {
+  fill: rgba(11, 138, 166, 0.55);
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 0.75;
+}
+.divider-pad--end { fill: var(--blue-bright); }
+/* Flat connector cap at the top of each trace (in place of a node) */
+.divider-cap {
+  stroke: rgba(11, 138, 166, 0.55);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+@keyframes divider-flow {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ---- Spec ticker strip ----------------------------------------------- */
+.ticker-strip { margin: clamp(10px, 2.4vw, 26px) 0; }
+.ticker {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 24px rgba(15, 23, 42, 0.07);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 44s linear infinite;
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-block: 13px;
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+.ticker-item::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  margin-right: 16px;
+  border-radius: 1px;
+  transform: rotate(45deg);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(11, 138, 166, 0.6);
+}
+.ticker-item--lit { color: var(--text-strong); }
+@keyframes ticker-scroll {
+  to { transform: translateX(-50%); }
+}
+
+/* ---- Background gutter glyphs ----------------------------------------- */
+/* Faint blueprint-style annotations down the page margins: hex words,
+   binary, and logic-gate symbols. Hidden when the gutters get tight. */
+.gutter-glyphs {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: rgba(11, 138, 166, 0.14);
+}
+.gutter-glyphs .gg {
+  position: absolute;
+  white-space: nowrap;
+  letter-spacing: 0.12em;
+}
+.gutter-glyphs .gg-lg { font-size: 26px; color: rgba(11, 138, 166, 0.12); }
+@media (max-width: 1320px) { .gutter-glyphs { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .aurora-orb, .hero-panel { animation: none; }
+  .divider-pulse, .divider-pulse-glow, .ticker-track { animation: none; }
+  .divider-pulse, .divider-pulse-glow { stroke-dashoffset: 0; opacity: 0.7; }
   * { scroll-behavior: auto; }
 }
