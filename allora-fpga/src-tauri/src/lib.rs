@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::env;
 use std::fs;
 use std::io;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -2219,8 +2220,18 @@ fn tool_command(command: &str) -> PathBuf {
         return path;
     }
 
-    for tool_dir in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] {
-        let candidate = Path::new(tool_dir).join(command);
+    let mut tool_dirs = vec![
+        PathBuf::from("/opt/homebrew/bin"),
+        PathBuf::from("/usr/local/bin"),
+        PathBuf::from("/opt/local/bin"),
+    ];
+
+    if let Some(home) = env::var_os("HOME") {
+        tool_dirs.push(PathBuf::from(home).join("oss-cad-suite/bin"));
+    }
+
+    for tool_dir in tool_dirs {
+        let candidate = tool_dir.join(command);
         if candidate.exists() {
             return candidate;
         }
