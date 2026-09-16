@@ -14,6 +14,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::ipc::Channel;
 use tauri::State;
 
+mod virtual_fpga;
+use virtual_fpga::VirtualFpgaState;
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WorkspaceFileSpec {
@@ -2796,6 +2799,7 @@ fn close_serial_monitor(
 pub fn run() {
     tauri::Builder::default()
         .manage(SerialState::default())
+        .manage(VirtualFpgaState::default())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -2821,6 +2825,13 @@ pub fn run() {
             generate_synthesis_diagram,
             generate_bitstream,
             simulate_testbench,
+            virtual_fpga::detect_simulation_tools,
+            virtual_fpga::discover_rtl_ports,
+            virtual_fpga::start_virtual_simulation,
+            virtual_fpga::set_virtual_simulation_input,
+            virtual_fpga::step_virtual_simulation,
+            virtual_fpga::reset_virtual_simulation,
+            virtual_fpga::stop_virtual_simulation,
             detect_programmer,
             detect_connected_board,
             program_fpga,

@@ -1,5 +1,6 @@
 export type DashboardSection =
   | "editor"
+  | "virtual-fpga"
   | "board"
   | "synthesis"
   | "testbench"
@@ -8,6 +9,8 @@ export type DashboardSection =
   | "bitstream"
   | "programming"
   | "serial";
+
+export type ExecutionTarget = "simulate" | "build";
 
 export type ProjectFile = {
   name: string;

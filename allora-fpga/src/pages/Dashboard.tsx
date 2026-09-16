@@ -10,8 +10,13 @@ import BitstreamSection from "./dashboard/BitstreamSection";
 import ProgrammingSection from "./dashboard/ProgrammingSection";
 import SerialMonitorSection from "./dashboard/SerialMonitorSection";
 import HealthSection from "./dashboard/HealthSection";
+import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
 import SidebarButton from "./dashboard/SidebarButton";
-import type { DashboardSection, ProjectFile } from "./dashboard/types";
+import type {
+  DashboardSection,
+  ExecutionTarget,
+  ProjectFile,
+} from "./dashboard/types";
 import {
   ArrowLeft,
   Binary,
@@ -26,6 +31,9 @@ import {
   Settings,
   Upload,
   Usb,
+  Zap,
+  Hammer,
+  Play,
 } from "lucide-react";
 import { getBoardIconForBoardId } from "./boardIcons";
 import type { SavedProject } from "../data/projects";
@@ -39,6 +47,10 @@ import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
 import { useSaveProject } from "../hooks/useSaveProject";
 import { isHdlFile, getSaveStatusLabel } from "../hooks/utils";
 import { SettingsModal } from "../components/SettingsModal";
+import {
+  writeVirtualFpgaConfig,
+  type VirtualFpgaConfig,
+} from "../lib/virtualFpga";
 
 // Keeps a section's component mounted (and therefore its state — generated
 // diagrams, bitstreams, testbench results, logs — alive) once it has been
@@ -53,7 +65,9 @@ function KeepAliveSection({
   children: ReactNode;
 }) {
   if (!visited) return null;
-  return <div style={{ display: active ? "contents" : "none" }}>{children}</div>;
+  return (
+    <div style={{ display: active ? "contents" : "none" }}>{children}</div>
+  );
 }
 
 type DashboardProps = {
@@ -61,6 +75,7 @@ type DashboardProps = {
   project: SavedProject | null;
   settings: AppSettings;
   projectWarning?: string;
+  launchTarget: ExecutionTarget;
   onSettingsChange: (settings: AppSettings) => void;
   onBack: () => void;
   onHome: () => void;
@@ -71,12 +86,16 @@ export default function Dashboard({
   project,
   settings,
   projectWarning,
+  launchTarget,
   onSettingsChange,
   onBack,
   onHome,
 }: DashboardProps) {
-  const [activeSection, setActiveSection] =
-    useState<DashboardSection>("editor");
+  const [executionTarget, setExecutionTarget] =
+    useState<ExecutionTarget>(launchTarget);
+  const [activeSection, setActiveSection] = useState<DashboardSection>(
+    launchTarget === "simulate" ? "virtual-fpga" : "editor",
+  );
   // Track which sections have been opened so we can keep them mounted (and
   // their generated output intact) after the user switches away.
   const [visitedSections, setVisitedSections] = useState<Set<DashboardSection>>(
@@ -100,6 +119,16 @@ export default function Dashboard({
       return next;
     });
   }, [activeSection]);
+
+  useEffect(() => {
+    setExecutionTarget(launchTarget);
+    setActiveSection(launchTarget === "simulate" ? "virtual-fpga" : "editor");
+  }, [launchTarget]);
+
+  function changeExecutionTarget(target: ExecutionTarget) {
+    setExecutionTarget(target);
+    setActiveSection(target === "simulate" ? "virtual-fpga" : "editor");
+  }
 
   // --- File management hook ---
   const fileMgmt = useFileManagement(project);
@@ -258,6 +287,26 @@ export default function Dashboard({
     markWorkspaceUnsaved(fileName);
   }
 
+  function handleUpdateVirtualConfig(config: VirtualFpgaConfig) {
+    const metadata = fileMgmt.files.find(
+      (file) => file.name === "allora-project.json",
+    );
+    if (!metadata || metadata.isBinary) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage(
+        "Virtual FPGA mappings require a readable allora-project.json file.",
+      );
+      return;
+    }
+    const content = writeVirtualFpgaConfig(metadata.content, config);
+    fileMgmt.setFiles((currentFiles) =>
+      currentFiles.map((file) =>
+        file.name === metadata.name ? { ...file, content } : file,
+      ),
+    );
+    markWorkspaceUnsaved(metadata.name);
+  }
+
   function handleImportFiles(event: ChangeEvent<HTMLInputElement>) {
     fileMgmt.importFiles(event);
     // Note: importFiles triggers setFiles internally; we mark unsaved via the files effect
@@ -393,10 +442,29 @@ export default function Dashboard({
                   fontWeight: 600,
                 }}
               >
-                FPGA Project
+                {executionTarget === "simulate"
+                  ? "Simulation Workspace"
+                  : "FPGA Build Workspace"}
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="dashboard-target-switch" aria-label="Execution target">
+          <button
+            type="button"
+            className={executionTarget === "simulate" ? "active simulate" : ""}
+            onClick={() => changeExecutionTarget("simulate")}
+          >
+            <Play size={13} fill="currentColor" /> Simulate
+          </button>
+          <button
+            type="button"
+            className={executionTarget === "build" ? "active build" : ""}
+            onClick={() => changeExecutionTarget("build")}
+          >
+            <Hammer size={13} /> Build
+          </button>
         </div>
 
         <nav
@@ -413,54 +481,71 @@ export default function Dashboard({
             active={activeSection === "editor"}
             onClick={() => setActiveSection("editor")}
           />
-          <SidebarButton
-            label="Board"
-            icon={<CircuitBoard size={16} />}
-            active={activeSection === "board"}
-            onClick={() => setActiveSection("board")}
-          />
-          <SidebarButton
-            label="Synthesis"
-            icon={<Binary size={16} />}
-            active={activeSection === "synthesis"}
-            onClick={() => setActiveSection("synthesis")}
-          />
-          <SidebarButton
-            label="Testbench"
-            icon={<Waves size={16} />}
-            active={activeSection === "testbench"}
-            onClick={() => setActiveSection("testbench")}
-          />
-          <SidebarButton
-            label="Pins"
-            icon={<MapPinned size={16} />}
-            active={activeSection === "pin-mapping"}
-            onClick={() => setActiveSection("pin-mapping")}
-          />
+          {executionTarget === "simulate" ? (
+            <>
+              <SidebarButton
+                label="Virtual"
+                icon={<Zap size={16} />}
+                active={activeSection === "virtual-fpga"}
+                onClick={() => setActiveSection("virtual-fpga")}
+              />
+              <SidebarButton
+                label="Testbench"
+                icon={<Waves size={16} />}
+                active={activeSection === "testbench"}
+                onClick={() => setActiveSection("testbench")}
+              />
+            </>
+          ) : (
+            <>
+              <SidebarButton
+                label="Board"
+                icon={<CircuitBoard size={16} />}
+                active={activeSection === "board"}
+                onClick={() => setActiveSection("board")}
+              />
+              <SidebarButton
+                label="Synthesis"
+                icon={<Binary size={16} />}
+                active={activeSection === "synthesis"}
+                onClick={() => setActiveSection("synthesis")}
+              />
+              <SidebarButton
+                label="Pins"
+                icon={<MapPinned size={16} />}
+                active={activeSection === "pin-mapping"}
+                onClick={() => setActiveSection("pin-mapping")}
+              />
+            </>
+          )}
           <SidebarButton
             label="Health"
             icon={<Activity size={16} />}
             active={activeSection === "health"}
             onClick={() => setActiveSection("health")}
           />
-          <SidebarButton
-            label="Bitstream"
-            icon={<SquareTerminal size={16} />}
-            active={activeSection === "bitstream"}
-            onClick={() => setActiveSection("bitstream")}
-          />
-          <SidebarButton
-            label="Program"
-            icon={<Cpu size={16} />}
-            active={activeSection === "programming"}
-            onClick={() => setActiveSection("programming")}
-          />
-          <SidebarButton
-            label="Serial"
-            icon={<Usb size={16} />}
-            active={activeSection === "serial"}
-            onClick={() => setActiveSection("serial")}
-          />
+          {executionTarget === "build" ? (
+            <>
+              <SidebarButton
+                label="Bitstream"
+                icon={<SquareTerminal size={16} />}
+                active={activeSection === "bitstream"}
+                onClick={() => setActiveSection("bitstream")}
+              />
+              <SidebarButton
+                label="Program"
+                icon={<Cpu size={16} />}
+                active={activeSection === "programming"}
+                onClick={() => setActiveSection("programming")}
+              />
+              <SidebarButton
+                label="Serial"
+                icon={<Usb size={16} />}
+                active={activeSection === "serial"}
+                onClick={() => setActiveSection("serial")}
+              />
+            </>
+          ) : null}
         </nav>
 
         <div
@@ -766,6 +851,17 @@ export default function Dashboard({
         )}
 
         {activeSection === "board" && <BoardSection board={board} />}
+        <KeepAliveSection
+          active={activeSection === "virtual-fpga"}
+          visited={visitedSections.has("virtual-fpga")}
+        >
+          <VirtualFpgaSection
+            files={fileMgmt.files}
+            projectPath={projectPath}
+            topLevelFileName={activeTabs.topLevelFileName}
+            onConfigChange={handleUpdateVirtualConfig}
+          />
+        </KeepAliveSection>
         {activeSection === "health" && (
           <HealthSection
             board={board}

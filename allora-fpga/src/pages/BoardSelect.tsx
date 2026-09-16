@@ -15,13 +15,14 @@ import { SettingsModal } from "./welcome/SettingsModal";
 import { VariantSelectorModal } from "./welcome/VariantSelectorModal";
 import { WelcomeShell } from "./welcome/WelcomeShell";
 import type { WelcomeView } from "./welcome/WelcomeShell";
+import type { ExecutionTarget } from "./dashboard/types";
 
 type BoardSelectProps = {
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
   onSelectBoard: (boardId: string) => void;
-  onOpenProject: (projectId: string) => void;
-  onOpenExistingProject: () => Promise<void>;
+  onOpenProject: (projectId: string, target: ExecutionTarget) => void;
+  onOpenExistingProject: (target: ExecutionTarget) => Promise<void>;
 };
 
 export default function BoardSelect({
@@ -40,6 +41,7 @@ export default function BoardSelect({
     useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
   const [activeView, setActiveView] = useState<WelcomeView>("home");
+  const [homeViewKey, setHomeViewKey] = useState(0);
   const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
   const newProjectRef = useRef<HTMLElement | null>(null);
 
@@ -64,12 +66,12 @@ export default function BoardSelect({
     setSavedProjects(getSavedProjects());
   }
 
-  async function handleOpenExistingProject() {
+  async function handleOpenExistingProject(target: ExecutionTarget) {
     setOpenExistingProjectError("");
     setIsOpeningExistingProject(true);
 
     try {
-      await onOpenExistingProject();
+      await onOpenExistingProject(target);
     } catch (error) {
       setOpenExistingProjectError(
         error instanceof Error
@@ -85,6 +87,7 @@ export default function BoardSelect({
     setActiveView(view);
     if (view === "home") {
       setSelectedPinBoard(null);
+      setHomeViewKey((current) => current + 1);
     }
   }
 
@@ -98,6 +101,7 @@ export default function BoardSelect({
     >
       {activeView === "home" ? (
         <HomeView
+          key={homeViewKey}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
           showAllBoards={showAllBoards}
@@ -107,7 +111,9 @@ export default function BoardSelect({
           newProjectRef={newProjectRef}
           onToggleShowAllBoards={setShowAllBoards}
           onSelectBoard={handleSelectBoard}
-          onOpenExistingProject={() => void handleOpenExistingProject()}
+          onOpenExistingProject={(target) =>
+            void handleOpenExistingProject(target)
+          }
           onOpenProject={onOpenProject}
           onRemoveRecentProject={removeRecentProject}
         />

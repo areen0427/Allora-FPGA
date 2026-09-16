@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import {
@@ -7,6 +8,11 @@ import {
 } from "../../lib/buildHistory";
 import InfoCard from "./InfoCard";
 import type { ProjectFile } from "./types";
+import { hasTauriInvoke } from "../../lib/tauri";
+import {
+  virtualFpgaApi,
+  type SimulationTools,
+} from "../../lib/virtualFpga";
 
 type HealthSectionProps = {
   board: BoardDefinition;
@@ -35,6 +41,12 @@ export default function HealthSection({
   files,
   topLevelFileName,
 }: HealthSectionProps) {
+  const [simulationTools, setSimulationTools] =
+    useState<SimulationTools | null>(null);
+  useEffect(() => {
+    if (!hasTauriInvoke()) return;
+    void virtualFpgaApi.detectTools().then(setSimulationTools).catch(() => {});
+  }, []);
   const capabilities = getBoardCapabilities(board);
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const constraintFile = files.find((file) =>
@@ -153,6 +165,17 @@ export default function HealthSection({
             label="Toolchain"
             value={capabilities.toolchain}
             ready={capabilities.bitstream.supported}
+          />
+          <ReadinessItem
+            label="Verilator"
+            value={
+              simulationTools?.verilator.available
+                ? "Ready for Virtual FPGA"
+                : simulationTools
+                  ? "Not installed"
+                  : "Checking"
+            }
+            ready={simulationTools?.verilator.available ?? false}
           />
         </div>
       </InfoCard>

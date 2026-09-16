@@ -18,6 +18,7 @@ import {
   readProjectWorkspace,
 } from "./lib/projectWorkspace";
 import "./App.css";
+import type { ExecutionTarget } from "./pages/dashboard/types";
 
 type AppStage = "board-select" | "project-setup" | "dashboard";
 
@@ -34,6 +35,8 @@ function App() {
   const [project, setProject] = useState<SavedProject | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => getSettings());
   const [projectWarning, setProjectWarning] = useState("");
+  const [executionTarget, setExecutionTarget] =
+    useState<ExecutionTarget>("build");
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
@@ -47,7 +50,10 @@ function App() {
     setProjectWarning("");
   }
 
-  async function openProject(projectId: string) {
+  async function openProject(
+    projectId: string,
+    target: ExecutionTarget = "build",
+  ) {
     const savedProject = getSavedProject(projectId);
     if (!savedProject) return;
 
@@ -86,10 +92,11 @@ function App() {
 
     setProject(nextProject);
     setSelectedBoardId(nextProject.boardId);
+    setExecutionTarget(target);
     setStage("dashboard");
   }
 
-  async function openExistingProject() {
+  async function openExistingProject(target: ExecutionTarget = "build") {
     const projectPath = await pickExistingProjectDirectory();
     if (!projectPath) return;
 
@@ -160,6 +167,7 @@ function App() {
     saveProject(nextProject);
     setProject(nextProject);
     setSelectedBoardId(boardId);
+    setExecutionTarget(target);
     setProjectWarning("");
     setStage("dashboard");
   }
@@ -217,6 +225,7 @@ function App() {
           });
 
           setProject(nextProject);
+          setExecutionTarget("build");
           setProjectWarning("");
           setStage("dashboard");
         }}
@@ -231,6 +240,7 @@ function App() {
         project={project}
         settings={settings}
         projectWarning={projectWarning}
+        launchTarget={executionTarget}
         onSettingsChange={setSettings}
         onBack={() => setStage("project-setup")}
         onHome={goHome}

@@ -1,0 +1,541 @@
+.vfpga-page {
+  display: grid;
+  gap: 16px;
+  color: #10243f;
+}
+.vfpga-hero,
+.vfpga-control-card,
+.vfpga-board-card,
+.vfpga-panel {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 50px rgba(15, 45, 77, 0.08);
+  backdrop-filter: blur(18px);
+  border-radius: 22px;
+}
+.vfpga-hero {
+  padding: 24px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      rgba(56, 189, 248, 0.2),
+      transparent 35%
+    ),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(237, 249, 255, 0.9));
+}
+.vfpga-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+.vfpga-hero h1 {
+  font-size: 27px;
+  letter-spacing: -0.035em;
+  margin: 7px 0 4px;
+}
+.vfpga-hero p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+.vfpga-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  text-transform: capitalize;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+}
+.vfpga-status span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+.vfpga-status.running span {
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14);
+  animation: vfpga-pulse 1.2s infinite;
+}
+.vfpga-status.compiling span {
+  background: #f59e0b;
+}
+.vfpga-status.error span {
+  background: #ef4444;
+}
+.vfpga-error {
+  display: grid;
+  gap: 4px;
+  padding: 13px 16px;
+  border-radius: 15px;
+  color: #991b1b;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.vfpga-control-card {
+  padding: 12px 14px;
+}
+.vfpga-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.vfpga-stat,
+.vfpga-frequency {
+  display: grid;
+  gap: 2px;
+}
+.vfpga-stat span,
+.vfpga-frequency > span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  font-weight: 800;
+}
+.vfpga-stat strong {
+  font-size: 13px;
+}
+.vfpga-frequency select,
+.vfpga-frequency input,
+.vfpga-mapping select {
+  border: 1px solid #dbe7f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.vfpga-frequency input {
+  width: 130px;
+}
+.vfpga-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.vfpga-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #dbe4ed;
+  border-radius: 10px;
+  background: white;
+  color: #475569;
+  padding: 8px 10px;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.vfpga-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+.vfpga-actions button.primary {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: white;
+}
+.vfpga-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.vfpga-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(290px, 0.7fr);
+  gap: 16px;
+}
+.vfpga-board-card {
+  padding: 16px;
+  background: linear-gradient(145deg, #effaff, #dff3f7);
+}
+.vfpga-board-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  padding: 0 4px 11px;
+}
+.vfpga-board-heading div {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+}
+.vfpga-board-heading span {
+  font-weight: 950;
+  color: #0284c7;
+  letter-spacing: 0.08em;
+}
+.vfpga-board-heading strong {
+  font-size: 11px;
+  color: #64748b;
+}
+.vfpga-board-heading small {
+  color: #64748b;
+}
+.vfpga-board-silk {
+  min-height: 390px;
+  padding: 28px;
+  border-radius: 19px;
+  border: 8px solid #0d6f71;
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(255, 255, 255, 0.07),
+      transparent 20%
+    ),
+    linear-gradient(145deg, #12858a, #08686d);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.22),
+    0 16px 26px rgba(6, 95, 99, 0.22);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 26px;
+  position: relative;
+}
+.vfpga-board-silk:after {
+  content: "OPEN HARDWARE • VERILATOR CORE";
+  position: absolute;
+  right: 17px;
+  top: 50%;
+  writing-mode: vertical-rl;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+.vfpga-led-bank {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 12px;
+}
+.vfpga-led-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  color: #d8ffff;
+}
+.vfpga-led {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 2px solid #064c50;
+  background: #123f40;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.65);
+}
+.vfpga-led.on {
+  background: #7dff91;
+  box-shadow:
+    0 0 8px #83ffa0,
+    0 0 22px rgba(99, 255, 127, 0.78),
+    inset 0 2px 3px white;
+}
+.vfpga-led-wrap small {
+  font-size: 9px;
+  font-weight: 900;
+}
+.vfpga-led-wrap em {
+  font-size: 8px;
+  max-width: 55px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: normal;
+  color: rgba(216, 255, 255, 0.55);
+}
+.vfpga-chip {
+  place-self: center;
+  display: grid;
+  place-items: center;
+  width: 155px;
+  height: 115px;
+  background: linear-gradient(145deg, #172033, #0d1424);
+  border: 2px solid #34445b;
+  border-radius: 9px;
+  color: white;
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.25);
+}
+.vfpga-chip span {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: #7dd3fc;
+}
+.vfpga-chip strong {
+  font-size: 23px;
+  letter-spacing: 0.08em;
+}
+.vfpga-chip small {
+  color: #94a3b8;
+}
+.vfpga-input-bank {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+.vfpga-switches,
+.vfpga-buttons {
+  display: flex;
+  gap: 14px;
+}
+.vfpga-switch,
+.vfpga-button {
+  border: 0;
+  background: transparent;
+  color: #dcffff;
+  font-size: 9px;
+  font-weight: 900;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  cursor: pointer;
+}
+.vfpga-switch span {
+  width: 24px;
+  height: 38px;
+  border-radius: 7px;
+  background: #dbe6e8;
+  border: 3px solid #174e52;
+  box-shadow: inset 0 -14px 0 #879da1;
+  transition: 0.15s;
+}
+.vfpga-switch.on span {
+  box-shadow: inset 0 14px 0 #f8ffff;
+  transform: translateY(-2px);
+}
+.vfpga-button span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f43f5e;
+  border: 4px solid #6e2637;
+  box-shadow: 0 4px 0 #471a25;
+}
+.vfpga-button.reset span {
+  background: #fde047;
+  border-color: #765f12;
+  box-shadow: 0 4px 0 #4b3c0d;
+}
+.vfpga-button:active:not(:disabled) span {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #471a25;
+}
+.vfpga-button:disabled,
+.vfpga-switch:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.vfpga-panel {
+  padding: 17px;
+}
+.vfpga-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 13px;
+}
+.vfpga-section-title > div {
+  display: grid;
+  gap: 2px;
+}
+.vfpga-section-title strong {
+  font-size: 14px;
+}
+.vfpga-section-title span {
+  font-size: 10px;
+  color: #94a3b8;
+}
+.vfpga-mapping-list {
+  display: grid;
+  gap: 7px;
+  max-height: 430px;
+  overflow: auto;
+  padding-right: 4px;
+}
+.vfpga-mapping-list label {
+  display: grid;
+  grid-template-columns: 1fr minmax(110px, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.vfpga-mapping-list label > span {
+  display: grid;
+  grid-template-columns: 8px 1fr;
+  column-gap: 7px;
+  font-size: 11px;
+  font-weight: 850;
+}
+.vfpga-mapping-list label small {
+  grid-column: 2;
+  color: #94a3b8;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.vfpga-mapping-list i {
+  width: 7px;
+  height: 7px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: #38bdf8;
+}
+.vfpga-mapping-list i.kind-led {
+  background: #4ade80;
+}
+.vfpga-mapping-list i.kind-reset {
+  background: #fb7185;
+}
+.vfpga-map-control {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+}
+.vfpga-map-control select {
+  flex: 1;
+  min-width: 0;
+}
+.vfpga-map-control button {
+  border: 1px solid #dbe7f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.vfpga-signals {
+  overflow: hidden;
+}
+.vfpga-signals .vfpga-section-title {
+  justify-content: space-between;
+}
+.vfpga-radix {
+  display: flex !important;
+  grid-auto-flow: column;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 9px;
+}
+.vfpga-radix button {
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  color: #94a3b8;
+  padding: 5px 8px;
+  text-transform: uppercase;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.vfpga-radix button.active {
+  background: white;
+  color: #0284c7;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08);
+}
+.vfpga-signal-table > div {
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 0.4fr 1fr;
+  gap: 12px;
+  padding: 9px 11px;
+  border-top: 1px solid #edf2f7;
+  align-items: center;
+  font-size: 12px;
+}
+.vfpga-signal-table .head {
+  border: 0;
+  background: #f8fafc;
+  border-radius: 9px;
+  color: #94a3b8;
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+.vfpga-signal-table .signal-name {
+  font-weight: 800;
+}
+.vfpga-signal-table code {
+  color: #0369a1;
+  font-weight: 800;
+}
+.vfpga-signal-table .direction {
+  width: max-content;
+  padding: 3px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  font-size: 8px;
+  font-weight: 950;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.vfpga-signal-table .direction.output {
+  background: #dcfce7;
+  color: #15803d;
+}
+.vfpga-signals footer {
+  display: flex;
+  gap: 15px;
+  padding: 12px 11px 0;
+  color: #64748b;
+  font-size: 10px;
+}
+.vfpga-signals footer span:before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+@keyframes vfpga-pulse {
+  50% {
+    transform: scale(0.75);
+    opacity: 0.7;
+  }
+}
+@media (max-width: 1000px) {
+  .vfpga-grid {
+    grid-template-columns: 1fr;
+  }
+  .vfpga-board-silk {
+    min-height: 340px;
+  }
+}
+@media (max-width: 700px) {
+  .vfpga-hero {
+    align-items: flex-start;
+    gap: 15px;
+    flex-direction: column;
+  }
+  .vfpga-led-bank {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .vfpga-board-silk {
+    padding: 18px;
+  }
+  .vfpga-input-bank {
+    gap: 20px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .vfpga-actions {
+    margin-left: 0;
+  }
+}

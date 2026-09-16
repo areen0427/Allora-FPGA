@@ -1,10 +1,25 @@
-import { FolderClock, FolderOpen } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowLeft,
+  Binary,
+  CircuitBoard,
+  Code2,
+  FolderClock,
+  FolderOpen,
+  Hammer,
+  Play,
+  SlidersHorizontal,
+  Sparkles,
+  Waves,
+  Zap,
+} from "lucide-react";
 import { getBoardById } from "../../data/boards";
 import { formatProjectTime } from "../../data/projects";
 import type { SavedProject } from "../../data/projects";
 import type { BoardCatalogItem } from "../../data/boardSupport";
 import { getBoardDefinitions } from "../../data/boardSupport";
 import { getBoardIcon } from "../boardIcons";
+import type { ExecutionTarget } from "../dashboard/types";
 
 type HomeViewProps = {
   boards: BoardCatalogItem[];
@@ -16,8 +31,8 @@ type HomeViewProps = {
   newProjectRef: React.RefObject<HTMLElement | null>;
   onToggleShowAllBoards: (showAll: boolean) => void;
   onSelectBoard: (board: BoardCatalogItem) => void;
-  onOpenExistingProject: () => void;
-  onOpenProject: (projectId: string) => void;
+  onOpenExistingProject: (target: ExecutionTarget) => void;
+  onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
 };
 
@@ -35,45 +50,246 @@ export function HomeView({
   onOpenProject,
   onRemoveRecentProject,
 }: HomeViewProps) {
+  const [path, setPath] = useState<ExecutionTarget | null>(null);
+
   return (
     <>
-      <PageHeader eyebrow="Allora FPGA" title="Welcome" />
+      <PageHeader
+        eyebrow="Allora FPGA"
+        title={
+          path
+            ? path === "simulate"
+              ? "Simulate"
+              : "Build"
+            : "Choose your path"
+        }
+        subtitle={
+          path
+            ? path === "simulate"
+              ? "Bring RTL to life before hardware."
+              : "Target a board and take your design to silicon."
+            : "One project. Two first-class ways to run it."
+        }
+        onBack={path ? () => setPath(null) : undefined}
+      />
 
-      <div className="welcome-home-layout">
-        <SupportedBoardGrid
-          boards={boards}
-          visibleBoards={visibleBoards}
-          showAllBoards={showAllBoards}
-          newProjectRef={newProjectRef}
-          onToggleShowAllBoards={onToggleShowAllBoards}
-          onSelectBoard={onSelectBoard}
+      {path === null ? (
+        <ExecutionPathChooser onChoose={setPath} />
+      ) : path === "simulate" ? (
+        <SimulationHome
+          recentProjects={recentProjects}
+          isOpening={isOpeningExistingProject}
+          error={openExistingProjectError}
+          onOpenExisting={() => onOpenExistingProject("simulate")}
+          onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
+          onRemoveProject={onRemoveRecentProject}
         />
+      ) : (
+        <div className="welcome-home-layout">
+          <SupportedBoardGrid
+            boards={boards}
+            visibleBoards={visibleBoards}
+            showAllBoards={showAllBoards}
+            newProjectRef={newProjectRef}
+            onToggleShowAllBoards={onToggleShowAllBoards}
+            onSelectBoard={onSelectBoard}
+          />
 
-        <div className="welcome-home-sidebar">
-          <OpenExistingProjectCard
-            isOpening={isOpeningExistingProject}
-            error={openExistingProjectError}
-            onOpen={onOpenExistingProject}
-          />
-          <RecentProjectsCard
-            projects={recentProjects}
-            onOpenProject={onOpenProject}
-            onRemoveProject={onRemoveRecentProject}
-          />
+          <div className="welcome-home-sidebar">
+            <OpenExistingProjectCard
+              isOpening={isOpeningExistingProject}
+              error={openExistingProjectError}
+              onOpen={() => onOpenExistingProject("build")}
+            />
+            <RecentProjectsCard
+              projects={recentProjects}
+              onOpenProject={(projectId) => onOpenProject(projectId, "build")}
+              onRemoveProject={onRemoveRecentProject}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
 
-function PageHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+function PageHeader({
+  eyebrow,
+  title,
+  subtitle,
+  onBack,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+}) {
   return (
     <header className="welcome-page-header">
+      {onBack ? (
+        <button className="welcome-back-button" type="button" onClick={onBack}>
+          <ArrowLeft size={17} />
+        </button>
+      ) : null}
       <div>
         <div className="welcome-eyebrow">{eyebrow}</div>
         <h1 className="welcome-title">{title}</h1>
+        {subtitle ? <p className="welcome-subtitle">{subtitle}</p> : null}
       </div>
     </header>
+  );
+}
+
+function ExecutionPathChooser({
+  onChoose,
+}: {
+  onChoose: (target: ExecutionTarget) => void;
+}) {
+  return (
+    <section className="execution-path-grid">
+      <button
+        type="button"
+        className="execution-path-card simulate"
+        onClick={() => onChoose("simulate")}
+      >
+        <div className="execution-path-copy">
+          <span className="execution-path-kicker">
+            <Sparkles size={15} /> Virtual FPGA
+          </span>
+          <h2>Simulate</h2>
+          <p>
+            Write RTL, touch virtual inputs, watch outputs, inspect signals, and
+            debug without plugging in a board.
+          </p>
+          <span className="execution-path-cta">
+            <Play size={15} fill="currentColor" /> Enter simulator
+          </span>
+        </div>
+        <MiniVirtualBoard />
+        <div className="execution-path-features">
+          <span>
+            <Code2 size={14} /> Same RTL
+          </span>
+          <span>
+            <SlidersHorizontal size={14} /> Live controls
+          </span>
+          <span>
+            <Waves size={14} /> Signals
+          </span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        className="execution-path-card build"
+        onClick={() => onChoose("build")}
+      >
+        <div className="execution-path-copy">
+          <span className="execution-path-kicker">
+            <CircuitBoard size={15} /> Physical FPGA
+          </span>
+          <h2>Build</h2>
+          <p>
+            Choose an open-source board, map pins, synthesize, place and route,
+            generate a bitstream, and program hardware.
+          </p>
+          <span className="execution-path-cta">
+            <Hammer size={15} /> Choose a board
+          </span>
+        </div>
+        <div className="build-flow-preview" aria-hidden="true">
+          <span>RTL</span>
+          <i />
+          <span>Yosys</span>
+          <i />
+          <span>nextpnr</span>
+          <i />
+          <span>FPGA</span>
+        </div>
+        <div className="execution-path-features">
+          <span>
+            <Binary size={14} /> Synthesis
+          </span>
+          <span>
+            <CircuitBoard size={14} /> Pin mapping
+          </span>
+          <span>
+            <Zap size={14} /> Program
+          </span>
+        </div>
+      </button>
+    </section>
+  );
+}
+
+function MiniVirtualBoard() {
+  return (
+    <div className="mini-virtual-board" aria-hidden="true">
+      <div className="mini-leds">
+        {[true, false, true, true, false, true].map((active, index) => (
+          <i className={active ? "on" : ""} key={index} />
+        ))}
+      </div>
+      <div className="mini-chip">
+        <small>ALLORA</small>
+        <strong>VIRTUAL</strong>
+        <em>FPGA</em>
+      </div>
+      <div className="mini-controls">
+        <span />
+        <span className="up" />
+        <span />
+        <b />
+        <b />
+      </div>
+    </div>
+  );
+}
+
+function SimulationHome({
+  recentProjects,
+  isOpening,
+  error,
+  onOpenExisting,
+  onOpenProject,
+  onRemoveProject,
+}: {
+  recentProjects: SavedProject[];
+  isOpening: boolean;
+  error: string;
+  onOpenExisting: () => void;
+  onOpenProject: (projectId: string) => void;
+  onRemoveProject: (projectId: string) => void;
+}) {
+  return (
+    <div className="simulation-home-layout">
+      <section className="simulation-welcome-card">
+        <div className="simulation-orbit one" />
+        <div className="simulation-orbit two" />
+        <div className="simulation-welcome-copy">
+          <span>
+            <Sparkles size={15} /> No hardware required
+          </span>
+          <h2>Your RTL, running on a virtual board.</h2>
+          <p>
+            Open any Allora project, map its ports to interactive peripherals,
+            and compile the actual design with Verilator.
+          </p>
+          <button type="button" onClick={onOpenExisting} disabled={isOpening}>
+            <FolderOpen size={17} />
+            {isOpening ? "Opening…" : "Open project to simulate"}
+          </button>
+          {error ? <div className="open-project-error">{error}</div> : null}
+        </div>
+        <MiniVirtualBoard />
+      </section>
+      <RecentProjectsCard
+        projects={recentProjects}
+        onOpenProject={onOpenProject}
+        onRemoveProject={onRemoveProject}
+        emptyMessage="Open an Allora project to begin simulating."
+      />
+    </div>
   );
 }
 
@@ -204,10 +420,12 @@ function RecentProjectsCard({
   projects,
   onOpenProject,
   onRemoveProject,
+  emptyMessage,
 }: {
   projects: SavedProject[];
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
+  emptyMessage?: string;
 }) {
   return (
     <aside className="liquid-home-card recent-projects-card">
@@ -220,7 +438,7 @@ function RecentProjectsCard({
         <div className="recent-project-empty">
           <FolderClock size={34} strokeWidth={1.8} />
           <div>No recent projects</div>
-          <p>Start with a board on the left.</p>
+          <p>{emptyMessage ?? "Start with a board on the left."}</p>
         </div>
       ) : (
         <div className="recent-project-list">
