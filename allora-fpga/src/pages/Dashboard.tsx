@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { ChangeEvent, ReactNode } from "react";
+import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
 import BoardSection from "./dashboard/BoardSection";
@@ -354,7 +354,9 @@ export default function Dashboard({
     <div
       className="dashboard-workspace"
       style={{
-        minHeight: "100vh",
+        "--dashboard-sidebar-width": `${sidebarWidth}px`,
+        height: "100vh",
+        overflow: "hidden",
         background: "#f1f5f9",
         padding: "24px",
         gap: "14px",
@@ -362,8 +364,8 @@ export default function Dashboard({
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
         display: "flex",
-        alignItems: "flex-start",
-      }}
+        alignItems: "stretch",
+      } as CSSProperties}
     >
       <aside
         className="dashboard-glass-card dashboard-sidebar"
@@ -803,13 +805,15 @@ export default function Dashboard({
       </aside>
 
       <main
+        className="dashboard-main"
         style={{
           flex: 1,
           padding: "0",
           overflowY:
             activeSection === "editor" || activeSection === "pin-mapping"
               ? "hidden"
-              : "visible",
+              : "auto",
+          height: "calc(100vh - 48px)",
           minHeight: 0,
         }}
       >

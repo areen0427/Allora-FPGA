@@ -55,6 +55,11 @@
   overflow: hidden;
 }
 
+.dashboard-main {
+  min-width: 0;
+  overscroll-behavior: contain;
+}
+
 .editor-shell {
   overflow: hidden;
 }

@@ -611,6 +611,20 @@
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.65fr);
   gap: 22px;
+  align-items: stretch;
+}
+
+.simulation-home-layout > .recent-projects-card {
+  height: 500px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.simulation-home-layout > .recent-projects-card .recent-project-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .simulation-welcome-card {
@@ -682,6 +696,9 @@
   .execution-path-grid,
   .simulation-home-layout {
     grid-template-columns: 1fr;
+  }
+  .simulation-home-layout > .recent-projects-card {
+    height: min(500px, 60vh);
   }
   .execution-path-card {
     min-height: 520px;

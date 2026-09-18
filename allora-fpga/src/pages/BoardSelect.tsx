@@ -102,6 +102,7 @@ export default function BoardSelect({
       {activeView === "home" ? (
         <HomeView
           key={homeViewKey}
+          theme={settings.theme}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
           showAllBoards={showAllBoards}

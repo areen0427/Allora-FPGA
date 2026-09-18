@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ArrowLeft,
+  ArrowUpRight,
   Binary,
   CircuitBoard,
   Code2,
@@ -22,6 +23,7 @@ import { getBoardIcon } from "../boardIcons";
 import type { ExecutionTarget } from "../dashboard/types";
 
 type HomeViewProps = {
+  theme: "ice" | "black-ice";
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
   showAllBoards: boolean;
@@ -51,31 +53,41 @@ export function HomeView({
   onRemoveRecentProject,
 }: HomeViewProps) {
   const [path, setPath] = useState<ExecutionTarget | null>(null);
+  if (path === null) {
+    return (
+      <section className="execution-path-stage">
+        <div className="welcome-environment" aria-hidden="true" />
+        <div className="welcome-atmosphere" aria-hidden="true" />
+        <header className="welcome-brand-lockup">
+          <span className="welcome-brand-mark"><CircuitBoard size={18} /></span>
+          <span>
+            <strong>ALLORA</strong>
+            <small>FPGA development environment</small>
+          </span>
+        </header>
+        <ExecutionPathChooser onChoose={setPath} />
+        <div className="welcome-stage-caption" aria-hidden="true">
+          <span>One RTL source</span><i />
+          <span>Two execution targets</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
       <PageHeader
         eyebrow="Allora FPGA"
-        title={
-          path
-            ? path === "simulate"
-              ? "Simulate"
-              : "Build"
-            : "Choose your path"
-        }
+        title={path === "simulate" ? "Simulate" : "Build"}
         subtitle={
-          path
-            ? path === "simulate"
-              ? "Bring RTL to life before hardware."
-              : "Target a board and take your design to silicon."
-            : "One project. Two first-class ways to run it."
+          path === "simulate"
+            ? "Bring RTL to life before hardware."
+            : "Target a board and take your design to silicon."
         }
-        onBack={path ? () => setPath(null) : undefined}
+        onBack={() => setPath(null)}
       />
 
-      {path === null ? (
-        <ExecutionPathChooser onChoose={setPath} />
-      ) : path === "simulate" ? (
+      {path === "simulate" ? (
         <SimulationHome
           recentProjects={recentProjects}
           isOpening={isOpeningExistingProject}
@@ -149,9 +161,12 @@ function ExecutionPathChooser({
     <section className="execution-path-grid">
       <button
         type="button"
-        className="execution-path-card simulate"
         onClick={() => onChoose("simulate")}
+        className="execution-path-card simulate"
       >
+        <span className="glass-edge glass-edge-top" aria-hidden="true" />
+        <span className="glass-edge glass-edge-side" aria-hidden="true" />
+        <span className="glass-specular" aria-hidden="true" />
         <div className="execution-path-copy">
           <span className="execution-path-kicker">
             <Sparkles size={15} /> Virtual FPGA
@@ -163,9 +178,12 @@ function ExecutionPathChooser({
           </p>
           <span className="execution-path-cta">
             <Play size={15} fill="currentColor" /> Enter simulator
+            <ArrowUpRight size={15} />
           </span>
         </div>
-        <MiniVirtualBoard />
+        <div className="execution-path-clear-field" aria-hidden="true">
+          <span /><span /><span /><span />
+        </div>
         <div className="execution-path-features">
           <span>
             <Code2 size={14} /> Same RTL
@@ -181,9 +199,12 @@ function ExecutionPathChooser({
 
       <button
         type="button"
-        className="execution-path-card build"
         onClick={() => onChoose("build")}
+        className="execution-path-card build"
       >
+        <span className="glass-edge glass-edge-top" aria-hidden="true" />
+        <span className="glass-edge glass-edge-side" aria-hidden="true" />
+        <span className="glass-specular" aria-hidden="true" />
         <div className="execution-path-copy">
           <span className="execution-path-kicker">
             <CircuitBoard size={15} /> Physical FPGA
@@ -195,16 +216,11 @@ function ExecutionPathChooser({
           </p>
           <span className="execution-path-cta">
             <Hammer size={15} /> Choose a board
+            <ArrowUpRight size={15} />
           </span>
         </div>
-        <div className="build-flow-preview" aria-hidden="true">
-          <span>RTL</span>
-          <i />
-          <span>Yosys</span>
-          <i />
-          <span>nextpnr</span>
-          <i />
-          <span>FPGA</span>
+        <div className="execution-path-clear-field" aria-hidden="true">
+          <span /><span /><span /><span />
         </div>
         <div className="execution-path-features">
           <span>

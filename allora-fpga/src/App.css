@@ -7,12 +7,10 @@
 @import "./styles/welcome-polish.css";
 @import "./styles/themes/black-ice.css";
 @import "./styles/modals-settings.css";
-@import "./styles/themes/light.css";
 @import "./styles/themes/ice.css";
-@import "./styles/themes/solar.css";
-@import "./styles/themes/dark.css";
 @import "./styles/virtual-board.css";
 @import "./styles/build-editor.css";
 @import "./styles/project-setup.css";
 @import "./styles/serial.css";
 @import "./styles/accessibility.css";
+@import "./styles/welcome-landing.css";

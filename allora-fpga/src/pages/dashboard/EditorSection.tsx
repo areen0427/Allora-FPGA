@@ -80,8 +80,7 @@ export default function EditorSection({
   const monacoRef = useRef<Monaco | null>(null);
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
-  const isDarkEditor =
-    settings.theme === "dark" || settings.theme === "black-ice";
+  const isDarkEditor = settings.theme === "black-ice";
 
   const lintableFiles = projectFiles.filter(
     (file) => /\.(v|sv)$/i.test(file.name) && !file.isBinary,

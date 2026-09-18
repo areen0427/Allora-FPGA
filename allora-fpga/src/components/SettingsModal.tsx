@@ -40,7 +40,7 @@ export function SettingsModal({
             onChange={(value) =>
               updateSetting("theme", value as AppSettings["theme"])
             }
-            options={["light", "ice", "solar", "dark", "black-ice"]}
+            options={["ice", "black-ice"]}
           />
           <SettingSelect
             label="Default HDL"

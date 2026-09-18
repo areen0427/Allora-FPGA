@@ -68,7 +68,13 @@ export default function VirtualFpgaSection({
   const steppingRef = useRef(false);
   const sessionRef = useRef<number | null>(null);
 
-  const sourceFiles = useMemo(() => getHdlSources(files), [files]);
+  // Interactive simulation compiles the synthesizable design only. Dedicated
+  // testbenches remain available in the Testbench workspace, where delay and
+  // stimulus syntax such as `#10` is valid.
+  const sourceFiles = useMemo(
+    () => getHdlSources(files, config.topModule),
+    [config.topModule, files],
+  );
   const clock = config.peripherals.find((item) => item.type === "clock");
   const reset = config.peripherals.find((item) => item.type === "reset");
   const buttons = config.peripherals.filter((item) => item.type === "button");

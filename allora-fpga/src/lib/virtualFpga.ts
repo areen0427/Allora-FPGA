@@ -1,5 +1,6 @@
 import { invokeTauri } from "./tauri";
 import type { ProjectFile } from "../pages/dashboard/types";
+import { findTopModule, isTestbenchFile } from "../hooks/utils";
 
 export type RtlPort = {
   name: string;
@@ -138,7 +139,11 @@ export function getConfiguredTopModule(
   topFileName: string | null,
 ) {
   if (topFileName) {
-    return topFileName.replace(/\.(sv|v|vhd|vhdl)$/i, "");
+    const topFile = files.find((file) => file.name === topFileName);
+    return (
+      (topFile ? findTopModule([topFile]) : null) ??
+      topFileName.replace(/\.(sv|v|vhd|vhdl)$/i, "")
+    );
   }
   const metadata = files.find((file) => file.name === "allora-project.json");
   if (metadata && !metadata.isBinary) {
@@ -152,9 +157,14 @@ export function getConfiguredTopModule(
   return "top";
 }
 
-export function getHdlSources(files: ProjectFile[]) {
+export function getHdlSources(files: ProjectFile[], topModule?: string) {
   return files
-    .filter((file) => /\.(sv|v)$/i.test(file.name) && !file.isBinary)
+    .filter(
+      (file) =>
+        /\.(sv|v)$/i.test(file.name) &&
+        !file.isBinary &&
+        !isTestbenchFile(file, topModule ?? null),
+    )
     .map(({ name, content }) => ({ name, content }));
 }
 

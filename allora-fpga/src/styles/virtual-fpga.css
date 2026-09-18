@@ -1,7 +1,9 @@
 .vfpga-page {
   display: grid;
   gap: 16px;
-  color: #10243f;
+  min-height: 0;
+  padding-right: 2px;
+  color: var(--dashboard-text, #10243f);
 }
 .vfpga-hero,
 .vfpga-control-card,
@@ -14,17 +16,19 @@
   border-radius: 22px;
 }
 .vfpga-hero {
-  padding: 24px 26px;
+  padding: 16px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(15, 45, 77, 0.06);
   background:
     radial-gradient(
       circle at 85% 10%,
-      rgba(56, 189, 248, 0.2),
-      transparent 35%
+      rgba(56, 189, 248, 0.12),
+      transparent 32%
     ),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(237, 249, 255, 0.9));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(237, 249, 255, 0.78));
 }
 .vfpga-eyebrow {
   display: flex;
@@ -36,9 +40,9 @@
   letter-spacing: 0.14em;
 }
 .vfpga-hero h1 {
-  font-size: 27px;
+  font-size: 22px;
   letter-spacing: -0.035em;
-  margin: 7px 0 4px;
+  margin: 5px 0 2px;
 }
 .vfpga-hero p {
   margin: 0;
@@ -161,11 +165,19 @@
 }
 .vfpga-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(290px, 0.7fr);
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--dashboard-sidebar-width, 270px);
   gap: 16px;
+  height: clamp(430px, 56vh, 620px);
+  min-height: 0;
+  align-items: stretch;
 }
 .vfpga-board-card {
   padding: 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(145deg, #effaff, #dff3f7);
 }
 .vfpga-board-heading {
@@ -192,7 +204,8 @@
   color: #64748b;
 }
 .vfpga-board-silk {
-  min-height: 390px;
+  min-height: 0;
+  flex: 1;
   padding: 28px;
   border-radius: 19px;
   border: 8px solid #0d6f71;
@@ -343,6 +356,12 @@
 .vfpga-panel {
   padding: 17px;
 }
+.vfpga-mapping {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .vfpga-section-title {
   display: flex;
   align-items: center;
@@ -363,8 +382,10 @@
 .vfpga-mapping-list {
   display: grid;
   gap: 7px;
-  max-height: 430px;
-  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
   padding-right: 4px;
 }
 .vfpga-mapping-list label {
@@ -513,9 +534,13 @@
 @media (max-width: 1000px) {
   .vfpga-grid {
     grid-template-columns: 1fr;
+    height: auto;
   }
   .vfpga-board-silk {
     min-height: 340px;
+  }
+  .vfpga-mapping {
+    max-height: min(520px, 64vh);
   }
 }
 @media (max-width: 700px) {

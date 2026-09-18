@@ -414,7 +414,7 @@ fn discover_ports(
         .collect::<Vec<_>>()
         .join(" ");
     let script = format!(
-        "read_verilog -sv {read_files}; hierarchy -check -top {top_module}; write_json {}",
+        "read_verilog -sv {read_files}; hierarchy -check -top {top_module}; proc; write_json {}",
         yosys_quote(&json_path)
     );
     let output = Command::new(tool_command("yosys"))
@@ -712,7 +712,10 @@ mod tests {
         {
             return;
         }
-        let files = vec![SimulationSourceFile { name: "counter.sv".into(), content: "module counter(input logic clk, input logic reset, output logic [3:0] leds); endmodule".into() }];
+        let files = vec![SimulationSourceFile {
+            name: "counter.sv".into(),
+            content: "module counter(input logic clk, input logic reset, output logic [3:0] leds); always_ff @(posedge clk) if (reset) leds <= 0; else leds <= leds + 1; endmodule".into(),
+        }];
         let ports = discover_ports(&files, "counter").expect("discover ports");
         assert_eq!(ports.len(), 3);
         assert!(ports.contains(&RtlPort {
