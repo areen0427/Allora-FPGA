@@ -147,8 +147,6 @@ export default function Dashboard({
     files: fileMgmt.files,
     activeFileName: activeTabs.activeFileName,
     topLevelFileName: activeTabs.topLevelFileName,
-    autoSave: settings.autoSave,
-    autoSaveInterval: settings.autoSaveInterval,
   });
 
   const projectName = project?.name ?? "Untitled Project";
@@ -640,7 +638,11 @@ export default function Dashboard({
             }}
           >
             <ProjectTree
-              files={fileMgmt.files}
+              files={
+                settings.showGeneratedArtifacts
+                  ? fileMgmt.files
+                  : fileMgmt.files.filter((file) => !isGeneratedArtifact(file))
+              }
               projectPath={projectPath}
               activeFileName={activeTabs.activeFileName}
               openFileNames={activeTabs.openFileNames}
@@ -850,6 +852,7 @@ export default function Dashboard({
             files={fileMgmt.files}
             projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
+            settings={settings}
             onConfigChange={handleUpdateVirtualConfig}
           />
         </KeepAliveSection>
@@ -882,6 +885,7 @@ export default function Dashboard({
             projectName={projectName}
             projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
+            settings={settings}
             onCreateTestbench={(fileName, content) =>
               handleCreateNewFile(fileName, content)
             }
@@ -916,7 +920,7 @@ export default function Dashboard({
           <PinMappingSection
             board={board}
             files={fileMgmt.files}
-            defaultMode={settings.defaultPinMappingMode}
+            defaultMode="advanced"
             topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
@@ -978,7 +982,6 @@ export default function Dashboard({
           settings={settings}
           onChange={onSettingsChange}
           onClose={() => setShowSettings(false)}
-          projectNameLabel="Project Name"
         />
       ) : null}
 
@@ -1027,8 +1030,13 @@ export default function Dashboard({
           <button
             type="button"
             onClick={() => {
-              setDeletingFileName(contextMenu.fileName);
+              const fileName = contextMenu.fileName;
               setContextMenu(null);
+              if (settings.confirmBeforeDelete) {
+                setDeletingFileName(fileName);
+              } else {
+                void handleDeleteFileFromProject(fileName);
+              }
             }}
             style={{
               width: "100%",
@@ -1118,6 +1126,16 @@ export default function Dashboard({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function isGeneratedArtifact(file: ProjectFile) {
+  const normalizedPath = file.path?.replace(/\\/g, "/").toLowerCase() ?? "";
+  const normalizedName = file.name.toLowerCase();
+  return (
+    normalizedPath.includes("/build/") ||
+    normalizedPath.includes("/sim/") ||
+    /\.(vcd|bin|bit|asc|json\.gz)$/.test(normalizedName)
   );
 }
 

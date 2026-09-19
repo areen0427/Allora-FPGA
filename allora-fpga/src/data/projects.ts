@@ -1,6 +1,7 @@
 import type { ProjectFile } from "../pages/dashboard/types";
 
 const STORAGE_KEY = "allora-fpga-projects";
+const LAST_OPENED_PROJECT_KEY = "allora-fpga-last-opened-project";
 
 export type SavedProject = {
   id: string;
@@ -64,6 +65,14 @@ export function removeSavedProject(projectId: string) {
   const projects = getSavedProjects();
   const nextProjects = projects.filter((project) => project.id !== projectId);
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
+}
+
+export function getLastOpenedProjectId() {
+  return window.localStorage.getItem(LAST_OPENED_PROJECT_KEY);
+}
+
+export function saveLastOpenedProjectId(projectId: string) {
+  window.localStorage.setItem(LAST_OPENED_PROJECT_KEY, projectId);
 }
 
 export function createProject({

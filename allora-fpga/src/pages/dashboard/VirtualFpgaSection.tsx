@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { ProjectFile } from "./types";
+import type { AppSettings } from "../../data/settings";
 import {
   formatSignalValue,
   getConfiguredTopModule,
@@ -32,6 +33,7 @@ type Props = {
   files: ProjectFile[];
   projectPath?: string;
   topLevelFileName: string | null;
+  settings: AppSettings;
   onConfigChange: (config: VirtualFpgaConfig) => void;
 };
 
@@ -51,6 +53,7 @@ export default function VirtualFpgaSection({
   files,
   projectPath,
   topLevelFileName,
+  settings,
   onConfigChange,
 }: Props) {
   const inferredTop = getConfiguredTopModule(files, topLevelFileName);
@@ -64,9 +67,10 @@ export default function VirtualFpgaSection({
   const [status, setStatus] = useState<SimulationStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
-  const [radix, setRadix] = useState<"binary" | "hex" | "decimal">("hex");
+  const [radix, setRadix] = useState(settings.simulatorDefaultRadix);
   const steppingRef = useRef(false);
   const sessionRef = useRef<number | null>(null);
+  const executedCyclesRef = useRef(0);
 
   // Interactive simulation compiles the synthesizable design only. Dedicated
   // testbenches remain available in the Testbench workspace, where delay and
@@ -84,6 +88,10 @@ export default function VirtualFpgaSection({
   useEffect(() => {
     sessionRef.current = sessionId;
   }, [sessionId]);
+
+  useEffect(() => {
+    setRadix(settings.simulatorDefaultRadix);
+  }, [settings.simulatorDefaultRadix]);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,10 +118,25 @@ export default function VirtualFpgaSection({
     if (status !== "running" || sessionId === null) return;
     const timer = window.setInterval(() => {
       if (steppingRef.current) return;
+      const remainingCycles = settings.simulatorCycleLimit
+        ? settings.simulatorCycleLimit - executedCyclesRef.current
+        : 250;
+      if (remainingCycles <= 0) {
+        setStatus("paused");
+        setLogs((current) => [
+          ...current,
+          `[simulation] Paused at the ${settings.simulatorCycleLimit.toLocaleString()} cycle safety limit.`,
+        ]);
+        return;
+      }
+      const cycles = Math.min(250, remainingCycles);
       steppingRef.current = true;
       void virtualFpgaApi
-        .step(sessionId, 250)
-        .then(setSnapshot)
+        .step(sessionId, cycles)
+        .then((nextSnapshot) => {
+          executedCyclesRef.current += cycles;
+          setSnapshot(nextSnapshot);
+        })
         .catch((error: unknown) => {
           setStatus("error");
           setErrorMessage(getErrorMessage(error));
@@ -121,9 +144,14 @@ export default function VirtualFpgaSection({
         .finally(() => {
           steppingRef.current = false;
         });
-    }, 100);
+    }, settings.simulatorRefreshInterval);
     return () => window.clearInterval(timer);
-  }, [sessionId, status]);
+  }, [
+    sessionId,
+    settings.simulatorCycleLimit,
+    settings.simulatorRefreshInterval,
+    status,
+  ]);
 
   useEffect(
     () => () => {
@@ -161,9 +189,10 @@ export default function VirtualFpgaSection({
         topModule: config.topModule,
         clockSignal: clock?.signal ?? null,
         clockFrequencyHz: config.clockFrequencyHz,
-        enableVcd: config.enableVcd,
+        enableVcd: settings.simulatorCaptureWaveform,
         projectPath,
       });
+      executedCyclesRef.current = 0;
       setSessionId(result.sessionId);
       setPorts(result.ports);
       const initialState =
@@ -171,7 +200,12 @@ export default function VirtualFpgaSection({
           ? await virtualFpgaApi.setInput(result.sessionId, reset.signal, 1)
           : result.state;
       setSnapshot(initialState);
-      setLogs(result.logs);
+      setLogs(
+        formatSimulatorLogs(result.logs, settings.simulatorLogLevel, {
+          sourceCount: sourceFiles.length,
+          topModule: config.topModule,
+        }),
+      );
       setStatus("ready");
     } catch (error) {
       setStatus("error");
@@ -185,11 +219,20 @@ export default function VirtualFpgaSection({
     setStatus("idle");
   }
 
-  async function stepSimulation(cycles = 1) {
+  async function stepSimulation(cycles = settings.simulatorStepSize) {
     if (sessionId === null || steppingRef.current) return;
+    const remainingCycles = settings.simulatorCycleLimit
+      ? settings.simulatorCycleLimit - executedCyclesRef.current
+      : cycles;
+    if (remainingCycles <= 0) {
+      setErrorMessage("The simulation cycle safety limit has been reached.");
+      return;
+    }
+    const allowedCycles = Math.min(cycles, remainingCycles);
     steppingRef.current = true;
     try {
-      setSnapshot(await virtualFpgaApi.step(sessionId, cycles));
+      setSnapshot(await virtualFpgaApi.step(sessionId, allowedCycles));
+      executedCyclesRef.current += allowedCycles;
       setStatus("paused");
     } catch (error) {
       setStatus("error");
@@ -202,6 +245,7 @@ export default function VirtualFpgaSection({
   async function resetSimulation() {
     if (sessionId === null) return;
     try {
+      executedCyclesRef.current = 0;
       setSnapshot(
         await virtualFpgaApi.reset(
           sessionId,
@@ -550,6 +594,24 @@ export default function VirtualFpgaSection({
       </section>
     </div>
   );
+}
+
+function formatSimulatorLogs(
+  logs: string[],
+  level: AppSettings["simulatorLogLevel"],
+  context: { sourceCount: number; topModule: string },
+) {
+  if (level === "errors") {
+    return logs.filter((line) => /error|failed|warning/i.test(line));
+  }
+  if (level === "verbose") {
+    return [
+      `[simulation] Top module: ${context.topModule}`,
+      `[simulation] Source files: ${context.sourceCount}`,
+      ...logs,
+    ];
+  }
+  return logs;
 }
 
 function VirtualLed({

@@ -47,7 +47,7 @@ export default function BoardSelect({
 
   const supportedBoards = useMemo(() => getBuildSupportedBoards(), []);
   const pinMappingBoards = useMemo(() => getPinMappingOnlyBoards(), []);
-  const recentProjects = savedProjects.slice(0, settings.recentProjectsLimit);
+  const recentProjects = savedProjects.slice(0, 5);
   const visibleBoards = showAllBoards
     ? supportedBoards
     : supportedBoards.slice(0, 8);

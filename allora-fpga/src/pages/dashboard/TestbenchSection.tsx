@@ -21,6 +21,7 @@ import VirtualBoard, {
   type BoardSignalStates,
 } from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
+import type { AppSettings } from "../../data/settings";
 
 type SimulateTestbenchResponse = {
   logs: string[];
@@ -50,6 +51,7 @@ type TestbenchSectionProps = {
   projectName: string;
   projectPath?: string;
   topLevelFileName: string | null;
+  settings: AppSettings;
   onCreateTestbench: (fileName: string, content: string) => void;
   onOpenFile: (fileName: string) => void;
   onAddArtifact?: (artifact: {
@@ -65,6 +67,7 @@ export default function TestbenchSection({
   projectName,
   projectPath,
   topLevelFileName,
+  settings,
   onCreateTestbench,
   onOpenFile,
   onAddArtifact,
@@ -102,6 +105,7 @@ export default function TestbenchSection({
   const vcdFiles = files.filter(
     (file) => file.name.toLowerCase().endsWith(".vcd") && !file.isBinary,
   );
+  const initialWaveformContent = vcdFiles[0]?.content ?? "";
   const inferredTestbench = inferTestbenchFile(
     testbenchFiles,
     topModule,
@@ -128,10 +132,24 @@ export default function TestbenchSection({
     [selectedTopLevel],
   );
   const waveform = useMemo(
-    () => parseVcd(waveformText || vcdFiles[0]?.content || ""),
-    [vcdFiles, waveformText],
+    () => parseVcd(waveformText),
+    [waveformText],
   );
   const canRun = Boolean(selectedTestbench && designFiles.length > 0);
+
+  useEffect(() => {
+    if (
+      settings.simulatorAutoOpenWaveform &&
+      !waveformText &&
+      initialWaveformContent
+    ) {
+      setWaveformText(initialWaveformContent);
+    }
+  }, [
+    initialWaveformContent,
+    settings.simulatorAutoOpenWaveform,
+    waveformText,
+  ]);
 
   function createTestbench() {
     const moduleName = topModule ?? "top";
@@ -169,13 +187,30 @@ export default function TestbenchSection({
 
     setIsRunning(true);
     setErrorMessage("");
-    setLogs([
-      "[simulation] Starting",
-      `Board context: ${board.name}`,
-      `Testbench: ${selectedTestbench.name}`,
-    ]);
+    setLogs(
+      filterTestbenchLogs(
+        [
+          "[simulation] Starting",
+          `Board context: ${board.name}`,
+          `Testbench: ${selectedTestbench.name}`,
+          ...(settings.simulatorLogLevel === "verbose"
+            ? [
+                `Top module: ${testbenchTopModule ?? "auto-detect"}`,
+                `Design sources: ${designFiles.length}`,
+              ]
+            : []),
+        ],
+        settings.simulatorLogLevel,
+      ),
+    );
 
     const logChannel = createTauriChannel<string>((line) => {
+      if (
+        settings.simulatorLogLevel === "errors" &&
+        !/error|failed|warning/i.test(line)
+      ) {
+        return;
+      }
       setLogs((current) => [...current, line]);
     });
 
@@ -200,13 +235,17 @@ export default function TestbenchSection({
         },
       );
 
-      setLogs(result.logs);
-      setWaveformText(result.vcd);
-      await onAddArtifact?.({
-        fileName: result.waveformName,
-        content: result.vcd,
-        path: result.waveformPath ?? undefined,
-      });
+      setLogs(filterTestbenchLogs(result.logs, settings.simulatorLogLevel));
+      if (settings.simulatorCaptureWaveform) {
+        if (settings.simulatorAutoOpenWaveform) {
+          setWaveformText(result.vcd);
+        }
+        await onAddArtifact?.({
+          fileName: result.waveformName,
+          content: result.vcd,
+          path: result.waveformPath ?? undefined,
+        });
+      }
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
       setLogs((current) => [
@@ -341,7 +380,13 @@ export default function TestbenchSection({
               <button
                 key={file.name}
                 type="button"
-                onClick={() => onOpenFile(file.name)}
+                onClick={() => {
+                  if (file.name.toLowerCase().endsWith(".vcd")) {
+                    setWaveformText(file.content);
+                  } else {
+                    onOpenFile(file.name);
+                  }
+                }}
               >
                 {file.name}
               </button>
@@ -373,6 +418,15 @@ export default function TestbenchSection({
       </div>
     </div>
   );
+}
+
+function filterTestbenchLogs(
+  logs: string[],
+  level: AppSettings["simulatorLogLevel"],
+) {
+  return level === "errors"
+    ? logs.filter((line) => /error|failed|warning/i.test(line))
+    : logs;
 }
 
 const PLAYBACK_SECONDS = 10;

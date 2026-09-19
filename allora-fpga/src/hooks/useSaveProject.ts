@@ -13,9 +13,9 @@ type UseSaveProjectParams = {
   files: ProjectFile[];
   activeFileName: string | null;
   topLevelFileName: string | null;
-  autoSave: boolean;
-  autoSaveInterval: string;
 };
+
+const AUTO_SAVE_INTERVAL_MS = 30_000;
 
 export function useSaveProject({
   project,
@@ -23,8 +23,6 @@ export function useSaveProject({
   files,
   activeFileName,
   topLevelFileName,
-  autoSave,
-  autoSaveInterval,
 }: UseSaveProjectParams) {
   const projectPath = project?.projectPath;
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
@@ -122,30 +120,13 @@ export function useSaveProject({
   }, [activeFileName, board.id, files, project, projectPath]);
 
   useEffect(() => {
-    if (!project || !autoSave || saveStatus !== "unsaved") return;
-
-    const delay =
-      autoSaveInterval === "5s" ? 5000 : autoSaveInterval === "30s" ? 30000 : 0;
-
-    if (delay === 0) {
-      void saveCurrentProject();
-      return;
-    }
+    if (!project || saveStatus !== "unsaved") return;
 
     const timeout = window.setTimeout(() => {
       void saveCurrentProject();
-    }, delay);
+    }, AUTO_SAVE_INTERVAL_MS);
     return () => window.clearTimeout(timeout);
-  }, [
-    activeFileName,
-    board.id,
-    files,
-    project,
-    projectPath,
-    saveStatus,
-    autoSave,
-    autoSaveInterval,
-  ]);
+  }, [project, saveStatus]);
 
   function markWorkspaceUnsaved(fileName?: string | null) {
     if (isSavingRef.current) {
@@ -161,7 +142,7 @@ export function useSaveProject({
     // and let Dashboard handle dirtyFileNames updates
   }
 
-  const showManualSaveButton = !autoSave || autoSaveInterval !== "immediate";
+  const showManualSaveButton = true;
 
   return {
     saveStatus,

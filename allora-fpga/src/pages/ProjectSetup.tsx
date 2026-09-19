@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
-import type { AppSettings } from "../data/settings";
+import {
+  getLastProjectParentDirectory,
+  type AppSettings,
+} from "../data/settings";
 import {
   PROJECT_TEMPLATES,
   getTemplateById,
@@ -42,14 +45,17 @@ export default function ProjectSetup({
   onBack,
   onCreateProject,
 }: ProjectSetupProps) {
-  const defaultProjectName =
-    settings.defaultProjectNamePattern === "{board}_project"
-      ? `${board.id.replace(/-/g, "_")}_project`
-      : "my_fpga_project";
-  const [projectName, setProjectName] = useState(defaultProjectName);
-  const [language, setLanguage] = useState(settings.defaultLanguage);
+  const lastProjectParentDirectory = getLastProjectParentDirectory();
+  const initialParentDirectory =
+    settings.projectLocationMode === "last-used"
+      ? lastProjectParentDirectory
+      : null;
+  const [projectName, setProjectName] = useState("");
+  const [language, setLanguage] = useState<TemplateLanguage>("Verilog");
   const [isCreating, setIsCreating] = useState(false);
-  const [parentDirectory, setParentDirectory] = useState<string | null>(null);
+  const [parentDirectory, setParentDirectory] = useState<string | null>(
+    initialParentDirectory,
+  );
   const [isChoosingLocation, setIsChoosingLocation] = useState(false);
   const [templateId, setTemplateId] = useState("blinky");
   const capabilities = useMemo(() => getBoardCapabilities(board), [board]);
@@ -86,7 +92,7 @@ export default function ProjectSetup({
   }
 
   async function createProject() {
-    if (isCreating) return;
+    if (isCreating || !projectName.trim() || requiresLocation) return;
     setIsCreating(true);
     try {
       await onCreateProject(projectName, language, parentDirectory, templateId);
@@ -94,6 +100,12 @@ export default function ProjectSetup({
       setIsCreating(false);
     }
   }
+
+  const requiresLocation =
+    hasTauriInvoke() &&
+    (settings.projectLocationMode === "ask" ||
+      settings.projectLocationMode === "last-used") &&
+    !parentDirectory;
 
   return (
     <div className="glass-page project-setup-page">
@@ -126,21 +138,21 @@ export default function ProjectSetup({
               autoCorrect="off"
               spellCheck={false}
               onChange={(event) => setProjectName(event.target.value)}
-              placeholder="my_fpga_project"
+              placeholder="Enter a project name"
             />
           </label>
 
           <label className="project-setup-field">
-            <span>HDL language</span>
+            <span>Starter source type</span>
             <select
               value={language}
               onChange={(event) =>
                 changeLanguage(event.target.value as TemplateLanguage)
               }
             >
-              <option>Verilog</option>
-              <option>SystemVerilog</option>
-              <option>VHDL</option>
+              <option value="Verilog">Verilog (.v)</option>
+              <option value="SystemVerilog">SystemVerilog (.sv)</option>
+              <option value="VHDL">VHDL (.vhd)</option>
             </select>
           </label>
 
@@ -149,8 +161,8 @@ export default function ProjectSetup({
               <FolderOpen size={18} />
               <div>
                 <div>Project location</div>
-                <p title={parentDirectory ?? "Documents/Allora FPGA Projects"}>
-                  {parentDirectory ?? "Documents/Allora FPGA Projects"}
+                <p title={getLocationLabel()}>
+                  {getLocationLabel()}
                 </p>
               </div>
             </div>
@@ -184,6 +196,7 @@ export default function ProjectSetup({
           <button
             className="project-create-button"
             type="button"
+            disabled={!projectName.trim() || requiresLocation || isCreating}
             onClick={() => void createProject()}
           >
             {isCreating ? "Creating Project..." : "Create Project"}
@@ -310,6 +323,15 @@ export default function ProjectSetup({
       </main>
     </div>
   );
+
+  function getLocationLabel() {
+    if (parentDirectory) return parentDirectory;
+    if (settings.projectLocationMode === "ask") return "Choose a location";
+    if (settings.projectLocationMode === "last-used") {
+      return "Choose a location (no previous location found)";
+    }
+    return "Documents/Allora FPGA Projects";
+  }
 }
 
 function MiniFact({

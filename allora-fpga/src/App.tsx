@@ -1,16 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import Dashboard from "./pages/Dashboard";
 import { getBoardById } from "./data/boards";
 import {
   createProject,
+  getLastOpenedProjectId,
   getSavedProject,
   getSavedProjects,
   saveProject,
+  saveLastOpenedProjectId,
 } from "./data/projects";
 import type { SavedProject } from "./data/projects";
-import { getSettings, saveSettings } from "./data/settings";
+import {
+  getSettings,
+  saveLastProjectParentDirectory,
+  saveSettings,
+} from "./data/settings";
 import type { AppSettings } from "./data/settings";
 import {
   createProjectWorkspace,
@@ -37,11 +43,22 @@ function App() {
   const [projectWarning, setProjectWarning] = useState("");
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
+  const restoredStartupRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
     saveSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    if (restoredStartupRef.current) return;
+    restoredStartupRef.current = true;
+    if (settings.startupView !== "last-project") return;
+    const projectId = getLastOpenedProjectId();
+    if (projectId) void openProject(projectId);
+    // Startup restoration intentionally runs once with the persisted settings.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function goHome() {
     setStage("board-select");
@@ -90,7 +107,18 @@ function App() {
       }
     }
 
+    if (!settings.restorePreviousSession) {
+      nextProject = {
+        ...nextProject,
+        activeFileName:
+          nextProject.files.find((file) => isHdlFile(file.name))?.name ??
+          nextProject.files[0]?.name ??
+          null,
+      };
+    }
+
     setProject(nextProject);
+    saveLastOpenedProjectId(nextProject.id);
     setSelectedBoardId(nextProject.boardId);
     setExecutionTarget(target);
     setStage("dashboard");
@@ -165,6 +193,7 @@ function App() {
     };
 
     saveProject(nextProject);
+    saveLastOpenedProjectId(nextProject.id);
     setProject(nextProject);
     setSelectedBoardId(boardId);
     setExecutionTarget(target);
@@ -223,6 +252,11 @@ function App() {
               workspace.files.find((file) => isHdlFile(file.name))?.name ??
               null,
           });
+
+          if (parentDirectory) {
+            saveLastProjectParentDirectory(parentDirectory);
+          }
+          saveLastOpenedProjectId(nextProject.id);
 
           setProject(nextProject);
           setExecutionTarget("build");

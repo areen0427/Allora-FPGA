@@ -28,12 +28,7 @@ export function useFileManagement(project: SavedProject | null) {
 
   function getUntitledFileName() {
     let index = 1;
-    const extension =
-      project?.language === "SystemVerilog"
-        ? "sv"
-        : project?.language === "VHDL"
-          ? "vhd"
-          : "v";
+    const extension = inferWorkspaceHdlExtension(files);
 
     while (
       files.some((file) => file.name === `untitled-${index}.${extension}`)
@@ -227,4 +222,11 @@ export function useFileManagement(project: SavedProject | null) {
     updateConstraintFile,
     importFiles,
   };
+}
+
+function inferWorkspaceHdlExtension(files: ProjectFile[]) {
+  const representativeSource = files.find((file) =>
+    /\.(sv|v|vhd|vhdl)$/i.test(file.name),
+  );
+  return representativeSource?.name.split(".").pop()?.toLowerCase() ?? "v";
 }

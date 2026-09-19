@@ -324,10 +324,11 @@ export default function EditorSection({
           options={{
             fontSize: settings.editorFontSize,
             fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-            minimap: { enabled: false },
+            minimap: { enabled: settings.editorMinimap },
             lineNumbers: "on",
             wordWrap: settings.editorWordWrap ? "on" : "off",
             tabSize: settings.editorTabSize,
+            renderWhitespace: settings.editorWhitespace,
             automaticLayout: true,
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
