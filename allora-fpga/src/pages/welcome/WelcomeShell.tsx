@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from "react";
-import { Cpu, Home, Map as MapIcon, Settings } from "lucide-react";
+import { Cpu, Home, Settings } from "lucide-react";
 
 export type WelcomeView = "home" | "pin-mapping";
 
@@ -23,7 +23,7 @@ export function WelcomeShell({
   return (
     <div className="glass-page welcome-page">
       <aside className="home-rail welcome-rail">
-        <div className="welcome-rail-logo">
+        <div className="welcome-rail-logo" aria-hidden="true">
           <Cpu size={20} color="white" strokeWidth={2.2} />
         </div>
 
@@ -38,19 +38,11 @@ export function WelcomeShell({
           <Home size={20} />
         </RailButton>
 
-        <RailButton
-          active={activeView === "pin-mapping"}
-          label="Pin Mapping"
-          onClick={() => onViewChange("pin-mapping")}
-        >
-          <MapIcon size={20} />
-        </RailButton>
+        <div className="welcome-rail-spacer" />
 
         <RailButton label="Settings" onClick={onOpenSettings}>
           <Settings size={20} />
         </RailButton>
-
-        <div className="welcome-rail-spacer" />
       </aside>
 
       <main className="welcome-main">

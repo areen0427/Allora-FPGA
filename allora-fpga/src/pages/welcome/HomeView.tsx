@@ -1,18 +1,16 @@
 import { useState } from "react";
 import {
   ArrowLeft,
-  ArrowUpRight,
-  Binary,
+  BookOpen,
   CircuitBoard,
-  Code2,
+  ExternalLink,
   FolderClock,
   FolderOpen,
-  Hammer,
-  Play,
-  SlidersHorizontal,
+  Info,
+  Keyboard,
+  Map as MapIcon,
   Sparkles,
-  Waves,
-  Zap,
+  X,
 } from "lucide-react";
 import { getBoardById } from "../../data/boards";
 import { formatProjectTime } from "../../data/projects";
@@ -33,6 +31,7 @@ type HomeViewProps = {
   newProjectRef: React.RefObject<HTMLElement | null>;
   onToggleShowAllBoards: (showAll: boolean) => void;
   onSelectBoard: (board: BoardCatalogItem) => void;
+  onOpenPinMapping: () => void;
   onOpenExistingProject: (target: ExecutionTarget) => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
@@ -48,27 +47,95 @@ export function HomeView({
   newProjectRef,
   onToggleShowAllBoards,
   onSelectBoard,
+  onOpenPinMapping,
   onOpenExistingProject,
   onOpenProject,
   onRemoveRecentProject,
 }: HomeViewProps) {
   const [path, setPath] = useState<ExecutionTarget | null>(null);
+  const [showProductInfo, setShowProductInfo] = useState(false);
   if (path === null) {
     return (
       <section className="execution-path-stage">
         <div className="welcome-environment" aria-hidden="true" />
         <div className="welcome-atmosphere" aria-hidden="true" />
-        <header className="welcome-brand-lockup">
-          <span className="welcome-brand-mark"><CircuitBoard size={18} /></span>
-          <span>
-            <strong>ALLORA</strong>
-            <small>FPGA development environment</small>
-          </span>
-        </header>
-        <ExecutionPathChooser onChoose={setPath} />
-        <div className="welcome-stage-caption" aria-hidden="true">
-          <span>One RTL source</span><i />
-          <span>Two execution targets</span>
+        <div className="welcome-action-stack">
+          <button
+            type="button"
+            className="welcome-brand-lockup"
+            aria-expanded={showProductInfo}
+            aria-controls="welcome-product-info"
+            onClick={() => setShowProductInfo((visible) => !visible)}
+          >
+            <span className="welcome-brand-mark"><CircuitBoard size={18} /></span>
+            <span className="welcome-brand-copy">
+              <strong>ALLORA</strong>
+              <small>FPGA development environment</small>
+            </span>
+            <Info className="welcome-brand-info-icon" size={15} aria-hidden="true" />
+          </button>
+          {showProductInfo ? (
+            <section
+              id="welcome-product-info"
+              className="welcome-product-info"
+              aria-label="About Allora FPGA"
+            >
+              <button
+                type="button"
+                className="welcome-product-info-close"
+                aria-label="Close product information"
+                onClick={() => setShowProductInfo(false)}
+              >
+                <X size={15} />
+              </button>
+              <header className="welcome-product-info-header">
+                <span className="welcome-product-info-eyebrow">Allora FPGA</span>
+                <strong>Product information</strong>
+              </header>
+              <div className="welcome-product-info-meta">
+                <span><small>Version</small><strong>0.0.0</strong></span>
+                <a
+                  href="https://github.com/areen0427/Allora-FPGA#readme"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <BookOpen size={14} /> Documentation <ExternalLink size={11} />
+                </a>
+              </div>
+              <div className="welcome-product-info-section">
+                <h3>Projects</h3>
+                <div className="welcome-product-stat-row">
+                  <span><strong>{recentProjects.length}</strong><small>Recent</small></span>
+                  <span><strong>{boards.length}</strong><small>Supported boards</small></span>
+                </div>
+                {recentProjects[0] ? (
+                  <p className="welcome-product-latest">
+                    Latest: <strong>{recentProjects[0].name}</strong>
+                    <small>{formatProjectTime(recentProjects[0].updatedAt)}</small>
+                  </p>
+                ) : (
+                  <p className="welcome-product-latest">No recent projects yet.</p>
+                )}
+              </div>
+              <div className="welcome-product-info-section">
+                <h3><Keyboard size={13} /> Shortcuts</h3>
+                <dl className="welcome-shortcut-list">
+                  <div><dt>Save project</dt><dd>⌘/Ctrl S</dd></div>
+                  <div><dt>Zoom waveforms</dt><dd>⌘/Ctrl + scroll</dd></div>
+                </dl>
+              </div>
+            </section>
+          ) : null}
+          <ExecutionPathChooser
+            onChoose={setPath}
+            onOpenPinMapping={onOpenPinMapping}
+          />
+          {recentProjects[0] ? (
+            <ContinueProjectTile
+              project={recentProjects[0]}
+              onOpen={(target) => onOpenProject(recentProjects[0].id, target)}
+            />
+          ) : null}
         </div>
       </section>
     );
@@ -154,86 +221,108 @@ function PageHeader({
 
 function ExecutionPathChooser({
   onChoose,
+  onOpenPinMapping,
 }: {
   onChoose: (target: ExecutionTarget) => void;
+  onOpenPinMapping: () => void;
 }) {
   return (
     <section className="execution-path-grid">
-      <button
-        type="button"
-        onClick={() => onChoose("simulate")}
-        className="execution-path-card simulate"
-      >
-        <span className="glass-edge glass-edge-top" aria-hidden="true" />
-        <span className="glass-edge glass-edge-side" aria-hidden="true" />
-        <span className="glass-specular" aria-hidden="true" />
-        <div className="execution-path-copy">
-          <span className="execution-path-kicker">
-            <Sparkles size={15} /> Virtual FPGA
-          </span>
-          <h2>Simulate</h2>
-          <p>
-            Write RTL, touch virtual inputs, watch outputs, inspect signals, and
-            debug without plugging in a board.
-          </p>
-          <span className="execution-path-cta">
-            <Play size={15} fill="currentColor" /> Enter simulator
-            <ArrowUpRight size={15} />
-          </span>
-        </div>
-        <div className="execution-path-clear-field" aria-hidden="true">
-          <span /><span /><span /><span />
-        </div>
-        <div className="execution-path-features">
-          <span>
-            <Code2 size={14} /> Same RTL
-          </span>
-          <span>
-            <SlidersHorizontal size={14} /> Live controls
-          </span>
-          <span>
-            <Waves size={14} /> Signals
-          </span>
-        </div>
-      </button>
+      <div className="execution-path-option">
+        <button
+          type="button"
+          onClick={() => onChoose("simulate")}
+          className="execution-path-card simulate"
+        >
+          <span className="glass-edge glass-edge-top" aria-hidden="true" />
+          <span className="glass-edge glass-edge-side" aria-hidden="true" />
+          <span className="glass-specular" aria-hidden="true" />
+          <div className="execution-path-copy">
+            <span className="execution-path-kicker">
+              <Sparkles size={14} aria-hidden="true" /> Virtual FPGA
+            </span>
+            <span className="execution-path-title-row">
+              <h2>Simulate</h2>
+              <i className="execution-path-glyph" aria-hidden="true"><b /><b /><b /></i>
+            </span>
+            <span className="execution-path-microcopy">RTL · Signals · No hardware</span>
+          </div>
+        </button>
+      </div>
 
-      <button
-        type="button"
-        onClick={() => onChoose("build")}
-        className="execution-path-card build"
-      >
-        <span className="glass-edge glass-edge-top" aria-hidden="true" />
-        <span className="glass-edge glass-edge-side" aria-hidden="true" />
-        <span className="glass-specular" aria-hidden="true" />
-        <div className="execution-path-copy">
-          <span className="execution-path-kicker">
-            <CircuitBoard size={15} /> Physical FPGA
-          </span>
-          <h2>Build</h2>
-          <p>
-            Choose an open-source board, map pins, synthesize, place and route,
-            generate a bitstream, and program hardware.
-          </p>
-          <span className="execution-path-cta">
-            <Hammer size={15} /> Choose a board
-            <ArrowUpRight size={15} />
-          </span>
+      <div className="execution-path-option build-option">
+        <button
+          type="button"
+          onClick={() => onChoose("build")}
+          className="execution-path-card build"
+        >
+          <span className="glass-edge glass-edge-top" aria-hidden="true" />
+          <span className="glass-edge glass-edge-side" aria-hidden="true" />
+          <span className="glass-specular" aria-hidden="true" />
+          <div className="execution-path-copy">
+            <span className="execution-path-kicker">
+              <CircuitBoard size={14} aria-hidden="true" /> Physical FPGA
+            </span>
+            <span className="execution-path-title-row">
+              <h2>Build</h2>
+              <i className="execution-path-glyph" aria-hidden="true"><b /><b /><b /></i>
+            </span>
+            <span className="execution-path-microcopy">Synthesis · Bitstream · Program</span>
+          </div>
+        </button>
+        <button
+          type="button"
+          className="pin-mapping-quick-action"
+          onClick={onOpenPinMapping}
+        >
+          <MapIcon size={14} /> Open Pin Mapper
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ContinueProjectTile({
+  project,
+  onOpen,
+}: {
+  project: SavedProject;
+  onOpen: (target: ExecutionTarget) => void;
+}) {
+  const boardName = getBoardById(project.boardId)?.name ?? project.boardId;
+  const updatedAt = new Date(project.updatedAt);
+  const hasValidUpdatedAt = !Number.isNaN(updatedAt.getTime());
+  const updatedDate = hasValidUpdatedAt
+    ? new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+      }).format(updatedAt)
+    : "Unknown date";
+  const updatedTime = hasValidUpdatedAt
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(updatedAt)
+    : "Unknown time";
+
+  return (
+    <section className="welcome-continue-project" aria-label="Continue project">
+      <div className="welcome-continue-project-copy">
+        <span>Continue project</span>
+        <strong>{project.name}</strong>
+        <div className="welcome-continue-project-meta">
+          <small>{boardName} · {updatedDate}</small>
+          <time dateTime={project.updatedAt}>{updatedTime}</time>
         </div>
-        <div className="execution-path-clear-field" aria-hidden="true">
-          <span /><span /><span /><span />
-        </div>
-        <div className="execution-path-features">
-          <span>
-            <Binary size={14} /> Synthesis
-          </span>
-          <span>
-            <CircuitBoard size={14} /> Pin mapping
-          </span>
-          <span>
-            <Zap size={14} /> Program
-          </span>
-        </div>
-      </button>
+      </div>
+      <div className="welcome-continue-actions">
+        <button type="button" onClick={() => onOpen("simulate")}>
+          <Sparkles size={13} /> Simulate
+        </button>
+        <button type="button" onClick={() => onOpen("build")}>
+          <CircuitBoard size={13} /> Build
+        </button>
+      </div>
     </section>
   );
 }

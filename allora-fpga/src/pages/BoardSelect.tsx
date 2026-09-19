@@ -112,6 +112,7 @@ export default function BoardSelect({
           newProjectRef={newProjectRef}
           onToggleShowAllBoards={setShowAllBoards}
           onSelectBoard={handleSelectBoard}
+          onOpenPinMapping={() => handleViewChange("pin-mapping")}
           onOpenExistingProject={(target) =>
             void handleOpenExistingProject(target)
           }
