@@ -40,7 +40,7 @@ export function WelcomeShell({
 
         <div className="welcome-rail-spacer" />
 
-        <RailButton label="Settings" onClick={onOpenSettings}>
+        <RailButton filled label="Settings" onClick={onOpenSettings}>
           <Settings size={20} />
         </RailButton>
       </aside>
@@ -56,11 +56,13 @@ export function WelcomeShell({
 
 function RailButton({
   active,
+  filled,
   label,
   onClick,
   children,
 }: {
   active?: boolean;
+  filled?: boolean;
   label: string;
   onClick?: () => void;
   children: ReactNode;
@@ -68,7 +70,7 @@ function RailButton({
   return (
     <button
       type="button"
-      className={active ? "welcome-rail-button active" : "welcome-rail-button"}
+      className={`welcome-rail-button${active ? " active" : ""}${filled ? " filled" : ""}`}
       title={label}
       aria-label={label}
       onClick={onClick}

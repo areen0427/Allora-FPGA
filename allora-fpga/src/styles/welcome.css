@@ -29,6 +29,12 @@
 
 .welcome-rail {
   width: 68px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex: 0 0 68px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,7 +71,8 @@
 }
 
 .welcome-rail-button:hover,
-.welcome-rail-button.active {
+.welcome-rail-button.active,
+.welcome-rail-button.filled {
   background: #eff6ff;
   color: #2563eb;
 }

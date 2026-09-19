@@ -40,7 +40,6 @@ import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
 import {
   buildProjectFilePath,
-  readProjectWorkspace,
 } from "../lib/projectWorkspace";
 import { useFileManagement } from "../hooks/useFileManagement";
 import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
@@ -165,16 +164,6 @@ export default function Dashboard({
         current.includes(fileName) ? current : [...current, fileName],
       );
     }
-  }
-
-  async function reloadWorkspaceFromDisk() {
-    if (!projectPath) return;
-
-    const diskFiles = await readProjectWorkspace(projectPath);
-    fileMgmt.setFiles(diskFiles);
-    activeTabs.setDirtyFileNames([]);
-    saveProject.setSaveStatus("saved");
-    saveProject.setLastSavedAt(new Date().toISOString());
   }
 
   function handleOpenFile(fileName: string) {
@@ -840,7 +829,6 @@ export default function Dashboard({
               activeTabs.openFileNames.includes(file.name),
             )}
             projectFiles={fileMgmt.files}
-            projectPath={projectPath}
             activeFileName={activeTabs.activeFileName}
             setActiveFileName={handleOpenFile}
             activeFile={activeTabs.activeFile}
@@ -849,7 +837,6 @@ export default function Dashboard({
             createNewFile={() => handleCreateNewFile()}
             closeOpenFile={handleCloseOpenFile}
             renameFile={handleRenameFile}
-            onWorkspaceChanged={reloadWorkspaceFromDisk}
             settings={settings}
           />
         )}
