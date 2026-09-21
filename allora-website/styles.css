@@ -91,8 +91,8 @@ html[data-theme="black-ice"] .theme-switch-track span { transform: translateX(14
 html[data-theme="black-ice"] .hero-environment { opacity: .62; background-image: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 72%, transparent) 48%, transparent 100%), url("welcome-black-ice.png"); }
 .hero-grid { display: grid; grid-template-columns: 1.06fr .78fr; align-items: center; gap: clamp(42px, 8vw, 110px); }
 .eyebrow { color: var(--cyan); font: 600 12px/1.2 var(--mono); letter-spacing: .17em; text-transform: uppercase; }
-.hero h1 { margin-top: 18px; font-size: clamp(48px, 5vw, 64px); line-height: .98; letter-spacing: -.055em; max-width: 720px; }
-.hero h1 span { color: transparent; background: linear-gradient(100deg, var(--blue), var(--cyan)); -webkit-background-clip: text; background-clip: text; }
+.hero h1 { margin-top: 18px; padding: .04em .06em .06em 0; font-size: clamp(48px, 5vw, 64px); line-height: 1.04; letter-spacing: -.045em; max-width: 720px; }
+.hero h1 span { padding-right: .06em; color: transparent; background: linear-gradient(100deg, var(--blue), var(--cyan)); -webkit-background-clip: text; background-clip: text; }
 .hero-lead { margin-top: 22px; max-width: 650px; color: var(--text-soft); font-size: clamp(16px, 1.35vw, 18px); line-height: 1.55; }
 .hero-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-proof { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 14px 25px; color: var(--muted); font: 600 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .07em; }
