@@ -86,26 +86,26 @@ html[data-theme="black-ice"] .theme-switch-track span { transform: translateX(14
 .button-disabled:hover { transform: none; }
 .button-small { min-height: 40px; padding-inline: 16px; font-size: 13px; }
 
-.hero { min-height: 820px; padding: 150px 0 92px; position: relative; overflow: hidden; display: grid; align-items: center; }
+.hero { min-height: 100svh; padding: 120px 0 48px; position: relative; overflow: hidden; display: grid; align-items: center; }
 .hero-environment { position: absolute; inset: 0; z-index: -2; opacity: .42; background: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 75%, transparent) 47%, transparent 100%), url("welcome-ice.png") center/cover no-repeat; mask-image: linear-gradient(to bottom, #000 76%, transparent); }
 html[data-theme="black-ice"] .hero-environment { opacity: .62; background-image: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 72%, transparent) 48%, transparent 100%), url("welcome-black-ice.png"); }
 .hero-grid { display: grid; grid-template-columns: 1.06fr .78fr; align-items: center; gap: clamp(42px, 8vw, 110px); }
 .eyebrow { color: var(--cyan); font: 600 12px/1.2 var(--mono); letter-spacing: .17em; text-transform: uppercase; }
-.hero h1 { margin-top: 22px; font-size: clamp(48px, 6.5vw, 84px); line-height: .98; letter-spacing: -.055em; max-width: 780px; }
+.hero h1 { margin-top: 18px; font-size: clamp(48px, 5vw, 64px); line-height: .98; letter-spacing: -.055em; max-width: 720px; }
 .hero h1 span { color: transparent; background: linear-gradient(100deg, var(--blue), var(--cyan)); -webkit-background-clip: text; background-clip: text; }
-.hero-lead { margin-top: 28px; max-width: 650px; color: var(--text-soft); font-size: clamp(17px, 1.8vw, 20px); line-height: 1.65; }
-.hero-actions { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; }
-.hero-proof { margin-top: 38px; padding-top: 22px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 14px 25px; color: var(--muted); font: 600 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .07em; }
+.hero-lead { margin-top: 22px; max-width: 650px; color: var(--text-soft); font-size: clamp(16px, 1.35vw, 18px); line-height: 1.55; }
+.hero-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
+.hero-proof { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 14px 25px; color: var(--muted); font: 600 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .07em; }
 .hero-proof b { margin-right: 7px; color: var(--blue); }
-.mode-stack { display: grid; gap: 18px; transform: perspective(1100px) rotateY(-4deg); transform-origin: left center; }
-.mode-card { min-height: 230px; padding: 27px 28px; border-radius: 24px; position: relative; overflow: hidden; transition: transform .22s ease, box-shadow .22s ease; }
+.mode-stack { display: grid; gap: 14px; transform: perspective(1100px) rotateY(-4deg); transform-origin: left center; }
+.mode-card { min-height: 210px; padding: 24px 26px; border-radius: 24px; position: relative; overflow: hidden; transition: transform .22s ease, box-shadow .22s ease; }
 .mode-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
 .mode-card::after { content: ""; position: absolute; width: 180px; height: 180px; right: -60px; top: -70px; border-radius: 50%; background: var(--glow); filter: blur(7px); opacity: .55; }
 .mode-card-simulate { --glow: radial-gradient(circle, rgba(14,165,233,.32), transparent 65%); }
 .mode-card-build { --glow: radial-gradient(circle, rgba(99,102,241,.3), transparent 65%); }
 .mode-card-top { display: flex; justify-content: space-between; color: var(--cyan); font: 600 11px/1 var(--mono); letter-spacing: .15em; text-transform: uppercase; }
 .mode-card-top i { font-style: normal; color: var(--muted); }
-.mode-card h2 { margin-top: 28px; font-size: 38px; letter-spacing: -.045em; }
+.mode-card h2 { margin-top: 22px; font-size: 36px; letter-spacing: -.045em; }
 .mode-card p { margin-top: 10px; max-width: 390px; color: var(--text-soft); font-size: 15px; }
 .signal-line { margin-top: 24px; display: flex; align-items: center; }
 .signal-line::before { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--cyan), rgba(14,165,233,.08)); }
