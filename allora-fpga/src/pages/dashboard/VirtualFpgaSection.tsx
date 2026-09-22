@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  CheckCircle2,
   CircleStop,
   Gauge,
+  LoaderCircle,
   Pause,
   Play,
   RotateCcw,
@@ -11,6 +13,9 @@ import {
 } from "lucide-react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
+import SignalWaveformPanel, {
+  type SignalWaveTrace,
+} from "../../components/SignalWaveformPanel";
 import {
   formatSignalValue,
   getConfiguredTopModule,
@@ -35,6 +40,12 @@ type Props = {
   topLevelFileName: string | null;
   settings: AppSettings;
   onConfigChange: (config: VirtualFpgaConfig) => void;
+  guidedTemplate?: "blank" | "counter" | "pwm";
+};
+
+type WaveSample = {
+  simTimePs: number;
+  values: Record<string, string>;
 };
 
 type SimulationStatus =
@@ -48,6 +59,7 @@ type SimulationStatus =
 const FREQUENCIES = [
   1_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000,
 ];
+const RUN_CYCLES_PER_TICK = 1;
 
 export default function VirtualFpgaSection({
   files,
@@ -55,6 +67,7 @@ export default function VirtualFpgaSection({
   topLevelFileName,
   settings,
   onConfigChange,
+  guidedTemplate,
 }: Props) {
   const inferredTop = getConfiguredTopModule(files, topLevelFileName);
   const [config, setConfig] = useState(() =>
@@ -68,6 +81,8 @@ export default function VirtualFpgaSection({
   const [errorMessage, setErrorMessage] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
   const [radix, setRadix] = useState(settings.simulatorDefaultRadix);
+  const [selectedSignals, setSelectedSignals] = useState<string[]>([]);
+  const [waveSamples, setWaveSamples] = useState<WaveSample[]>([]);
   const steppingRef = useRef(false);
   const sessionRef = useRef<number | null>(null);
   const executedCyclesRef = useRef(0);
@@ -115,12 +130,39 @@ export default function VirtualFpgaSection({
   }, [config.topModule, sourceFiles]);
 
   useEffect(() => {
+    if (selectedSignals.length || ports.length === 0) return;
+    const mappedSignals = config.peripherals
+      .map((peripheral) => peripheral.signal)
+      .filter((signal): signal is string => Boolean(signal));
+    setSelectedSignals(
+      [...new Set([...mappedSignals, ...ports.map((port) => port.name)])].slice(
+        0,
+        5,
+      ),
+    );
+  }, [config.peripherals, ports, selectedSignals.length]);
+
+  useEffect(() => {
+    if (!snapshot) return;
+    setWaveSamples((current) => {
+      const sample = {
+        simTimePs: snapshot.simTimePs,
+        values: snapshot.values,
+      };
+      if (current.at(-1)?.simTimePs === sample.simTimePs) {
+        return [...current.slice(0, -1), sample];
+      }
+      return [...current, sample].slice(-160);
+    });
+  }, [snapshot]);
+
+  useEffect(() => {
     if (status !== "running" || sessionId === null) return;
     const timer = window.setInterval(() => {
       if (steppingRef.current) return;
       const remainingCycles = settings.simulatorCycleLimit
         ? settings.simulatorCycleLimit - executedCyclesRef.current
-        : 250;
+        : RUN_CYCLES_PER_TICK;
       if (remainingCycles <= 0) {
         setStatus("paused");
         setLogs((current) => [
@@ -129,13 +171,16 @@ export default function VirtualFpgaSection({
         ]);
         return;
       }
-      const cycles = Math.min(250, remainingCycles);
+      const cycles = Math.min(RUN_CYCLES_PER_TICK, remainingCycles);
       steppingRef.current = true;
       void virtualFpgaApi
         .step(sessionId, cycles)
-        .then((nextSnapshot) => {
+        .then((result) => {
           executedCyclesRef.current += cycles;
-          setSnapshot(nextSnapshot);
+          setWaveSamples((current) =>
+            appendWaveSamples(current, result.trace),
+          );
+          setSnapshot(result.state);
         })
         .catch((error: unknown) => {
           setStatus("error");
@@ -183,6 +228,7 @@ export default function VirtualFpgaSection({
     setStatus("compiling");
     setErrorMessage("");
     try {
+      await waitForNextPaint();
       if (sessionId !== null) await virtualFpgaApi.stop(sessionId);
       const result = await virtualFpgaApi.start({
         sourceFiles,
@@ -193,6 +239,7 @@ export default function VirtualFpgaSection({
         projectPath,
       });
       executedCyclesRef.current = 0;
+      setWaveSamples([]);
       setSessionId(result.sessionId);
       setPorts(result.ports);
       const initialState =
@@ -231,7 +278,9 @@ export default function VirtualFpgaSection({
     const allowedCycles = Math.min(cycles, remainingCycles);
     steppingRef.current = true;
     try {
-      setSnapshot(await virtualFpgaApi.step(sessionId, allowedCycles));
+      const result = await virtualFpgaApi.step(sessionId, allowedCycles);
+      setWaveSamples((current) => appendWaveSamples(current, result.trace));
+      setSnapshot(result.state);
       executedCyclesRef.current += allowedCycles;
       setStatus("paused");
     } catch (error) {
@@ -246,13 +295,13 @@ export default function VirtualFpgaSection({
     if (sessionId === null) return;
     try {
       executedCyclesRef.current = 0;
-      setSnapshot(
-        await virtualFpgaApi.reset(
-          sessionId,
-          reset?.signal ?? null,
-          reset?.activeHigh ?? true,
-        ),
+      const result = await virtualFpgaApi.reset(
+        sessionId,
+        reset?.signal ?? null,
+        reset?.activeHigh ?? true,
       );
+      setWaveSamples(appendWaveSamples([], result.trace));
+      setSnapshot(result.state);
       setStatus("paused");
     } catch (error) {
       setStatus("error");
@@ -270,13 +319,15 @@ export default function VirtualFpgaSection({
     const mask = 1n << BigInt(bit);
     const next = bitValue ? current | mask : current & ~mask;
     try {
-      setSnapshot(
-        await virtualFpgaApi.setInput(
-          sessionId,
-          peripheral.signal,
-          Number(next),
-        ),
+      const nextSnapshot = await virtualFpgaApi.setInput(
+        sessionId,
+        peripheral.signal,
+        Number(next),
       );
+      setWaveSamples((currentSamples) =>
+        appendWaveSamples(currentSamples, [nextSnapshot]),
+      );
+      setSnapshot(nextSnapshot);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     }
@@ -285,13 +336,44 @@ export default function VirtualFpgaSection({
   const canInteract =
     sessionId !== null && status !== "compiling" && status !== "error";
   const simTime = snapshot ? formatSimTime(snapshot.simTimePs) : "0 ns";
+  const hasGuide = guidedTemplate === "counter" || guidedTemplate === "pwm";
+  const guidePeripheralIds =
+    guidedTemplate === "counter"
+      ? [
+          "clock-0",
+          "reset-0",
+          "switch-0",
+          "led-0",
+          "led-1",
+          "led-2",
+          "led-3",
+        ]
+      : guidedTemplate === "pwm"
+        ? ["clock-0", "switch-0", "led-0"]
+        : [];
+  const guideMappingsComplete = guidePeripheralIds.every((id) =>
+    config.peripherals.some(
+      (peripheral) => peripheral.id === id && Boolean(peripheral.signal),
+    ),
+  );
+
+  function toggleSignal(signal: string) {
+    setSelectedSignals((current) => {
+      if (current.includes(signal)) {
+        return current.length === 1
+          ? current
+          : current.filter((item) => item !== signal);
+      }
+      return [...current, signal].slice(-6);
+    });
+  }
 
   return (
     <div className="vfpga-page">
       <header className="vfpga-hero">
         <div>
           <div className="vfpga-eyebrow">
-            <Zap size={14} /> VIRTUAL FPGA V0.1
+            <Zap size={14} /> VIRTUAL FPGA V0.2
           </div>
           <h1>Prototype in RTL. Touch every signal.</h1>
           <p>
@@ -303,6 +385,24 @@ export default function VirtualFpgaSection({
           <span /> {status === "compiling" ? "Compiling RTL" : status}
         </div>
       </header>
+
+      {hasGuide ? (
+        <section className="vfpga-guide" aria-label="Guided project progress">
+          <div>
+            <span>Guided {guidedTemplate === "counter" ? "LED counter" : "PWM dimmer"}</span>
+            <strong>Run the design, then inspect a signal over time.</strong>
+          </div>
+          <ol>
+            <GuideStep label="Source ready" done={sourceFiles.length > 0} />
+            <GuideStep
+              label="Ports mapped"
+              done={guideMappingsComplete}
+            />
+            <GuideStep label="Model compiled" done={sessionId !== null} />
+            <GuideStep label="Waveform captured" done={waveSamples.length > 1} />
+          </ol>
+        </section>
+      ) : null}
 
       {errorMessage ? (
         <div className="vfpga-error">
@@ -360,7 +460,16 @@ export default function VirtualFpgaSection({
                 onClick={() => void startSimulation()}
                 disabled={status === "compiling"}
               >
-                <Wrench size={15} /> Compile & Start
+                {status === "compiling" ? (
+                  <>
+                    <LoaderCircle className="vfpga-button-spinner" size={15} />
+                    Compiling…
+                  </>
+                ) : (
+                  <>
+                    <Wrench size={15} /> Compile & Start
+                  </>
+                )}
               </button>
             ) : (
               <>
@@ -538,6 +647,21 @@ export default function VirtualFpgaSection({
         </section>
       </div>
 
+      <SignalWaveformPanel
+        subtitle={
+          waveSamples.length
+            ? `${waveSamples.length} edge samples · ${formatClockFrequency(
+                config.clockFrequencyHz,
+              )} clock`
+            : "Compile and run to capture signal history"
+        }
+        traces={buildLiveWaveTraces(ports, waveSamples)}
+        selectedSignalIds={selectedSignals}
+        onToggleSignal={toggleSignal}
+        emptyMessage="Discovered ports will appear here."
+        formatTime={() => simTime}
+      />
+
       <section className="vfpga-panel vfpga-signals">
         <div className="vfpga-section-title">
           <div>
@@ -569,8 +693,21 @@ export default function VirtualFpgaSection({
               port.width,
             );
             return (
-              <div key={port.name}>
-                <span className="signal-name">{port.name}</span>
+              <div
+                key={port.name}
+                className={
+                  selectedSignals.includes(port.name) ? "selected" : undefined
+                }
+              >
+                <button
+                  type="button"
+                  className="signal-name"
+                  aria-pressed={selectedSignals.includes(port.name)}
+                  onClick={() => toggleSignal(port.name)}
+                  title="Show or hide this signal in the live waveform"
+                >
+                  <span /> {port.name}
+                </button>
                 <span className={`direction ${port.direction}`}>
                   {port.direction}
                 </span>
@@ -594,6 +731,70 @@ export default function VirtualFpgaSection({
       </section>
     </div>
   );
+}
+
+function GuideStep({ label, done }: { label: string; done: boolean }) {
+  return (
+    <li className={done ? "done" : ""}>
+      <CheckCircle2 size={14} />
+      <span>{label}</span>
+    </li>
+  );
+}
+
+function buildLiveWaveTraces(
+  ports: RtlPort[],
+  samples: WaveSample[],
+): SignalWaveTrace[] {
+  return ports.map((port) => ({
+    id: port.name,
+    name: port.name,
+    width: port.width,
+    direction: port.direction,
+    values: samples.map((sample, index) => ({
+      time: index,
+      value: sample.values[port.name] ?? "0",
+    })),
+  }));
+}
+
+function appendWaveSamples(
+  current: WaveSample[],
+  snapshots: SimulationSnapshot[],
+) {
+  const samples = [...current];
+  for (const snapshot of snapshots) {
+    const sample = {
+      simTimePs: snapshot.simTimePs,
+      values: snapshot.values,
+    };
+    const previous = samples.at(-1);
+    if (
+      previous?.simTimePs === sample.simTimePs &&
+      haveMatchingValues(previous.values, sample.values)
+    ) {
+      samples[samples.length - 1] = sample;
+    } else {
+      samples.push(sample);
+    }
+  }
+  return samples.slice(-160);
+}
+
+function haveMatchingValues(
+  left: Record<string, string>,
+  right: Record<string, string>,
+) {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].every((key) => left[key] === right[key]);
+}
+
+function waitForNextPaint() {
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => resolve()),
+    );
+  });
 }
 
 function formatSimulatorLogs(
@@ -637,6 +838,12 @@ function formatSimTime(picoseconds: number) {
     return `${(picoseconds / 1_000_000).toFixed(3)} µs`;
   if (picoseconds >= 1_000) return `${(picoseconds / 1_000).toFixed(1)} ns`;
   return `${picoseconds} ps`;
+}
+
+function formatClockFrequency(hertz: number) {
+  if (hertz >= 1_000_000) return `${hertz / 1_000_000} MHz`;
+  if (hertz >= 1_000) return `${hertz / 1_000} kHz`;
+  return `${hertz} Hz`;
 }
 
 function getErrorMessage(error: unknown) {

@@ -22,6 +22,7 @@ import type { ExecutionTarget } from "../dashboard/types";
 
 type HomeViewProps = {
   theme: "ice" | "black-ice";
+  reduceMotion: boolean;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
   showAllBoards: boolean;
@@ -33,11 +34,13 @@ type HomeViewProps = {
   onSelectBoard: (board: BoardCatalogItem) => void;
   onOpenPinMapping: () => void;
   onOpenExistingProject: (target: ExecutionTarget) => void;
+  onCreateSimulationProject: () => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
 };
 
 export function HomeView({
+  reduceMotion,
   boards,
   visibleBoards,
   showAllBoards,
@@ -49,16 +52,34 @@ export function HomeView({
   onSelectBoard,
   onOpenPinMapping,
   onOpenExistingProject,
+  onCreateSimulationProject,
   onOpenProject,
   onRemoveRecentProject,
 }: HomeViewProps) {
   const [path, setPath] = useState<ExecutionTarget | null>(null);
+  const [departingPath, setDepartingPath] = useState<ExecutionTarget | null>(
+    null,
+  );
   const [showProductInfo, setShowProductInfo] = useState(false);
   if (path === null) {
     return (
-      <section className="execution-path-stage">
+      <section
+        className={`execution-path-stage${departingPath ? ` is-transitioning transition-${departingPath}` : ""}`}
+        aria-busy={departingPath !== null}
+        onAnimationEnd={(event) => {
+          if (event.target !== event.currentTarget || !departingPath) return;
+          setPath(departingPath);
+          setDepartingPath(null);
+        }}
+      >
         <div className="welcome-environment" aria-hidden="true" />
         <div className="welcome-atmosphere" aria-hidden="true" />
+        {departingPath ? (
+          <div
+            className={`welcome-route-pulse ${departingPath}`}
+            aria-hidden="true"
+          />
+        ) : null}
         <div className="welcome-action-stack">
           <button
             type="button"
@@ -67,12 +88,18 @@ export function HomeView({
             aria-controls="welcome-product-info"
             onClick={() => setShowProductInfo((visible) => !visible)}
           >
-            <span className="welcome-brand-mark"><CircuitBoard size={18} /></span>
+            <span className="welcome-brand-mark">
+              <CircuitBoard size={18} />
+            </span>
             <span className="welcome-brand-copy">
               <strong>ALLORA</strong>
               <small>FPGA development environment</small>
             </span>
-            <Info className="welcome-brand-info-icon" size={15} aria-hidden="true" />
+            <Info
+              className="welcome-brand-info-icon"
+              size={15}
+              aria-hidden="true"
+            />
           </button>
           {showProductInfo ? (
             <section
@@ -89,45 +116,76 @@ export function HomeView({
                 <X size={15} />
               </button>
               <header className="welcome-product-info-header">
-                <span className="welcome-product-info-eyebrow">Allora FPGA</span>
+                <span className="welcome-product-info-eyebrow">
+                  Allora FPGA
+                </span>
                 <strong>Product information</strong>
               </header>
               <div className="welcome-product-info-meta">
-                <span><small>Version</small><strong>0.0.0</strong></span>
+                <span>
+                  <small>Version</small>
+                  <strong>0.0.0</strong>
+                </span>
                 <a
                   href="https://github.com/areen0427/Allora-FPGA#readme"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <BookOpen size={14} /> Documentation <ExternalLink size={11} />
+                  <BookOpen size={14} /> Documentation{" "}
+                  <ExternalLink size={11} />
                 </a>
               </div>
               <div className="welcome-product-info-section">
                 <h3>Projects</h3>
                 <div className="welcome-product-stat-row">
-                  <span><strong>{recentProjects.length}</strong><small>Recent</small></span>
-                  <span><strong>{boards.length}</strong><small>Supported boards</small></span>
+                  <span>
+                    <strong>{recentProjects.length}</strong>
+                    <small>Recent</small>
+                  </span>
+                  <span>
+                    <strong>{boards.length}</strong>
+                    <small>Supported boards</small>
+                  </span>
                 </div>
                 {recentProjects[0] ? (
                   <p className="welcome-product-latest">
                     Latest: <strong>{recentProjects[0].name}</strong>
-                    <small>{formatProjectTime(recentProjects[0].updatedAt)}</small>
+                    <small>
+                      {formatProjectTime(recentProjects[0].updatedAt)}
+                    </small>
                   </p>
                 ) : (
-                  <p className="welcome-product-latest">No recent projects yet.</p>
+                  <p className="welcome-product-latest">
+                    No recent projects yet.
+                  </p>
                 )}
               </div>
               <div className="welcome-product-info-section">
-                <h3><Keyboard size={13} /> Shortcuts</h3>
+                <h3>
+                  <Keyboard size={13} /> Shortcuts
+                </h3>
                 <dl className="welcome-shortcut-list">
-                  <div><dt>Save project</dt><dd>⌘/Ctrl S</dd></div>
-                  <div><dt>Zoom waveforms</dt><dd>⌘/Ctrl + scroll</dd></div>
+                  <div>
+                    <dt>Save project</dt>
+                    <dd>⌘/Ctrl S</dd>
+                  </div>
+                  <div>
+                    <dt>Zoom waveforms</dt>
+                    <dd>⌘/Ctrl + scroll</dd>
+                  </div>
                 </dl>
               </div>
             </section>
           ) : null}
           <ExecutionPathChooser
-            onChoose={setPath}
+            selectedTarget={departingPath}
+            onChoose={(target) => {
+              if (reduceMotion) {
+                setPath(target);
+                return;
+              }
+              setDepartingPath(target);
+            }}
             onOpenPinMapping={onOpenPinMapping}
           />
           {recentProjects[0] ? (
@@ -142,53 +200,60 @@ export function HomeView({
   }
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Allora FPGA"
-        title={path === "simulate" ? "Simulate" : "Build"}
-        subtitle={
-          path === "simulate"
-            ? "Bring RTL to life before hardware."
-            : "Target a board and take your design to silicon."
-        }
-        onBack={() => setPath(null)}
-      />
-
-      {path === "simulate" ? (
-        <SimulationHome
-          recentProjects={recentProjects}
-          isOpening={isOpeningExistingProject}
-          error={openExistingProjectError}
-          onOpenExisting={() => onOpenExistingProject("simulate")}
-          onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
-          onRemoveProject={onRemoveRecentProject}
+    <section
+      className={`welcome-destination-stage ${path}${reduceMotion ? " reduce-animation" : ""}`}
+    >
+      <div className="welcome-environment" aria-hidden="true" />
+      <div className="welcome-atmosphere" aria-hidden="true" />
+      <div className="welcome-destination-content">
+        <PageHeader
+          eyebrow="Allora FPGA"
+          title={path === "simulate" ? "Simulate" : "Build"}
+          subtitle={
+            path === "simulate"
+              ? "Bring RTL to life before hardware."
+              : "Target a board and take your design to silicon."
+          }
+          onBack={() => setPath(null)}
         />
-      ) : (
-        <div className="welcome-home-layout">
-          <SupportedBoardGrid
-            boards={boards}
-            visibleBoards={visibleBoards}
-            showAllBoards={showAllBoards}
-            newProjectRef={newProjectRef}
-            onToggleShowAllBoards={onToggleShowAllBoards}
-            onSelectBoard={onSelectBoard}
-          />
 
-          <div className="welcome-home-sidebar">
-            <OpenExistingProjectCard
-              isOpening={isOpeningExistingProject}
-              error={openExistingProjectError}
-              onOpen={() => onOpenExistingProject("build")}
+        {path === "simulate" ? (
+          <SimulationHome
+            recentProjects={recentProjects}
+            isOpening={isOpeningExistingProject}
+            error={openExistingProjectError}
+            onOpenExisting={() => onOpenExistingProject("simulate")}
+            onCreateProject={onCreateSimulationProject}
+            onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
+            onRemoveProject={onRemoveRecentProject}
+          />
+        ) : (
+          <div className="welcome-home-layout">
+            <SupportedBoardGrid
+              boards={boards}
+              visibleBoards={visibleBoards}
+              showAllBoards={showAllBoards}
+              newProjectRef={newProjectRef}
+              onToggleShowAllBoards={onToggleShowAllBoards}
+              onSelectBoard={onSelectBoard}
             />
-            <RecentProjectsCard
-              projects={recentProjects}
-              onOpenProject={(projectId) => onOpenProject(projectId, "build")}
-              onRemoveProject={onRemoveRecentProject}
-            />
+
+            <div className="welcome-home-sidebar">
+              <OpenExistingProjectCard
+                isOpening={isOpeningExistingProject}
+                error={openExistingProjectError}
+                onOpen={() => onOpenExistingProject("build")}
+              />
+              <RecentProjectsCard
+                projects={recentProjects}
+                onOpenProject={(projectId) => onOpenProject(projectId, "build")}
+                onRemoveProject={onRemoveRecentProject}
+              />
+            </div>
           </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -206,7 +271,12 @@ function PageHeader({
   return (
     <header className="welcome-page-header">
       {onBack ? (
-        <button className="welcome-back-button" type="button" onClick={onBack}>
+        <button
+          className="welcome-back-button"
+          type="button"
+          aria-label="Back to welcome"
+          onClick={onBack}
+        >
           <ArrowLeft size={17} />
         </button>
       ) : null}
@@ -220,9 +290,11 @@ function PageHeader({
 }
 
 function ExecutionPathChooser({
+  selectedTarget,
   onChoose,
   onOpenPinMapping,
 }: {
+  selectedTarget: ExecutionTarget | null;
   onChoose: (target: ExecutionTarget) => void;
   onOpenPinMapping: () => void;
 }) {
@@ -232,7 +304,8 @@ function ExecutionPathChooser({
         <button
           type="button"
           onClick={() => onChoose("simulate")}
-          className="execution-path-card simulate"
+          className={`execution-path-card simulate${selectedTarget === "simulate" ? " is-selected" : ""}`}
+          disabled={selectedTarget !== null}
         >
           <span className="glass-edge glass-edge-top" aria-hidden="true" />
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
@@ -243,9 +316,15 @@ function ExecutionPathChooser({
             </span>
             <span className="execution-path-title-row">
               <h2>Simulate</h2>
-              <i className="execution-path-glyph" aria-hidden="true"><b /><b /><b /></i>
+              <i className="execution-path-glyph" aria-hidden="true">
+                <b />
+                <b />
+                <b />
+              </i>
             </span>
-            <span className="execution-path-microcopy">RTL · Signals · No hardware</span>
+            <span className="execution-path-microcopy">
+              RTL · Signals · No hardware
+            </span>
           </div>
         </button>
       </div>
@@ -254,7 +333,8 @@ function ExecutionPathChooser({
         <button
           type="button"
           onClick={() => onChoose("build")}
-          className="execution-path-card build"
+          className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`}
+          disabled={selectedTarget !== null}
         >
           <span className="glass-edge glass-edge-top" aria-hidden="true" />
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
@@ -265,15 +345,22 @@ function ExecutionPathChooser({
             </span>
             <span className="execution-path-title-row">
               <h2>Build</h2>
-              <i className="execution-path-glyph" aria-hidden="true"><b /><b /><b /></i>
+              <i className="execution-path-glyph" aria-hidden="true">
+                <b />
+                <b />
+                <b />
+              </i>
             </span>
-            <span className="execution-path-microcopy">Synthesis · Bitstream · Program</span>
+            <span className="execution-path-microcopy">
+              Synthesis · Bitstream · Program
+            </span>
           </div>
         </button>
         <button
           type="button"
           className="pin-mapping-quick-action"
           onClick={onOpenPinMapping}
+          disabled={selectedTarget !== null}
         >
           <MapIcon size={14} /> Open Pin Mapper
         </button>
@@ -304,6 +391,9 @@ function ContinueProjectTile({
         minute: "2-digit",
       }).format(updatedAt)
     : "Unknown time";
+  const resumeTarget =
+    project.lastExecutionTarget ??
+    (project.projectKind === "simulation" ? "simulate" : null);
 
   return (
     <section className="welcome-continue-project" aria-label="Continue project">
@@ -311,17 +401,32 @@ function ContinueProjectTile({
         <span>Continue project</span>
         <strong>{project.name}</strong>
         <div className="welcome-continue-project-meta">
-          <small>{boardName} · {updatedDate}</small>
+          <small>
+            {boardName} · {updatedDate}
+          </small>
           <time dateTime={project.updatedAt}>{updatedTime}</time>
         </div>
       </div>
       <div className="welcome-continue-actions">
-        <button type="button" onClick={() => onOpen("simulate")}>
-          <Sparkles size={13} /> Simulate
-        </button>
-        <button type="button" onClick={() => onOpen("build")}>
-          <CircuitBoard size={13} /> Build
-        </button>
+        {resumeTarget ? (
+          <button type="button" onClick={() => onOpen(resumeTarget)}>
+            {resumeTarget === "simulate" ? (
+              <Sparkles size={13} />
+            ) : (
+              <CircuitBoard size={13} />
+            )}
+            Resume {resumeTarget === "simulate" ? "Simulation" : "Build"}
+          </button>
+        ) : (
+          <>
+            <button type="button" onClick={() => onOpen("simulate")}>
+              <Sparkles size={13} /> Simulate
+            </button>
+            <button type="button" onClick={() => onOpen("build")}>
+              <CircuitBoard size={13} /> Build
+            </button>
+          </>
+        )}
       </div>
     </section>
   );
@@ -356,6 +461,7 @@ function SimulationHome({
   isOpening,
   error,
   onOpenExisting,
+  onCreateProject,
   onOpenProject,
   onRemoveProject,
 }: {
@@ -363,6 +469,7 @@ function SimulationHome({
   isOpening: boolean;
   error: string;
   onOpenExisting: () => void;
+  onCreateProject: () => void;
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
 }) {
@@ -380,10 +487,20 @@ function SimulationHome({
             Open any Allora project, map its ports to interactive peripherals,
             and compile the actual design with Verilator.
           </p>
-          <button type="button" onClick={onOpenExisting} disabled={isOpening}>
-            <FolderOpen size={17} />
-            {isOpening ? "Opening…" : "Open project to simulate"}
-          </button>
+          <div className="simulation-welcome-actions">
+            <button type="button" onClick={onCreateProject}>
+              <Sparkles size={17} /> New simulation project
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={onOpenExisting}
+              disabled={isOpening}
+            >
+              <FolderOpen size={17} />
+              {isOpening ? "Opening…" : "Open existing"}
+            </button>
+          </div>
           {error ? <div className="open-project-error">{error}</div> : null}
         </div>
         <MiniVirtualBoard />

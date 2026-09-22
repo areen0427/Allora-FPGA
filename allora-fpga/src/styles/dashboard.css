@@ -1054,3 +1054,7 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 .dashboard-target-switch button.active.build {
   color: #4f46e5;
 }
+.dashboard-target-switch button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}

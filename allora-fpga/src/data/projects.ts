@@ -1,4 +1,5 @@
 import type { ProjectFile } from "../pages/dashboard/types";
+import type { ExecutionTarget } from "../pages/dashboard/types";
 
 const STORAGE_KEY = "allora-fpga-projects";
 const LAST_OPENED_PROJECT_KEY = "allora-fpga-last-opened-project";
@@ -7,6 +8,9 @@ export type SavedProject = {
   id: string;
   name: string;
   boardId: string;
+  projectKind?: "simulation" | "hardware";
+  starterTemplate?: "blank" | "counter" | "pwm";
+  lastExecutionTarget?: ExecutionTarget;
   files: ProjectFile[];
   projectPath?: string;
   language?: string;
@@ -84,6 +88,9 @@ export function createProject({
   language,
   activeFileName,
   topLevelFileName,
+  projectKind,
+  starterTemplate,
+  lastExecutionTarget,
 }: {
   id?: string;
   name: string;
@@ -93,12 +100,18 @@ export function createProject({
   language?: string;
   activeFileName?: string | null;
   topLevelFileName?: string | null;
+  projectKind?: "simulation" | "hardware";
+  starterTemplate?: "blank" | "counter" | "pwm";
+  lastExecutionTarget?: ExecutionTarget;
 }) {
   const now = new Date().toISOString();
   const project: SavedProject = {
     id: id ?? window.crypto?.randomUUID?.() ?? `${Date.now()}`,
     name: name.trim() || "Untitled Project",
     boardId,
+    projectKind,
+    starterTemplate,
+    lastExecutionTarget,
     files: files ?? [],
     projectPath,
     language,

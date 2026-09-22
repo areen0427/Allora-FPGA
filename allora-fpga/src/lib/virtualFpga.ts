@@ -37,6 +37,11 @@ export type SimulationSnapshot = {
   values: Record<string, string>;
 };
 
+export type SimulationStepResult = {
+  state: SimulationSnapshot;
+  trace: SimulationSnapshot[];
+};
+
 export type ToolAvailability = {
   available: boolean;
   path: string | null;
@@ -247,11 +252,11 @@ export const virtualFpgaApi = {
       request: { sessionId, signal, value },
     }),
   step: (sessionId: number, cycles: number) =>
-    invokeTauri<SimulationSnapshot>("step_virtual_simulation", {
+    invokeTauri<SimulationStepResult>("step_virtual_simulation", {
       request: { sessionId, cycles },
     }),
   reset: (sessionId: number, resetSignal: string | null, activeHigh = true) =>
-    invokeTauri<SimulationSnapshot>("reset_virtual_simulation", {
+    invokeTauri<SimulationStepResult>("reset_virtual_simulation", {
       request: { sessionId, resetSignal, activeHigh },
     }),
   stop: (sessionId: number) =>

@@ -76,6 +76,7 @@ type DashboardProps = {
   projectWarning?: string;
   launchTarget: ExecutionTarget;
   onSettingsChange: (settings: AppSettings) => void;
+  onExecutionTargetChange: (target: ExecutionTarget) => void;
   onBack: () => void;
   onHome: () => void;
 };
@@ -87,6 +88,7 @@ export default function Dashboard({
   projectWarning,
   launchTarget,
   onSettingsChange,
+  onExecutionTargetChange,
   onBack,
   onHome,
 }: DashboardProps) {
@@ -125,8 +127,10 @@ export default function Dashboard({
   }, [launchTarget]);
 
   function changeExecutionTarget(target: ExecutionTarget) {
+    if (board.id === "allora-virtual" && target === "build") return;
     setExecutionTarget(target);
     setActiveSection(target === "simulate" ? "virtual-fpga" : "editor");
+    onExecutionTargetChange(target);
   }
 
   // --- File management hook ---
@@ -451,8 +455,15 @@ export default function Dashboard({
             type="button"
             className={executionTarget === "build" ? "active build" : ""}
             onClick={() => changeExecutionTarget("build")}
+            disabled={board.id === "allora-virtual"}
+            title={
+              board.id === "allora-virtual"
+                ? "Choose a physical board before opening the Build workspace."
+                : "Open the physical FPGA build workspace"
+            }
           >
-            <Hammer size={13} /> Build
+            <Hammer size={13} />
+            {board.id === "allora-virtual" ? "Build · board needed" : "Build"}
           </button>
         </div>
 
@@ -854,6 +865,7 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
             settings={settings}
             onConfigChange={handleUpdateVirtualConfig}
+            guidedTemplate={project?.starterTemplate}
           />
         </KeepAliveSection>
         {activeSection === "health" && (

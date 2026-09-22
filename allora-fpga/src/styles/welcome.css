@@ -694,6 +694,22 @@
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(2, 132, 199, 0.24);
 }
+.simulation-welcome-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+.simulation-welcome-actions button {
+  margin-top: 0;
+}
+.simulation-welcome-actions button.secondary {
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  background: rgba(255, 255, 255, 0.72);
+  color: #0369a1;
+  box-shadow: none;
+}
 .simulation-welcome-card .mini-virtual-board {
   width: 100%;
   transform: perspective(700px) rotateY(-4deg) rotateX(4deg);

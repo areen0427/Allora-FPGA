@@ -1,0 +1,3 @@
+# This example is ready for Virtual FPGA without physical constraints.
+# Map clk, reset, enable, button, and leds[3:0] in Allora's Pins workspace
+# before building it for an iCEBreaker or another selected physical board.

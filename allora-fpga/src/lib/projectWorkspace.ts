@@ -79,6 +79,59 @@ export async function createProjectWorkspace({
   };
 }
 
+export async function createSimulationProjectWorkspace({
+  projectName,
+  language,
+  parentDirectory,
+  starterTemplate,
+}: {
+  projectName: string;
+  language: "Verilog" | "SystemVerilog";
+  parentDirectory?: string | null;
+  starterTemplate: "blank" | "counter" | "pwm";
+}) {
+  const starterFiles = buildSimulationStarterFiles({
+    projectName,
+    language,
+    starterTemplate,
+  });
+  const folderName = sanitizeFolderName(projectName);
+  const response = await invokeTauri<CreateProjectWorkspaceResponse>(
+    "create_project_workspace",
+    {
+      request: {
+        projectName,
+        folderName,
+        parentDirectory,
+        files: starterFiles.map((file) => ({
+          relativePath: file.relativePath,
+          content: file.content,
+        })),
+      },
+    },
+  );
+
+  const files: ProjectFile[] = response.files.map((writtenFile) => {
+    const starterFile = starterFiles.find(
+      (file) => file.relativePath === writtenFile.relativePath,
+    );
+    return {
+      name:
+        writtenFile.relativePath.split("/").pop() ?? writtenFile.relativePath,
+      content: starterFile?.content ?? "",
+      path: writtenFile.absolutePath,
+    };
+  });
+
+  return {
+    projectId: response.projectId,
+    projectPath: response.projectPath,
+    files,
+    activeFileName:
+      files.find((file) => /\.(v|sv)$/i.test(file.name))?.name ?? null,
+  };
+}
+
 export async function writeProjectFile(path: string, content: string) {
   await invokeTauri("write_project_file", {
     request: {
@@ -195,6 +248,115 @@ function buildStarterFiles({
       ),
     },
   ];
+}
+
+function buildSimulationStarterFiles({
+  projectName,
+  language,
+  starterTemplate,
+}: {
+  projectName: string;
+  language: "Verilog" | "SystemVerilog";
+  starterTemplate: "blank" | "counter" | "pwm";
+}) {
+  const topModule = sanitizeModuleName(projectName || "top");
+  const extension = language === "SystemVerilog" ? "sv" : "v";
+  const source =
+    starterTemplate === "counter"
+      ? createSimulationCounter(topModule)
+      : starterTemplate === "pwm"
+        ? createSimulationPwm(topModule)
+        : [`module ${topModule};`, "", "endmodule", ""].join("\n");
+  const peripherals =
+    starterTemplate === "counter"
+      ? [
+          { id: "clock-0", type: "clock", label: "CLOCK", signal: "clk" },
+          { id: "reset-0", type: "reset", label: "RESET", signal: "rst_n", activeHigh: false },
+          { id: "switch-0", type: "switch", label: "SW 0", signal: "enable" },
+          ...Array.from({ length: 4 }, (_, bit) => ({
+            id: `led-${bit}`,
+            type: "led",
+            label: `LED ${bit}`,
+            signal: "leds",
+            bit,
+          })),
+        ]
+      : starterTemplate === "pwm"
+        ? [
+            { id: "clock-0", type: "clock", label: "CLOCK", signal: "clk" },
+            { id: "switch-0", type: "switch", label: "ENABLE", signal: "enable" },
+            { id: "led-0", type: "led", label: "LED 0", signal: "led" },
+          ]
+        : [];
+
+  return [
+    { relativePath: `src/${topModule}.${extension}`, content: source },
+    {
+      relativePath: "allora-project.json",
+      content: JSON.stringify(
+        {
+          name: projectName,
+          projectKind: "simulation",
+          language,
+          topModule,
+          template: starterTemplate,
+          simulation: {
+            engine: "verilator",
+            clockFrequencyHz: 50_000_000,
+            peripherals,
+          },
+        },
+        null,
+        2,
+      ),
+    },
+  ];
+}
+
+function createSimulationCounter(topModule: string) {
+  return [
+    `module ${topModule} (`,
+    "  input  wire       clk,",
+    "  input  wire       rst_n,",
+    "  input  wire       enable,",
+    "  output wire [3:0] leds",
+    ");",
+    "",
+    "  reg [3:0] counter = 4'd0;",
+    "",
+    "  always @(posedge clk) begin",
+    "    if (!rst_n)",
+    "      counter <= 4'd0;",
+    "    else if (enable)",
+    "      counter <= counter + 4'd1;",
+    "  end",
+    "",
+    "  assign leds = counter;",
+    "",
+    "endmodule",
+    "",
+  ].join("\n");
+}
+
+function createSimulationPwm(topModule: string) {
+  return [
+    `module ${topModule} (`,
+    "  input  wire clk,",
+    "  input  wire enable,",
+    "  output wire led",
+    ");",
+    "",
+    "  reg [7:0] phase = 8'd0;",
+    "  reg [7:0] duty = 8'd128;",
+    "  always @(posedge clk) begin",
+    "    phase <= phase + 8'd1;",
+    "    if (enable) duty <= duty + 8'd1;",
+    "  end",
+    "  assign led = enable && (phase < duty);",
+    "",
+    "endmodule",
+    "",
+  ].join("\n");
 }
 
 function createEmptySource({

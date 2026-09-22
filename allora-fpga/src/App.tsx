@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
+import SimulationProjectSetup from "./pages/SimulationProjectSetup";
 import Dashboard from "./pages/Dashboard";
-import { getBoardById } from "./data/boards";
+import { getBoardById, VIRTUAL_BOARD } from "./data/boards";
 import {
   createProject,
   getLastOpenedProjectId,
@@ -20,19 +21,26 @@ import {
 import type { AppSettings } from "./data/settings";
 import {
   createProjectWorkspace,
+  createSimulationProjectWorkspace,
   pickExistingProjectDirectory,
   readProjectWorkspace,
 } from "./lib/projectWorkspace";
 import "./App.css";
 import type { ExecutionTarget } from "./pages/dashboard/types";
 
-type AppStage = "board-select" | "project-setup" | "dashboard";
+type AppStage =
+  | "board-select"
+  | "project-setup"
+  | "simulation-setup"
+  | "dashboard";
 
 type ProjectMetadata = {
   name?: string;
   boardId?: string;
   language?: string;
   topModule?: string;
+  projectKind?: "simulation" | "hardware";
+  template?: "blank" | "counter" | "pwm";
 };
 
 function App() {
@@ -67,10 +75,7 @@ function App() {
     setProjectWarning("");
   }
 
-  async function openProject(
-    projectId: string,
-    target: ExecutionTarget = "build",
-  ) {
+  async function openProject(projectId: string, target?: ExecutionTarget) {
     const savedProject = getSavedProject(projectId);
     if (!savedProject) return;
 
@@ -117,10 +122,16 @@ function App() {
       };
     }
 
+    const effectiveTarget =
+      target ??
+      nextProject.lastExecutionTarget ??
+      (nextProject.projectKind === "simulation" ? "simulate" : "build");
+    nextProject = { ...nextProject, lastExecutionTarget: effectiveTarget };
+    saveProject(nextProject);
     setProject(nextProject);
     saveLastOpenedProjectId(nextProject.id);
     setSelectedBoardId(nextProject.boardId);
-    setExecutionTarget(target);
+    setExecutionTarget(effectiveTarget);
     setStage("dashboard");
   }
 
@@ -147,9 +158,9 @@ function App() {
       );
     }
 
-    const boardId = metadata.boardId;
-    const board = boardId ? getBoardById(boardId) : undefined;
-    if (!boardId || !board) {
+    const boardId = metadata.boardId ?? VIRTUAL_BOARD.id;
+    const board = getBoardById(boardId);
+    if (!board) {
       throw new Error(
         "This project references a board that is not available in this version of Allora FPGA.",
       );
@@ -183,6 +194,11 @@ function App() {
         existingProject?.id ?? window.crypto?.randomUUID?.() ?? `${Date.now()}`,
       name,
       boardId,
+      projectKind:
+        metadata.projectKind ??
+        (boardId === VIRTUAL_BOARD.id ? "simulation" : "hardware"),
+      starterTemplate: metadata.template,
+      lastExecutionTarget: target,
       files: diskFiles,
       projectPath,
       language: metadata.language ?? existingProject?.language,
@@ -212,9 +228,57 @@ function App() {
         onSettingsChange={setSettings}
         onOpenProject={openProject}
         onOpenExistingProject={openExistingProject}
+        onCreateSimulationProject={() => setStage("simulation-setup")}
         onSelectBoard={(boardId) => {
           setSelectedBoardId(boardId);
           setStage("project-setup");
+        }}
+      />
+    );
+  }
+
+  if (stage === "simulation-setup") {
+    return (
+      <SimulationProjectSetup
+        settings={settings}
+        onBack={() => setStage("board-select")}
+        onCreateProject={async (
+          name,
+          language,
+          parentDirectory,
+          starterTemplate,
+        ) => {
+          const workspace = await createSimulationProjectWorkspace({
+            projectName: name,
+            language,
+            parentDirectory,
+            starterTemplate,
+          });
+          const topLevelFileName =
+            workspace.files.find((file) => isHdlFile(file.name))?.name ?? null;
+          const nextProject = createProject({
+            id: workspace.projectId,
+            name,
+            boardId: VIRTUAL_BOARD.id,
+            projectKind: "simulation",
+            starterTemplate,
+            lastExecutionTarget: "simulate",
+            files: workspace.files,
+            projectPath: workspace.projectPath,
+            language,
+            activeFileName: workspace.activeFileName,
+            topLevelFileName,
+          });
+
+          if (parentDirectory) {
+            saveLastProjectParentDirectory(parentDirectory);
+          }
+          saveLastOpenedProjectId(nextProject.id);
+          setProject(nextProject);
+          setSelectedBoardId(VIRTUAL_BOARD.id);
+          setExecutionTarget("simulate");
+          setProjectWarning("");
+          setStage("dashboard");
         }}
       />
     );
@@ -244,6 +308,16 @@ function App() {
             id: workspace.projectId,
             name,
             boardId: selectedBoard.id,
+            projectKind: "hardware",
+            starterTemplate:
+              templateId === "empty"
+                ? "blank"
+                : templateId === "counter"
+                  ? "counter"
+                  : templateId === "pwm-breathe"
+                    ? "pwm"
+                    : undefined,
+            lastExecutionTarget: "build",
             files: workspace.files,
             projectPath: workspace.projectPath,
             language,
@@ -275,8 +349,25 @@ function App() {
         settings={settings}
         projectWarning={projectWarning}
         launchTarget={executionTarget}
+        onExecutionTargetChange={(target) => {
+          setExecutionTarget(target);
+          if (!project) return;
+          const nextProject = {
+            ...project,
+            lastExecutionTarget: target,
+            updatedAt: new Date().toISOString(),
+          };
+          setProject(nextProject);
+          saveProject(nextProject);
+        }}
         onSettingsChange={setSettings}
-        onBack={() => setStage("project-setup")}
+        onBack={() =>
+          setStage(
+            selectedBoard.id === VIRTUAL_BOARD.id
+              ? "simulation-setup"
+              : "project-setup",
+          )
+        }
         onHome={goHome}
       />
     );
@@ -288,6 +379,7 @@ function App() {
       onSettingsChange={setSettings}
       onOpenProject={openProject}
       onOpenExistingProject={openExistingProject}
+      onCreateSimulationProject={() => setStage("simulation-setup")}
       onSelectBoard={(boardId) => {
         setSelectedBoardId(boardId);
         setStage("project-setup");

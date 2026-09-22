@@ -89,11 +89,52 @@ html[data-theme="black-ice"] .dashboard-workspace {
 html[data-theme="black-ice"] .vfpga-hero,
 html[data-theme="black-ice"] .vfpga-control-card,
 html[data-theme="black-ice"] .vfpga-board-card,
-html[data-theme="black-ice"] .vfpga-panel {
+html[data-theme="black-ice"] .vfpga-panel,
+html[data-theme="black-ice"] .vfpga-guide {
   border-color: var(--dashboard-surface-border) !important;
   background: var(--dashboard-surface-bg) !important;
   color: var(--dashboard-text);
   box-shadow: var(--dashboard-surface-shadow) !important;
+}
+
+html[data-theme="black-ice"] .vfpga-guide li,
+html[data-theme="black-ice"] .vfpga-wave-labels,
+html[data-theme="black-ice"] .vfpga-wave-picker button {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.56);
+  color: #cbd5e1;
+}
+
+html[data-theme="black-ice"] .vfpga-guide li.done {
+  background: rgba(6, 78, 59, 0.34);
+  color: #6ee7b7;
+}
+
+html[data-theme="black-ice"] .vfpga-wave-grid {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="black-ice"] .vfpga-wave-labels {
+  border-right-color: rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="black-ice"] .vfpga-wave-labels button {
+  border-bottom-color: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+}
+
+html[data-theme="black-ice"] .vfpga-wave-canvas {
+  background: repeating-linear-gradient(90deg, transparent 0 79px, rgba(148, 163, 184, 0.09) 80px);
+}
+
+html[data-theme="black-ice"] .vfpga-wave-picker button.active {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(14, 116, 144, 0.28);
+  color: #bae6fd;
+}
+
+html[data-theme="black-ice"] .simulation-create-row .project-create-button {
+  color: #ffffff !important;
 }
 
 html[data-theme="black-ice"] .vfpga-hero {
@@ -171,6 +212,34 @@ html[data-theme="black-ice"] .vfpga-actions button.primary {
   background: linear-gradient(135deg, #2563eb, #0284c7) !important;
   border-color: rgba(125, 211, 252, 0.32) !important;
   color: #ffffff !important;
+}
+
+html[data-theme="black-ice"] .vfpga-actions button:not(.primary),
+html[data-theme="black-ice"] .vfpga-map-control button {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.78)),
+    #172033 !important;
+  color: #dbeafe !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="black-ice"] .vfpga-actions button:not(.primary):hover:not(:disabled),
+html[data-theme="black-ice"] .vfpga-map-control button:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.52) !important;
+  background:
+    linear-gradient(180deg, rgba(30, 64, 175, 0.38), rgba(15, 32, 56, 0.88)),
+    #172033 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="black-ice"] .vfpga-actions button:disabled,
+html[data-theme="black-ice"] .vfpga-map-control button:disabled {
+  border-color: rgba(100, 116, 139, 0.2) !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  color: #64748b !important;
+  opacity: 0.72;
+  box-shadow: none;
 }
 
 html[data-theme="black-ice"] .vfpga-error {

@@ -15,10 +15,7 @@ import {
 import { DEFAULT_SETTINGS } from "../data/settings";
 import type { AppSettings } from "../data/settings";
 import { hasTauriInvoke } from "../lib/tauri";
-import {
-  virtualFpgaApi,
-  type SimulationTools,
-} from "../lib/virtualFpga";
+import { virtualFpgaApi, type SimulationTools } from "../lib/virtualFpga";
 
 type SettingsModalProps = {
   settings: AppSettings;
@@ -210,6 +207,12 @@ export function SettingsModal({
                   onChange={(value) =>
                     updateSetting("restorePreviousSession", value)
                   }
+                />
+                <SettingToggle
+                  label="Reduce Animation"
+                  description="Skip the animated Simulate and Build screen transitions."
+                  checked={settings.reduceMotion}
+                  onChange={(value) => updateSetting("reduceMotion", value)}
                 />
               </SettingsGroup>
             </SettingsSection>
@@ -532,7 +535,7 @@ function ToolStatus({
         <small title={tool?.path ?? tool?.installHint}>
           {tool
             ? available
-              ? tool.path ?? "Detected"
+              ? (tool.path ?? "Detected")
               : tool.installHint
             : "Checking…"}
         </small>

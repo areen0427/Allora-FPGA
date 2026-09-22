@@ -1,0 +1,23 @@
+{
+  "name": "Virtual LED Counter",
+  "boardId": "icebreaker",
+  "boardName": "iCEBreaker",
+  "language": "SystemVerilog",
+  "topModule": "virtual_led_counter",
+  "simulation": {
+    "topModule": "virtual_led_counter",
+    "engine": "verilator",
+    "clockFrequencyHz": 50000000,
+    "enableVcd": true,
+    "peripherals": [
+      { "id": "clock-0", "type": "clock", "label": "CLOCK", "signal": "clk" },
+      { "id": "reset-0", "type": "reset", "label": "RESET", "signal": "reset", "activeHigh": true },
+      { "id": "button-0", "type": "button", "label": "BTN0", "signal": "button" },
+      { "id": "switch-0", "type": "switch", "label": "SW0", "signal": "enable" },
+      { "id": "led-0", "type": "led", "label": "LED0", "signal": "leds", "bit": 0 },
+      { "id": "led-1", "type": "led", "label": "LED1", "signal": "leds", "bit": 1 },
+      { "id": "led-2", "type": "led", "label": "LED2", "signal": "leds", "bit": 2 },
+      { "id": "led-3", "type": "led", "label": "LED3", "signal": "leds", "bit": 3 }
+    ]
+  }
+}

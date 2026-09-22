@@ -76,6 +76,27 @@ export const REAL_BOARDS: BoardDefinition[] = [
   ...TINYFPGA_BOARDS,
 ];
 
+// Simulation-only projects use a first-class virtual target until the user
+// chooses physical hardware. It deliberately stays out of the public board
+// catalog and has no build/program toolchain.
+export const VIRTUAL_BOARD: BoardDefinition = {
+  id: "allora-virtual",
+  name: "Allora Virtual FPGA",
+  vendor: "Allora",
+  family: "Virtual",
+  device: "Verilator model",
+  package: "Simulation",
+  fpgaId: "allora-virtual",
+  constraintsFile: "pcf",
+  synthesisFlow: "yosys-nextpnr",
+  toolchain: { synth: "" },
+  clocks: [],
+  pins: [],
+  leds: [],
+  buttons: [],
+  notes: "Simulation-only target. Choose a physical board before building.",
+};
+
 export const BOARDS: BoardCatalogItem[] = [
   ac701,
   fomuPvt,
@@ -235,7 +256,9 @@ export const BOARDS: BoardCatalogItem[] = [
   },
 ];
 
-const BOARD_BY_ID = new Map(REAL_BOARDS.map((board) => [board.id, board]));
+const BOARD_BY_ID = new Map(
+  [...REAL_BOARDS, VIRTUAL_BOARD].map((board) => [board.id, board]),
+);
 
 export function getBoardById(id: string): BoardDefinition | undefined {
   return BOARD_BY_ID.get(id);

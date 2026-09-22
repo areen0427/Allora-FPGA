@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import {
@@ -22,6 +21,9 @@ import VirtualBoard, {
 } from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
+import SignalWaveformPanel, {
+  type SignalWaveTrace,
+} from "../../components/SignalWaveformPanel";
 
 type SimulateTestbenchResponse = {
   logs: string[];
@@ -76,6 +78,9 @@ export default function TestbenchSection({
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [waveformText, setWaveformText] = useState("");
+  const [selectedWaveSignalIds, setSelectedWaveSignalIds] = useState<string[]>(
+    [],
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const logRef = useRef<HTMLPreElement | null>(null);
 
@@ -136,6 +141,18 @@ export default function TestbenchSection({
     [waveformText],
   );
   const canRun = Boolean(selectedTestbench && designFiles.length > 0);
+
+  useEffect(() => {
+    const signals = waveform?.signals ?? [];
+    setSelectedWaveSignalIds((current) => {
+      const available = current.filter((signalId) =>
+        signals.some((signal) => signal.id === signalId),
+      );
+      return available.length
+        ? available
+        : signals.slice(0, 6).map((signal) => signal.id);
+    });
+  }, [waveform]);
 
   useEffect(() => {
     if (
@@ -328,7 +345,33 @@ export default function TestbenchSection({
           </div>
         )}
 
-        <WaveformViewer waveform={waveform} />
+        <SignalWaveformPanel
+          title="Testbench waveform"
+          subtitle={
+            waveform
+              ? `${waveform.signals.length} signals · ${formatWaveTick(
+                  waveform.endTime,
+                  waveform.timescale,
+                )} capture`
+              : "Run a testbench or import a VCD file to inspect its signals"
+          }
+          traces={buildTestbenchWaveTraces(waveform)}
+          selectedSignalIds={selectedWaveSignalIds}
+          onToggleSignal={(signalId) =>
+            setSelectedWaveSignalIds((current) => {
+              if (current.includes(signalId)) {
+                return current.length > 1
+                  ? current.filter((item) => item !== signalId)
+                  : current;
+              }
+              return [...current.slice(-5), signalId];
+            })
+          }
+          emptyMessage="Run a testbench or import a .vcd file with $dumpvars data."
+          formatTime={(time) =>
+            formatWaveTick(Math.round(time), waveform?.timescale ?? "ns")
+          }
+        />
 
         <BoardPlayback
           board={board}
@@ -610,201 +653,16 @@ function interpretSignalBit(
   return undefined;
 }
 
-function WaveformViewer({ waveform }: { waveform: Waveform | null }) {
-  const [zoom, setZoom] = useState(1);
-  const visibleSignals = waveform?.signals.slice(0, 18) ?? [];
-  const endTime = Math.max(waveform?.endTime ?? 1, 1);
-  const clockPeriod = waveform ? inferClockPeriod(waveform.signals) : null;
-  const defaultWindow = clockPeriod
-    ? Math.min(endTime, clockPeriod * 20)
-    : endTime;
-  const autoScale = Math.max(1, endTime / Math.max(defaultWindow, 1));
-  const timeWidth = Math.round(980 * autoScale * zoom);
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
-    Math.round(endTime * ratio),
-  );
-  const zoomLabel = `${Math.round(autoScale * zoom * 100)}%`;
-
-  if (!waveform || visibleSignals.length === 0) {
-    return (
-      <div className="waveform-shell waveform-empty">
-        <div>
-          <strong>No waveform loaded</strong>
-          <span>
-            Run a testbench or import a `.vcd` file with `$dumpvars` data.
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="waveform-controls">
-        <div className="waveform-scale-readout">
-          <span>{clockPeriod ? `20 cycles/window` : "Full timeline"}</span>
-          <strong>{zoomLabel}</strong>
-        </div>
-        <button
-          type="button"
-          onClick={() => setZoom((current) => Math.max(0.25, current / 1.35))}
-        >
-          Zoom Out
-        </button>
-        <button type="button" onClick={() => setZoom(1)}>
-          Reset
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoom((current) => Math.min(12, current * 1.35))}
-        >
-          Zoom In
-        </button>
-      </div>
-
-      <div
-        className="waveform-shell"
-        style={{ "--wave-time-width": `${timeWidth}px` } as CSSProperties}
-        onWheel={(event) => {
-          // Only zoom when a modifier is held (Ctrl/Cmd), so a plain wheel
-          // gesture scrolls the page/signal list as expected.
-          if (!event.ctrlKey && !event.metaKey) {
-            return;
-          }
-
-          event.preventDefault();
-          setZoom((current) => {
-            const next = event.deltaY < 0 ? current * 1.007 : current / 1.007;
-            return Math.min(12, Math.max(0.25, next));
-          });
-        }}
-      >
-        <div className="waveform-header">
-          <div>Signal</div>
-          <div className="waveform-ticks">
-            {ticks.map((tick) => (
-              <span key={tick}>{formatWaveTick(tick, waveform.timescale)}</span>
-            ))}
-          </div>
-        </div>
-
-        <div className="waveform-rows">
-          {visibleSignals.map((signal) => (
-            <div className="waveform-row" key={signal.id}>
-              <div className="waveform-signal-name">
-                <span title={signal.name}>{signal.shortName}</span>
-                {signal.name !== signal.shortName ? (
-                  <em>{signal.name}</em>
-                ) : null}
-                <small>
-                  {signal.width > 1 ? `${signal.width} bits` : "1 bit"}
-                </small>
-              </div>
-              <SignalWave
-                signal={signal}
-                endTime={endTime}
-                timeWidth={timeWidth}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function SignalWave({
-  signal,
-  endTime,
-  timeWidth,
-}: {
-  signal: WaveSignal;
-  endTime: number;
-  timeWidth: number;
-}) {
-  const segments = signal.values
-    .map((value, index) => {
-      const nextTime = signal.values[index + 1]?.time ?? endTime;
-      const widthPercent = Math.max(
-        ((nextTime - value.time) / endTime) * 100,
-        0,
-      );
-      const widthPx = (widthPercent / 100) * timeWidth;
-      const displayValue = formatSignalValue(signal, value.value);
-      return {
-        ...value,
-        displayValue,
-        left: `${(value.time / endTime) * 100}%`,
-        width: `${widthPercent}%`,
-        leftPx: (value.time / endTime) * timeWidth,
-        widthPx,
-        showLabel:
-          signal.width > 1 &&
-          widthPx >= Math.max(8, 4 * Math.max(1, displayValue.length) + 2),
-      };
-    })
-    .filter((segment) => Number.parseFloat(segment.width) > 0.05);
-  const transitions =
-    signal.width === 1
-      ? segments
-          .slice(1)
-          .filter((segment, index) => segment.value !== segments[index]?.value)
-          .map((segment) => ({ left: segment.left, time: segment.time }))
-      : [];
-  const busTransitions =
-    signal.width > 1
-      ? segments
-          .slice(1)
-          .filter(
-            (segment, index) =>
-              segment.value !== segments[index]?.value &&
-              segment.leftPx - segments[index].leftPx >= 12,
-          )
-          .map((segment) => ({ left: segment.left, time: segment.time }))
-      : [];
-
-  return (
-    <div
-      className={`waveform-lane ${signal.width > 1 ? "bus-lane" : "bit-lane"}`}
-    >
-      {transitions.map((transition) => (
-        <span
-          className="waveform-transition"
-          key={`transition-${transition.time}`}
-          style={{ left: transition.left }}
-        />
-      ))}
-      {busTransitions.map((transition) => (
-        <span
-          className="waveform-bus-transition"
-          key={`bus-transition-${transition.time}`}
-          style={{ left: transition.left }}
-        />
-      ))}
-      {segments.map((segment, index) => {
-        const normalized = segment.value.toLowerCase();
-        const high = normalized === "1";
-        const unknown = normalized.includes("x") || normalized.includes("z");
-        return (
-          <div
-            className={[
-              "waveform-segment",
-              high ? "high" : "",
-              unknown ? "unknown" : "",
-              signal.width > 1 ? "bus" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            key={`${segment.time}-${index}`}
-            style={{ left: segment.left, width: segment.width }}
-            title={`${signal.name} = ${segment.value} @ ${segment.time}`}
-          >
-            {segment.showLabel ? segment.displayValue : ""}
-          </div>
-        );
-      })}
-    </div>
-  );
+function buildTestbenchWaveTraces(
+  waveform: Waveform | null,
+): SignalWaveTrace[] {
+  return (waveform?.signals ?? []).map((signal) => ({
+    id: signal.id,
+    name: signal.shortName,
+    fullName: signal.name,
+    width: signal.width,
+    values: signal.values,
+  }));
 }
 
 function formatWaveTick(value: number, unit: string) {
@@ -815,64 +673,6 @@ function formatWaveTick(value: number, unit: string) {
   }
 
   return `${value} ${unit}`;
-}
-
-function formatSignalValue(signal: WaveSignal, value: string) {
-  const normalized = value.toLowerCase();
-  if (normalized.includes("x")) return "X";
-  if (normalized.includes("z")) return "Z";
-  if (signal.width > 3 && /^[01]+$/.test(value)) {
-    return `0x${Number.parseInt(value, 2).toString(16).toUpperCase()}`;
-  }
-
-  return value;
-}
-
-function inferClockPeriod(signals: WaveSignal[]) {
-  const clockSignal = signals.find(
-    (signal) =>
-      signal.width === 1 && /(^|[._])(clk|clock|sysclk)$/i.test(signal.name),
-  );
-  if (!clockSignal) return null;
-
-  const risingEdges: number[] = [];
-  const toggles: number[] = [];
-
-  for (let index = 1; index < clockSignal.values.length; index++) {
-    const previous = clockSignal.values[index - 1];
-    const current = clockSignal.values[index];
-    if (previous.value === current.value) continue;
-    if (/^[01]$/.test(previous.value) && /^[01]$/.test(current.value)) {
-      toggles.push(current.time);
-    }
-    if (previous.value === "0" && current.value === "1") {
-      risingEdges.push(current.time);
-    }
-  }
-
-  const periods = risingEdges
-    .slice(1)
-    .map((time, index) => time - risingEdges[index])
-    .filter((period) => period > 0);
-
-  if (periods.length > 0) {
-    return median(periods);
-  }
-
-  const halfPeriods = toggles
-    .slice(1)
-    .map((time, index) => time - toggles[index])
-    .filter((period) => period > 0);
-
-  return halfPeriods.length > 0 ? median(halfPeriods) * 2 : null;
-}
-
-function median(values: number[]) {
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[middle - 1] + sorted[middle]) / 2
-    : sorted[middle];
 }
 
 function parseVcd(content: string): Waveform | null {

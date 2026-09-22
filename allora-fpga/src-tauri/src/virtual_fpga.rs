@@ -74,6 +74,20 @@ pub struct SimulationSnapshot {
     pub values: HashMap<String, String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SimulationStepResponse {
+    pub state: SimulationSnapshot,
+    pub trace: Vec<SimulationSnapshot>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HarnessTracePoint {
+    tick: u64,
+    values: HashMap<String, String>,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetInputRequest {
@@ -327,7 +341,7 @@ pub fn set_virtual_simulation_input(
 pub fn step_virtual_simulation(
     request: StepSimulationRequest,
     state: tauri::State<'_, VirtualFpgaState>,
-) -> Result<SimulationSnapshot, ErrorPayload> {
+) -> Result<SimulationStepResponse, ErrorPayload> {
     let mut sessions = state
         .sessions
         .lock()
@@ -335,14 +349,14 @@ pub fn step_virtual_simulation(
     let session = sessions
         .get_mut(&request.session_id)
         .ok_or_else(|| error("The Virtual FPGA simulation is no longer running."))?;
-    step_session(session, request.cycles.max(1).min(100_000))
+    step_session_with_trace(session, request.cycles.max(1).min(100_000))
 }
 
 #[tauri::command]
 pub fn reset_virtual_simulation(
     request: ResetSimulationRequest,
     state: tauri::State<'_, VirtualFpgaState>,
-) -> Result<SimulationSnapshot, ErrorPayload> {
+) -> Result<SimulationStepResponse, ErrorPayload> {
     let mut sessions = state
         .sessions
         .lock()
@@ -353,6 +367,8 @@ pub fn reset_virtual_simulation(
     for signal in session.input_ports.keys().cloned().collect::<Vec<_>>() {
         exchange(session, &format!("SET {signal} 0"))?;
     }
+    session.sim_time_ps = 0;
+    let mut trace = Vec::new();
     if let Some(reset) = request.reset_signal {
         if session.input_ports.contains_key(&reset) {
             let active = if request.active_high.unwrap_or(true) {
@@ -361,15 +377,26 @@ pub fn reset_virtual_simulation(
                 0
             };
             let inactive = 1 - active;
-            exchange(session, &format!("SET {reset} {active}"))?;
-            step_session(session, 2)?;
-            exchange(session, &format!("SET {reset} {inactive}"))?;
+            let mut active_state = exchange(session, &format!("SET {reset} {active}"))?;
+            active_state.sim_time_ps = 0;
+            trace.push(active_state);
+            let reset_cycles = step_session_with_trace(session, 2)?;
+            trace.extend(reset_cycles.trace);
+            let mut inactive_state = exchange(session, &format!("SET {reset} {inactive}"))?;
+            inactive_state.sim_time_ps = session.sim_time_ps;
+            trace.push(inactive_state);
         }
     }
     session.sim_time_ps = 0;
     let mut snapshot = exchange(session, "STATE")?;
     snapshot.sim_time_ps = 0;
-    Ok(snapshot)
+    if trace.is_empty() {
+        trace.push(snapshot.clone());
+    }
+    Ok(SimulationStepResponse {
+        state: snapshot,
+        trace,
+    })
 }
 
 #[tauri::command]
@@ -552,6 +579,44 @@ fn step_session(
     Ok(snapshot)
 }
 
+fn step_session_with_trace(
+    session: &mut VirtualFpgaSession,
+    cycles: u32,
+) -> Result<SimulationStepResponse, ErrorPayload> {
+    let Some(clock) = session.clock_signal.clone() else {
+        let state = step_session(session, cycles)?;
+        return Ok(SimulationStepResponse {
+            trace: vec![state.clone()],
+            state,
+        });
+    };
+
+    let start_time_ps = session.sim_time_ps;
+    let period_ps = 1_000_000_000_000u64 / session.clock_frequency_hz;
+    let captured_cycles = cycles.min(80);
+    let command = format!("TRACE {clock} {cycles} {captured_cycles}");
+    let points = exchange_trace(session, &command)?;
+    session.sim_time_ps = session
+        .sim_time_ps
+        .saturating_add(period_ps.saturating_mul(cycles as u64));
+
+    let trace = points
+        .into_iter()
+        .map(|point| SimulationSnapshot {
+            sim_time_ps: start_time_ps.saturating_add(period_ps.saturating_mul(point.tick) / 2),
+            values: point.values,
+        })
+        .collect::<Vec<_>>();
+    let state = SimulationSnapshot {
+        sim_time_ps: session.sim_time_ps,
+        values: trace
+            .last()
+            .map(|point| point.values.clone())
+            .unwrap_or_default(),
+    };
+    Ok(SimulationStepResponse { state, trace })
+}
+
 fn exchange(
     session: &mut VirtualFpgaSession,
     command: &str,
@@ -580,6 +645,33 @@ fn exchange(
     }
 }
 
+fn exchange_trace(
+    session: &mut VirtualFpgaSession,
+    command: &str,
+) -> Result<Vec<HarnessTracePoint>, ErrorPayload> {
+    writeln!(session.stdin, "{command}")
+        .and_then(|_| session.stdin.flush())
+        .map_err(|err| error(&format!("Unable to send a simulator command: {err}")))?;
+    let mut line = String::new();
+    loop {
+        line.clear();
+        let count = session
+            .stdout
+            .read_line(&mut line)
+            .map_err(|err| error(&format!("Unable to read simulator output: {err}")))?;
+        if count == 0 {
+            return Err(error(
+                "The Verilator simulation process exited unexpectedly.",
+            ));
+        }
+        if let Some(payload) = line.trim().strip_prefix("ALLORA_TRACE:") {
+            return serde_json::from_str(payload).map_err(|err| {
+                error(&format!("The simulator returned invalid trace data: {err}"))
+            });
+        }
+    }
+}
+
 fn generate_harness(top: &str, ports: &[RtlPort], vcd_path: Option<&Path>) -> String {
     let set_cases = ports
         .iter()
@@ -596,7 +688,7 @@ fn generate_harness(top: &str, ports: &[RtlPort], vcd_path: Option<&Path>) -> St
         .iter()
         .map(|port| {
             format!(
-                "    emit(\"{}\", static_cast<unsigned long long>(top.{}), first);",
+                "      emit(\"{}\", static_cast<unsigned long long>(top.{}), first);",
                 port.name, port.name
             )
         })
@@ -624,14 +716,17 @@ int main(int argc, char** argv) {{
   auto set_input = [&](const std::string& name, unsigned long long value) {{
 {set_cases}
   }};
-  auto send_state = [&]() {{
+  auto emit_values = [&](std::ostream& output) {{
     bool first = true;
-    std::cout << "ALLORA:{{\"simTimePs\":0,\"values\":{{";
     auto emit = [&](const char* name, unsigned long long value, bool& is_first) {{
-      if (!is_first) std::cout << ','; is_first = false;
-      std::cout << '\"' << name << "\":\"" << value << '\"';
+      if (!is_first) output << ','; is_first = false;
+      output << '\"' << name << "\":\"" << value << '\"';
     }};
 {values}
+  }};
+  auto send_state = [&]() {{
+    std::cout << "ALLORA:{{\"simTimePs\":0,\"values\":{{";
+    emit_values(std::cout);
     std::cout << "}}}}" << std::endl;
   }};
   evaluate();
@@ -644,7 +739,31 @@ int main(int argc, char** argv) {{
     if (command == "SET") {{ input >> name >> value; set_input(name, value); evaluate(); }}
     else if (command == "STEP") {{
       input >> name >> cycles;
-      for (unsigned i = 0; i < cycles; ++i) {{ set_input(name, 0); evaluate(); context.timeInc(1); set_input(name, 1); evaluate(); context.timeInc(1); }}
+      for (unsigned i = 0; i < cycles; ++i) {{ set_input(name, 1); evaluate(); context.timeInc(1); set_input(name, 0); evaluate(); context.timeInc(1); }}
+    }} else if (command == "TRACE") {{
+      unsigned capture_cycles = 1;
+      input >> name >> cycles >> capture_cycles;
+      const unsigned capture_start = cycles > capture_cycles ? cycles - capture_cycles : 0;
+      bool first_sample = true;
+      std::ostringstream samples;
+      samples << '[';
+      auto capture = [&](unsigned long long tick) {{
+        if (!first_sample) samples << ','; first_sample = false;
+        samples << "{{\"tick\":" << tick << ",\"values\":{{";
+        emit_values(samples);
+        samples << "}}}}";
+      }};
+      for (unsigned i = 0; i < cycles; ++i) {{
+        set_input(name, 1); evaluate();
+        if (i >= capture_start) capture(static_cast<unsigned long long>(i) * 2);
+        context.timeInc(1);
+        set_input(name, 0); evaluate();
+        if (i >= capture_start) capture(static_cast<unsigned long long>(i) * 2 + 1);
+        context.timeInc(1);
+      }}
+      samples << ']';
+      std::cout << "ALLORA_TRACE:" << samples.str() << std::endl;
+      continue;
     }} else if (command == "EVAL") {{ input >> cycles; for (unsigned i = 0; i < cycles; ++i) {{ evaluate(); context.timeInc(1); }} }}
     send_state();
   }}
@@ -812,6 +931,19 @@ mod tests {
         command("SET enable 1");
         let state = command("STEP clk 1");
         assert!(state.contains("\"leds\":\"1\""), "{state}");
+        let trace_line = command("TRACE clk 4 4");
+        let trace_payload = trace_line
+            .trim()
+            .strip_prefix("ALLORA_TRACE:")
+            .expect("trace prefix");
+        let trace: Vec<HarnessTracePoint> =
+            serde_json::from_str(trace_payload).expect("valid trace payload");
+        assert_eq!(trace.len(), 8);
+        assert_eq!(trace[0].values.get("clk").map(String::as_str), Some("1"));
+        assert_eq!(trace[1].values.get("clk").map(String::as_str), Some("0"));
+        assert_eq!(trace[6].values.get("clk").map(String::as_str), Some("1"));
+        assert_eq!(trace[7].values.get("clk").map(String::as_str), Some("0"));
+        assert_eq!(trace[7].values.get("leds").map(String::as_str), Some("5"));
         let _ = child.kill();
         let _ = child.wait();
         let _ = fs::remove_dir_all(workspace);

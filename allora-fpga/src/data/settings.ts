@@ -1,11 +1,12 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 const LAST_PROJECT_PARENT_KEY = "allora-fpga-last-project-parent";
-const SETTINGS_VERSION = 3;
+const SETTINGS_VERSION = 4;
 
 export type AppSettings = {
   theme: "ice" | "black-ice";
   startupView: "home" | "last-project";
   restorePreviousSession: boolean;
+  reduceMotion: boolean;
   editorFontSize: number;
   editorTabSize: number;
   editorWordWrap: boolean;
@@ -27,6 +28,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "ice",
   startupView: "home",
   restorePreviousSession: true,
+  reduceMotion: false,
   editorFontSize: 15,
   editorTabSize: 2,
   editorWordWrap: true,
@@ -51,9 +53,7 @@ export function getSettings(): AppSettings {
 
     const parsed = JSON.parse(rawSettings) as unknown;
     const candidate =
-      isRecord(parsed) && isRecord(parsed.settings)
-        ? parsed.settings
-        : parsed;
+      isRecord(parsed) && isRecord(parsed.settings) ? parsed.settings : parsed;
 
     return sanitizeSettings(candidate);
   } catch {
@@ -82,6 +82,10 @@ function sanitizeSettings(value: unknown): AppSettings {
       typeof value.restorePreviousSession === "boolean"
         ? value.restorePreviousSession
         : DEFAULT_SETTINGS.restorePreviousSession,
+    reduceMotion:
+      typeof value.reduceMotion === "boolean"
+        ? value.reduceMotion
+        : DEFAULT_SETTINGS.reduceMotion,
     editorFontSize: sanitizeInteger(
       value.editorFontSize,
       11,
@@ -131,11 +135,10 @@ function sanitizeSettings(value: unknown): AppSettings {
     simulatorStepSize: isOneOf(value.simulatorStepSize, [1, 10, 100])
       ? value.simulatorStepSize
       : DEFAULT_SETTINGS.simulatorStepSize,
-    simulatorRefreshInterval: isOneOf(value.simulatorRefreshInterval, [
-      50,
-      100,
-      250,
-    ])
+    simulatorRefreshInterval: isOneOf(
+      value.simulatorRefreshInterval,
+      [50, 100, 250],
+    )
       ? value.simulatorRefreshInterval
       : DEFAULT_SETTINGS.simulatorRefreshInterval,
     simulatorCaptureWaveform:
@@ -146,12 +149,10 @@ function sanitizeSettings(value: unknown): AppSettings {
       typeof value.simulatorAutoOpenWaveform === "boolean"
         ? value.simulatorAutoOpenWaveform
         : DEFAULT_SETTINGS.simulatorAutoOpenWaveform,
-    simulatorCycleLimit: isOneOf(value.simulatorCycleLimit, [
-      100_000,
-      1_000_000,
-      10_000_000,
-      0,
-    ])
+    simulatorCycleLimit: isOneOf(
+      value.simulatorCycleLimit,
+      [100_000, 1_000_000, 10_000_000, 0],
+    )
       ? value.simulatorCycleLimit
       : DEFAULT_SETTINGS.simulatorCycleLimit,
     simulatorLogLevel: isOneOf(value.simulatorLogLevel, [

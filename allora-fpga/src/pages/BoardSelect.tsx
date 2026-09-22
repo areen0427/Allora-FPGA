@@ -23,6 +23,7 @@ type BoardSelectProps = {
   onSelectBoard: (boardId: string) => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onOpenExistingProject: (target: ExecutionTarget) => Promise<void>;
+  onCreateSimulationProject: () => void;
 };
 
 export default function BoardSelect({
@@ -31,6 +32,7 @@ export default function BoardSelect({
   onSelectBoard,
   onOpenProject,
   onOpenExistingProject,
+  onCreateSimulationProject,
 }: BoardSelectProps) {
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
@@ -103,6 +105,7 @@ export default function BoardSelect({
         <HomeView
           key={homeViewKey}
           theme={settings.theme}
+          reduceMotion={settings.reduceMotion}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
           showAllBoards={showAllBoards}
@@ -116,6 +119,7 @@ export default function BoardSelect({
           onOpenExistingProject={(target) =>
             void handleOpenExistingProject(target)
           }
+          onCreateSimulationProject={onCreateSimulationProject}
           onOpenProject={onOpenProject}
           onRemoveRecentProject={removeRecentProject}
         />
