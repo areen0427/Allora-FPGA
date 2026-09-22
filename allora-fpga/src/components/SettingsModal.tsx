@@ -402,7 +402,7 @@ export function SettingsModal({
                 />
                 <SettingToggle
                   label="Open waveform after run"
-                  description="Display a completed testbench waveform automatically."
+                  description="Open a completed testbench waveform in a dedicated window."
                   checked={settings.simulatorAutoOpenWaveform}
                   onChange={(value) =>
                     updateSetting("simulatorAutoOpenWaveform", value)

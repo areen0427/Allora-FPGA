@@ -1,7 +1,6 @@
 export type DashboardSection =
   | "editor"
   | "virtual-fpga"
-  | "board"
   | "synthesis"
   | "testbench"
   | "pin-mapping"

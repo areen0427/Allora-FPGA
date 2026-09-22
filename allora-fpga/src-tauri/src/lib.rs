@@ -13,6 +13,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::ipc::Channel;
 use tauri::State;
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
@@ -22,6 +23,81 @@ use virtual_fpga::VirtualFpgaState;
 struct WorkspaceFileSpec {
     relative_path: String,
     content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ViewerWindowRequest {
+    kind: String,
+    storage_key: String,
+    payload: String,
+    title: String,
+    label: String,
+}
+
+#[derive(Default)]
+struct ViewerPayloadState(Mutex<HashMap<String, String>>);
+
+#[tauri::command]
+fn open_viewer_window(
+    app: tauri::AppHandle,
+    state: State<'_, ViewerPayloadState>,
+    request: ViewerWindowRequest,
+) -> Result<(), String> {
+    if !matches!(request.kind.as_str(), "synthesis" | "waveform") {
+        return Err("Unsupported viewer kind.".to_string());
+    }
+    if !request
+        .storage_key
+        .chars()
+        .all(|character| character.is_ascii_alphanumeric() || ".:-_".contains(character))
+        || !request
+            .label
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || "-_".contains(character))
+    {
+        return Err("Invalid viewer identifier.".to_string());
+    }
+
+    let url = format!(
+        "index.html?viewer={}&key={}",
+        request.kind, request.storage_key
+    );
+    state
+        .0
+        .lock()
+        .map_err(|_| "Unable to store viewer data.".to_string())?
+        .insert(request.storage_key.clone(), request.payload);
+
+    let build_result = WebviewWindowBuilder::new(&app, request.label, WebviewUrl::App(url.into()))
+        .title(request.title)
+        .inner_size(1280.0, 850.0)
+        .min_inner_size(720.0, 500.0)
+        .resizable(true)
+        .maximized(true)
+        .center()
+        .build();
+
+    if let Err(error) = build_result {
+        if let Ok(mut payloads) = state.0.lock() {
+            payloads.remove(&request.storage_key);
+        }
+        return Err(format!("Unable to open viewer window: {error}"));
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn read_viewer_payload(
+    state: State<'_, ViewerPayloadState>,
+    storage_key: String,
+) -> Result<Option<String>, String> {
+    state
+        .0
+        .lock()
+        .map_err(|_| "Unable to read viewer data.".to_string())
+        .map(|mut payloads| payloads.remove(&storage_key))
 }
 
 #[derive(Debug, Deserialize)]
@@ -536,7 +612,6 @@ struct SynthesisInputFile {
 struct GenerateSynthesisDiagramRequest {
     project_name: String,
     board_name: String,
-    board_family: String,
     fpga_id: String,
     synthesis_flow: String,
     top_module: Option<String>,
@@ -1710,24 +1785,15 @@ fn build_yosys_script(request: &GenerateSynthesisDiagramRequest, json_path: &Pat
     lines.push("opt".to_string());
     lines.push("memory".to_string());
     lines.push("opt".to_string());
-
-    let top_arg = request
-        .top_module
-        .as_deref()
-        .map(|top| format!("-top {top} "))
-        .unwrap_or_default();
-
-    if request.board_family.to_lowercase().contains("ice40") {
-        lines.push(format!(
-            "synth_ice40 {top_arg}-json {}",
-            json_path.display()
-        ));
-    } else if request.board_family.to_lowercase().contains("ecp5") {
-        lines.push(format!("synth_ecp5 {top_arg}-json {}", json_path.display()));
-    } else {
-        lines.push(format!("synth {top_arg}"));
-        lines.push(format!("write_json {}", json_path.display()));
-    }
+    // Keep the diagram technology-independent. Device-specific synthesis turns
+    // useful RTL operators into hundreds of opaque FPGA primitives (CCU2C,
+    // LUT4, SB_LUT4, etc.), which is correct for place-and-route but poor for a
+    // human-readable schematic. The bitstream flow still performs the full
+    // family-specific synth pass separately.
+    lines.push("flatten".to_string());
+    lines.push("opt_clean".to_string());
+    lines.push("check".to_string());
+    lines.push(format!("write_json {}", json_path.display()));
 
     lines.join("\n")
 }
@@ -2522,6 +2588,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(SerialState::default())
         .manage(VirtualFpgaState::default())
+        .manage(ViewerPayloadState::default())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -2540,6 +2607,8 @@ pub fn run() {
             write_project_file,
             rename_project_file,
             delete_project_file,
+            open_viewer_window,
+            read_viewer_payload,
             generate_synthesis_diagram,
             generate_bitstream,
             simulate_testbench,

@@ -25,6 +25,7 @@ type Props = {
 };
 
 const ROW_HEIGHT = 42;
+const MAX_RENDERED_WAVE_POINTS = 4_000;
 
 export default function SignalWaveformPanel({
   title = "Live waveform",
@@ -39,11 +40,7 @@ export default function SignalWaveformPanel({
     .map((signalId) => traces.find((trace) => trace.id === signalId))
     .filter((trace): trace is SignalWaveTrace => Boolean(trace));
   const height = Math.max(86, visibleTraces.length * ROW_HEIGHT + 12);
-  const pointTimes = traces.flatMap((trace) =>
-    trace.values.map((point) => point.time),
-  );
-  const startTime = pointTimes.length ? Math.min(...pointTimes) : 0;
-  const endTime = pointTimes.length ? Math.max(...pointTimes) : 1;
+  const { startTime, endTime } = getTraceTimeRange(traces);
 
   return (
     <section className="vfpga-panel vfpga-waveform signal-waveform-panel">
@@ -83,7 +80,7 @@ export default function SignalWaveformPanel({
                 <small>
                   {trace.width > 1
                     ? `${trace.width}-bit · ${formatTraceValue(trace)}`
-                    : trace.direction ?? formatTraceValue(trace)}
+                    : (trace.direction ?? formatTraceValue(trace))}
                 </small>
               </button>
             ))}
@@ -163,6 +160,7 @@ function buildWavePath(
   endTime: number,
 ) {
   if (!trace.values.length) return "";
+  const values = sampleWavePoints(trace.values);
   const top = row * rowHeight + 9;
   const middle = row * rowHeight + rowHeight / 2;
   const bottom = row * rowHeight + rowHeight - 9;
@@ -176,13 +174,41 @@ function buildWavePath(
     return /^[0]+$/.test(normalized) ? bottom : top;
   };
 
-  let path = `M ${xFor(trace.values[0].time)} ${yFor(trace.values[0].value)}`;
-  for (let index = 1; index < trace.values.length; index += 1) {
-    const point = trace.values[index];
+  let path = `M ${xFor(values[0].time)} ${yFor(values[0].value)}`;
+  for (let index = 1; index < values.length; index += 1) {
+    const point = values[index];
     path += ` H ${xFor(point.time)} V ${yFor(point.value)}`;
   }
   path += ` H ${width}`;
   return path;
+}
+
+function getTraceTimeRange(traces: SignalWaveTrace[]) {
+  let startTime = Number.POSITIVE_INFINITY;
+  let endTime = Number.NEGATIVE_INFINITY;
+
+  for (const trace of traces) {
+    for (const point of trace.values) {
+      if (point.time < startTime) startTime = point.time;
+      if (point.time > endTime) endTime = point.time;
+    }
+  }
+
+  return Number.isFinite(startTime) && Number.isFinite(endTime)
+    ? { startTime, endTime }
+    : { startTime: 0, endTime: 1 };
+}
+
+function sampleWavePoints(values: SignalWavePoint[]) {
+  if (values.length <= MAX_RENDERED_WAVE_POINTS) return values;
+
+  const stride = Math.ceil(values.length / MAX_RENDERED_WAVE_POINTS);
+  const sampled: SignalWavePoint[] = [values[0]];
+  for (let index = stride; index < values.length - 1; index += stride) {
+    sampled.push(values[index]);
+  }
+  sampled.push(values[values.length - 1]);
+  return sampled;
 }
 
 function formatTraceValue(trace: SignalWaveTrace) {

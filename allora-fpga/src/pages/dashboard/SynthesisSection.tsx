@@ -5,6 +5,7 @@ import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
 import type { ProjectFile } from "./types";
 import { findTopModule, isHdlFile, isTestbenchFile } from "../../hooks/utils";
+import { openViewerWindow } from "../../lib/viewerWindow";
 
 type SynthesisStatus = "idle" | "ready" | "blocked" | "unsupported";
 
@@ -28,7 +29,7 @@ type AggregatedDiagramEdge = {
   count: number;
 };
 
-type SynthesisDiagramResponse = {
+export type SynthesisDiagramResponse = {
   logs: string[];
   topModule: string;
   outputName: string;
@@ -85,7 +86,6 @@ export default function SynthesisSection({
       ? "ready"
       : "blocked";
   const outputName = sanitizeName(projectName || "allora_project");
-  const logSummary = log.find((line) => line.trim().length > 0) ?? "";
 
   useEffect(() => {
     if (hdlFiles.length === 0) {
@@ -100,6 +100,21 @@ export default function SynthesisSection({
       onTopLevelFileNameChange(hdlFiles[0]?.name ?? null);
     }
   }, [hdlFiles, onTopLevelFileNameChange, topLevelFileName]);
+
+  async function openDiagramViewer(nextDiagram: SynthesisDiagramResponse) {
+    try {
+      await openViewerWindow(
+        "synthesis",
+        `${projectName || nextDiagram.topModule} — Hardware Diagram`,
+        nextDiagram,
+      );
+    } catch (viewerError) {
+      setLog((current) => [
+        ...current.filter((line) => !line.startsWith("[viewer]")),
+        `[viewer] ${getErrorMessage(viewerError)}`,
+      ]);
+    }
+  }
 
   async function runSynthesis() {
     if (status === "unsupported") {
@@ -154,6 +169,7 @@ export default function SynthesisSection({
       setDiagram(result);
       setLog(result.logs);
       setShowAdvancedLog(false);
+      await openDiagramViewer(result);
     } catch (error) {
       setDiagram(null);
       setLog(["[synthesis] Failed", getErrorMessage(error)]);
@@ -167,28 +183,41 @@ export default function SynthesisSection({
       style={{
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) 205px",
-        gap: "22px",
-        alignItems: "start",
+        gap: "16px",
+        alignItems: "stretch",
         minWidth: 0,
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
       }}
     >
-      <InfoCard title="Synthesis">
+      <InfoCard
+        title="Synthesis"
+        style={{
+          height: "100%",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          padding: "20px",
+        }}
+      >
         <p
           style={{
             margin: 0,
             color: "#64748b",
-            fontSize: "16px",
-            lineHeight: 1.55,
+            fontSize: "14px",
+            lineHeight: 1.45,
           }}
         >
-          Run real synthesis through the local Tauri tool runner and inspect the
-          generated hardware graph.
+          Run real synthesis through the local toolchain, review the generated
+          design report, and explore the schematic in its dedicated workspace.
         </p>
 
         <div
           className="dashboard-glass-card synthesis-control-bar"
           style={{
-            marginTop: "24px",
+            marginTop: "14px",
           }}
         >
           <label className="synthesis-top-level-field">
@@ -214,7 +243,7 @@ export default function SynthesisSection({
             onClick={runSynthesis}
             disabled={status !== "ready" || isRunning}
           >
-            {isRunning ? "Generating Diagram..." : "Generate Hardware Diagram"}
+            {isRunning ? "Synthesizing..." : "Run Synthesis"}
           </button>
 
           {log.length > 0 ? (
@@ -228,92 +257,38 @@ export default function SynthesisSection({
           ) : null}
         </div>
 
-        <div
-          style={{
-            marginTop: "24px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "20px",
-            background: "#f8fafc",
-            minHeight: "420px",
-            padding: "20px",
-          }}
-        >
-          {diagram ? (
-            <HardwareDiagram diagram={diagram} />
+        <div className="synthesis-report-shell">
+          {showAdvancedLog && log.length > 0 ? (
+            <pre className="synthesis-log-panel">{log.join("\n")}</pre>
+          ) : diagram ? (
+            <SynthesisReport
+              diagram={diagram}
+              onOpen={() => void openDiagramViewer(diagram)}
+            />
           ) : (
-            <div
-              style={{
-                minHeight: "378px",
-                display: "grid",
-                placeItems: "center",
-                textAlign: "center",
-                color: "#64748b",
-                padding: "28px",
-              }}
-            >
+            <div className="synthesis-report-empty">
+              <div className="synthesis-empty-mark">∿</div>
               <div>
-                <div
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: "#0f172a",
-                  }}
-                >
-                  No synthesized diagram yet
-                </div>
-                <div style={{ marginTop: "10px", lineHeight: 1.6 }}>
+                <strong>Ready for synthesis</strong>
+                <p>
                   {status === "unsupported"
                     ? capabilities.synthesisDiagram.detail
-                    : "Run synthesis to generate the actual hardware structure for the current HDL files."}
-                </div>
+                    : "Run synthesis to inspect the design profile, logic composition, I/O, and connectivity."}
+                </p>
               </div>
             </div>
           )}
         </div>
-
-        {log.length > 0 ? (
-          <div style={{ marginTop: "18px" }}>
-            <div
-              style={{
-                color: "#64748b",
-                fontSize: "14px",
-                lineHeight: 1.5,
-              }}
-            >
-              {logSummary}
-            </div>
-
-            {showAdvancedLog ? (
-              <div
-                style={{
-                  marginTop: "14px",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "16px",
-                  background: "#f8fafc",
-                  color: "#334155",
-                  minHeight: "220px",
-                  padding: "18px",
-                  fontFamily:
-                    "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-                  fontSize: "13px",
-                  lineHeight: 1.55,
-                  whiteSpace: "pre-wrap",
-                  overflow: "auto",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
-                }}
-              >
-                {log.join("\n")}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
       </InfoCard>
 
       <div
         style={{
           display: "grid",
-          gap: "22px",
+          alignContent: "start",
+          gap: "16px",
           minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
         <InfoCard
@@ -353,7 +328,145 @@ export default function SynthesisSection({
   );
 }
 
-function HardwareDiagram({ diagram }: { diagram: SynthesisDiagramResponse }) {
+function SynthesisReport({
+  diagram,
+  onOpen,
+}: {
+  diagram: SynthesisDiagramResponse;
+  onOpen: () => void;
+}) {
+  const report = useMemo(() => createSynthesisReport(diagram), [diagram]);
+
+  return (
+    <section className="synthesis-report">
+      <header className="synthesis-report-header">
+        <div className="synthesis-success-mark">✓</div>
+        <div>
+          <span>Synthesis completed</span>
+          <strong>{diagram.topModule}</strong>
+          <small>Technology-independent netlist</small>
+        </div>
+        <button type="button" onClick={onOpen}>
+          Explore Schematic
+          <span aria-hidden="true">↗</span>
+        </button>
+      </header>
+
+      <div className="synthesis-metric-grid">
+        <SynthesisMetric label="Logic elements" value={report.cells} detail="total synthesized cells" tone="violet" />
+        <SynthesisMetric label="Registers" value={report.registers} detail={`${report.registerShare}% of logic`} tone="blue" />
+        <SynthesisMetric label="Combinational" value={report.combinational} detail="operators and gates" tone="cyan" />
+        <SynthesisMetric label="Connections" value={diagram.edges.length} detail={`${report.fanout} average per cell`} tone="amber" />
+      </div>
+
+      <div className="synthesis-report-detail-grid">
+        <div className="synthesis-breakdown-card">
+          <div className="synthesis-card-heading">
+            <div>
+              <strong>Cell composition</strong>
+              <span>Most-used synthesized element types</span>
+            </div>
+            <span>{report.cellTypes.length} types</span>
+          </div>
+          <div className="synthesis-cell-bars">
+            {report.topCellTypes.map((cell) => (
+              <div className="synthesis-cell-row" key={cell.name}>
+                <span title={cell.name}>{cell.name}</span>
+                <div><i style={{ width: `${cell.percent}%` }} /></div>
+                <strong>{cell.count}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="synthesis-design-card">
+          <div className="synthesis-card-heading">
+            <div>
+              <strong>Design interface</strong>
+              <span>External signals and generated artifacts</span>
+            </div>
+          </div>
+          <dl>
+            <div><dt>Inputs</dt><dd>{report.inputs}</dd></div>
+            <div><dt>Outputs</dt><dd>{report.outputs}</dd></div>
+            <div><dt>Constants</dt><dd>{report.constants}</dd></div>
+            <div><dt>Memories</dt><dd>{report.memories}</dd></div>
+            <div className="wide"><dt>Netlist</dt><dd>{diagram.outputName}.json</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SynthesisMetric({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: number;
+  detail: string;
+  tone: "violet" | "blue" | "cyan" | "amber";
+}) {
+  return (
+    <div className={`synthesis-metric ${tone}`}>
+      <span>{label}</span>
+      <strong>{value.toLocaleString()}</strong>
+      <small>{detail}</small>
+    </div>
+  );
+}
+
+function createSynthesisReport(diagram: SynthesisDiagramResponse) {
+  const cells = diagram.nodes.filter((node) => node.kind === "cell");
+  const registers = cells.filter((node) =>
+    /dff|adff|sdff|ff|latch/i.test(`${node.label} ${node.detail}`),
+  ).length;
+  const memories = cells.filter((node) =>
+    /mem|ram|rom/i.test(`${node.label} ${node.detail}`),
+  ).length;
+  const typeCounts = new Map<string, number>();
+  for (const cell of cells) {
+    const name = cell.detail
+      .replace(/^[$\\]+/, "")
+      .replaceAll("_TECHMAP_REPLACE_", "")
+      .replaceAll("_", " ")
+      .trim()
+      .toUpperCase() || "LOGIC";
+    typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
+  }
+  const cellTypes = [...typeCounts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+  const maximum = Math.max(cellTypes[0]?.count ?? 0, 1);
+
+  return {
+    cells: cells.length,
+    registers,
+    registerShare: cells.length ? Math.round((registers / cells.length) * 100) : 0,
+    combinational: Math.max(0, cells.length - registers - memories),
+    memories,
+    inputs: diagram.nodes.filter((node) => node.kind === "input").length,
+    outputs: diagram.nodes.filter((node) => node.kind === "output").length,
+    constants: diagram.nodes.filter((node) => node.kind === "constant").length,
+    fanout: cells.length ? (diagram.edges.length / cells.length).toFixed(1) : "0.0",
+    cellTypes,
+    topCellTypes: cellTypes.slice(0, 7).map((cell) => ({
+      ...cell,
+      percent: Math.max(5, Math.round((cell.count / maximum) * 100)),
+    })),
+  };
+}
+
+export function HardwareDiagram({
+  diagram,
+  expanded = false,
+}: {
+  diagram: SynthesisDiagramResponse;
+  expanded?: boolean;
+}) {
   const layout = useMemo(() => createDiagramLayout(diagram), [diagram]);
 
   return (
@@ -416,7 +529,7 @@ function HardwareDiagram({ diagram }: { diagram: SynthesisDiagramResponse }) {
           background:
             "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.98) 100%)",
           overflow: "auto",
-          maxHeight: "420px",
+          maxHeight: expanded ? "none" : "420px",
         }}
       >
         <svg

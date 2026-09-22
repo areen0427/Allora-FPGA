@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
-import BoardSection from "./dashboard/BoardSection";
 import SynthesisSection from "./dashboard/SynthesisSection";
 import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
@@ -20,7 +19,6 @@ import type {
 import {
   ArrowLeft,
   Binary,
-  CircuitBoard,
   Code2,
   Activity,
   MapPinned,
@@ -34,17 +32,24 @@ import {
   Zap,
   Hammer,
   Play,
+  PanelLeftClose,
+  PanelLeftOpen,
+  FileCode2,
+  FileJson,
+  FileOutput,
+  FileText,
+  Folder,
+  FolderOpen,
+  ChevronRight,
 } from "lucide-react";
 import { getBoardIconForBoardId } from "./boardIcons";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
-import {
-  buildProjectFilePath,
-} from "../lib/projectWorkspace";
+import { buildProjectFilePath } from "../lib/projectWorkspace";
 import { useFileManagement } from "../hooks/useFileManagement";
 import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
 import { useSaveProject } from "../hooks/useSaveProject";
-import { isHdlFile, getSaveStatusLabel } from "../hooks/utils";
+import { isHdlFile } from "../hooks/utils";
 import { SettingsModal } from "../components/SettingsModal";
 import {
   writeVirtualFpgaConfig,
@@ -102,7 +107,8 @@ export default function Dashboard({
   const [visitedSections, setVisitedSections] = useState<Set<DashboardSection>>(
     () => new Set<DashboardSection>(["editor"]),
   );
-  const [sidebarWidth, setSidebarWidth] = useState(270);
+  const [sidebarWidth, setSidebarWidth] = useState(368);
+  const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     fileName: string;
@@ -328,7 +334,7 @@ export default function Dashboard({
     event.preventDefault();
 
     function handleMouseMove(moveEvent: MouseEvent) {
-      const nextWidth = Math.min(Math.max(moveEvent.clientX - 24, 250), 285);
+      const nextWidth = Math.min(Math.max(moveEvent.clientX - 24, 300), 480);
       setSidebarWidth(nextWidth);
     }
 
@@ -344,28 +350,30 @@ export default function Dashboard({
   return (
     <div
       className="dashboard-workspace"
-      style={{
-        "--dashboard-sidebar-width": `${sidebarWidth}px`,
-        height: "100vh",
-        overflow: "hidden",
-        background: "#f1f5f9",
-        padding: "24px",
-        gap: "14px",
-        color: "#0f172a",
-        fontFamily:
-          "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-        display: "flex",
-        alignItems: "stretch",
-      } as CSSProperties}
+      style={
+        {
+          "--dashboard-sidebar-width": `${explorerCollapsed ? 64 : sidebarWidth}px`,
+          height: "100vh",
+          overflow: "hidden",
+          background: "#f1f5f9",
+          padding: "24px",
+          gap: "14px",
+          color: "#0f172a",
+          fontFamily:
+            "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+          display: "flex",
+          alignItems: "stretch",
+        } as CSSProperties
+      }
     >
       <aside
-        className="dashboard-glass-card dashboard-sidebar"
+        className={`dashboard-glass-card dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
-          width: `${sidebarWidth}px`,
+          width: explorerCollapsed ? "64px" : `${sidebarWidth}px`,
           height: "calc(100vh - 48px)",
           overflow: "hidden",
-          minWidth: "250px",
-          maxWidth: "285px",
+          minWidth: explorerCollapsed ? "64px" : "300px",
+          maxWidth: explorerCollapsed ? "64px" : "480px",
           background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
 
           border: "1px solid rgba(226,232,240,0.5)",
@@ -375,435 +383,253 @@ export default function Dashboard({
           boxShadow:
             "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08)",
 
-          padding: "14px 12px",
+          padding: 0,
           position: "sticky",
           top: "24px",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
         }}
       >
-        <div style={{ marginBottom: "14px" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "12px",
-            }}
-          >
+        <div className="dashboard-activity-rail">
+          <div className="activity-rail-top">
             <button
               type="button"
               aria-label="Go to home page"
               title="Home"
               onClick={onHome}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "10px",
-                border: "none",
-                background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
-                flexShrink: 0,
-                cursor: "pointer",
-                padding: 0,
-              }}
+              className="activity-home-button"
             >
               <BoardHomeIcon size={18} color="white" strokeWidth={2.2} />
             </button>
-
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 800,
-                  color: "#0f172a",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
+            {explorerCollapsed ? (
+              <button
+                type="button"
+                className="explorer-expand-button"
+                aria-label="Open explorer"
+                title="Open explorer"
+                onClick={() => setExplorerCollapsed(false)}
               >
-                {projectName || "Untitled Project"}
-              </div>
-
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#64748b",
-                  fontWeight: 600,
-                }}
-              >
-                {executionTarget === "simulate"
-                  ? "Simulation Workspace"
-                  : "FPGA Build Workspace"}
-              </div>
-            </div>
+                <PanelLeftOpen size={18} />
+              </button>
+            ) : null}
           </div>
-        </div>
-
-        <div className="dashboard-target-switch" aria-label="Execution target">
-          <button
-            type="button"
-            className={executionTarget === "simulate" ? "active simulate" : ""}
-            onClick={() => changeExecutionTarget("simulate")}
-          >
-            <Play size={13} fill="currentColor" /> Simulate
-          </button>
-          <button
-            type="button"
-            className={executionTarget === "build" ? "active build" : ""}
-            onClick={() => changeExecutionTarget("build")}
-            disabled={board.id === "allora-virtual"}
-            title={
-              board.id === "allora-virtual"
-                ? "Choose a physical board before opening the Build workspace."
-                : "Open the physical FPGA build workspace"
-            }
-          >
-            <Hammer size={13} />
-            {board.id === "allora-virtual" ? "Build · board needed" : "Build"}
-          </button>
-        </div>
-
-        <nav
-          aria-label="Dashboard sections"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: "6px",
-          }}
-        >
-          <SidebarButton
-            label="Editor"
-            icon={<Code2 size={16} />}
-            active={activeSection === "editor"}
-            onClick={() => setActiveSection("editor")}
-          />
-          {executionTarget === "simulate" ? (
-            <>
+          <nav className="activity-rail-nav" aria-label="Dashboard sections">
+            <SidebarButton
+              label="Editor"
+              icon={<Code2 size={19} />}
+              active={activeSection === "editor"}
+              onClick={() => setActiveSection("editor")}
+            />
+            {executionTarget === "simulate" ? (
               <SidebarButton
                 label="Virtual"
-                icon={<Zap size={16} />}
+                icon={<Zap size={19} />}
                 active={activeSection === "virtual-fpga"}
                 onClick={() => setActiveSection("virtual-fpga")}
               />
-              <SidebarButton
-                label="Testbench"
-                icon={<Waves size={16} />}
-                active={activeSection === "testbench"}
-                onClick={() => setActiveSection("testbench")}
-              />
-            </>
-          ) : (
-            <>
-              <SidebarButton
-                label="Board"
-                icon={<CircuitBoard size={16} />}
-                active={activeSection === "board"}
-                onClick={() => setActiveSection("board")}
-              />
-              <SidebarButton
-                label="Synthesis"
-                icon={<Binary size={16} />}
-                active={activeSection === "synthesis"}
-                onClick={() => setActiveSection("synthesis")}
-              />
-              <SidebarButton
-                label="Pins"
-                icon={<MapPinned size={16} />}
-                active={activeSection === "pin-mapping"}
-                onClick={() => setActiveSection("pin-mapping")}
-              />
-            </>
-          )}
-          <SidebarButton
-            label="Health"
-            icon={<Activity size={16} />}
-            active={activeSection === "health"}
-            onClick={() => setActiveSection("health")}
-          />
-          {executionTarget === "build" ? (
-            <>
-              <SidebarButton
-                label="Bitstream"
-                icon={<SquareTerminal size={16} />}
-                active={activeSection === "bitstream"}
-                onClick={() => setActiveSection("bitstream")}
-              />
-              <SidebarButton
-                label="Program"
-                icon={<Cpu size={16} />}
-                active={activeSection === "programming"}
-                onClick={() => setActiveSection("programming")}
-              />
-              <SidebarButton
-                label="Serial"
-                icon={<Usb size={16} />}
-                active={activeSection === "serial"}
-                onClick={() => setActiveSection("serial")}
-              />
-            </>
-          ) : null}
-        </nav>
-
-        <div
-          style={{
-            marginTop: "16px",
-            paddingTop: "14px",
-            borderTop: "1px solid #e2e8f0",
-
-            flex: 1,
-            minHeight: 0,
-
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              marginBottom: "12px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "8px",
-            }}
-          >
-            <div
-              style={{
-                color: "#64748b",
-                fontSize: "12px",
-                fontWeight: 900,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              Files
-            </div>
-
-            <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-              <button
-                type="button"
-                title="New file"
-                aria-label="New file"
-                onClick={() => handleCreateNewFile()}
-                style={{
-                  height: "28px",
-                  width: "28px",
-                  borderRadius: "9px",
-                  border: "1px solid #e2e8f0",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  fontWeight: 850,
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Plus size={14} />
-              </button>
-
-              <label
-                className="project-file-import"
-                title="Import files"
-                aria-label="Import files"
-                style={{
-                  height: "28px",
-                  width: "28px",
-                  borderRadius: "9px",
-                  border: "1px solid #dbe4f0",
-                  background: "#2563eb",
-                  color: "#ffffff",
-                  fontWeight: 850,
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                  padding: 0,
-                }}
-              >
-                <Upload size={14} />
-                <input
-                  type="file"
-                  multiple
-                  accept=".v,.sv,.vhd,.vhdl,.vcd"
-                  onChange={handleImportFiles}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
-          </div>
-          <div
-            style={{
-              overflowY: "auto",
-              flex: 1,
-              minHeight: 0,
-              paddingRight: "4px",
-            }}
-          >
-            <ProjectTree
-              files={
-                settings.showGeneratedArtifacts
-                  ? fileMgmt.files
-                  : fileMgmt.files.filter((file) => !isGeneratedArtifact(file))
-              }
-              projectPath={projectPath}
-              activeFileName={activeTabs.activeFileName}
-              openFileNames={activeTabs.openFileNames}
-              dirtyFileNames={activeTabs.dirtyFileNames}
-              topLevelFileName={activeTabs.topLevelFileName}
-              draggedFileName={fileMgmt.draggedFileName}
-              dragOverFileName={fileMgmt.dragOverFileName}
-              onOpenFile={handleOpenFile}
-              onCloseFile={handleCloseOpenFile}
-              onDragStartFile={fileMgmt.setDraggedFileName}
-              onDragOverFile={fileMgmt.setDragOverFileName}
-              onDropFile={handleSidebarDrop}
-              onSetTopLevelFile={handleMakeTopLevelFile}
-              onOpenContextMenu={(fileName, x, y) =>
-                setContextMenu({ fileName, x, y })
-              }
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: "10px",
-            paddingTop: "10px",
-            borderTop: "1px solid #e2e8f0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-          }}
-        >
-          <div
-            style={{
-              minWidth: 0,
-              color: saveProject.saveStatus === "error" ? "#dc2626" : "#94a3b8",
-              fontSize: "11px",
-              fontWeight: 750,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            title={
-              saveProject.saveErrorMessage ||
-              getSaveStatusLabel(
-                saveProject.saveStatus,
-                saveProject.lastSavedAt,
-              )
-            }
-          >
-            {getSaveStatusLabel(
-              saveProject.saveStatus,
-              saveProject.lastSavedAt,
-            )}
-          </div>
-
-          <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-            {saveProject.showManualSaveButton ? (
-              <button
-                type="button"
-                aria-label="Save now"
-                title="Save now"
-                disabled={
-                  saveProject.saveStatus === "saving" ||
-                  saveProject.saveStatus === "saved"
-                }
-                onClick={() => void saveProject.saveCurrentProject()}
-                style={{
-                  border: "1px solid #e2e8f0",
-                  background: "#ffffff",
-                  color: "#475569",
-                  borderRadius: "10px",
-                  width: "30px",
-                  height: "30px",
-                  cursor:
-                    saveProject.saveStatus === "saving" ||
-                    saveProject.saveStatus === "saved"
-                      ? "not-allowed"
-                      : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 0,
-                  opacity:
-                    saveProject.saveStatus === "saving" ||
-                    saveProject.saveStatus === "saved"
-                      ? 0.56
-                      : 1,
-                }}
-              >
-                <span style={{ fontSize: "12px", fontWeight: 900 }}>S</span>
-              </button>
             ) : null}
+            <SidebarButton
+              label="Testbench"
+              icon={<Waves size={19} />}
+              active={activeSection === "testbench"}
+              onClick={() => setActiveSection("testbench")}
+            />
+            {executionTarget === "build" ? (
+              <>
+                <SidebarButton
+                  label="Synthesis"
+                  icon={<Binary size={19} />}
+                  active={activeSection === "synthesis"}
+                  onClick={() => setActiveSection("synthesis")}
+                />
+                <SidebarButton
+                  label="Pins"
+                  icon={<MapPinned size={19} />}
+                  active={activeSection === "pin-mapping"}
+                  onClick={() => setActiveSection("pin-mapping")}
+                />
+              </>
+            ) : null}
+            <SidebarButton
+              label="Health"
+              icon={<Activity size={19} />}
+              active={activeSection === "health"}
+              onClick={() => setActiveSection("health")}
+            />
+            {executionTarget === "build" ? (
+              <>
+                <SidebarButton
+                  label="Bitstream"
+                  icon={<SquareTerminal size={19} />}
+                  active={activeSection === "bitstream"}
+                  onClick={() => setActiveSection("bitstream")}
+                />
+                <SidebarButton
+                  label="Program"
+                  icon={<Cpu size={19} />}
+                  active={activeSection === "programming"}
+                  onClick={() => setActiveSection("programming")}
+                />
+                <SidebarButton
+                  label="Serial"
+                  icon={<Usb size={19} />}
+                  active={activeSection === "serial"}
+                  onClick={() => setActiveSection("serial")}
+                />
+              </>
+            ) : null}
+          </nav>
 
+          <div className="activity-rail-bottom">
             <button
               type="button"
               aria-label="Settings"
               title="Settings"
               onClick={() => setShowSettings(true)}
-              style={{
-                border: "1px solid #e2e8f0",
-                background: "#ffffff",
-                color: "#475569",
-                borderRadius: "10px",
-                width: "30px",
-                height: "30px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-              }}
             >
-              <Settings size={14} />
+              <Settings size={18} />
             </button>
-
             <button
               type="button"
               aria-label="Back to project setup"
               title="Back to project setup"
               onClick={onBack}
-              style={{
-                border: "1px solid #e2e8f0",
-                background: "#ffffff",
-                color: "#475569",
-                borderRadius: "10px",
-                width: "30px",
-                height: "30px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-              }}
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={18} />
             </button>
           </div>
         </div>
 
-        <div
-          onMouseDown={startSidebarResize}
-          style={{
-            position: "absolute",
-            top: 0,
-            right: "-5px",
-            width: "10px",
-            height: "100%",
-            cursor: "col-resize",
-          }}
-        />
+        {!explorerCollapsed ? (
+          <div className="dashboard-explorer">
+            <header className="explorer-project-header">
+              <div className="explorer-project-copy">
+                <strong title={projectName}>
+                  {projectName || "Untitled Project"}
+                </strong>
+                <span>
+                  {executionTarget === "simulate"
+                    ? "Simulation workspace"
+                    : "FPGA build workspace"}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="explorer-collapse-button"
+                aria-label="Collapse explorer"
+                title="Collapse explorer"
+                onClick={() => setExplorerCollapsed(true)}
+              >
+                <PanelLeftClose size={17} />
+              </button>
+            </header>
+
+            <div
+              className="dashboard-target-switch"
+              aria-label="Execution target"
+            >
+              <button
+                type="button"
+                className={
+                  executionTarget === "simulate" ? "active simulate" : ""
+                }
+                onClick={() => changeExecutionTarget("simulate")}
+              >
+                <Play size={13} fill="currentColor" /> Simulate
+              </button>
+              <button
+                type="button"
+                className={executionTarget === "build" ? "active build" : ""}
+                onClick={() => changeExecutionTarget("build")}
+                disabled={board.id === "allora-virtual"}
+                title={
+                  board.id === "allora-virtual"
+                    ? "Choose a physical board before opening the Build workspace."
+                    : "Open the physical FPGA build workspace"
+                }
+              >
+                <Hammer size={13} />{" "}
+                {board.id === "allora-virtual" ? "Build unavailable" : "Build"}
+              </button>
+            </div>
+
+            <section className="project-explorer-panel">
+              <div className="project-explorer-heading">
+                <div>
+                  <span className="project-explorer-eyebrow">Explorer</span>
+                  <strong>Project files</strong>
+                </div>
+                <div className="project-explorer-actions">
+                  <button
+                    type="button"
+                    title="New file"
+                    aria-label="New file"
+                    onClick={() => handleCreateNewFile()}
+                  >
+                    <Plus size={14} />
+                  </button>
+
+                  <label
+                    className="project-file-import"
+                    title="Import files"
+                    aria-label="Import files"
+                  >
+                    <Upload size={14} />
+                    <input
+                      type="file"
+                      multiple
+                      accept=".v,.sv,.vhd,.vhdl,.vcd"
+                      onChange={handleImportFiles}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="project-tree-scroll">
+                <ProjectTree
+                  files={
+                    settings.showGeneratedArtifacts
+                      ? fileMgmt.files
+                      : fileMgmt.files.filter(
+                          (file) => !isGeneratedArtifact(file),
+                        )
+                  }
+                  projectPath={projectPath}
+                  activeFileName={activeTabs.activeFileName}
+                  openFileNames={activeTabs.openFileNames}
+                  dirtyFileNames={activeTabs.dirtyFileNames}
+                  topLevelFileName={activeTabs.topLevelFileName}
+                  draggedFileName={fileMgmt.draggedFileName}
+                  dragOverFileName={fileMgmt.dragOverFileName}
+                  onOpenFile={handleOpenFile}
+                  onCloseFile={handleCloseOpenFile}
+                  onDragStartFile={fileMgmt.setDraggedFileName}
+                  onDragOverFile={fileMgmt.setDragOverFileName}
+                  onDropFile={handleSidebarDrop}
+                  onSetTopLevelFile={handleMakeTopLevelFile}
+                  onOpenContextMenu={(fileName, x, y) =>
+                    setContextMenu({ fileName, x, y })
+                  }
+                />
+              </div>
+              {saveProject.saveStatus === "error" ? (
+                <div
+                  className="explorer-save-error"
+                  title={saveProject.saveErrorMessage}
+                >
+                  Autosave failed
+                </div>
+              ) : null}
+            </section>
+          </div>
+        ) : null}
+
+        {!explorerCollapsed ? (
+          <div
+            onMouseDown={startSidebarResize}
+            className="dashboard-sidebar-resizer"
+          />
+        ) : null}
       </aside>
 
       <main
@@ -812,7 +638,9 @@ export default function Dashboard({
           flex: 1,
           padding: "0",
           overflowY:
-            activeSection === "editor" || activeSection === "pin-mapping"
+            activeSection === "editor" ||
+            activeSection === "pin-mapping" ||
+            activeSection === "synthesis"
               ? "hidden"
               : "auto",
           height: "calc(100vh - 48px)",
@@ -854,7 +682,6 @@ export default function Dashboard({
           />
         )}
 
-        {activeSection === "board" && <BoardSection board={board} />}
         <KeepAliveSection
           active={activeSection === "virtual-fpga"}
           visited={visitedSections.has("virtual-fpga")}
@@ -1247,42 +1074,23 @@ function ProjectTreeNode({
 }) {
   if (node.type === "directory") {
     return (
-      <div>
-        <div
-          style={{
-            padding: `8px 10px 8px ${10 + depth * 14}px`,
-            color: "#64748b",
-            fontSize: "12px",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {node.name}
-        </div>
-        <div style={{ display: "grid", gap: "2px" }}>
-          {node.children.map((child) => (
-            <ProjectTreeNode
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              activeFileName={activeFileName}
-              openFileNames={openFileNames}
-              dirtyFileNames={dirtyFileNames}
-              topLevelFileName={topLevelFileName}
-              draggedFileName={draggedFileName}
-              dragOverFileName={dragOverFileName}
-              onOpenFile={onOpenFile}
-              onCloseFile={onCloseFile}
-              onDragStartFile={onDragStartFile}
-              onDragOverFile={onDragOverFile}
-              onDropFile={onDropFile}
-              onSetTopLevelFile={onSetTopLevelFile}
-              onOpenContextMenu={onOpenContextMenu}
-            />
-          ))}
-        </div>
-      </div>
+      <ProjectTreeDirectory
+        node={node}
+        depth={depth}
+        activeFileName={activeFileName}
+        openFileNames={openFileNames}
+        dirtyFileNames={dirtyFileNames}
+        topLevelFileName={topLevelFileName}
+        draggedFileName={draggedFileName}
+        dragOverFileName={dragOverFileName}
+        onOpenFile={onOpenFile}
+        onCloseFile={onCloseFile}
+        onDragStartFile={onDragStartFile}
+        onDragOverFile={onDragOverFile}
+        onDropFile={onDropFile}
+        onSetTopLevelFile={onSetTopLevelFile}
+        onOpenContextMenu={onOpenContextMenu}
+      />
     );
   }
 
@@ -1293,6 +1101,7 @@ function ProjectTreeNode({
   const isDragged = node.name === draggedFileName;
   const isDragTarget =
     node.name === dragOverFileName && node.name !== draggedFileName;
+  const FileIcon = getProjectFileIcon(node.name);
 
   return (
     <div
@@ -1301,6 +1110,7 @@ function ProjectTreeNode({
       className={[
         "project-tree-file",
         isActive ? "active" : "",
+        isOpen ? "open" : "",
         isDragTarget ? "drag-target" : "",
       ]
         .filter(Boolean)
@@ -1334,94 +1144,37 @@ function ProjectTreeNode({
       onDragLeave={(event) => {
         if (event.currentTarget.contains(event.relatedTarget as Node | null))
           return;
-        if (dragOverFileName === node.name) {
-          onDragOverFile(null);
-        }
+        if (dragOverFileName === node.name) onDragOverFile(null);
       }}
       onDrop={(event) => {
         event.preventDefault();
         const sourceFileName =
           event.dataTransfer.getData("text/plain") || draggedFileName || null;
-        if (sourceFileName) {
-          onDropFile(sourceFileName, node.name);
-        }
+        if (sourceFileName) onDropFile(sourceFileName, node.name);
       }}
       style={{
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        padding: `9px 10px 9px ${10 + depth * 14}px`,
-        borderRadius: "12px",
-        border: isDragTarget ? "1px solid #93c5fd" : "1px solid transparent",
-        background: isDragTarget
-          ? "#eff6ff"
-          : isActive
-            ? "#eef2ff"
-            : "transparent",
-        color: isActive ? "#2563eb" : "#475569",
-        opacity: isDragged ? 0.72 : 1,
-        cursor: "pointer",
+        paddingLeft: `${10 + depth * 16}px`,
+        opacity: isDragged ? 0.64 : 1,
       }}
+      title={node.path}
     >
-      <span
-        className="project-tree-open-indicator"
-        style={{
-          width: "10px",
-          height: "10px",
-          borderRadius: "3px",
-          border: `1.5px solid ${isOpen ? "#2563eb" : "#94a3b8"}`,
-          background: isOpen ? "#2563eb" : "transparent",
-          flexShrink: 0,
-        }}
+      <FileIcon
+        size={15}
+        className="project-tree-file-icon"
+        aria-hidden="true"
       />
-      <span
-        style={{
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          textAlign: "left",
-          fontWeight: isActive ? 800 : 700,
-          fontSize: "13px",
-        }}
-      >
-        {node.name}
-      </span>
-
+      <span className="project-tree-file-name">{node.name}</span>
       {isDirty ? (
         <span
           className="project-tree-dirty-indicator"
           title="Unsaved changes"
-          style={{
-            width: "7px",
-            height: "7px",
-            borderRadius: "999px",
-            background: "#2563eb",
-            flexShrink: 0,
-          }}
         />
       ) : null}
-
       {isTopLevel ? (
-        <span
-          className="project-tree-top-badge"
-          style={{
-            padding: "2px 6px",
-            borderRadius: "999px",
-            border: "1px solid #bfdbfe",
-            background: "#eff6ff",
-            color: "#2563eb",
-            fontSize: "10px",
-            fontWeight: 900,
-            letterSpacing: "0.04em",
-            flexShrink: 0,
-          }}
-        >
+        <span className="project-tree-top-badge" title="Top-level module">
           TOP
         </span>
       ) : null}
-
       {isOpen ? (
         <button
           type="button"
@@ -1438,6 +1191,80 @@ function ProjectTreeNode({
       ) : null}
     </div>
   );
+}
+
+type ProjectTreeDirectoryProps = Omit<
+  Parameters<typeof ProjectTreeNode>[0],
+  "node"
+> & {
+  node: Extract<TreeNode, { type: "directory" }>;
+};
+
+function ProjectTreeDirectory({
+  node,
+  depth,
+  ...props
+}: ProjectTreeDirectoryProps) {
+  const generatedDirectory = ["build", "sim"].includes(node.name.toLowerCase());
+  const [expanded, setExpanded] = useState(!generatedDirectory);
+  const fileCount = countTreeFiles(node);
+
+  return (
+    <div className="project-tree-directory">
+      <button
+        type="button"
+        className="project-tree-folder"
+        style={{ paddingLeft: `${8 + depth * 16}px` }}
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        title={`${expanded ? "Collapse" : "Expand"} ${node.name}`}
+      >
+        <ChevronRight
+          size={14}
+          className="project-tree-chevron"
+          aria-hidden="true"
+        />
+        {expanded ? (
+          <FolderOpen size={16} aria-hidden="true" />
+        ) : (
+          <Folder size={16} aria-hidden="true" />
+        )}
+        <span>{node.name}</span>
+        {generatedDirectory ? (
+          <small>{fileCount} generated</small>
+        ) : (
+          <small>{fileCount}</small>
+        )}
+      </button>
+      {expanded ? (
+        <div className="project-tree-children">
+          {node.children.map((child) => (
+            <ProjectTreeNode
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              {...props}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function countTreeFiles(node: TreeNode): number {
+  if (node.type === "file") return 1;
+  return node.children.reduce(
+    (count, child) => count + countTreeFiles(child),
+    0,
+  );
+}
+
+function getProjectFileIcon(fileName: string) {
+  if (/\.(v|sv|vhd|vhdl)$/i.test(fileName)) return FileCode2;
+  if (/\.json$/i.test(fileName)) return FileJson;
+  if (/\.(bit|bin|asc|vcd)$/i.test(fileName)) return FileOutput;
+  return FileText;
 }
 
 type TreeNode =

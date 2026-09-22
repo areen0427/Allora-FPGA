@@ -1,0 +1,362 @@
+.viewer-page {
+  min-height: 100%;
+  padding: 24px;
+  background: var(--dashboard-page-bg, #eef2f7);
+  color: var(--dashboard-text, #0f172a);
+}
+
+.viewer-page-schematic {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.schematic-workspace {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f7f9fc;
+}
+
+.schematic-topbar {
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
+  align-items: center;
+  gap: 22px;
+  min-height: 76px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 5px 22px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.schematic-topbar > div:first-child {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 12px;
+}
+
+.schematic-eyebrow {
+  grid-column: 1 / -1;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.schematic-topbar strong {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.schematic-topbar small,
+.schematic-help {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.schematic-help {
+  text-align: center;
+}
+
+.schematic-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.schematic-sensitivity {
+  display: grid;
+  grid-template-columns: auto 104px 40px;
+  align-items: center;
+  gap: 8px;
+  margin-right: 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.schematic-sensitivity input {
+  width: 104px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.schematic-sensitivity-value {
+  min-width: 40px;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.schematic-controls button,
+.schematic-zoom-value {
+  display: inline-grid;
+  min-width: 36px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.schematic-controls button {
+  cursor: pointer;
+}
+
+.schematic-controls button:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.schematic-zoom-value {
+  min-width: 58px;
+  border-color: transparent;
+  background: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+}
+
+.schematic-canvas {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.schematic-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.schematic-svg {
+  display: block;
+  overflow: hidden;
+}
+
+.schematic-net {
+  fill: none;
+  stroke: #64748b;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.schematic-net.bus {
+  stroke: #475569;
+  stroke-width: 3.2;
+}
+
+.schematic-element {
+  cursor: pointer;
+  transition: filter 140ms ease;
+}
+
+.schematic-element:hover,
+.schematic-element.selected {
+  filter: drop-shadow(0 0 5px rgba(37, 99, 235, 0.55));
+}
+
+.schematic-element.selected > :first-child {
+  stroke: #2563eb;
+  stroke-width: 3;
+}
+
+.schematic-port-label,
+.schematic-symbol-mark,
+.schematic-operator-mark,
+.schematic-pin-hint {
+  fill: #0f172a;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.schematic-port-label {
+  font-size: 13px;
+}
+
+.schematic-symbol-mark {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.schematic-operator-mark {
+  font-size: 26px;
+}
+
+.schematic-pin-hint {
+  fill: #64748b;
+  font-size: 9px;
+}
+
+.schematic-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.schematic-inspector {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  min-width: 230px;
+  gap: 5px;
+  padding: 16px 42px 16px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.15);
+  backdrop-filter: blur(16px);
+}
+
+.schematic-inspector span,
+.schematic-inspector small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.schematic-inspector strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.schematic-inspector button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.viewer-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 auto 18px;
+  max-width: 1800px;
+}
+
+.viewer-header span {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.viewer-header h1 {
+  margin: 4px 0 0;
+  font-size: clamp(22px, 2.3vw, 34px);
+}
+
+.viewer-summary {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.viewer-surface {
+  max-width: 1800px;
+  min-height: calc(100vh - 130px);
+  margin: 0 auto;
+  padding: 20px;
+  overflow: auto;
+  border: 1px solid var(--dashboard-surface-border, #dbe4f0);
+  border-radius: 20px;
+  background: var(--dashboard-surface-bg, rgba(255, 255, 255, 0.94));
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+.viewer-schematic > div,
+.viewer-waveform .signal-waveform-panel {
+  min-height: calc(100vh - 174px);
+}
+
+.viewer-waveform .vfpga-wave-stage {
+  min-width: 1100px;
+}
+
+.viewer-error {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.viewer-error h1 {
+  margin-bottom: 4px;
+}
+
+.viewer-error p {
+  color: var(--dashboard-muted-text, #64748b);
+}
+
+@media (max-width: 760px) {
+  .viewer-page {
+    padding: 14px;
+  }
+
+  .viewer-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .viewer-surface {
+    padding: 12px;
+  }
+
+  .viewer-page-schematic {
+    padding: 0;
+  }
+
+  .schematic-topbar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .schematic-help {
+    display: none;
+  }
+
+  .schematic-sensitivity span {
+    display: none;
+  }
+
+  .schematic-sensitivity {
+    grid-template-columns: 80px 38px;
+  }
+
+  .schematic-sensitivity input {
+    width: 80px;
+  }
+}

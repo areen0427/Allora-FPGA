@@ -3,6 +3,7 @@ import Editor, { type Monaco } from "@monaco-editor/react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
+import { ChevronRight, FileCode2, Plus } from "lucide-react";
 
 type LintDiagnostic = {
   fileName: string;
@@ -237,6 +238,8 @@ export default function EditorSection({
         <button
           className="editor-add-tab"
           onClick={createNewFile}
+          aria-label="New file"
+          title="New file"
           style={{
             height: "36px",
             width: "42px",
@@ -250,7 +253,7 @@ export default function EditorSection({
             flexShrink: 0,
           }}
         >
-          +
+          <Plus size={16} />
         </button>
 
         {diagnostics.length > 0 ? (
@@ -267,10 +270,20 @@ export default function EditorSection({
             {errorCount > 0 && warningCount > 0 ? " · " : ""}
             {warningCount > 0
               ? `${warningCount} warning${warningCount === 1 ? "" : "s"}`
-            : ""}
+              : ""}
           </div>
         ) : null}
+      </div>
 
+      <div className="editor-breadcrumbs" aria-label="Current file path">
+        <span>Project</span>
+        <ChevronRight size={12} aria-hidden="true" />
+        <span>{getEditorFolder(activeFile)}</span>
+        <ChevronRight size={12} aria-hidden="true" />
+        <strong>
+          <FileCode2 size={13} aria-hidden="true" />
+          {activeFile?.name ?? "No file open"}
+        </strong>
       </div>
 
       <div className="editor-body">
@@ -332,11 +345,14 @@ export default function EditorSection({
             automaticLayout: true,
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
-            renderLineHighlight: "none",
+            renderLineHighlight: "line",
             overviewRulerBorder: false,
             hideCursorInOverviewRuler: true,
-            glyphMargin: false,
-            folding: false,
+            glyphMargin: true,
+            folding: true,
+            foldingHighlight: true,
+            guides: { indentation: true, bracketPairs: true },
+            bracketPairColorization: { enabled: true },
             roundedSelection: false,
             cursorBlinking: "smooth",
             smoothScrolling: true,
@@ -354,6 +370,13 @@ export default function EditorSection({
       </div>
     </div>
   );
+}
+
+function getEditorFolder(file?: ProjectFile) {
+  if (!file?.path) return "src";
+  const normalized = file.path.replace(/\\/g, "/");
+  const parts = normalized.split("/").filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 2] : "src";
 }
 
 function applyLintMarkers(
