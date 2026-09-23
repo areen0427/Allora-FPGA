@@ -152,8 +152,9 @@ export function createSuggestedMappings(
 
 function findClockMatch(port: HdlPort, clocks: BoardDefinition["clocks"]) {
   const aliases = getPortAliases(port);
-  const isClockPort = aliases.some((alias) =>
-    ["clk", "clock", "sysclk"].includes(alias) || /^clk\d+$/.test(alias),
+  const isClockPort = aliases.some(
+    (alias) =>
+      ["clk", "clock", "sysclk"].includes(alias) || /^clk\d+$/.test(alias),
   );
 
   if (!isClockPort) return null;
@@ -222,9 +223,7 @@ function findAliasCandidate(
 
   for (const alias of searchableAliases) {
     const matches = candidates.filter((pin) =>
-      getPinSearchTerms(pin).some((term) =>
-        namesExplicitlyMatch(alias, term),
-      ),
+      getPinSearchTerms(pin).some((term) => namesExplicitlyMatch(alias, term)),
     );
     if (matches.length === 1) return matches[0];
   }
@@ -246,9 +245,7 @@ function namesExplicitlyMatch(alias: string, candidateName: string) {
   }
 
   const canonicalAlias = canonicalName(normalizedAlias);
-  return candidateParts.some(
-    (part) => canonicalName(part) === canonicalAlias,
-  );
+  return candidateParts.some((part) => canonicalName(part) === canonicalAlias);
 }
 
 function canonicalName(name: string) {
@@ -389,6 +386,136 @@ export function getPinOptions(board: BoardDefinition) {
       symbol: getPinSymbol(pin),
     })),
   ];
+}
+
+export function createPinMappingConstraints(
+  board: BoardDefinition,
+  ports: HdlPort[],
+  mappings: Record<string, string>,
+) {
+  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+  const lines = [`# ${board.name} pin mapping saved by Allora`];
+
+  for (const port of ports) {
+    const pin = pinOptions.get(mappings[port.name] ?? "");
+    if (!pin?.pin) {
+      lines.push(`# ${port.name} is unmapped`);
+      continue;
+    }
+
+    const portRef = port.name.includes("[") ? `{${port.name}}` : port.name;
+    if (board.constraintsFile === "xdc") {
+      lines.push(
+        `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${portRef}]`,
+      );
+      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${portRef}]`);
+    } else if (board.constraintsFile === "pcf") {
+      lines.push(`set_io ${port.name} ${pin.pin}`);
+    } else if (board.constraintsFile === "lpf") {
+      lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
+      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=LVCMOS33;`);
+    } else if (board.constraintsFile === "cst") {
+      lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
+    } else if (board.constraintsFile === "qsf") {
+      lines.push(`set_location_assignment PIN_${pin.pin} -to ${port.name}`);
+    } else if (board.constraintsFile === "pdc") {
+      lines.push(`set_io -port_name {${port.name}} -pin_name ${pin.pin}`);
+    } else if (board.constraintsFile === "ccf") {
+      lines.push(`Pin_in "${port.name}" Loc = "${pin.pin}"`);
+    } else {
+      // Efinity .peri files are XML in a full project. Keep a readable,
+      // durable mapping until that toolchain's project writer is wired up.
+      lines.push(`# ${port.name} -> ${pin.pin}`);
+    }
+  }
+
+  lines.push("");
+  return lines.join("\n");
+}
+
+export function readPinMappingsFromConstraints(
+  board: BoardDefinition,
+  ports: HdlPort[],
+  content: string,
+) {
+  const assignments = new Map<string, string>();
+  const unmapped = new Set<string>();
+  const portNames = new Set(ports.map((port) => port.name));
+
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    const unmappedMatch = trimmed.match(/^#\s+(.+?)\s+is unmapped$/);
+    if (unmappedMatch && portNames.has(unmappedMatch[1])) {
+      unmapped.add(unmappedMatch[1]);
+      continue;
+    }
+
+    let match: RegExpMatchArray | null;
+    if (board.constraintsFile === "xdc") {
+      const bracedMatch = trimmed.match(
+        /^set_property\s+PACKAGE_PIN\s+(\S+)\s+\[get_ports\s+\{([^}]+)}\]$/i,
+      );
+      const plainMatch = trimmed.match(
+        /^set_property\s+PACKAGE_PIN\s+(\S+)\s+\[get_ports\s+([^\]\s]+)\]$/i,
+      );
+      match = bracedMatch ?? plainMatch;
+    } else if (board.constraintsFile === "pcf") {
+      match = trimmed.match(/^set_io\s+(\S+)\s+(\S+)/i);
+      if (match) match = [match[0], match[2], match[1]];
+    } else if (board.constraintsFile === "lpf") {
+      match = trimmed.match(/^LOCATE\s+COMP\s+"([^"]+)"\s+SITE\s+"([^"]+)"/i);
+      if (match) match = [match[0], match[2], match[1]];
+    } else if (board.constraintsFile === "cst") {
+      match = trimmed.match(/^IO_LOC\s+"([^"]+)"\s+(\S+?);?$/i);
+      if (match) match = [match[0], match[2], match[1]];
+    } else if (board.constraintsFile === "qsf") {
+      match = trimmed.match(
+        /^set_location_assignment\s+PIN_(\S+)\s+-to\s+(\S+)/i,
+      );
+    } else if (board.constraintsFile === "pdc") {
+      match = trimmed.match(
+        /^set_io\s+-port_name\s+\{([^}]+)}\s+-pin_name\s+(\S+)/i,
+      );
+      if (match) match = [match[0], match[2], match[1]];
+    } else if (board.constraintsFile === "ccf") {
+      match = trimmed.match(/^Pin_in\s+"([^"]+)"\s+Loc\s*=\s*"([^"]+)"/i);
+      if (match) match = [match[0], match[2], match[1]];
+    } else {
+      match = trimmed.match(/^#\s+(.+?)\s+->\s+(\S+)$/);
+      if (match) match = [match[0], match[2], match[1]];
+    }
+
+    if (match && portNames.has(match[2])) assignments.set(match[2], match[1]);
+  }
+
+  const hasSavedMapping =
+    assignments.size > 0 ||
+    unmapped.size > 0 ||
+    content.includes("pin mapping saved by Allora");
+  if (!hasSavedMapping) return null;
+
+  const options = getPinOptions(board);
+  const suggestions = createSuggestedMappings(ports, board.pins, board.clocks);
+  const mappings: Record<string, string> = {};
+
+  for (const port of ports) {
+    const physicalPin = assignments.get(port.name);
+    if (!physicalPin) {
+      mappings[port.name] = "";
+      continue;
+    }
+
+    const suggested = suggestions[port.name];
+    const suggestedOption = options.find(
+      (option) => option.key === suggested && option.pin === physicalPin,
+    );
+    mappings[port.name] =
+      suggestedOption?.key ??
+      options.find((option) => option.pin === physicalPin)?.key ??
+      "";
+  }
+
+  return mappings;
 }
 
 export function getPinSymbol(pin: BoardPin) {

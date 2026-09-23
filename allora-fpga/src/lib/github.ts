@@ -15,6 +15,19 @@ export type GitHubAuthStatus = {
   message: string | null;
 };
 
+export type GitHubDeviceAuthorization = {
+  userCode: string;
+  verificationUri: string;
+  expiresIn: number;
+  interval: number;
+};
+
+export type GitHubDeviceAuthorizationPoll = {
+  pending: boolean;
+  interval: number;
+  auth: GitHubAuthStatus | null;
+};
+
 export type GitToolAvailability = {
   gitAvailable: boolean;
   gitVersion: string | null;
@@ -111,8 +124,18 @@ export function getGitHubAuthStatus() {
   return invokeTauri<GitHubAuthStatus>("github_auth_status");
 }
 
-export function signInToGitHub() {
-  return invokeTauri<GitHubAuthStatus>("github_sign_in");
+export function beginGitHubDeviceSignIn() {
+  return invokeTauri<GitHubDeviceAuthorization>("github_begin_device_sign_in");
+}
+
+export function pollGitHubDeviceSignIn() {
+  return invokeTauri<GitHubDeviceAuthorizationPoll>(
+    "github_poll_device_sign_in",
+  );
+}
+
+export function cancelGitHubDeviceSignIn() {
+  return invokeTauri<void>("github_cancel_device_sign_in");
 }
 
 export function signOutOfGitHub() {

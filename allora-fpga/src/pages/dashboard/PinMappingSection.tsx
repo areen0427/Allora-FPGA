@@ -6,8 +6,10 @@ import VirtualBoard from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
 import {
   createSuggestedMappings,
+  createPinMappingConstraints,
   findPorts,
   getPinOptions,
+  readPinMappingsFromConstraints,
   type HdlPort,
 } from "./pinMappingUtils";
 
@@ -18,6 +20,7 @@ type PinMappingSectionProps = {
   files: ProjectFile[];
   defaultMode: "simple" | "advanced";
   topLevelFileName: string | null;
+  onSaveMappings: (fileName: string, content: string) => Promise<boolean>;
 };
 
 export default function PinMappingSection({
@@ -25,6 +28,7 @@ export default function PinMappingSection({
   files,
   defaultMode,
   topLevelFileName,
+  onSaveMappings,
 }: PinMappingSectionProps) {
   const [mode, setMode] = useState<PinMappingMode>(defaultMode);
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null);
@@ -41,7 +45,31 @@ export default function PinMappingSection({
     () => createSuggestedMappings(ports, board.pins, board.clocks),
     [ports, board.pins, board.clocks],
   );
-  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const constraintFile = useMemo(
+    () =>
+      files.find(
+        (file) =>
+          file.name.toLowerCase() === `constraints.${board.constraintsFile}`,
+      ) ??
+      files.find((file) =>
+        file.name.toLowerCase().endsWith(`.${board.constraintsFile}`),
+      ) ??
+      null,
+    [board.constraintsFile, files],
+  );
+  const savedMappings = useMemo(
+    () =>
+      constraintFile
+        ? readPinMappingsFromConstraints(board, ports, constraintFile.content)
+        : null,
+    [board, constraintFile, ports],
+  );
+  const [overrides, setOverrides] = useState<Record<string, string>>(
+    () => savedMappings ?? {},
+  );
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
 
   const mappedCount = ports.filter(
     (port) => overrides[port.name] ?? suggestedMappings[port.name],
@@ -52,10 +80,39 @@ export default function PinMappingSection({
   }
 
   function setPortMapping(portName: string, pinKey: string) {
+    setSaveState("idle");
     setOverrides((current) => ({
       ...current,
       [portName]: pinKey,
     }));
+  }
+
+  const currentMappings = Object.fromEntries(
+    ports.map((port) => [port.name, getSelectedPin(port.name)]),
+  );
+  const savedComparison = savedMappings ?? suggestedMappings;
+  const hasUnsavedChanges =
+    savedMappings === null
+      ? ports.some((port) => Boolean(currentMappings[port.name]))
+      : ports.some(
+          (port) =>
+            (currentMappings[port.name] ?? "") !==
+            (savedComparison[port.name] ?? ""),
+        );
+  const canRevert = ports.some(
+    (port) =>
+      (currentMappings[port.name] ?? "") !==
+      ((savedMappings ?? suggestedMappings)[port.name] ?? ""),
+  );
+
+  async function saveMappings() {
+    setSaveState("saving");
+    const content = createPinMappingConstraints(board, ports, currentMappings);
+    const saved = await onSaveMappings(
+      constraintFile?.name ?? `constraints.${board.constraintsFile}`,
+      content,
+    );
+    setSaveState(saved ? "saved" : "error");
   }
 
   return (
@@ -153,25 +210,58 @@ export default function PinMappingSection({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setOverrides({})}
-            disabled={Object.keys(overrides).length === 0}
-            style={{
-              border: "1px solid #dbe4f0",
-              borderRadius: "11px",
-              background: "#ffffff",
-              color:
-                Object.keys(overrides).length === 0 ? "#94a3b8" : "#475569",
-              padding: "8px 11px",
-              fontSize: "13px",
-              fontWeight: 850,
-              cursor:
-                Object.keys(overrides).length === 0 ? "not-allowed" : "pointer",
-            }}
-          >
-            Reset
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            {saveState === "error" ? (
+              <span
+                style={{ color: "#b91c1c", fontSize: "12px", fontWeight: 800 }}
+              >
+                Save failed
+              </span>
+            ) : saveState === "saved" && !hasUnsavedChanges ? (
+              <span
+                style={{ color: "#15803d", fontSize: "12px", fontWeight: 800 }}
+              >
+                Saved
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setOverrides(savedMappings ?? {});
+                setSaveState("idle");
+              }}
+              disabled={!canRevert}
+              style={{
+                border: "1px solid #dbe4f0",
+                borderRadius: "11px",
+                background: "#ffffff",
+                color: canRevert ? "#475569" : "#94a3b8",
+                padding: "8px 11px",
+                fontSize: "13px",
+                fontWeight: 850,
+                cursor: canRevert ? "pointer" : "not-allowed",
+              }}
+            >
+              Revert
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveMappings()}
+              disabled={!hasUnsavedChanges || saveState === "saving"}
+              style={{
+                border: "1px solid #2563eb",
+                borderRadius: "11px",
+                background: hasUnsavedChanges ? "#2563eb" : "#bfdbfe",
+                color: "#ffffff",
+                padding: "8px 13px",
+                fontSize: "13px",
+                fontWeight: 900,
+                cursor: hasUnsavedChanges ? "pointer" : "not-allowed",
+              }}
+            >
+              {saveState === "saving" ? "Saving…" : "Save Mapping"}
+            </button>
+          </div>
         </div>
 
         <p
@@ -260,6 +350,14 @@ function SimplePinMapper({
   getSelectedPin: (portName: string) => string;
   setPortMapping: (portName: string, pinKey: string) => void;
 }) {
+  const pinOptions = getPinOptions(board);
+  const pinOptionMap = new Map(pinOptions.map((pin) => [pin.key, pin]));
+  const mappedPhysicalPins = new Set(
+    ports
+      .map((port) => pinOptionMap.get(getSelectedPin(port.name))?.pin)
+      .filter((pin): pin is string => Boolean(pin)),
+  );
+
   return (
     <div
       style={{
@@ -363,11 +461,17 @@ function SimplePinMapper({
                 }}
               >
                 <option value="">Unmapped</option>
-                {getPinOptions(board).map((pin) => (
-                  <option key={pin.key} value={pin.key}>
-                    {pin.label}
-                  </option>
-                ))}
+                {pinOptions
+                  .filter(
+                    (pin) =>
+                      pin.key === selectedPin ||
+                      !mappedPhysicalPins.has(pin.pin),
+                  )
+                  .map((pin) => (
+                    <option key={pin.key} value={pin.key}>
+                      {pin.label}
+                    </option>
+                  ))}
               </select>
             </div>
           );
@@ -437,11 +541,22 @@ function ResourcePinMapper({
         }))
         .filter((group) => group.pins.length > 0)
     : resourceGroups;
-  const validationItems = createPinMappingValidation(ports, getSelectedPin);
+  const validationItems = createPinMappingValidation(
+    board,
+    ports,
+    getSelectedPin,
+  );
   const mappedPinKeys = mappedPorts.map((port) => getSelectedPin(port.name));
+  const mappedPhysicalPins = new Set(
+    mappedPinKeys
+      .map((pinKey) => pinOptionMap.get(pinKey)?.pin)
+      .filter((pin): pin is string => Boolean(pin)),
+  );
 
   function assignPin(pinKey: string) {
     if (!selectedPort) return;
+    const physicalPin = pinOptionMap.get(pinKey)?.pin;
+    if (physicalPin && mappedPhysicalPins.has(physicalPin)) return;
     setPortMapping(selectedPort.name, pinKey);
   }
 
@@ -468,7 +583,8 @@ function ResourcePinMapper({
             style={{
               flexShrink: 0,
               display: "grid",
-              gridTemplateColumns: "minmax(220px, 0.8fr) minmax(260px, 1fr) auto",
+              gridTemplateColumns:
+                "minmax(220px, 0.8fr) minmax(260px, 1fr) auto",
               gap: "12px",
               alignItems: "center",
               padding: "12px",
@@ -604,6 +720,7 @@ function ResourcePinMapper({
                   ports={filteredPorts}
                   pinOptions={pinOptions}
                   pinOptionMap={pinOptionMap}
+                  mappedPhysicalPins={mappedPhysicalPins}
                   selectedPortName={selectedPort?.name ?? null}
                   getSelectedPin={getSelectedPin}
                   setPortMapping={setPortMapping}
@@ -624,6 +741,7 @@ function ResourcePinMapper({
                       group={group}
                       selectedPin={selectedPin}
                       selectedPort={selectedPort}
+                      mappedPhysicalPins={mappedPhysicalPins}
                       onAssignPin={assignPin}
                     />
                   ))}
@@ -710,7 +828,10 @@ function ResourcePinMapper({
                       gap: "8px",
                     }}
                   >
-                    <PinInspectorFact label="Pad" value={selectedPinOption.pin} />
+                    <PinInspectorFact
+                      label="Pad"
+                      value={selectedPinOption.pin}
+                    />
                     <PinInspectorFact
                       label="Type"
                       value={selectedPinOption.type.toUpperCase()}
@@ -826,6 +947,7 @@ function AdvancedAssignmentTable({
   ports,
   pinOptions,
   pinOptionMap,
+  mappedPhysicalPins,
   selectedPortName,
   getSelectedPin,
   setPortMapping,
@@ -834,6 +956,7 @@ function AdvancedAssignmentTable({
   ports: HdlPort[];
   pinOptions: PinOption[];
   pinOptionMap: Map<string, PinOption>;
+  mappedPhysicalPins: Set<string>;
   selectedPortName: string | null;
   getSelectedPin: (portName: string) => string;
   setPortMapping: (portName: string, pinKey: string) => void;
@@ -870,7 +993,8 @@ function AdvancedAssignmentTable({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
+          gridTemplateColumns:
+            "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
           gap: "12px",
           padding: "11px 14px",
           background: "#eef2f7",
@@ -960,11 +1084,17 @@ function AdvancedAssignmentTable({
               }}
             >
               <option value="">Unmapped</option>
-              {pinOptions.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
+              {pinOptions
+                .filter(
+                  (option) =>
+                    option.key === selectedPin ||
+                    !mappedPhysicalPins.has(option.pin),
+                )
+                .map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
             </select>
             <span
               style={{
@@ -1089,19 +1219,22 @@ function ConstraintPreview({
 }
 
 function createPinMappingValidation(
+  board: BoardDefinition,
   ports: HdlPort[],
   getSelectedPin: (portName: string) => string,
 ) {
   const items: Array<{ kind: "warning" | "info"; message: string }> = [];
   const pinToPorts = new Map<string, string[]>();
+  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
   const unmapped = ports.filter((port) => !getSelectedPin(port.name));
 
   for (const port of ports) {
     const pinKey = getSelectedPin(port.name);
     if (!pinKey) continue;
-    const mapped = pinToPorts.get(pinKey) ?? [];
+    const physicalPin = pinOptions.get(pinKey)?.pin ?? pinKey;
+    const mapped = pinToPorts.get(physicalPin) ?? [];
     mapped.push(port.name);
-    pinToPorts.set(pinKey, mapped);
+    pinToPorts.set(physicalPin, mapped);
   }
 
   if (unmapped.length > 0) {
@@ -1113,9 +1246,8 @@ function createPinMappingValidation(
     });
   }
 
-  for (const [pinKey, mappedPorts] of pinToPorts) {
+  for (const [physicalPin, mappedPorts] of pinToPorts) {
     if (mappedPorts.length <= 1) continue;
-    const physicalPin = pinKey.split(":").at(-1) ?? pinKey;
     items.push({
       kind: "warning",
       message: `${physicalPin} is assigned to ${mappedPorts.join(", ")}.`,
@@ -1141,13 +1273,19 @@ function ResourceGroupCard({
   group,
   selectedPin,
   selectedPort,
+  mappedPhysicalPins,
   onAssignPin,
 }: {
   group: ResourceGroup;
   selectedPin: string;
   selectedPort: HdlPort | null;
+  mappedPhysicalPins: Set<string>;
   onAssignPin: (pinKey: string) => void;
 }) {
+  const visiblePins = group.pins.filter(
+    (pin) => pin.key === selectedPin || !mappedPhysicalPins.has(pin.pin),
+  );
+
   return (
     <DashboardSurfaceCard
       className="pin-map-resource-card"
@@ -1180,7 +1318,7 @@ function ResourceGroupCard({
           </div>
         </div>
         <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 900 }}>
-          {group.pins.length}
+          {visiblePins.length}
         </span>
       </div>
 
@@ -1192,7 +1330,7 @@ function ResourceGroupCard({
           gap: "8px",
         }}
       >
-        {group.pins.map((pin) => {
+        {visiblePins.map((pin) => {
           const active = selectedPin === pin.key;
           const color = getPinTypeColor(pin.type);
 
@@ -1372,41 +1510,16 @@ function createConstraintPreview(
   ports: HdlPort[],
   getSelectedPin: (portName: string) => string,
 ) {
-  const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
-  const lines = [
-    `# ${board.name} ${board.constraintsFile.toUpperCase()} preview`,
-  ];
-
   if (ports.length === 0) {
-    lines.push("# No top-level ports detected.");
-    return lines.join("\n");
+    return `# ${board.name} ${board.constraintsFile.toUpperCase()} preview\n# No top-level ports detected.`;
   }
-
-  for (const port of ports) {
-    const selectedPin = getSelectedPin(port.name);
-    const pin = selectedPin ? pinOptions.get(selectedPin) : null;
-
-    if (!pin?.pin) {
-      lines.push(`# ${port.name} is unmapped`);
-      continue;
-    }
-
-    if (board.constraintsFile === "xdc") {
-      lines.push(
-        `set_property PACKAGE_PIN ${pin.pin} [get_ports ${port.name}]`,
-      );
-      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
-    } else if (board.constraintsFile === "pcf") {
-      lines.push(`set_io ${port.name} ${pin.pin}`);
-    } else if (board.constraintsFile === "lpf") {
-      lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
-      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=LVCMOS33;`);
-    } else {
-      lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
-    }
-  }
-
-  return lines.join("\n");
+  return createPinMappingConstraints(
+    board,
+    ports,
+    Object.fromEntries(
+      ports.map((port) => [port.name, getSelectedPin(port.name)]),
+    ),
+  );
 }
 
 function EmptyPortState() {

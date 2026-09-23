@@ -26,19 +26,19 @@ Both paths operate on disk-backed Allora projects. A project can remember its mo
 
 ## Technology stack
 
-| Area | Technology |
-|---|---|
-| Desktop shell and native commands | Tauri 2 + Rust |
-| Main interface | React 19 + TypeScript + Vite |
-| Code editor | Monaco |
-| Interactive RTL execution | Verilator |
-| Testbench simulation | Icarus Verilog (`iverilog` and `vvp`) |
-| Synthesis | Yosys |
-| Place and route | nextpnr |
-| FPGA packing/programming | Board-family-specific open-source tools |
-| Waveforms | VCD parsing and dedicated viewer surfaces |
-| Persistent lightweight UI state | Browser `localStorage` |
-| Project source of truth | Files in the selected project directory |
+| Area                              | Technology                                |
+| --------------------------------- | ----------------------------------------- |
+| Desktop shell and native commands | Tauri 2 + Rust                            |
+| Main interface                    | React 19 + TypeScript + Vite              |
+| Code editor                       | Monaco                                    |
+| Interactive RTL execution         | Verilator                                 |
+| Testbench simulation              | Icarus Verilog (`iverilog` and `vvp`)     |
+| Synthesis                         | Yosys                                     |
+| Place and route                   | nextpnr                                   |
+| FPGA packing/programming          | Board-family-specific open-source tools   |
+| Waveforms                         | VCD parsing and dedicated viewer surfaces |
+| Persistent lightweight UI state   | Browser `localStorage`                    |
+| Project source of truth           | Files in the selected project directory   |
 
 ## Application flow
 
@@ -182,7 +182,7 @@ For UI changes, validate both Ice and Black Ice, the native WebView when native-
 
 The dashboard now has one **Publish to GitHub** entry point. GitHub remains optional: local project creation, editing, simulation, and hardware builds do not require an account or a network connection.
 
-Allora is treated as a public native OAuth client. It uses GitHub's authorization-code flow with PKCE and a temporary `127.0.0.1` loopback callback. The project owner must register an OAuth App and compile the public client ID through `ALLORA_GITHUB_CLIENT_ID`; no client secret belongs in the desktop binary. Until that client ID exists, the UI explains the exact missing configuration and does not attempt authentication.
+Allora is treated as a public native OAuth client. It uses GitHub's OAuth Device Flow, displays the short-lived one-time code in the publish dialog, and polls only at GitHub's required interval. The project owner must enable Device Flow on the OAuth App and compile the public client ID through `ALLORA_GITHUB_CLIENT_ID`; no client secret belongs in the desktop binary. Until that client ID exists, the UI explains the exact missing configuration and does not attempt authentication.
 
 OAuth tokens remain entirely in Rust and are stored through the operating system credential vault (macOS Keychain, Windows Credential Manager, or Linux Secret Service). They are never returned to the WebView or stored in project files, `localStorage`, settings JSON, logs, remote URLs, or Git command arguments. Account status validates the token with GitHub and converts expired or revoked credentials into a signed-out state with reauthentication guidance.
 

@@ -24,11 +24,7 @@ log = "0.4"
 tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
 serialport = "4"
-base64 = "0.22"
 keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
-rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
-sha2 = "0.10"
 tauri-plugin-opener = "2"
 tempfile = "3"
-url = "2"

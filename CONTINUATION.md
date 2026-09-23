@@ -2,6 +2,58 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-23 — Added Apple Silicon release automation
+
+Changed:
+
+- Added a GitHub Actions workflow that runs when a `v*` Git tag is pushed.
+- The workflow installs the locked npm dependencies and Rust Apple Silicon target, builds the Tauri app as an ARM64 macOS DMG, and uploads it to a draft GitHub Release.
+- Release builds read the optional public GitHub OAuth client ID from the `ALLORA_GITHUB_CLIENT_ID` GitHub Actions repository variable; no client secret is used.
+
+Files:
+
+- `.github/workflows/release-macos-apple-silicon.yml`
+- `CONTINUATION.md`
+
+Validated:
+
+- Workflow YAML syntax and repository-relative application paths reviewed locally.
+- `npm run build`
+- `git diff --check`
+
+Known limitations:
+
+- The workflow currently builds only Apple Silicon macOS installers.
+- Apple code signing and notarization are not configured, so macOS Gatekeeper may warn users about the downloaded app.
+
+## 2026-09-23 — Persisted physical pin mappings and reconciled board resources
+
+Changed:
+
+- Added an explicit **Save Mapping** action to Build → Pins. Saving writes the current assignments to the project's board-specific constraints file, reports success/failure, and restores the saved assignments when the user returns to the page.
+- Made the bitstream view and build input honor saved constraint assignments instead of replacing them with newly inferred suggestions.
+- Fixed the successful bitstream path so it never writes inferred constraints over an existing saved or hand-authored constraints file; automatic constraints are persisted only when no constraints file existed before the build.
+- Removed already-used physical pads from the remaining assignment dropdowns and resource cards. Availability is keyed by the physical pad, so aliases cannot accidentally assign the same package pin twice.
+- Added constraint serialization and parsing for PCF, LPF, XDC, CST, QSF, PDC, CCF, and the current comment-backed PERI fallback, including vector ports and explicit unmapped entries.
+- Cross-checked the project-setup board diagram resources against the selectable pin catalog for all 255 board definitions. Normalized the iCEBreaker RGB LED and user-reset identifiers, which were the only mismatches and caused the reset shown on the diagram to use a different key from the pin mapper.
+
+Files:
+
+- `allora-fpga/src/data/boards/icebreaker.ts`
+- `allora-fpga/src/pages/Dashboard.tsx`
+- `allora-fpga/src/pages/dashboard/BitstreamSection.tsx`
+- `allora-fpga/src/pages/dashboard/PinMappingSection.tsx`
+- `allora-fpga/src/pages/dashboard/pinMappingUtils.ts`
+- `CONTINUATION.md`
+
+Validated:
+
+- `npm run build`
+- `npm run lint`
+- Constraint save/load round-trip for all eight supported constraint-file variants.
+- Automated catalog/layout audit across all 255 board definitions: zero missing LED, button, clock, or diagram resource references.
+- `git diff --check`
+
 ## 2026-09-23 — Added secure, explicit GitHub publishing V1
 
 Changed:
@@ -9,7 +61,7 @@ Changed:
 - Added one Publish to GitHub entry point in the project explorer and a progressive four-step workflow for account connection, local initialization/commit, repository creation or selection, safe `origin` connection, and first or subsequent pushes.
 - Promoted the entry point from a subtle header icon to a full-width, labeled **Publish to GitHub — Commit, connect, and push** action directly above Project files after UI review showed the icon was too easy to miss.
 - Kept GitHub out of project creation. Existing projects without Git can explicitly initialize local history from the publish dialog, while the existing project-setup Git option continues to perform only `git init`.
-- Added GitHub OAuth authorization-code authentication with PKCE and a dynamic `127.0.0.1` loopback callback. The flow uses the system browser and requires a project-owner-supplied `ALLORA_GITHUB_CLIENT_ID`; no client secret or invented credential is embedded.
+- Added GitHub OAuth Device Flow authentication. The dialog displays a copyable one-time code, opens GitHub in the system browser, respects GitHub's polling interval and `slow_down` responses, and supports local cancellation. The flow requires a project-owner-supplied `ALLORA_GITHUB_CLIENT_ID`; no client secret or invented credential is embedded.
 - Added native OS credential storage through `keyring`. Tokens remain in Rust and are never returned to React, project files, `localStorage`, settings JSON, logs, remote URLs, or Git arguments. Status validation detects revoked/expired credentials and sign-out deletes the local credential.
 - Added direct GitHub API services for current-user validation, owned writable repository listing, and empty repository creation. New repositories default to private and expose editable name and description fields.
 - Added structured native Git services for executable detection, repository/branch/upstream/origin status, dirty-file classification, ahead/behind state, explicit staging and commits, optional repository-local author identity, safe origin creation, and push with upstream tracking.
@@ -48,14 +100,14 @@ Validated:
 
 Configuration still required:
 
-- Register a GitHub OAuth App with callback URL `http://127.0.0.1/oauth/callback`, then build or run with `ALLORA_GITHUB_CLIENT_ID=<client-id>`. Do not configure a client secret in the desktop application.
+- Register a GitHub OAuth App, enable Device Flow, then build or run with `ALLORA_GITHUB_CLIENT_ID=<client-id>`. Do not configure a client secret in the desktop application.
 
 Known limitations:
 
 - Live OAuth, native keychain consent, repository creation, and push need an explicitly authorized smoke test after the real OAuth client ID exists. Development and automated tests intentionally did not touch a GitHub account.
 - V1 lists owned repositories with push access. Organization-owned repository creation/selection, GitHub Enterprise hosts, collaborators, issues, pull requests, fetch/pull/merge/rebase assistance, and automatic divergence resolution are outside this version.
 - Ahead/behind status uses the locally stored upstream refs. Refresh does not silently fetch from the network, so the value can be stale until another explicit Git operation updates those refs.
-- Closing the dialog while the system-browser OAuth callback is waiting does not cancel the native three-minute callback timeout; no token is stored unless the callback completes successfully.
+- Closing the dialog or pressing **Cancel sign-in** stops local Device Flow polling and discards the pending device authorization; no token is stored unless GitHub completes authorization successfully.
 
 Next:
 

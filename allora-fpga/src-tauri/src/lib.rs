@@ -34,12 +34,25 @@ async fn github_auth_status() -> Result<github::GitHubAuthStatus, github::Servic
 }
 
 #[tauri::command]
-async fn github_sign_in(
+async fn github_begin_device_sign_in(
     app: tauri::AppHandle,
-) -> Result<github::GitHubAuthStatus, github::ServiceError> {
-    tauri::async_runtime::spawn_blocking(move || github::sign_in(app))
+) -> Result<github::DeviceAuthorization, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::begin_device_sign_in(app))
         .await
         .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn github_poll_device_sign_in(
+) -> Result<github::DeviceAuthorizationPoll, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(github::poll_device_sign_in)
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+fn github_cancel_device_sign_in() {
+    github::cancel_device_sign_in();
 }
 
 #[tauri::command]
@@ -3330,7 +3343,9 @@ pub fn run() {
             close_serial_monitor,
             github_tool_availability,
             github_auth_status,
-            github_sign_in,
+            github_begin_device_sign_in,
+            github_poll_device_sign_in,
+            github_cancel_device_sign_in,
             github_sign_out,
             github_list_repositories,
             github_create_repository,

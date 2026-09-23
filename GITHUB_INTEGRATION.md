@@ -4,12 +4,12 @@ Allora's GitHub workflow is local-first. Opening, creating, editing, simulating,
 
 ## Authentication and configuration
 
-Allora is a public native client. It uses GitHub's OAuth authorization-code flow with PKCE (`S256`) and a temporary loopback listener on `127.0.0.1`. The browser receives only the OAuth client ID, loopback redirect, random state, and PKCE challenge. No client secret is shipped in the application.
+Allora is a public native client. It uses GitHub's OAuth Device Flow, which is designed for applications that cannot keep a client secret. The browser receives a short-lived, one-time user code. No client secret is shipped in the application.
 
 The project owner must register a GitHub OAuth App before sign-in can work:
 
 1. Register an OAuth App in GitHub Developer settings.
-2. Set its callback URL to `http://127.0.0.1/oauth/callback`. GitHub's native-app loopback behavior permits Allora to supply the temporary local port at runtime.
+2. Enable **Device Flow** in the OAuth App settings. The redirect URI is not used by Allora's sign-in flow.
 3. Build the desktop app with the public client ID:
 
    ```bash
@@ -18,7 +18,7 @@ The project owner must register a GitHub OAuth App before sign-in can work:
 
    The same environment variable can be used with `npm run tauri dev` during development.
 
-Allora requests the OAuth App `repo` scope because V1 can create and push both public and private repositories. OAuth App scopes are coarse-grained; the publish dialog explains the requested repository access before opening the browser. The OAuth app should not be configured with or bundled with a client secret.
+Allora requests the OAuth App `repo` scope because V1 can create and push both public and private repositories. OAuth App scopes are coarse-grained; the publish dialog explains the requested repository access before opening the browser. The OAuth app should not be configured with or bundled with a client secret. If expiring access tokens are enabled, V1 asks the user to sign in again after expiration rather than retaining a refresh token.
 
 The access token is written directly by Rust to the native operating-system credential store through `keyring`: macOS Keychain, Windows Credential Manager, or the Linux Secret Service. It is never returned to React, written to project metadata, `localStorage`, ordinary settings, logs, a URL, or a Git command argument. Sign-out deletes the local credential. Users can separately revoke the OAuth grant in GitHub account settings.
 
@@ -35,12 +35,12 @@ Primary references:
 
 ## Responsibility boundary
 
-| Responsibility | Implementation | Reason |
-|---|---|---|
-| Account authorization, current-user validation, owned-repository listing, repository creation | Direct GitHub REST API in Rust | Typed responses, explicit permissions/errors, and no dependency on a separately installed CLI |
-| Repository initialization, status, staging, commits, local identity, remotes, branch/upstream state, pushes | System `git`, invoked only by Rust | Preserves ordinary Git repositories and interoperates with every editor/terminal |
-| GitHub CLI | Detection and diagnostics only in V1 | `gh` is useful to expert users but is not required, silently invoked, or used as an alternate credential store |
-| Secret storage and authenticated HTTPS push | Native credential store plus an ephemeral askpass helper | Keeps the token out of the WebView, files, logs, remote URLs, and process arguments |
+| Responsibility                                                                                              | Implementation                                           | Reason                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Account authorization, current-user validation, owned-repository listing, repository creation               | Direct GitHub REST API in Rust                           | Typed responses, explicit permissions/errors, and no dependency on a separately installed CLI                  |
+| Repository initialization, status, staging, commits, local identity, remotes, branch/upstream state, pushes | System `git`, invoked only by Rust                       | Preserves ordinary Git repositories and interoperates with every editor/terminal                               |
+| GitHub CLI                                                                                                  | Detection and diagnostics only in V1                     | `gh` is useful to expert users but is not required, silently invoked, or used as an alternate credential store |
+| Secret storage and authenticated HTTPS push                                                                 | Native credential store plus an ephemeral askpass helper | Keeps the token out of the WebView, files, logs, remote URLs, and process arguments                            |
 
 The frontend uses typed wrappers in `src/lib/github.ts`. It never invokes commands directly or parses raw Git output. Rust returns structured repository state and structured error codes from `src-tauri/src/github.rs`.
 

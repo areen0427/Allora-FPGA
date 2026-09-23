@@ -474,6 +474,52 @@ html[data-theme="black-ice"] .project-tree-git-action {
   font-size: 11px;
 }
 
+.github-device-authorization {
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 13px;
+  background: rgba(219, 234, 254, 0.54);
+}
+
+.github-device-authorization > span {
+  color: var(--dashboard-muted-text);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.github-device-code {
+  padding: 6px 11px;
+  border: 1px dashed rgba(37, 99, 235, 0.45);
+  border-radius: 9px;
+  color: #1d4ed8;
+  background: var(--dashboard-control-bg);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  cursor: copy;
+}
+
+.github-device-authorization small {
+  color: var(--dashboard-muted-text);
+  font-size: 10.5px;
+}
+
+html[data-theme="black-ice"] .github-device-authorization {
+  border-color: rgba(56, 189, 248, 0.24);
+  background: rgba(30, 64, 175, 0.18);
+}
+
+html[data-theme="black-ice"] .github-device-code {
+  border-color: rgba(125, 211, 252, 0.42);
+  color: #7dd3fc;
+}
+
 .github-git-summary {
   display: flex;
   flex-wrap: wrap;

@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import {
+  beginGitHubDeviceSignIn,
+  cancelGitHubDeviceSignIn,
   commitAllProjectFiles,
   createGitHubRepository,
   getGitHubAuthStatus,
@@ -20,13 +22,14 @@ import {
   getGitToolAvailability,
   initializeGitRepository,
   listGitHubRepositories,
+  pollGitHubDeviceSignIn,
   pushGitProject,
   repositoryNameFromProject,
   setGitOrigin,
-  signInToGitHub,
   signOutOfGitHub,
   toGitHubServiceError,
   type GitHubAuthStatus,
+  type GitHubDeviceAuthorization,
   type GitHubRepository,
   type GitRepositoryStatus,
   type GitToolAvailability,
@@ -78,6 +81,8 @@ export function GitHubPublishDialog({
     detail?: string | null;
   } | null>(null);
   const [notice, setNotice] = useState("");
+  const [deviceAuthorization, setDeviceAuthorization] =
+    useState<GitHubDeviceAuthorization | null>(null);
 
   const selectedRepository = useMemo(
     () =>
@@ -141,6 +146,49 @@ export function GitHubPublishDialog({
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
+
+  useEffect(() => {
+    if (!deviceAuthorization) return;
+
+    let active = true;
+    let timeoutId: number | undefined;
+
+    const schedulePoll = (interval: number) => {
+      timeoutId = window.setTimeout(
+        async () => {
+          try {
+            const result = await pollGitHubDeviceSignIn();
+            if (!active) return;
+            if (result.pending) {
+              schedulePoll(result.interval);
+              return;
+            }
+            if (!result.auth) {
+              throw new Error(
+                "GitHub completed sign-in without account details.",
+              );
+            }
+            setAuth(result.auth);
+            setDeviceAuthorization(null);
+            await loadRepositories();
+            if (active) setNotice("GitHub account connected securely.");
+          } catch (cause) {
+            if (!active) return;
+            setDeviceAuthorization(null);
+            setError(toGitHubServiceError(cause));
+          }
+        },
+        Math.max(1, interval) * 1000,
+      );
+    };
+
+    schedulePoll(deviceAuthorization.interval);
+    return () => {
+      active = false;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      void cancelGitHubDeviceSignIn();
+    };
+  }, [deviceAuthorization]);
 
   async function runAction(label: string, action: () => Promise<void>) {
     if (busy) return;
@@ -308,35 +356,65 @@ export function GitHubPublishDialog({
             ) : (
               <div className="github-action-block">
                 <p>
-                  A secure browser window will ask GitHub for repository access.
-                  The resulting token is kept in your operating system
-                  credential vault and never sent to the interface.
+                  GitHub will open in your browser and ask for the one-time code
+                  shown here. The resulting token is kept in your operating
+                  system credential vault and never sent to the interface.
                 </p>
                 {auth.message ? (
                   <span className="github-inline-note">{auth.message}</span>
                 ) : null}
-                <button
-                  type="button"
-                  className="github-primary-button"
-                  disabled={!readyForGit || Boolean(busy)}
-                  onClick={() =>
-                    void runAction("signin", async () => {
-                      const nextAuth = await signInToGitHub();
-                      setAuth(nextAuth);
-                      await loadRepositories();
-                      setNotice("GitHub account connected securely.");
-                    })
-                  }
-                >
-                  {busy === "signin" ? (
-                    <LoaderCircle className="spin" size={16} />
-                  ) : (
-                    <GitFork size={16} />
-                  )}
-                  {busy === "signin"
-                    ? "Waiting for browser…"
-                    : "Sign in with GitHub"}
-                </button>
+                {deviceAuthorization ? (
+                  <div className="github-device-authorization">
+                    <span>Enter this code at GitHub</span>
+                    <button
+                      type="button"
+                      className="github-device-code"
+                      title="Copy verification code"
+                      onClick={() =>
+                        void navigator.clipboard.writeText(
+                          deviceAuthorization.userCode,
+                        )
+                      }
+                    >
+                      {deviceAuthorization.userCode}
+                    </button>
+                    <small>
+                      Browser opened to {deviceAuthorization.verificationUri}.
+                      Waiting for authorization…
+                    </small>
+                    <button
+                      type="button"
+                      className="github-secondary-button"
+                      onClick={() => {
+                        void cancelGitHubDeviceSignIn();
+                        setDeviceAuthorization(null);
+                        setNotice("GitHub sign-in cancelled locally.");
+                      }}
+                    >
+                      Cancel sign-in
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="github-primary-button"
+                    disabled={!readyForGit || Boolean(busy)}
+                    onClick={() =>
+                      void runAction("signin", async () => {
+                        setDeviceAuthorization(await beginGitHubDeviceSignIn());
+                      })
+                    }
+                  >
+                    {busy === "signin" ? (
+                      <LoaderCircle className="spin" size={16} />
+                    ) : (
+                      <GitFork size={16} />
+                    )}
+                    {busy === "signin"
+                      ? "Requesting code…"
+                      : "Sign in with GitHub"}
+                  </button>
+                )}
               </div>
             )}
           </Step>

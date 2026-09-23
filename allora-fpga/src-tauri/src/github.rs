@@ -1,27 +1,25 @@
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use base64::Engine;
 use keyring::Entry;
-use rand::RngCore;
 use reqwest::blocking::{Client, Response};
 use reqwest::header::{ACCEPT, AUTHORIZATION, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::fs;
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 use tempfile::TempDir;
-use url::Url;
 
 const GITHUB_API: &str = "https://api.github.com";
 const KEYRING_SERVICE: &str = "com.areendabadghav.allorafpga.github";
 const KEYRING_ACCOUNT: &str = "github.com";
 const USER_AGENT_VALUE: &str = "Allora-FPGA";
+const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
+
+static PENDING_DEVICE_AUTHORIZATION: OnceLock<Mutex<Option<PendingDeviceAuthorization>>> =
+    OnceLock::new();
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,7 +48,7 @@ impl ServiceError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub(crate) struct GitHubUser {
     id: u64,
     login: String,
@@ -66,6 +64,31 @@ pub(crate) struct GitHubAuthStatus {
     authenticated: bool,
     user: Option<GitHubUser>,
     message: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DeviceAuthorization {
+    user_code: String,
+    verification_uri: String,
+    expires_in: u64,
+    interval: u64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DeviceAuthorizationPoll {
+    pending: bool,
+    interval: u64,
+    auth: Option<GitHubAuthStatus>,
+}
+
+#[derive(Debug, Clone)]
+struct PendingDeviceAuthorization {
+    device_code: String,
+    expires_at: Instant,
+    interval: u64,
+    next_poll_at: Instant,
 }
 
 #[derive(Debug, Serialize)]
@@ -212,7 +235,7 @@ pub(crate) fn auth_status() -> Result<GitHubAuthStatus, ServiceError> {
     }
 }
 
-pub(crate) fn sign_in(app: AppHandle) -> Result<GitHubAuthStatus, ServiceError> {
+pub(crate) fn begin_device_sign_in(app: AppHandle) -> Result<DeviceAuthorization, ServiceError> {
     let client_id = github_client_id().ok_or_else(|| {
         ServiceError::new(
             "oauth_not_configured",
@@ -220,43 +243,52 @@ pub(crate) fn sign_in(app: AppHandle) -> Result<GitHubAuthStatus, ServiceError> 
         )
     })?;
 
-    let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| {
-        ServiceError::with_detail(
-            "oauth_callback_unavailable",
-            "Allora could not start the local sign-in callback.",
-            error.to_string(),
-        )
-    })?;
-    listener.set_nonblocking(true).map_err(|error| {
-        ServiceError::with_detail(
-            "oauth_callback_unavailable",
-            "Allora could not prepare the local sign-in callback.",
-            error.to_string(),
-        )
-    })?;
-    let port = listener
-        .local_addr()
-        .map_err(|error| ServiceError::new("oauth_callback_unavailable", error.to_string()))?
-        .port();
-    let redirect_uri = format!("http://127.0.0.1:{port}/oauth/callback");
-    let verifier = random_urlsafe(64);
-    let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
-    let state = random_urlsafe(32);
+    let body: Value = github_client()?
+        .post("https://github.com/login/device/code")
+        .header(ACCEPT, "application/json")
+        .form(&[("client_id", client_id.as_str()), ("scope", "repo")])
+        .send()
+        .map_err(map_network_error)?
+        .json()
+        .map_err(|error| {
+            ServiceError::with_detail(
+                "oauth_response_invalid",
+                "GitHub returned an unreadable device authorization response.",
+                error.to_string(),
+            )
+        })?;
+    if let Some(error_code) = body.get("error").and_then(Value::as_str) {
+        return Err(device_flow_error(error_code, &body));
+    }
 
-    let mut authorization_url = Url::parse("https://github.com/login/oauth/authorize")
-        .map_err(|error| ServiceError::new("oauth_url_invalid", error.to_string()))?;
-    authorization_url
-        .query_pairs_mut()
-        .append_pair("client_id", &client_id)
-        .append_pair("redirect_uri", &redirect_uri)
-        .append_pair("scope", "repo")
-        .append_pair("state", &state)
-        .append_pair("code_challenge", &challenge)
-        .append_pair("code_challenge_method", "S256")
-        .append_pair("prompt", "select_account");
+    let device_code = required_oauth_string(&body, "device_code")?;
+    let user_code = required_oauth_string(&body, "user_code")?;
+    let verification_uri = required_oauth_string(&body, "verification_uri")?;
+    let expires_in = body
+        .get("expires_in")
+        .and_then(Value::as_u64)
+        .unwrap_or(900);
+    let interval = body
+        .get("interval")
+        .and_then(Value::as_u64)
+        .unwrap_or(5)
+        .max(1);
+
+    let now = Instant::now();
+    *pending_device_authorization().lock().map_err(|_| {
+        ServiceError::new(
+            "oauth_state_unavailable",
+            "Allora could not prepare GitHub sign-in. Try again.",
+        )
+    })? = Some(PendingDeviceAuthorization {
+        device_code,
+        expires_at: now + Duration::from_secs(expires_in),
+        interval,
+        next_poll_at: now + Duration::from_secs(interval),
+    });
 
     app.opener()
-        .open_url(authorization_url.as_str(), None::<&str>)
+        .open_url(&verification_uri, None::<&str>)
         .map_err(|error| {
             ServiceError::with_detail(
                 "browser_open_failed",
@@ -265,38 +297,98 @@ pub(crate) fn sign_in(app: AppHandle) -> Result<GitHubAuthStatus, ServiceError> 
             )
         })?;
 
-    let callback = wait_for_oauth_callback(&listener, &state, Duration::from_secs(180))?;
-    let client = github_client()?;
-    let response = client
+    Ok(DeviceAuthorization {
+        user_code,
+        verification_uri,
+        expires_in,
+        interval,
+    })
+}
+
+pub(crate) fn poll_device_sign_in() -> Result<DeviceAuthorizationPoll, ServiceError> {
+    let client_id = github_client_id().ok_or_else(|| {
+        ServiceError::new(
+            "oauth_not_configured",
+            "GitHub sign-in is not configured in this build.",
+        )
+    })?;
+    let pending = pending_device_authorization()
+        .lock()
+        .map_err(|_| {
+            ServiceError::new(
+                "oauth_state_unavailable",
+                "GitHub sign-in state is unavailable.",
+            )
+        })?
+        .clone()
+        .ok_or_else(|| {
+            ServiceError::new(
+                "oauth_not_started",
+                "Start GitHub sign-in before checking authorization.",
+            )
+        })?;
+    let now = Instant::now();
+    if now >= pending.expires_at {
+        clear_pending_device_authorization();
+        return Err(ServiceError::new(
+            "oauth_timeout",
+            "The GitHub verification code expired. Start sign-in again.",
+        ));
+    }
+    if now < pending.next_poll_at {
+        return Ok(DeviceAuthorizationPoll {
+            pending: true,
+            interval: pending
+                .next_poll_at
+                .saturating_duration_since(now)
+                .as_secs()
+                .max(1),
+            auth: None,
+        });
+    }
+
+    let body: Value = github_client()?
         .post("https://github.com/login/oauth/access_token")
         .header(ACCEPT, "application/json")
         .form(&[
             ("client_id", client_id.as_str()),
-            ("code", callback.as_str()),
-            ("redirect_uri", redirect_uri.as_str()),
-            ("code_verifier", verifier.as_str()),
+            ("device_code", pending.device_code.as_str()),
+            ("grant_type", DEVICE_GRANT_TYPE),
         ])
         .send()
-        .map_err(map_network_error)?;
-    let body: Value = response.json().map_err(|error| {
-        ServiceError::with_detail(
-            "oauth_response_invalid",
-            "GitHub returned an unreadable sign-in response.",
-            error.to_string(),
-        )
-    })?;
+        .map_err(map_network_error)?
+        .json()
+        .map_err(|error| {
+            ServiceError::with_detail(
+                "oauth_response_invalid",
+                "GitHub returned an unreadable sign-in response.",
+                error.to_string(),
+            )
+        })?;
     if let Some(error_code) = body.get("error").and_then(Value::as_str) {
-        return Err(ServiceError::with_detail(
-            "authentication_failed",
-            "GitHub could not complete sign-in. Try again.",
-            format!(
-                "{}: {}",
-                error_code,
-                body.get("error_description")
-                    .and_then(Value::as_str)
-                    .unwrap_or("authorization was not completed")
-            ),
-        ));
+        if matches!(error_code, "authorization_pending" | "slow_down") {
+            let next_interval = if error_code == "slow_down" {
+                body.get("interval")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(pending.interval + 5)
+                    .max(pending.interval + 5)
+            } else {
+                pending.interval
+            };
+            if let Ok(mut state) = pending_device_authorization().lock() {
+                if let Some(current) = state.as_mut() {
+                    current.interval = next_interval;
+                    current.next_poll_at = Instant::now() + Duration::from_secs(next_interval);
+                }
+            }
+            return Ok(DeviceAuthorizationPoll {
+                pending: true,
+                interval: next_interval,
+                auth: None,
+            });
+        }
+        clear_pending_device_authorization();
+        return Err(device_flow_error(error_code, &body));
     }
     let token = body
         .get("access_token")
@@ -317,12 +409,21 @@ pub(crate) fn sign_in(app: AppHandle) -> Result<GitHubAuthStatus, ServiceError> 
         }
     };
 
-    Ok(GitHubAuthStatus {
-        configured: true,
-        authenticated: true,
-        user: Some(user),
-        message: None,
+    clear_pending_device_authorization();
+    Ok(DeviceAuthorizationPoll {
+        pending: false,
+        interval: pending.interval,
+        auth: Some(GitHubAuthStatus {
+            configured: true,
+            authenticated: true,
+            user: Some(user),
+            message: None,
+        }),
     })
+}
+
+pub(crate) fn cancel_device_sign_in() {
+    clear_pending_device_authorization();
 }
 
 pub(crate) fn sign_out() -> Result<(), ServiceError> {
@@ -776,126 +877,58 @@ fn delete_token() -> Result<(), ServiceError> {
     }
 }
 
-fn random_urlsafe(byte_count: usize) -> String {
-    let mut bytes = vec![0u8; byte_count];
-    rand::thread_rng().fill_bytes(&mut bytes);
-    URL_SAFE_NO_PAD.encode(bytes)
+fn pending_device_authorization() -> &'static Mutex<Option<PendingDeviceAuthorization>> {
+    PENDING_DEVICE_AUTHORIZATION.get_or_init(|| Mutex::new(None))
 }
 
-fn wait_for_oauth_callback(
-    listener: &TcpListener,
-    expected_state: &str,
-    timeout: Duration,
-) -> Result<String, ServiceError> {
-    let started = Instant::now();
-    while started.elapsed() < timeout {
-        match listener.accept() {
-            Ok((mut stream, _)) => {
-                if let Some(result) = parse_oauth_request(&mut stream, expected_state)? {
-                    return Ok(result);
-                }
-            }
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                std::thread::sleep(Duration::from_millis(75));
-            }
-            Err(error) => {
-                return Err(ServiceError::with_detail(
-                    "oauth_callback_failed",
-                    "Allora could not receive the GitHub sign-in response.",
-                    error.to_string(),
-                ));
-            }
-        }
+fn clear_pending_device_authorization() {
+    if let Ok(mut pending) = pending_device_authorization().lock() {
+        *pending = None;
     }
-    Err(ServiceError::new(
-        "oauth_timeout",
-        "GitHub sign-in timed out. Start again when you are ready.",
-    ))
 }
 
-fn parse_oauth_request(
-    stream: &mut TcpStream,
-    expected_state: &str,
-) -> Result<Option<String>, ServiceError> {
-    stream
-        .set_read_timeout(Some(Duration::from_secs(2)))
-        .map_err(|error| ServiceError::new("oauth_callback_failed", error.to_string()))?;
-    let mut buffer = [0u8; 8192];
-    let count = stream.read(&mut buffer).map_err(|error| {
-        ServiceError::with_detail(
-            "oauth_callback_failed",
-            "Allora could not read the GitHub sign-in response.",
-            error.to_string(),
-        )
-    })?;
-    let request = String::from_utf8_lossy(&buffer[..count]);
-    let target = match request
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-    {
-        Some(target) => target,
-        None => return Ok(None),
-    };
-    let url = Url::parse(&format!("http://127.0.0.1{target}"))
-        .map_err(|error| ServiceError::new("oauth_callback_invalid", error.to_string()))?;
-    if url.path() != "/oauth/callback" {
-        respond_to_browser(stream, 404, "This callback is not recognized.");
-        return Ok(None);
-    }
-    let parameters = url
-        .query_pairs()
-        .collect::<std::collections::HashMap<_, _>>();
-    if parameters.get("state").map(|value| value.as_ref()) != Some(expected_state) {
-        respond_to_browser(
-            stream,
-            400,
-            "The sign-in state did not match. Return to Allora and try again.",
-        );
-        return Err(ServiceError::new(
-            "oauth_state_mismatch",
-            "GitHub sign-in could not be verified. Try again.",
-        ));
-    }
-    if let Some(error) = parameters.get("error") {
-        respond_to_browser(
-            stream,
-            400,
-            "GitHub sign-in was cancelled. You can close this tab.",
-        );
-        return Err(ServiceError::with_detail(
-            "oauth_cancelled",
-            "GitHub sign-in was cancelled.",
-            error.to_string(),
-        ));
-    }
-    let code = parameters
-        .get("code")
-        .map(ToString::to_string)
+fn required_oauth_string(body: &Value, field: &str) -> Result<String, ServiceError> {
+    body.get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
         .ok_or_else(|| {
-            ServiceError::new(
-                "oauth_code_missing",
-                "GitHub did not return a sign-in code.",
+            ServiceError::with_detail(
+                "oauth_response_invalid",
+                "GitHub returned an incomplete device authorization response.",
+                format!("Missing {field}"),
             )
-        })?;
-    respond_to_browser(
-        stream,
-        200,
-        "GitHub sign-in is complete. You can close this tab and return to Allora FPGA.",
-    );
-    Ok(Some(code))
+        })
 }
 
-fn respond_to_browser(stream: &mut TcpStream, status: u16, message: &str) {
-    let label = if status == 200 { "OK" } else { "Bad Request" };
-    let body = format!(
-        "<!doctype html><html><head><meta charset=\"utf-8\"><title>Allora FPGA</title></head><body style=\"font-family:system-ui;padding:3rem;max-width:42rem;margin:auto\"><h1>Allora FPGA</h1><p>{message}</p></body></html>"
-    );
-    let response = format!(
-        "HTTP/1.1 {status} {label}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
-    );
-    let _ = stream.write_all(response.as_bytes());
+fn device_flow_error(error_code: &str, body: &Value) -> ServiceError {
+    let detail = body
+        .get("error_description")
+        .and_then(Value::as_str)
+        .unwrap_or(error_code);
+    let (code, message) = match error_code {
+        "device_flow_disabled" => (
+            "device_flow_disabled",
+            "Enable Device Flow in the GitHub OAuth App settings, then try again.",
+        ),
+        "access_denied" => (
+            "oauth_cancelled",
+            "GitHub sign-in was cancelled. Start again when you are ready.",
+        ),
+        "expired_token" | "token_expired" => (
+            "oauth_timeout",
+            "The GitHub verification code expired. Start sign-in again.",
+        ),
+        "incorrect_client_credentials" => (
+            "oauth_client_invalid",
+            "GitHub rejected this build's OAuth Client ID.",
+        ),
+        _ => (
+            "authentication_failed",
+            "GitHub could not complete sign-in. Try again.",
+        ),
+    };
+    ServiceError::with_detail(code, message, detail)
 }
 
 fn command_version(program: &str, arguments: &[&str]) -> Option<String> {
@@ -1226,6 +1259,29 @@ impl AskPass {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_github_account_fields_and_serializes_for_the_frontend() {
+        let user: GitHubUser = serde_json::from_value(json!({
+            "id": 1,
+            "login": "octocat",
+            "name": "The Octocat",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1?v=4",
+            "html_url": "https://github.com/octocat"
+        }))
+        .expect("GitHub account response");
+
+        assert_eq!(
+            user.avatar_url,
+            "https://avatars.githubusercontent.com/u/1?v=4"
+        );
+        let frontend = serde_json::to_value(user).expect("frontend account payload");
+        assert_eq!(
+            frontend.get("avatarUrl").and_then(Value::as_str),
+            Some("https://avatars.githubusercontent.com/u/1?v=4")
+        );
+        assert!(frontend.get("avatar_url").is_none());
+    }
 
     #[test]
     fn parses_porcelain_status_without_losing_spaces() {

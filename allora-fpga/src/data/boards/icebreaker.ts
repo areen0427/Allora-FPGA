@@ -194,7 +194,7 @@ export const icebreaker: BoardDefinition = {
     },
 
     {
-      name: "iCEBreaker_LED_R",
+      name: "rgb_red",
       signal: "rgb_red",
       pin: "39",
       type: "led",
@@ -203,7 +203,7 @@ export const icebreaker: BoardDefinition = {
       verified: true,
     },
     {
-      name: "iCEBreaker_LED_G",
+      name: "rgb_green",
       signal: "rgb_green",
       pin: "40",
       type: "led",
@@ -212,7 +212,7 @@ export const icebreaker: BoardDefinition = {
       verified: true,
     },
     {
-      name: "iCEBreaker_LED_B",
+      name: "rgb_blue",
       signal: "rgb_blue",
       pin: "41",
       type: "led",
@@ -222,7 +222,7 @@ export const icebreaker: BoardDefinition = {
     },
 
     {
-      name: "iCEBreaker_USR_RST_BTN",
+      name: "usr_rst_btn",
       signal: "usr_rst_btn",
       pin: "10",
       type: "button",

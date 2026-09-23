@@ -286,9 +286,10 @@ export default function Dashboard({
     if (result.error) {
       saveProject.setSaveStatus("error");
       saveProject.setSaveErrorMessage(result.error);
-      return;
+      return false;
     }
     markWorkspaceUnsaved(fileName);
+    return true;
   }
 
   function handleUpdateVirtualConfig(config: VirtualFpgaConfig) {
@@ -785,6 +786,7 @@ export default function Dashboard({
             files={fileMgmt.files}
             defaultMode="advanced"
             topLevelFileName={activeTabs.topLevelFileName}
+            onSaveMappings={handleUpdateConstraintFile}
           />
         )}
         <KeepAliveSection
@@ -797,7 +799,9 @@ export default function Dashboard({
             projectName={projectName}
             projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
-            onUpdateConstraints={handleUpdateConstraintFile}
+            onUpdateConstraints={async (fileName, content) => {
+              await handleUpdateConstraintFile(fileName, content);
+            }}
             onAddArtifact={async ({ fileName, content, isBinary }) => {
               const artifactPath = projectPath
                 ? `${projectPath}/build/${fileName}`

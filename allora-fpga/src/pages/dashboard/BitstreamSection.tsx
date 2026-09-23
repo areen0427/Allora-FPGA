@@ -20,11 +20,10 @@ import {
   createSuggestedMappings,
   findPorts,
   getPinOptions,
+  readPinMappingsFromConstraints,
   type HdlPort,
 } from "./pinMappingUtils";
-import TimingAnalysis, {
-  type TimingAnalysisResult,
-} from "./TimingAnalysis";
+import TimingAnalysis, { type TimingAnalysisResult } from "./TimingAnalysis";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -112,22 +111,6 @@ export default function BitstreamSection({
     () => findPorts(selectedTopLevelFile ? [selectedTopLevelFile] : []),
     [selectedTopLevelFile],
   );
-  const generatedConstraintContent = useMemo(
-    () => createGeneratedConstraints(board, topLevelPorts, projectName),
-    [board, topLevelPorts, projectName],
-  );
-  const autoMappings = useMemo(
-    () => createConstraintMappings(board, topLevelPorts),
-    [board, topLevelPorts],
-  );
-  const unmappedPorts = autoMappings.filter((mapping) => !mapping.pin);
-  const mappedClock = autoMappings.find(
-    (mapping) => mapping.pin?.type === "clock",
-  );
-  const targetClock = mappedClock
-    ? board.clocks.find((clock) => clock.pin === mappedClock.pin?.pin) ?? null
-    : null;
-  const extension = getBitstreamExtension(board);
   const constraintFile =
     files.find(
       (file) =>
@@ -137,10 +120,37 @@ export default function BitstreamSection({
       file.name.toLowerCase().endsWith(`.${board.constraintsFile}`),
     ) ??
     null;
+  const savedMappings = useMemo(
+    () =>
+      constraintFile
+        ? readPinMappingsFromConstraints(
+            board,
+            topLevelPorts,
+            constraintFile.content,
+          )
+        : null,
+    [board, constraintFile, topLevelPorts],
+  );
+  const generatedConstraintContent = useMemo(
+    () => createGeneratedConstraints(board, topLevelPorts, projectName),
+    [board, topLevelPorts, projectName],
+  );
+  const autoMappings = useMemo(
+    () => createConstraintMappings(board, topLevelPorts, savedMappings),
+    [board, savedMappings, topLevelPorts],
+  );
+  const unmappedPorts = autoMappings.filter((mapping) => !mapping.pin);
+  const mappedClock = autoMappings.find(
+    (mapping) => mapping.pin?.type === "clock",
+  );
+  const targetClock = mappedClock
+    ? (board.clocks.find((clock) => clock.pin === mappedClock.pin?.pin) ?? null)
+    : null;
+  const extension = getBitstreamExtension(board);
   const constraintFileName =
     constraintFile?.name ?? `constraints.${board.constraintsFile}`;
   const buildConstraintContent =
-    generatedConstraintContent || (constraintFile?.content ?? "");
+    constraintFile?.content || generatedConstraintContent;
   const buildInputKey = [
     synthesisFiles
       .map((file) => `${file.name}:${file.content}`)
@@ -278,7 +288,11 @@ export default function BitstreamSection({
 
       setArtifact(nextArtifact);
       setLiveLogs(result.logs);
-      if (generatedConstraintContent) {
+      // Never replace a project constraint file here. It may contain explicit
+      // assignments saved by the pin mapper (or hand-authored constraints).
+      // Only materialize auto-generated constraints when the project did not
+      // already have a constraint file at build start.
+      if (!constraintFile && generatedConstraintContent) {
         await onUpdateConstraints?.(
           constraintFileName,
           generatedConstraintContent,
@@ -477,9 +491,11 @@ export default function BitstreamSection({
           {errorMessage
             ? errorMessage
             : artifact
-              ? `Bitstream generated. Auto constraints ${constraintFile ? "updated" : "created"} for this project.`
+              ? constraintFile
+                ? "Bitstream generated using the project's saved constraints."
+                : "Bitstream generated. Auto constraints were created for this project."
               : capabilities.bitstream.supported
-                ? "Ready to auto-map top-level ports, write constraints, and build a hardware artifact."
+                ? "Ready to build with saved constraints, or auto-map ports when no constraint file exists."
                 : capabilities.bitstream.detail}
         </div>
 
@@ -594,7 +610,7 @@ export default function BitstreamSection({
         </InfoCard>
 
         <InfoCard
-          title="Auto Mapping"
+          title="Pin Mapping"
           style={{
             padding: "14px",
             borderRadius: "16px",
@@ -781,8 +797,13 @@ function createGeneratedConstraints(
   return lines.join("\n");
 }
 
-function createConstraintMappings(board: BoardDefinition, ports: HdlPort[]) {
-  const suggestions = createSuggestedMappings(ports, board.pins, board.clocks);
+function createConstraintMappings(
+  board: BoardDefinition,
+  ports: HdlPort[],
+  savedMappings: Record<string, string> | null = null,
+) {
+  const suggestions =
+    savedMappings ?? createSuggestedMappings(ports, board.pins, board.clocks);
   const pinOptions = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
 
   return ports.map((port) => {

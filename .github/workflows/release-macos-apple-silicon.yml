@@ -1,0 +1,49 @@
+name: Release Apple Silicon app
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Apple Silicon DMG
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: allora-fpga/package-lock.json
+
+      - name: Install Rust for Apple Silicon
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: allora-fpga
+
+      - name: Build DMG and create draft release
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALLORA_GITHUB_CLIENT_ID: ${{ vars.ALLORA_GITHUB_CLIENT_ID }}
+        with:
+          projectPath: allora-fpga
+          tagName: ${{ github.ref_name }}
+          releaseName: "Allora FPGA ${{ github.ref_name }}"
+          releaseBody: "Apple Silicon macOS installer. Download the DMG from the assets below."
+          generateReleaseNotes: true
+          releaseDraft: true
+          prerelease: false
+          args: --target aarch64-apple-darwin --bundles dmg
