@@ -22,6 +22,9 @@ import {
   getPinOptions,
   type HdlPort,
 } from "./pinMappingUtils";
+import TimingAnalysis, {
+  type TimingAnalysisResult,
+} from "./TimingAnalysis";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -50,6 +53,7 @@ type BitstreamArtifact = {
   generatedAt: string;
   artifactPath?: string | null;
   logs: string[];
+  timing: TimingAnalysisResult;
 };
 
 type GenerateBitstreamResponse = {
@@ -58,6 +62,7 @@ type GenerateBitstreamResponse = {
   outputName: string;
   artifactPath?: string | null;
   bytes: number[];
+  timing: TimingAnalysisResult;
 };
 
 export default function BitstreamSection({
@@ -116,6 +121,12 @@ export default function BitstreamSection({
     [board, topLevelPorts],
   );
   const unmappedPorts = autoMappings.filter((mapping) => !mapping.pin);
+  const mappedClock = autoMappings.find(
+    (mapping) => mapping.pin?.type === "clock",
+  );
+  const targetClock = mappedClock
+    ? board.clocks.find((clock) => clock.pin === mappedClock.pin?.pin) ?? null
+    : null;
   const extension = getBitstreamExtension(board);
   const constraintFile =
     files.find(
@@ -235,6 +246,10 @@ export default function BitstreamSection({
             },
             outputExtension: extension,
             projectPath,
+            targetClockName: targetClock ? mappedClock?.port.name : null,
+            targetFrequencyMhz: targetClock
+              ? targetClock.frequency / 1_000_000
+              : null,
           },
         },
       );
@@ -258,6 +273,7 @@ export default function BitstreamSection({
         generatedAt,
         artifactPath: result.artifactPath,
         logs: result.logs,
+        timing: result.timing,
       };
 
       setArtifact(nextArtifact);
@@ -386,6 +402,7 @@ export default function BitstreamSection({
         </p>
 
         <div
+          className="bitstream-actions"
           style={{
             display: "flex",
             gap: "10px",
@@ -467,6 +484,7 @@ export default function BitstreamSection({
         </div>
 
         <div
+          className="bitstream-results"
           style={{
             marginTop: "18px",
             minHeight: 0,
@@ -501,6 +519,8 @@ export default function BitstreamSection({
                     projectName || "allora_project",
                   )}.${extension}`}
           </div>
+
+          {artifact ? <TimingAnalysis timing={artifact.timing} /> : null}
 
           {liveLogs.length ? (
             <div

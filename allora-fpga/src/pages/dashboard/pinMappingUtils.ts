@@ -153,27 +153,24 @@ export function createSuggestedMappings(
 function findClockMatch(port: HdlPort, clocks: BoardDefinition["clocks"]) {
   const aliases = getPortAliases(port);
   const isClockPort = aliases.some((alias) =>
-    ["clk", "clock", "sysclk", "clk12", "clk25", "clk48"].includes(alias),
+    ["clk", "clock", "sysclk"].includes(alias) || /^clk\d+$/.test(alias),
   );
 
   if (!isClockPort) return null;
 
-  return (
-    clocks.find((clock) =>
-      aliases.some((alias) => normalizeName(clock.name).includes(alias)),
-    ) ??
-    clocks[0] ??
-    null
-  );
+  for (const alias of aliases) {
+    const matches = clocks.filter((clock) =>
+      namesExplicitlyMatch(alias, clock.name),
+    );
+    if (matches.length === 1) return matches[0];
+  }
+
+  return null;
 }
 
 function findPinMatch(port: HdlPort, pins: BoardPin[], usedPins: Set<string>) {
   const aliases = getPortAliases(port);
   const preferredTypes = getPreferredTypes(aliases, port.direction);
-  const isResetPort = aliases.some((alias) =>
-    ["rst", "reset", "rstn", "resetn"].includes(alias),
-  );
-  const hasSpecificAlias = aliases.some((alias) => alias.length > 1);
 
   for (const type of preferredTypes) {
     const candidates = pins.filter(
@@ -184,18 +181,6 @@ function findPinMatch(port: HdlPort, pins: BoardPin[], usedPins: Set<string>) {
 
     const aliasMatch = findAliasCandidate(aliases, candidates);
     if (aliasMatch) return aliasMatch;
-
-    if (isResetPort && type === "button") {
-      const resetCandidate =
-        candidates.find((pin) => pin.activeLow) ?? candidates[0] ?? null;
-      if (resetCandidate) return resetCandidate;
-    }
-
-    if (candidates.length === 1) return candidates[0];
-
-    if (!hasSpecificAlias && candidates.length > 0) {
-      return candidates[0];
-    }
   }
 
   return findAliasCandidate(
@@ -208,17 +193,18 @@ function findPinMatch(port: HdlPort, pins: BoardPin[], usedPins: Set<string>) {
 function findIndexedCandidate(port: HdlPort, candidates: BoardPin[]) {
   if (port.index === undefined) return null;
   const normalizedBase = normalizeName(port.baseName ?? port.name);
+  const indexedName = `${normalizedBase}${port.index}`;
 
   return (
     candidates.find((pin) => {
-      const searchable = getPinSearchTerms(pin).join(" ");
-      return (
-        normalizeName(searchable).includes(normalizedBase) &&
-        new RegExp(`(^|[^0-9])${port.index}([^0-9]|$)`).test(searchable)
-      );
-    }) ??
-    candidates[port.index] ??
-    null
+      return getPinSearchTerms(pin).some((term) => {
+        const parts = getNameParts(term);
+        return (
+          parts.includes(indexedName) ||
+          (parts.includes(normalizedBase) && parts.includes(String(port.index)))
+        );
+      });
+    }) ?? null
   );
 }
 
@@ -234,18 +220,55 @@ function findAliasCandidate(
 
   if (searchableAliases.length === 0) return null;
 
-  return (
-    candidates.find((pin) =>
-      getPinSearchTerms(pin).some((term) => {
-        const normalizedPin = normalizeName(term);
-        return searchableAliases.some(
-          (alias) =>
-            normalizedPin === alias ||
-            normalizedPin.includes(alias) ||
-            alias.includes(normalizedPin),
-        );
-      }),
-    ) ?? null
+  for (const alias of searchableAliases) {
+    const matches = candidates.filter((pin) =>
+      getPinSearchTerms(pin).some((term) =>
+        namesExplicitlyMatch(alias, term),
+      ),
+    );
+    if (matches.length === 1) return matches[0];
+  }
+
+  return null;
+}
+
+function namesExplicitlyMatch(alias: string, candidateName: string) {
+  const normalizedAlias = normalizeName(alias);
+  const candidateParts = getNameParts(candidateName);
+
+  if (candidateParts.includes(normalizedAlias)) return true;
+
+  if (
+    ["clk", "clock", "sysclk"].includes(normalizedAlias) &&
+    candidateParts.some((part) => /^clk\d+$/.test(part))
+  ) {
+    return true;
+  }
+
+  const canonicalAlias = canonicalName(normalizedAlias);
+  return candidateParts.some(
+    (part) => canonicalName(part) === canonicalAlias,
+  );
+}
+
+function canonicalName(name: string) {
+  if (["clk", "clock", "sysclk"].includes(name)) return "clock";
+  if (["rst", "reset", "rstn", "resetn"].includes(name)) return "reset";
+  if (["btn", "button"].includes(name)) return "button";
+  if (["sw", "switch"].includes(name)) return "switch";
+  return name;
+}
+
+function getNameParts(name: string) {
+  const separated = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  return Array.from(
+    new Set([
+      normalizeName(name),
+      ...separated
+        .split(/[^a-zA-Z0-9]+/)
+        .map(normalizeName)
+        .filter(Boolean),
+    ]),
   );
 }
 
@@ -296,7 +319,24 @@ function getPreferredTypes(
 function getPortAliases(port: HdlPort) {
   const rawName = port.baseName ?? port.name;
   const normalized = normalizeName(rawName);
+  const ignoredParts = new Set([
+    "in",
+    "out",
+    "input",
+    "output",
+    "inout",
+    "signal",
+    "sig",
+    "p",
+    "n",
+    "pos",
+    "neg",
+  ]);
   const aliases = new Set([normalized]);
+
+  for (const part of getNameParts(rawName)) {
+    if (!ignoredParts.has(part) && !/^\d+$/.test(part)) aliases.add(part);
+  }
 
   if (["clk", "clock", "sysclk"].includes(normalized)) {
     aliases.add("clk");

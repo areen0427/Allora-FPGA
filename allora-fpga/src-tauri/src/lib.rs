@@ -659,6 +659,75 @@ struct GenerateBitstreamRequest {
     constraint_file: SynthesisInputFile,
     output_extension: String,
     project_path: Option<String>,
+    target_clock_name: Option<String>,
+    target_frequency_mhz: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingPathElement {
+    kind: String,
+    name: String,
+    from: Option<String>,
+    to: Option<String>,
+    net: Option<String>,
+    delay_ns: f64,
+    sources: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingPath {
+    id: String,
+    launch_clock: Option<String>,
+    capture_clock: Option<String>,
+    startpoint: String,
+    endpoint: String,
+    total_delay_ns: f64,
+    required_time_ns: Option<f64>,
+    slack_ns: Option<f64>,
+    logic_delay_ns: f64,
+    routing_delay_ns: f64,
+    other_delay_ns: f64,
+    setup_delay_ns: f64,
+    clock_to_q_delay_ns: f64,
+    classification: Option<String>,
+    elements: Vec<TimingPathElement>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingClock {
+    name: String,
+    target_frequency_mhz: Option<f64>,
+    achieved_frequency_mhz: Option<f64>,
+    status: String,
+    worst_slack_ns: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingViolation {
+    path_id: String,
+    startpoint: String,
+    endpoint: String,
+    slack_ns: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingAnalysis {
+    engine: String,
+    device: String,
+    status: String,
+    target_clock_name: Option<String>,
+    target_frequency_mhz: Option<f64>,
+    achieved_frequency_mhz: Option<f64>,
+    worst_slack_ns: Option<f64>,
+    clocks: Vec<TimingClock>,
+    paths: Vec<TimingPath>,
+    violations: Vec<TimingViolation>,
+    message: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -669,6 +738,7 @@ struct GenerateBitstreamResponse {
     output_name: String,
     artifact_path: Option<String>,
     bytes: Vec<u8>,
+    timing: TimingAnalysis,
 }
 
 // ── FPGA Programming ─────────────────────────────────────────────────────
@@ -1106,6 +1176,7 @@ async fn generate_bitstream(
         temp_dir.join(format!("{output_name}.config"))
     };
     let artifact_path_tmp = temp_dir.join(format!("{output_name}.{}", request.output_extension));
+    let timing_report_path = temp_dir.join(format!("{output_name}.timing.json"));
     let script_path = temp_dir.join("bitstream.ys");
     let script = build_bitstream_yosys_script(&request, &json_path);
     fs::write(&script_path, &script)
@@ -1165,6 +1236,16 @@ async fn generate_bitstream(
         return Err(error(&error_details));
     }
 
+    let pnr_command = if request.board_family.to_lowercase().contains("ice40") {
+        "nextpnr-ice40"
+    } else {
+        "nextpnr-ecp5"
+    };
+    let pnr_tool = tool_command(pnr_command);
+    let supports_report = command_supports_option(&pnr_tool, "--report");
+    let supports_detailed_report =
+        supports_report && command_supports_option(&pnr_tool, "--detailed-timing-report");
+
     let (pnr_command, pnr_args) = build_nextpnr_command(
         &request.board_family,
         &request.fpga_id,
@@ -1172,7 +1253,18 @@ async fn generate_bitstream(
         &json_path,
         &constraint_path,
         &pnr_path,
+        request.target_frequency_mhz,
+        supports_report.then_some(timing_report_path.as_path()),
+        supports_detailed_report,
     )?;
+
+    if !supports_report {
+        send_log(
+            &on_log,
+            &mut logs,
+            "[timing] This nextpnr version does not support JSON timing reports; raw timing remains in the build log.",
+        );
+    }
 
     send_log(&on_log, &mut logs, "");
     send_log(&on_log, &mut logs, "[place-and-route] Command");
@@ -1193,6 +1285,47 @@ async fn generate_bitstream(
         let _ = fs::remove_dir_all(&temp_dir);
         let error_details = format_command_error(&pnr_command, &pnr_stdout, &pnr_stderr);
         return Err(error(&error_details));
+    }
+
+    let timing = if supports_report {
+        match fs::read_to_string(&timing_report_path) {
+            Ok(report_text) => match serde_json::from_str::<Value>(&report_text) {
+                Ok(report) => parse_nextpnr_timing_report(
+                    &report,
+                    &request.fpga_id,
+                    request.target_clock_name.as_deref(),
+                    request.target_frequency_mhz,
+                ),
+                Err(err) => unavailable_timing(
+                    &request.fpga_id,
+                    request.target_clock_name.clone(),
+                    request.target_frequency_mhz,
+                    format!("nextpnr timing report could not be parsed: {err}"),
+                ),
+            },
+            Err(err) => unavailable_timing(
+                &request.fpga_id,
+                request.target_clock_name.clone(),
+                request.target_frequency_mhz,
+                format!("nextpnr did not produce a readable timing report: {err}"),
+            ),
+        }
+    } else {
+        unavailable_timing(
+            &request.fpga_id,
+            request.target_clock_name.clone(),
+            request.target_frequency_mhz,
+            "Timing analysis requires a nextpnr build with JSON report support.".to_string(),
+        )
+    };
+    if let Some(message) = &timing.message {
+        send_log(&on_log, &mut logs, format!("[timing] {message}"));
+    } else {
+        send_log(
+            &on_log,
+            &mut logs,
+            format!("[timing] Status: {}", timing.status.to_uppercase()),
+        );
     }
 
     let (pack_command, pack_args) =
@@ -1251,6 +1384,7 @@ async fn generate_bitstream(
         output_name,
         artifact_path: project_artifact_path,
         bytes,
+        timing,
     })
 }
 
@@ -1851,6 +1985,9 @@ fn build_nextpnr_command(
     json_path: &Path,
     constraint_path: &Path,
     output_path: &Path,
+    target_frequency_mhz: Option<f64>,
+    report_path: Option<&Path>,
+    detailed_timing_report: bool,
 ) -> Result<(String, Vec<String>), ErrorPayload> {
     let family = board_family.to_lowercase();
     let fpga = fpga_id.to_lowercase();
@@ -1876,20 +2013,24 @@ fn build_nextpnr_command(
             .map(str::to_string)
             .unwrap_or_else(|| board_package.to_lowercase());
 
-        return Ok((
-            "nextpnr-ice40".to_string(),
-            vec![
-                device_flag.to_string(),
-                "--package".to_string(),
-                package,
-                "--json".to_string(),
-                json_path.display().to_string(),
-                "--pcf".to_string(),
-                constraint_path.display().to_string(),
-                "--asc".to_string(),
-                output_path.display().to_string(),
-            ],
-        ));
+        let mut args = vec![
+            device_flag.to_string(),
+            "--package".to_string(),
+            package,
+            "--json".to_string(),
+            json_path.display().to_string(),
+            "--pcf".to_string(),
+            constraint_path.display().to_string(),
+            "--asc".to_string(),
+            output_path.display().to_string(),
+        ];
+        append_timing_args(
+            &mut args,
+            target_frequency_mhz,
+            report_path,
+            detailed_timing_report,
+        );
+        return Ok(("nextpnr-ice40".to_string(), args));
     }
 
     if family.contains("ecp5") {
@@ -1912,26 +2053,356 @@ fn build_nextpnr_command(
             .unwrap_or_else(|| board_package.to_uppercase());
         let package = normalize_ecp5_package(&package);
 
-        return Ok((
-            "nextpnr-ecp5".to_string(),
-            vec![
-                size_flag.to_string(),
-                "--package".to_string(),
-                package,
-                "--json".to_string(),
-                json_path.display().to_string(),
-                "--lpf".to_string(),
-                constraint_path.display().to_string(),
-                "--lpf-allow-unconstrained".to_string(),
-                "--textcfg".to_string(),
-                output_path.display().to_string(),
-            ],
-        ));
+        let mut args = vec![
+            size_flag.to_string(),
+            "--package".to_string(),
+            package,
+            "--json".to_string(),
+            json_path.display().to_string(),
+            "--lpf".to_string(),
+            constraint_path.display().to_string(),
+            "--lpf-allow-unconstrained".to_string(),
+            "--textcfg".to_string(),
+            output_path.display().to_string(),
+        ];
+        append_timing_args(
+            &mut args,
+            target_frequency_mhz,
+            report_path,
+            detailed_timing_report,
+        );
+        return Ok(("nextpnr-ecp5".to_string(), args));
     }
 
     Err(error(
         "Real bitstream generation is currently only wired up for iCE40 and ECP5 boards.",
     ))
+}
+
+fn append_timing_args(
+    args: &mut Vec<String>,
+    target_frequency_mhz: Option<f64>,
+    report_path: Option<&Path>,
+    detailed_timing_report: bool,
+) {
+    if let Some(frequency) = target_frequency_mhz.filter(|value| *value > 0.0) {
+        args.push("--freq".to_string());
+        args.push(format!("{frequency:.6}"));
+    }
+    // A timing miss is a valid implementation result: retain the bitstream
+    // and expose the violation in Allora instead of discarding the build.
+    args.push("--timing-allow-fail".to_string());
+    if let Some(path) = report_path {
+        args.push("--report".to_string());
+        args.push(path.display().to_string());
+        if detailed_timing_report {
+            args.push("--detailed-timing-report".to_string());
+        }
+    }
+}
+
+fn unavailable_timing(
+    device: &str,
+    target_clock_name: Option<String>,
+    target_frequency_mhz: Option<f64>,
+    message: String,
+) -> TimingAnalysis {
+    TimingAnalysis {
+        engine: "nextpnr".to_string(),
+        device: device.to_string(),
+        status: if target_frequency_mhz.is_some() {
+            "unavailable".to_string()
+        } else {
+            "unconstrained".to_string()
+        },
+        target_clock_name,
+        target_frequency_mhz,
+        achieved_frequency_mhz: None,
+        worst_slack_ns: None,
+        clocks: Vec::new(),
+        paths: Vec::new(),
+        violations: Vec::new(),
+        message: Some(message),
+    }
+}
+
+fn parse_nextpnr_timing_report(
+    report: &Value,
+    device: &str,
+    requested_clock_name: Option<&str>,
+    requested_frequency_mhz: Option<f64>,
+) -> TimingAnalysis {
+    let constrained = requested_frequency_mhz.is_some_and(|frequency| frequency > 0.0);
+    let mut clock_constraints = HashMap::<String, f64>::new();
+    let mut clocks = Vec::<TimingClock>::new();
+
+    if let Some(fmax) = report.get("fmax").and_then(Value::as_object) {
+        for (raw_name, values) in fmax {
+            let achieved = values.get("achieved").and_then(Value::as_f64);
+            let report_constraint = values.get("constraint").and_then(Value::as_f64);
+            let target = constrained.then_some(report_constraint).flatten();
+            if let Some(constraint) = target {
+                clock_constraints.insert(raw_name.clone(), constraint);
+            }
+            let status = match (target, achieved) {
+                (Some(target), Some(achieved)) if achieved + f64::EPSILON >= target => "pass",
+                (Some(_), Some(_)) => "fail",
+                _ => "unconstrained",
+            };
+            clocks.push(TimingClock {
+                name: display_clock_name(raw_name, requested_clock_name),
+                target_frequency_mhz: target,
+                achieved_frequency_mhz: achieved,
+                status: status.to_string(),
+                worst_slack_ns: None,
+            });
+        }
+    }
+
+    clocks.sort_by(|left, right| left.name.cmp(&right.name));
+    let mut paths = Vec::<TimingPath>::new();
+    if let Some(critical_paths) = report.get("critical_paths").and_then(Value::as_array) {
+        for (index, raw_path) in critical_paths.iter().enumerate() {
+            let raw_launch = raw_path
+                .get("from")
+                .and_then(Value::as_str)
+                .unwrap_or("<async>");
+            let raw_capture = raw_path
+                .get("to")
+                .and_then(Value::as_str)
+                .unwrap_or("<async>");
+            let launch_clock = event_clock_name(raw_launch)
+                .map(|name| display_clock_name(name, requested_clock_name));
+            let capture_clock = event_clock_name(raw_capture)
+                .map(|name| display_clock_name(name, requested_clock_name));
+            let raw_elements = raw_path
+                .get("path")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let mut elements = Vec::<TimingPathElement>::new();
+            let mut logic_delay_ns = 0.0;
+            let mut routing_delay_ns = 0.0;
+            let mut setup_delay_ns = 0.0;
+            let mut clock_to_q_delay_ns = 0.0;
+
+            for element in &raw_elements {
+                let kind = element
+                    .get("type")
+                    .and_then(Value::as_str)
+                    .unwrap_or("other")
+                    .to_string();
+                let delay_ns = element.get("delay").and_then(Value::as_f64).unwrap_or(0.0);
+                match kind.as_str() {
+                    "logic" => logic_delay_ns += delay_ns,
+                    "routing" => routing_delay_ns += delay_ns,
+                    "setup" => setup_delay_ns += delay_ns,
+                    "clk-to-q" => clock_to_q_delay_ns += delay_ns,
+                    _ => {}
+                }
+                let from = timing_point(element.get("from"));
+                let to = timing_point(element.get("to"));
+                let net = element
+                    .get("net")
+                    .and_then(Value::as_str)
+                    .map(str::to_string);
+                let name = net
+                    .clone()
+                    .or_else(|| to.clone())
+                    .or_else(|| from.clone())
+                    .unwrap_or_else(|| kind.clone());
+                let sources = element
+                    .get("sources")
+                    .and_then(Value::as_array)
+                    .map(|sources| {
+                        sources
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(str::to_string)
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                elements.push(TimingPathElement {
+                    kind,
+                    name,
+                    from,
+                    to,
+                    net,
+                    delay_ns,
+                    sources,
+                });
+            }
+
+            let total_delay_ns = elements.iter().map(|element| element.delay_ns).sum::<f64>();
+            let required_time_ns = if raw_launch == raw_capture {
+                event_clock_name(raw_capture)
+                    .and_then(|name| clock_constraints.get(name))
+                    .filter(|frequency| **frequency > 0.0)
+                    .map(|frequency| 1000.0 / frequency)
+            } else {
+                None
+            };
+            let slack_ns = required_time_ns.map(|required| required - total_delay_ns);
+            let other_delay_ns = (total_delay_ns - logic_delay_ns - routing_delay_ns).max(0.0);
+            let classification =
+                if logic_delay_ns <= f64::EPSILON && routing_delay_ns <= f64::EPSILON {
+                    None
+                } else if routing_delay_ns > logic_delay_ns * 1.25 {
+                    Some("routing-limited".to_string())
+                } else if logic_delay_ns > routing_delay_ns * 1.25 {
+                    Some("logic-limited".to_string())
+                } else {
+                    Some("mixed".to_string())
+                };
+            let startpoint = elements
+                .first()
+                .and_then(|element| element.from.clone())
+                .unwrap_or_else(|| raw_launch.to_string());
+            let endpoint = elements
+                .last()
+                .and_then(|element| element.to.clone())
+                .unwrap_or_else(|| raw_capture.to_string());
+            paths.push(TimingPath {
+                id: format!("path-{}", index + 1),
+                launch_clock,
+                capture_clock,
+                startpoint,
+                endpoint,
+                total_delay_ns,
+                required_time_ns,
+                slack_ns,
+                logic_delay_ns,
+                routing_delay_ns,
+                other_delay_ns,
+                setup_delay_ns,
+                clock_to_q_delay_ns,
+                classification,
+                elements,
+            });
+        }
+    }
+
+    paths.sort_by(|left, right| match (left.slack_ns, right.slack_ns) {
+        (Some(left), Some(right)) => left.total_cmp(&right),
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => right.total_delay_ns.total_cmp(&left.total_delay_ns),
+    });
+    for (index, path) in paths.iter_mut().enumerate() {
+        path.id = format!("path-{}", index + 1);
+    }
+
+    for clock in &mut clocks {
+        clock.worst_slack_ns = paths
+            .iter()
+            .filter(|path| path.capture_clock.as_deref() == Some(clock.name.as_str()))
+            .filter_map(|path| path.slack_ns)
+            .min_by(f64::total_cmp);
+    }
+
+    let worst_slack_ns = paths
+        .iter()
+        .filter_map(|path| path.slack_ns)
+        .min_by(f64::total_cmp);
+    let achieved_frequency_mhz = clocks
+        .iter()
+        .filter_map(|clock| clock.achieved_frequency_mhz)
+        .min_by(f64::total_cmp);
+    let violations = paths
+        .iter()
+        .filter_map(|path| {
+            path.slack_ns
+                .filter(|slack| *slack < 0.0)
+                .map(|slack| TimingViolation {
+                    path_id: path.id.clone(),
+                    startpoint: path.startpoint.clone(),
+                    endpoint: path.endpoint.clone(),
+                    slack_ns: slack,
+                })
+        })
+        .collect::<Vec<_>>();
+    let status = if !constrained {
+        "unconstrained"
+    } else if clocks.is_empty() {
+        "unavailable"
+    } else if clocks.iter().any(|clock| clock.status == "fail") || !violations.is_empty() {
+        "fail"
+    } else {
+        "pass"
+    };
+    let message = match status {
+        "unconstrained" => Some(
+            "No clock constraint was supplied. Add a mapped board clock to evaluate timing."
+                .to_string(),
+        ),
+        "unavailable" => Some(
+            "nextpnr completed, but the report did not contain clock timing information."
+                .to_string(),
+        ),
+        _ => None,
+    };
+
+    TimingAnalysis {
+        engine: "nextpnr".to_string(),
+        device: device.to_string(),
+        status: status.to_string(),
+        target_clock_name: requested_clock_name.map(str::to_string),
+        target_frequency_mhz: requested_frequency_mhz,
+        achieved_frequency_mhz,
+        worst_slack_ns,
+        clocks,
+        paths,
+        violations,
+        message,
+    }
+}
+
+fn event_clock_name(event: &str) -> Option<&str> {
+    if event == "<async>" {
+        None
+    } else {
+        Some(
+            event
+                .strip_prefix("posedge ")
+                .or_else(|| event.strip_prefix("negedge "))
+                .unwrap_or(event),
+        )
+    }
+}
+
+fn display_clock_name(raw_name: &str, requested_name: Option<&str>) -> String {
+    if let Some(requested) = requested_name.filter(|name| raw_name.contains(*name)) {
+        return requested.to_string();
+    }
+    raw_name
+        .split('$')
+        .next()
+        .filter(|name| !name.is_empty())
+        .unwrap_or(raw_name)
+        .to_string()
+}
+
+fn timing_point(value: Option<&Value>) -> Option<String> {
+    let point = value?.as_object()?;
+    let cell = point.get("cell").and_then(Value::as_str);
+    let port = point.get("port").and_then(Value::as_str);
+    match (cell, port) {
+        (Some(cell), Some(port)) => Some(format!("{cell}.{port}")),
+        (Some(cell), None) => Some(cell.to_string()),
+        (None, Some(port)) => Some(port.to_string()),
+        _ => None,
+    }
+}
+
+fn command_supports_option(command: &Path, option: &str) -> bool {
+    Command::new(command)
+        .arg("--help")
+        .output()
+        .map(|output| {
+            String::from_utf8_lossy(&output.stdout).contains(option)
+                || String::from_utf8_lossy(&output.stderr).contains(option)
+        })
+        .unwrap_or(false)
 }
 
 fn normalize_ecp5_package(package: &str) -> String {
@@ -1941,6 +2412,106 @@ fn normalize_ecp5_package(package: &str) -> String {
         "BG554" | "BG554I" => "CABGA554".to_string(),
         "BG756" | "BG756C" => "CABGA756".to_string(),
         value => value.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod timing_tests {
+    use super::*;
+
+    fn sample_report(constraint: f64, achieved: f64, routing: f64) -> Value {
+        serde_json::json!({
+            "fmax": {
+                "clk$SB_IO_IN_$glb_clk": {
+                    "achieved": achieved,
+                    "constraint": constraint
+                }
+            },
+            "critical_paths": [{
+                "from": "posedge clk$SB_IO_IN_$glb_clk",
+                "to": "posedge clk$SB_IO_IN_$glb_clk",
+                "path": [
+                    {
+                        "type": "clk-to-q",
+                        "delay": 1.0,
+                        "from": { "cell": "source_reg", "port": "Q" },
+                        "to": { "cell": "source_reg", "port": "Q" }
+                    },
+                    {
+                        "type": "routing",
+                        "delay": routing,
+                        "net": "data_net",
+                        "from": { "cell": "source_reg", "port": "Q" },
+                        "to": { "cell": "logic_cell", "port": "I0" },
+                        "sources": ["top.sv:10.3-10.12"]
+                    },
+                    {
+                        "type": "logic",
+                        "delay": 2.0,
+                        "from": { "cell": "logic_cell", "port": "I0" },
+                        "to": { "cell": "logic_cell", "port": "O" }
+                    },
+                    {
+                        "type": "setup",
+                        "delay": 1.0,
+                        "from": { "cell": "capture_reg", "port": "D" },
+                        "to": { "cell": "capture_reg", "port": "D" }
+                    }
+                ]
+            }]
+        })
+    }
+
+    #[test]
+    fn normalizes_real_nextpnr_report_shape() {
+        let timing = parse_nextpnr_timing_report(
+            &sample_report(12.0, 100.0, 3.0),
+            "ice40up5k-sg48",
+            Some("clk"),
+            Some(12.0),
+        );
+
+        assert_eq!(timing.status, "pass");
+        assert_eq!(timing.clocks.len(), 1);
+        assert_eq!(timing.clocks[0].name, "clk");
+        assert_eq!(timing.paths.len(), 1);
+        assert_eq!(timing.paths[0].startpoint, "source_reg.Q");
+        assert_eq!(timing.paths[0].endpoint, "capture_reg.D");
+        assert_eq!(timing.paths[0].routing_delay_ns, 3.0);
+        assert_eq!(timing.paths[0].logic_delay_ns, 2.0);
+        assert!((timing.paths[0].slack_ns.unwrap() - 76.333_333).abs() < 0.001);
+    }
+
+    #[test]
+    fn timing_failure_is_normalized_as_a_violation() {
+        let timing = parse_nextpnr_timing_report(
+            &sample_report(250.0, 100.0, 6.0),
+            "ice40up5k-sg48",
+            Some("clk"),
+            Some(250.0),
+        );
+
+        assert_eq!(timing.status, "fail");
+        assert_eq!(timing.violations.len(), 1);
+        assert_eq!(timing.violations[0].slack_ns, -6.0);
+        assert_eq!(
+            timing.paths[0].classification.as_deref(),
+            Some("routing-limited")
+        );
+    }
+
+    #[test]
+    fn report_without_user_constraint_does_not_claim_pass() {
+        let timing = parse_nextpnr_timing_report(
+            &sample_report(12.0, 100.0, 3.0),
+            "ice40up5k-sg48",
+            None,
+            None,
+        );
+
+        assert_eq!(timing.status, "unconstrained");
+        assert!(timing.worst_slack_ns.is_none());
+        assert!(timing.clocks[0].target_frequency_mhz.is_none());
     }
 }
 

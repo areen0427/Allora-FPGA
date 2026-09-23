@@ -392,13 +392,16 @@ function ResourcePinMapper({
   getSelectedPin: (portName: string) => string;
   setPortMapping: (portName: string, pinKey: string) => void;
 }) {
-  const selectedPort =
-    ports.find((port) => port.name === selectedPortName) ?? ports[0] ?? null;
-  const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
   const pinOptions = getPinOptions(board);
   const pinOptionMap = new Map(pinOptions.map((pin) => [pin.key, pin]));
-  const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
   const mappedPorts = ports.filter((port) => getSelectedPin(port.name));
+  const unmappedPorts = ports.filter((port) => !getSelectedPin(port.name));
+  const selectedPort =
+    unmappedPorts.find((port) => port.name === selectedPortName) ??
+    unmappedPorts[0] ??
+    null;
+  const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
+  const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
   const resourceGroups = getResourceGroups(board);
   const constraintPreview = createConstraintPreview(
     board,
@@ -477,6 +480,7 @@ function ResourcePinMapper({
             <select
               value={selectedPort?.name ?? ""}
               onChange={(event) => setSelectedPortName(event.target.value)}
+              disabled={unmappedPorts.length === 0}
               style={{
                 width: "100%",
                 minWidth: 0,
@@ -489,7 +493,10 @@ function ResourcePinMapper({
                 fontWeight: 800,
               }}
             >
-              {ports.map((port) => (
+              {unmappedPorts.length === 0 ? (
+                <option value="">All ports mapped</option>
+              ) : null}
+              {unmappedPorts.map((port) => (
                 <option key={port.name} value={port.name}>
                   {port.name} - {port.direction}
                 </option>

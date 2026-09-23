@@ -1376,6 +1376,398 @@ html[data-theme="black-ice"]
   color: var(--dashboard-strong-text) !important;
 }
 
+/* Post-route timing stays within the Build workspace and uses the same
+   engineering surface language as synthesis, pins, and build logs. */
+.bitstream-results {
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.timing-analysis {
+  flex: 0 0 auto;
+  border: 1px solid var(--dashboard-surface-border, #dbe4f0);
+  border-radius: 18px;
+  background: var(--dashboard-surface-bg, rgba(248, 250, 252, 0.92));
+  box-shadow: var(--dashboard-surface-shadow, inset 0 1px 0 #fff);
+  color: var(--dashboard-text, #334155);
+  padding: 18px;
+}
+
+.timing-heading,
+.timing-path-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.timing-heading h3 {
+  margin: 2px 0 0;
+  color: var(--dashboard-strong-text, #0f172a);
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.timing-eyebrow,
+.timing-section-label {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.timing-status {
+  border: 1px solid rgba(34, 197, 94, 0.34);
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.timing-fail .timing-status {
+  border-color: rgba(239, 68, 68, 0.38);
+  background: rgba(239, 68, 68, 0.11);
+  color: #b91c1c;
+}
+
+.timing-unconstrained .timing-status,
+.timing-unavailable .timing-status {
+  border-color: rgba(245, 158, 11, 0.38);
+  background: rgba(245, 158, 11, 0.1);
+  color: #a16207;
+}
+
+.timing-message,
+.timing-empty-path {
+  margin: 14px 0 0;
+  border-left: 2px solid rgba(245, 158, 11, 0.58);
+  color: var(--dashboard-muted-text, #64748b);
+  padding: 2px 0 2px 11px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.timing-summary,
+.timing-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px 0 0;
+  border-block: 1px solid var(--dashboard-control-border, #e2e8f0);
+}
+
+.timing-summary > div,
+.timing-breakdown > div {
+  min-width: 0;
+  padding: 12px;
+}
+
+.timing-summary > div + div,
+.timing-breakdown > div + div {
+  border-left: 1px solid var(--dashboard-control-border, #e2e8f0);
+}
+
+.timing-summary dt,
+.timing-breakdown dt {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.timing-summary dd,
+.timing-breakdown dd {
+  margin: 4px 0 0;
+  color: var(--dashboard-strong-text, #0f172a);
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.timing-summary small {
+  display: block;
+  margin-top: 2px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 10px;
+}
+
+.timing-summary .positive,
+.timing-breakdown .positive {
+  color: #15803d;
+}
+
+.timing-summary .negative,
+.timing-breakdown .negative,
+.timing-path-list .negative {
+  color: #dc2626;
+}
+
+.timing-clock-section {
+  margin-top: 18px;
+}
+
+.timing-clock-table {
+  margin-top: 7px;
+  overflow: hidden;
+  border: 1px solid var(--dashboard-control-border, #e2e8f0);
+  border-radius: 12px;
+}
+
+.timing-clock-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1.3fr) repeat(3, minmax(76px, 0.7fr));
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--dashboard-control-border, #e2e8f0);
+  background: transparent;
+  color: inherit;
+  padding: 9px 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timing-clock-row.head {
+  border-top: 0;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.timing-clock-row.selected {
+  background: var(--dashboard-control-active-bg, #eff6ff);
+}
+
+.timing-clock-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-clock-status {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.timing-clock-status.pass {
+  color: #16a34a;
+}
+
+.timing-clock-status.fail {
+  color: #dc2626;
+}
+
+.timing-path-workspace {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.32fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.timing-path-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.timing-path-list button {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timing-path-list button:hover,
+.timing-path-list button.selected {
+  border-color: var(--dashboard-control-active-border, #93c5fd);
+  background: var(--dashboard-control-active-bg, #eff6ff);
+}
+
+.timing-path-rank {
+  color: var(--dashboard-muted-text, #64748b);
+  font: 750 10px "JetBrains Mono", monospace;
+}
+
+.timing-path-route {
+  display: grid;
+  min-width: 0;
+}
+
+.timing-path-route strong,
+.timing-path-route small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-path-route strong {
+  color: var(--dashboard-strong-text, #0f172a);
+  font-size: 10px;
+}
+
+.timing-path-route small,
+.timing-path-list button > span:last-child {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 9px;
+}
+
+.timing-path-detail {
+  min-width: 0;
+  border-left: 1px solid var(--dashboard-control-border, #e2e8f0);
+  padding-left: 14px;
+}
+
+.timing-path-title strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--dashboard-strong-text, #0f172a);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.timing-cause {
+  border: 1px solid var(--dashboard-control-border, #dbe4f0);
+  border-radius: 999px;
+  color: var(--dashboard-muted-text, #64748b);
+  padding: 5px 8px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.timing-signal-path {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 13px;
+  overflow-x: auto;
+  padding: 2px 1px 8px;
+}
+
+.timing-terminal,
+.timing-stage {
+  position: relative;
+  display: grid;
+  align-content: center;
+  flex: 0 0 112px;
+  min-height: 68px;
+  box-sizing: border-box;
+  border: 1px solid var(--dashboard-control-border, #dbe4f0);
+  background: var(--dashboard-control-bg, #fff);
+  padding: 8px;
+  text-align: center;
+}
+
+.timing-terminal {
+  border-radius: 9px;
+  box-shadow: inset 0 2px 0 rgba(59, 130, 246, 0.5);
+}
+
+.timing-stage {
+  flex-basis: 96px;
+  margin-inline: 13px;
+  border-radius: 50%;
+  box-shadow: inset 0 2px 0 rgba(14, 165, 233, 0.4);
+}
+
+.timing-stage-line {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 1px);
+  width: 27px;
+  height: 1px;
+  background: linear-gradient(90deg, #60a5fa, #22d3ee);
+}
+
+.timing-stage-line::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 0;
+  border-block: 3px solid transparent;
+  border-left: 5px solid #22d3ee;
+}
+
+.timing-terminal span,
+.timing-stage-kind {
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.timing-terminal strong,
+.timing-stage strong {
+  margin-top: 3px;
+  color: var(--dashboard-strong-text, #0f172a);
+  font: 800 10px "JetBrains Mono", monospace;
+  overflow-wrap: anywhere;
+}
+
+.timing-stage small {
+  margin-top: 2px;
+  color: var(--dashboard-muted-text, #64748b);
+  font-size: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-breakdown {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+html[data-theme="black-ice"] .timing-status {
+  color: #86efac;
+}
+
+html[data-theme="black-ice"] .timing-fail .timing-status,
+html[data-theme="black-ice"] .timing-summary .negative,
+html[data-theme="black-ice"] .timing-breakdown .negative,
+html[data-theme="black-ice"] .timing-path-list .negative {
+  color: #fca5a5;
+}
+
+html[data-theme="black-ice"] .timing-unconstrained .timing-status,
+html[data-theme="black-ice"] .timing-unavailable .timing-status {
+  color: #fcd34d;
+}
+
+html[data-theme="black-ice"] .timing-summary .positive,
+html[data-theme="black-ice"] .timing-breakdown .positive {
+  color: #86efac;
+}
+
+@media (max-width: 1050px) {
+  .timing-path-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .timing-path-detail {
+    border-top: 1px solid var(--dashboard-control-border, #e2e8f0);
+    border-left: 0;
+    padding-top: 14px;
+    padding-left: 0;
+  }
+}
+
 .pin-map-preview-header {
   color: var(--dashboard-text) !important;
   background: var(--dashboard-preview-header-bg);
