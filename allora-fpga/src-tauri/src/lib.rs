@@ -106,6 +106,8 @@ struct CreateProjectWorkspaceRequest {
     project_name: String,
     folder_name: String,
     parent_directory: Option<String>,
+    #[serde(default)]
+    initialize_git: bool,
     files: Vec<WorkspaceFileSpec>,
 }
 
@@ -2770,6 +2772,22 @@ fn error(message: &str) -> ErrorPayload {
 fn create_project_workspace(
     request: CreateProjectWorkspaceRequest,
 ) -> Result<CreateProjectWorkspaceResponse, ErrorPayload> {
+    if request.initialize_git {
+        let git_check = Command::new("git")
+            .arg("--version")
+            .output()
+            .map_err(|err| {
+                error(&format!(
+                    "Git is required to initialize this project but was not found: {err}"
+                ))
+            })?;
+        if !git_check.status.success() {
+            return Err(error(
+                "Git is required to initialize this project but is not available.",
+            ));
+        }
+    }
+
     let parent = request
         .parent_directory
         .as_deref()
@@ -2787,6 +2805,25 @@ fn create_project_workspace(
 
     fs::create_dir_all(&project_dir)
         .map_err(|err| error(&format!("Unable to create project directory: {err}")))?;
+
+    if request.initialize_git {
+        let git_init = Command::new("git")
+            .arg("init")
+            .arg(&project_dir)
+            .output()
+            .map_err(|err| error(&format!("Unable to initialize Git: {err}")))?;
+
+        if !git_init.status.success() {
+            let message = String::from_utf8_lossy(&git_init.stderr).trim().to_string();
+            let _ = fs::remove_dir_all(&project_dir);
+            let error_message = if message.is_empty() {
+                "Unable to initialize the local Git repository.".to_string()
+            } else {
+                format!("Unable to initialize the local Git repository: {message}")
+            };
+            return Err(error(&error_message));
+        }
+    }
 
     let mut files = Vec::new();
 

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  CheckCircle2,
   Cpu,
   FileCode2,
   FolderOpen,
@@ -36,6 +35,10 @@ type ProjectSetupProps = {
     language: string,
     parentDirectory: string | null,
     templateId: string,
+    topModule: string,
+    sourceFileName: string,
+    createTestbench: boolean,
+    initializeGit: boolean,
   ) => Promise<void> | void;
 };
 
@@ -58,15 +61,32 @@ export default function ProjectSetup({
   );
   const [isChoosingLocation, setIsChoosingLocation] = useState(false);
   const [templateId, setTemplateId] = useState("blinky");
+  const [topModule, setTopModule] = useState("top");
+  const [sourceFileName, setSourceFileName] = useState("top.v");
+  const [topModuleCustomized, setTopModuleCustomized] = useState(false);
+  const [sourceFileCustomized, setSourceFileCustomized] = useState(false);
+  const [createTestbench, setCreateTestbench] = useState(false);
+  const [initializeGit, setInitializeGit] = useState(false);
+  const [creationError, setCreationError] = useState("");
   const capabilities = useMemo(() => getBoardCapabilities(board), [board]);
   const selectedTemplate = getTemplateById(templateId) ?? PROJECT_TEMPLATES[0];
-  const projectPlan = getProjectPlan(projectName, language, board);
+  const projectPlan = getProjectPlan(
+    topModule,
+    sourceFileName,
+    language,
+    board,
+    createTestbench,
+    initializeGit,
+  );
   const availableTemplateCount = PROJECT_TEMPLATES.filter(
     (template) => !getTemplateUnavailableReason(template, board, language),
   ).length;
 
   function changeLanguage(nextLanguage: TemplateLanguage) {
     setLanguage(nextLanguage);
+    setSourceFileName((current) =>
+      replaceSourceExtension(current, getSourceExtension(nextLanguage)),
+    );
     const selected = PROJECT_TEMPLATES.find(
       (template) => template.id === templateId,
     );
@@ -75,6 +95,25 @@ export default function ProjectSetup({
       getTemplateUnavailableReason(selected, board, nextLanguage)
     ) {
       setTemplateId("blinky");
+    }
+  }
+
+  function changeProjectName(nextProjectName: string) {
+    setProjectName(nextProjectName);
+    if (topModuleCustomized) return;
+
+    const nextTopModule = sanitizeModuleName(nextProjectName || "top");
+    setTopModule(nextTopModule);
+    if (!sourceFileCustomized) {
+      setSourceFileName(`${nextTopModule}.${getSourceExtension(language)}`);
+    }
+  }
+
+  function changeTopModule(nextTopModule: string) {
+    setTopModule(nextTopModule);
+    setTopModuleCustomized(true);
+    if (!sourceFileCustomized) {
+      setSourceFileName(`${nextTopModule}.${getSourceExtension(language)}`);
     }
   }
 
@@ -92,10 +131,26 @@ export default function ProjectSetup({
   }
 
   async function createProject() {
-    if (isCreating || !projectName.trim() || requiresLocation) return;
+    if (isCreating || !canCreateProject || requiresLocation) return;
     setIsCreating(true);
+    setCreationError("");
     try {
-      await onCreateProject(projectName, language, parentDirectory, templateId);
+      await onCreateProject(
+        projectName,
+        language,
+        parentDirectory,
+        templateId,
+        topModule,
+        sourceFileName,
+        createTestbench,
+        initializeGit,
+      );
+    } catch (error) {
+      setCreationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create the project.",
+      );
     } finally {
       setIsCreating(false);
     }
@@ -106,6 +161,13 @@ export default function ProjectSetup({
     (settings.projectLocationMode === "ask" ||
       settings.projectLocationMode === "last-used") &&
     !parentDirectory;
+  const expectedExtension = getSourceExtension(language);
+  const topModuleIsValid = /^[A-Za-z_][A-Za-z0-9_]*$/.test(topModule);
+  const sourceFileIsValid =
+    /^[A-Za-z0-9_.-]+$/.test(sourceFileName) &&
+    sourceFileName.toLowerCase().endsWith(`.${expectedExtension}`);
+  const canCreateProject =
+    Boolean(projectName.trim()) && topModuleIsValid && sourceFileIsValid;
 
   return (
     <div className="glass-page project-setup-page">
@@ -137,7 +199,7 @@ export default function ProjectSetup({
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              onChange={(event) => setProjectName(event.target.value)}
+              onChange={(event) => changeProjectName(event.target.value)}
               placeholder="Enter a project name"
             />
           </label>
@@ -161,9 +223,7 @@ export default function ProjectSetup({
               <FolderOpen size={18} />
               <div>
                 <div>Project location</div>
-                <p title={getLocationLabel()}>
-                  {getLocationLabel()}
-                </p>
+                <p title={getLocationLabel()}>{getLocationLabel()}</p>
               </div>
             </div>
             <button
@@ -193,10 +253,16 @@ export default function ProjectSetup({
             />
           </div>
 
+          {creationError ? (
+            <div className="project-creation-error" role="alert">
+              {creationError}
+            </div>
+          ) : null}
+
           <button
             className="project-create-button"
             type="button"
-            disabled={!projectName.trim() || requiresLocation || isCreating}
+            disabled={!canCreateProject || requiresLocation || isCreating}
             onClick={() => void createProject()}
           >
             {isCreating ? "Creating Project..." : "Create Project"}
@@ -206,62 +272,125 @@ export default function ProjectSetup({
         <section className="liquid-home-card project-setup-card project-template-panel">
           <div className="project-panel-title">
             <Layers3 size={18} />
-            Starter Template
+            Project Structure
           </div>
 
-          <div className="template-grid">
-            {PROJECT_TEMPLATES.map((template) => {
-              const reason = getTemplateUnavailableReason(
-                template,
-                board,
-                language,
-              );
-              const disabled = Boolean(reason);
-              const selected = templateId === template.id;
+          <label className="project-setup-field project-template-select">
+            <span>Starting point</span>
+            <select
+              value={templateId}
+              onChange={(event) => setTemplateId(event.target.value)}
+            >
+              {PROJECT_TEMPLATES.map((template) => {
+                const reason = getTemplateUnavailableReason(
+                  template,
+                  board,
+                  language,
+                );
+                return (
+                  <option
+                    key={template.id}
+                    value={template.id}
+                    disabled={Boolean(reason)}
+                  >
+                    {template.name}
+                    {reason ? ` — ${reason}` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
 
-              return (
-                <button
-                  type="button"
-                  key={template.id}
-                  disabled={disabled}
-                  className={[
-                    "template-card",
-                    selected ? "selected" : "",
-                    disabled ? "disabled" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  title={reason ?? template.description}
-                  onClick={() => setTemplateId(template.id)}
-                >
-                  <span className="template-card-name">{template.name}</span>
-                  <span className="template-card-desc">
-                    {reason ?? template.description}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="project-template-note">
-            <CheckCircle2 size={15} />
-            <span>
-              {selectedTemplate.name} · {availableTemplateCount}/
-              {PROJECT_TEMPLATES.length} available
-            </span>
-          </div>
-
-          <div className="template-inspector">
+          <div className="project-template-summary">
+            <Lightbulb size={16} />
             <div>
-              <Lightbulb size={16} />
-              <span>Template Output</span>
+              <strong>{selectedTemplate.name}</strong>
+              <p>{selectedTemplate.description}</p>
+              <span>
+                {availableTemplateCount}/{PROJECT_TEMPLATES.length} starters
+                available for this board
+              </span>
             </div>
-            <p>{selectedTemplate.description}</p>
-            <div className="template-meta-row">
-              <span>{language}</span>
-              <span>{selectedTemplate.generate ? "Pre-mapped I/O" : "Starter flow"}</span>
-              <span>{selectedTemplate.languages.join(" / ")}</span>
+          </div>
+
+          <div className="project-name-fields">
+            <label className="project-setup-field">
+              <span>Top module</span>
+              <input
+                value={topModule}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-invalid={!topModuleIsValid}
+                onChange={(event) => changeTopModule(event.target.value)}
+              />
+              {!topModuleIsValid ? (
+                <small>
+                  Use letters, numbers, and underscores; do not start with a
+                  number.
+                </small>
+              ) : null}
+            </label>
+            <label className="project-setup-field">
+              <span>Source file</span>
+              <input
+                value={sourceFileName}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-invalid={!sourceFileIsValid}
+                onChange={(event) => {
+                  setSourceFileName(event.target.value);
+                  setSourceFileCustomized(true);
+                }}
+              />
+              {!sourceFileIsValid ? (
+                <small>
+                  Use a .{expectedExtension} filename without folders.
+                </small>
+              ) : null}
+            </label>
+          </div>
+
+          <div className="project-option-list">
+            <label className="project-option-row">
+              <span>
+                <strong>Create testbench</strong>
+                <small>
+                  Add{" "}
+                  {projectPlan.testbenchFile ??
+                    `sim/${topModule || "top"}_tb.${expectedExtension}`}
+                </small>
+              </span>
+              <input
+                type="checkbox"
+                checked={createTestbench}
+                onChange={(event) => setCreateTestbench(event.target.checked)}
+              />
+            </label>
+            <label className="project-option-row">
+              <span>
+                <strong>Initialize local Git repository</strong>
+                <small>Creates .git and a project .gitignore</small>
+              </span>
+              <input
+                type="checkbox"
+                checked={initializeGit}
+                onChange={(event) => setInitializeGit(event.target.checked)}
+              />
+            </label>
+          </div>
+
+          <div className="project-file-preview">
+            <div>
+              <ListChecks size={16} />
+              <span>Files to create</span>
             </div>
+            <ul>
+              {projectPlan.files.map((file) => (
+                <li key={file}>{file}</li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -300,11 +429,26 @@ export default function ProjectSetup({
             </div>
 
             <div className="capability-pill-list">
-              <CapabilityPill label="Synthesis" supported={capabilities.synthesisDiagram.supported} />
-              <CapabilityPill label="Bitstream" supported={capabilities.bitstream.supported} />
-              <CapabilityPill label="Pin Mapping" supported={capabilities.pinMapping.supported} />
-              <CapabilityPill label="Programming" supported={capabilities.programming.supported} />
-              <CapabilityPill label="Diagram" supported={capabilities.synthesisDiagram.supported} />
+              <CapabilityPill
+                label="Synthesis"
+                supported={capabilities.synthesisDiagram.supported}
+              />
+              <CapabilityPill
+                label="Bitstream"
+                supported={capabilities.bitstream.supported}
+              />
+              <CapabilityPill
+                label="Pin Mapping"
+                supported={capabilities.pinMapping.supported}
+              />
+              <CapabilityPill
+                label="Programming"
+                supported={capabilities.programming.supported}
+              />
+              <CapabilityPill
+                label="Diagram"
+                supported={capabilities.synthesisDiagram.supported}
+              />
             </div>
 
             <div className="project-summary-grid">
@@ -312,10 +456,17 @@ export default function ProjectSetup({
               <SummaryItem label="Device" value={board.device} />
               <SummaryItem label="Package" value={board.package} />
               <SummaryItem label="Toolchain" value={capabilities.toolchain} />
-              <SummaryItem label="Constraints" value={board.constraintsFile.toUpperCase()} />
+              <SummaryItem
+                label="Constraints"
+                value={board.constraintsFile.toUpperCase()}
+              />
               <SummaryItem
                 label="Programmer"
-                value={board.programmer?.command ?? board.toolchain.program ?? "Not configured"}
+                value={
+                  board.programmer?.command ??
+                  board.toolchain.program ??
+                  "Not configured"
+                }
               />
             </div>
           </section>
@@ -360,7 +511,9 @@ function CapabilityPill({
   supported: boolean;
 }) {
   return (
-    <span className={supported ? "capability-pill supported" : "capability-pill"}>
+    <span
+      className={supported ? "capability-pill supported" : "capability-pill"}
+    >
       {label}
     </span>
   );
@@ -376,19 +529,46 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
 }
 
 function getProjectPlan(
-  projectName: string,
+  topModule: string,
+  sourceFileName: string,
   language: TemplateLanguage,
   board: BoardDefinition,
+  createTestbench: boolean,
+  initializeGit: boolean,
 ) {
-  const topModule = sanitizeModuleName(projectName || "top");
-  const sourceExtension =
-    language === "SystemVerilog" ? "sv" : language === "VHDL" ? "vhd" : "v";
+  const sourceExtension = getSourceExtension(language);
+  const safeTopModule = topModule || "top";
+  const testbenchFile = createTestbench
+    ? `sim/${safeTopModule}_tb.${sourceExtension}`
+    : null;
+  const files = [
+    `src/${sourceFileName || `${safeTopModule}.${sourceExtension}`}`,
+    ...(testbenchFile ? [testbenchFile] : []),
+    `constraints/constraints.${board.constraintsFile}`,
+    "allora-project.json",
+    ...(initializeGit ? [".gitignore"] : []),
+  ];
 
   return {
-    topModule,
-    sourceFile: `${topModule}.${sourceExtension}`,
+    topModule: safeTopModule,
+    sourceFile: sourceFileName || `${safeTopModule}.${sourceExtension}`,
     constraintsFile: `constraints.${board.constraintsFile}`,
+    testbenchFile,
+    files,
   };
+}
+
+function getSourceExtension(language: TemplateLanguage) {
+  return language === "SystemVerilog"
+    ? "sv"
+    : language === "VHDL"
+      ? "vhd"
+      : "v";
+}
+
+function replaceSourceExtension(fileName: string, extension: string) {
+  const baseName = fileName.replace(/\.[^.]+$/, "") || "top";
+  return `${baseName}.${extension}`;
 }
 
 function sanitizeModuleName(name: string) {

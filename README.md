@@ -1,6 +1,6 @@
 # Allora FPGA
 
-Allora FPGA is an open-source desktop development environment for open-source FPGA workflows. Its goal is a one-app experience: write HDL, inspect and simulate it on a Virtual FPGA, synthesize it, generate a bitstream, and program a physical board without changing projects or rewriting RTL.
+Allora FPGA is a desktop development environment for open-source FPGA workflows. Its goal is a one-app experience: write HDL, inspect and simulate it on a Virtual FPGA, synthesize it, generate a bitstream, and program a physical board without changing projects or rewriting RTL.
 
 ```text
                          ALLORA PROJECT

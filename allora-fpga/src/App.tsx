@@ -296,6 +296,10 @@ function App() {
           language,
           parentDirectory,
           templateId,
+          topModule,
+          sourceFileName,
+          createTestbench,
+          initializeGit,
         ) => {
           const workspace = await createProjectWorkspace({
             projectName: name,
@@ -303,6 +307,10 @@ function App() {
             language: language as "Verilog" | "SystemVerilog" | "VHDL",
             parentDirectory,
             templateId,
+            topModule,
+            sourceFileName,
+            createTestbench,
+            initializeGit,
           });
 
           const nextProject = createProject({

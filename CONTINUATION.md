@@ -2,6 +2,87 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-22 — Corrected navigation dirty state and Build landing scroll
+
+Changed:
+
+- Removed workspace-dirty updates from opening and closing existing editor tabs. Only content or project-structure changes now switch the save status to Unsaved changes.
+- Changed the welcome activity rail from viewport-sticky to normal document flow and allowed it to stretch with the full landing page.
+- Explicitly kept the Build landing's Open Existing Project and Recent Projects column in normal flow, so both panels scroll away with the expanded board list instead of remaining visually anchored.
+
+Validated:
+
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Browser visual QA of Build → Show all 23 Boards confirmed the right project panels scroll fully out of view and the activity rail travels with the page.
+- Confirmed the existing production bundle-size advisory remains the only build warning.
+
+Known limitations:
+
+- Opening a file changes the active editor session but intentionally does not persist that navigation choice until a later content/project save.
+
+Next:
+
+- Repeat the expanded-board scroll check in the native WebView if its scroll physics differ from the browser preview.
+
+## 2026-09-22 — Unified editor save state and clarified dashboard Home
+
+Changed:
+
+- Replaced the board-specific glyph in the dashboard activity rail's Home button with the standard Home icon; behavior and accessible labeling remain unchanged.
+- Connected successful project saves to the editor's per-file dirty state. The blue unsaved dot now clears after either the 30-second autosave or a manual save and reappears on the next edit.
+- Added a compact editor status strip showing `Autosave on · every 30 seconds` plus the live state: Unsaved changes, Saving, Saved, or Save failed.
+- Kept the existing Cmd+S/Ctrl+S save behavior and moved its key listener to the capture phase so Monaco and the browser shell cannot intercept the shortcut first.
+- Added matching Ice/Black Ice colors and a small saving animation; the explanatory autosave phrase hides at narrow widths while the live save state remains visible.
+
+Validated:
+
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Confirmed the existing production bundle-size advisory remains the only build warning.
+
+Known limitations:
+
+- The dirty indicator is workspace-save based: one successful project save clears all file dots because Allora persists the project files as one save operation.
+
+Next:
+
+- Exercise Cmd+S and the 30-second timer in the native WebView while editing several open files to confirm the status animation timing feels natural.
+
+## 2026-09-22 — Added first-class post-route Timing Analysis
+
+Changed:
+
+- Extended the existing iCE40/ECP5 nextpnr build invocation with a mapped board-clock `--freq`, `--timing-allow-fail`, machine-readable `--report`, and `--detailed-timing-report` when the installed nextpnr advertises support. Timing misses now retain a valid bitstream for inspection and programming.
+- Added a defensive Rust parser for nextpnr's real `fmax` and `critical_paths` report schema. It normalizes clock domains, target and achieved frequency, pass/fail state, setup slack, clock-to-Q, logic/routing/other delay, endpoints, source locations, individual stages, and violations into a frontend-independent timing model.
+- Kept optional timing failures non-fatal: missing reports, older nextpnr versions, report parse errors, unconstrained clocks, and combinational designs return an explanatory timing state while raw nextpnr timing remains in the normal build log.
+- Added Timing Analysis directly to Bitstream results with an immediate status summary, multi-clock selector, selectable worst-path list, FPGA signal-path visualization, delay breakdown, and data-derived logic/routing/mixed classification.
+- Added Ice and Black Ice treatments using the dashboard's existing surface variables, restrained status accents, horizontally scrollable signal paths, and compact engineering-oriented tables rather than a separate dashboard page.
+- Added Rust coverage for real nextpnr report shapes, passing timing, failing timing/violations, and unconstrained behavior.
+
+Validated:
+
+- `npm run build`
+- `npm run lint`
+- `cargo test --lib` (7 passing tests)
+- `git diff --check`
+- Real iCE40UP5K-SG48 Yosys → nextpnr → icepack smoke build using the Virtual LED Counter design at 12 MHz: report and log both showed 170.42 MHz achieved, a 5.868 ns sequential critical path, and PASS; a 104,090-byte bitstream was generated.
+- Repeated the same routed design at an intentionally aggressive 250 MHz: report and log both showed 170.42 MHz achieved and FAIL, with computed worst setup slack of -1.868 ns; `--timing-allow-fail` preserved the valid 104,090-byte bitstream.
+- Confirmed the installed nextpnr exposes `--report` and `--detailed-timing-report`, and inspected its emitted `fmax`, `critical_paths`, path-element, and detailed-net-timing fields before implementing the parser.
+
+Known limitations:
+
+- nextpnr emits one critical path per clock-domain pair rather than an arbitrary top-N list, so Allora presents every path the report actually provides and does not invent additional paths.
+- The current physical-build UI derives its primary timing constraint from the first automatically mapped board clock. Multiple domains reported or derived by nextpnr are displayed, but per-clock user-authored SDC constraint editing is not yet part of the Build workflow.
+- The native development window launched during visual QA but exited when navigating into the physical workflow, so the final populated timing view still needs a native WebView visual pass in both themes; TypeScript/CSS compilation and theme-variable integration are verified.
+
+Next:
+
+- Exercise a populated Timing Analysis result in the native Ice and Black Ice WebView and tune only if native font metrics or horizontal path scrolling differ materially from the browser engine.
+- Add project-level SDC editing when the Build workflow gains explicit per-clock constraints.
+
 ## 2026-09-22 — Animated welcome destination handoff
 
 Changed:

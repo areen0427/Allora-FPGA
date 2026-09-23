@@ -29,18 +29,30 @@ export async function createProjectWorkspace({
   language,
   parentDirectory,
   templateId,
+  topModule,
+  sourceFileName,
+  createTestbench = false,
+  initializeGit = false,
 }: {
   projectName: string;
   board: BoardDefinition;
   language: "Verilog" | "SystemVerilog" | "VHDL";
   parentDirectory?: string | null;
   templateId?: string;
+  topModule?: string;
+  sourceFileName?: string;
+  createTestbench?: boolean;
+  initializeGit?: boolean;
 }) {
   const starterFiles = buildStarterFiles({
     projectName,
     board,
     language,
     templateId,
+    topModule,
+    sourceFileName,
+    createTestbench,
+    initializeGit,
   });
   const folderName = sanitizeFolderName(projectName);
   const response = await invokeTauri<CreateProjectWorkspaceResponse>(
@@ -50,6 +62,7 @@ export async function createProjectWorkspace({
         projectName,
         folderName,
         parentDirectory,
+        initializeGit,
         files: starterFiles.map((file) => ({
           relativePath: file.relativePath,
           content: file.content,
@@ -194,16 +207,30 @@ function buildStarterFiles({
   board,
   language,
   templateId,
+  topModule: requestedTopModule,
+  sourceFileName,
+  createTestbench = false,
+  initializeGit = false,
 }: {
   projectName: string;
   board: BoardDefinition;
   language: "Verilog" | "SystemVerilog" | "VHDL";
   templateId?: string;
+  topModule?: string;
+  sourceFileName?: string;
+  createTestbench?: boolean;
+  initializeGit?: boolean;
 }) {
-  const topModule = sanitizeModuleName(projectName || "top");
+  const topModule = sanitizeModuleName(
+    requestedTopModule || projectName || "top",
+  );
   const sourceExtension =
     language === "SystemVerilog" ? "sv" : language === "VHDL" ? "vhd" : "v";
-  const sourceRelativePath = `src/${topModule}.${sourceExtension}`;
+  const safeSourceFileName = sanitizeSourceFileName(
+    sourceFileName || `${topModule}.${sourceExtension}`,
+    sourceExtension,
+  );
+  const sourceRelativePath = `src/${safeSourceFileName}`;
   const constraintsRelativePath = `constraints/constraints.${board.constraintsFile}`;
   const projectRelativePath = "allora-project.json";
 
@@ -226,7 +253,7 @@ function buildStarterFiles({
     );
   }
 
-  return [
+  const files = [
     {
       relativePath: sourceRelativePath,
       content: sourceContent,
@@ -244,13 +271,107 @@ function buildStarterFiles({
           boardName: board.name,
           language,
           topModule,
+          sourceFile: safeSourceFileName,
           template: template?.id ?? "blinky",
+          testbench: createTestbench ? `${topModule}_tb` : null,
+          git: initializeGit,
         },
         null,
         2,
       ),
     },
   ];
+
+  if (createTestbench) {
+    files.splice(1, 0, {
+      relativePath: `sim/${topModule}_tb.${sourceExtension}`,
+      content: createTestbenchSource({ topModule, language }),
+    });
+  }
+
+  if (initializeGit) {
+    files.push({
+      relativePath: ".gitignore",
+      content: createProjectGitignore(),
+    });
+  }
+
+  return files;
+}
+
+function sanitizeSourceFileName(fileName: string, expectedExtension: string) {
+  const baseName =
+    fileName
+      .trim()
+      .replace(/[^a-zA-Z0-9_.-]+/g, "_")
+      .replace(/^\.+/, "") || "top";
+  const withoutExtension = baseName.replace(/\.[^.]+$/, "");
+  return `${withoutExtension}.${expectedExtension}`;
+}
+
+function createTestbenchSource({
+  topModule,
+  language,
+}: {
+  topModule: string;
+  language: "Verilog" | "SystemVerilog" | "VHDL";
+}) {
+  const testbenchModule = `${topModule}_tb`;
+  if (language === "VHDL") {
+    return [
+      "library ieee;",
+      "use ieee.std_logic_1164.all;",
+      "",
+      `entity ${testbenchModule} is`,
+      `end entity ${testbenchModule};`,
+      "",
+      `architecture sim of ${testbenchModule} is`,
+      "begin",
+      `  -- TODO: instantiate work.${topModule} and connect its ports.`,
+      "end architecture sim;",
+      "",
+    ].join("\n");
+  }
+
+  return [
+    "`timescale 1ns/1ps",
+    "",
+    `module ${testbenchModule};`,
+    "",
+    `  // TODO: declare signals and instantiate ${topModule}.`,
+    "",
+    "  initial begin",
+    '    $dumpfile("waveform.vcd");',
+    `    $dumpvars(0, ${testbenchModule});`,
+    "    #100;",
+    "    $finish;",
+    "  end",
+    "",
+    "endmodule",
+    "",
+  ].join("\n");
+}
+
+function createProjectGitignore() {
+  return [
+    "# Allora FPGA generated outputs",
+    "build/",
+    "*.bit",
+    "*.bin",
+    "*.json.tmp",
+    "",
+    "# Simulation outputs",
+    "*.vcd",
+    "*.fst",
+    "*.lxt",
+    "",
+    "# Editor and operating-system files",
+    ".DS_Store",
+    ".idea/",
+    ".vscode/",
+    "*.swp",
+    "",
+  ].join("\n");
 }
 
 function buildSimulationStarterFiles({
@@ -276,7 +397,13 @@ function buildSimulationStarterFiles({
     starterTemplate === "counter"
       ? [
           { id: "clock-0", type: "clock", label: "CLOCK", signal: "clk" },
-          { id: "reset-0", type: "reset", label: "RESET", signal: "rst_n", activeHigh: false },
+          {
+            id: "reset-0",
+            type: "reset",
+            label: "RESET",
+            signal: "rst_n",
+            activeHigh: false,
+          },
           { id: "switch-0", type: "switch", label: "SW 0", signal: "enable" },
           ...Array.from({ length: 4 }, (_, bit) => ({
             id: `led-${bit}`,
@@ -289,7 +416,12 @@ function buildSimulationStarterFiles({
       : starterTemplate === "pwm"
         ? [
             { id: "clock-0", type: "clock", label: "CLOCK", signal: "clk" },
-            { id: "switch-0", type: "switch", label: "ENABLE", signal: "enable" },
+            {
+              id: "switch-0",
+              type: "switch",
+              label: "ENABLE",
+              signal: "enable",
+            },
             { id: "led-0", type: "led", label: "LED 0", signal: "led" },
           ]
         : [];
