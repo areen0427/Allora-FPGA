@@ -12,6 +12,7 @@
 @import "./styles/virtual-board.css";
 @import "./styles/build-editor.css";
 @import "./styles/project-setup.css";
+@import "./styles/github.css";
 @import "./styles/serial.css";
 @import "./styles/accessibility.css";
 @import "./styles/welcome-landing.css";

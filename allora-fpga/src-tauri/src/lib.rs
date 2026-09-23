@@ -15,8 +15,100 @@ use tauri::ipc::Channel;
 use tauri::State;
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
+mod github;
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
+
+#[tauri::command]
+async fn github_tool_availability() -> github::ToolAvailability {
+    tauri::async_runtime::spawn_blocking(github::tool_availability)
+        .await
+        .unwrap_or_else(|_| github::tool_availability())
+}
+
+#[tauri::command]
+async fn github_auth_status() -> Result<github::GitHubAuthStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(github::auth_status)
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn github_sign_in(
+    app: tauri::AppHandle,
+) -> Result<github::GitHubAuthStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::sign_in(app))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn github_sign_out() -> Result<(), github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(github::sign_out)
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn github_list_repositories() -> Result<Vec<github::GitHubRepository>, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(github::list_repositories)
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn github_create_repository(
+    request: github::CreateRepositoryRequest,
+) -> Result<github::GitHubRepository, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::create_repository(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_repository_status(
+    request: github::ProjectPathRequest,
+) -> Result<github::GitRepositoryStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::repository_status(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_initialize_repository(
+    request: github::ProjectPathRequest,
+) -> Result<(), github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::initialize_repository(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_commit_all(
+    request: github::CommitRequest,
+) -> Result<github::GitRepositoryStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::commit_all(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_set_origin(
+    request: github::SetOriginRequest,
+) -> Result<github::GitRepositoryStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::set_origin(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_push_project(
+    request: github::ProjectPathRequest,
+) -> Result<github::GitRepositoryStatus, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::push(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -3194,6 +3286,7 @@ fn close_serial_monitor(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(SerialState::default())
         .manage(VirtualFpgaState::default())
         .manage(ViewerPayloadState::default())
@@ -3234,7 +3327,18 @@ pub fn run() {
             list_serial_ports,
             open_serial_monitor,
             write_serial_monitor,
-            close_serial_monitor
+            close_serial_monitor,
+            github_tool_availability,
+            github_auth_status,
+            github_sign_in,
+            github_sign_out,
+            github_list_repositories,
+            github_create_repository,
+            git_repository_status,
+            git_initialize_repository,
+            git_commit_all,
+            git_set_origin,
+            git_push_project
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

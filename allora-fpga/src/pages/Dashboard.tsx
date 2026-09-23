@@ -42,6 +42,7 @@ import {
   Folder,
   FolderOpen,
   ChevronRight,
+  GitFork,
 } from "lucide-react";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
@@ -55,6 +56,7 @@ import {
   writeVirtualFpgaConfig,
   type VirtualFpgaConfig,
 } from "../lib/virtualFpga";
+import { GitHubPublishDialog } from "../components/GitHubPublishDialog";
 
 // Keeps a section's component mounted (and therefore its state — generated
 // diagrams, bitstreams, testbench results, logs — alive) once it has been
@@ -110,6 +112,7 @@ export default function Dashboard({
   const [sidebarWidth, setSidebarWidth] = useState(368);
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showGitHubPublish, setShowGitHubPublish] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     fileName: string;
     x: number;
@@ -167,11 +170,7 @@ export default function Dashboard({
     if (saveProject.saveStatus === "saved") {
       setDirtyFileNames([]);
     }
-  }, [
-    saveProject.lastSavedAt,
-    saveProject.saveStatus,
-    setDirtyFileNames,
-  ]);
+  }, [saveProject.lastSavedAt, saveProject.saveStatus, setDirtyFileNames]);
 
   // --- Coordinating functions that wire hooks together ---
 
@@ -561,6 +560,19 @@ export default function Dashboard({
               </button>
             </div>
 
+            <button
+              type="button"
+              className="explorer-github-publish"
+              onClick={() => setShowGitHubPublish(true)}
+            >
+              <GitFork size={16} />
+              <span>
+                <strong>Publish to GitHub</strong>
+                <small>Commit, connect, and push</small>
+              </span>
+              <ChevronRight size={15} />
+            </button>
+
             <section className="project-explorer-panel">
               <div className="project-explorer-heading">
                 <div>
@@ -615,6 +627,7 @@ export default function Dashboard({
                   onDragOverFile={fileMgmt.setDragOverFileName}
                   onDropFile={handleSidebarDrop}
                   onSetTopLevelFile={handleMakeTopLevelFile}
+                  onOpenGitHub={() => setShowGitHubPublish(true)}
                   onOpenContextMenu={(fileName, x, y) =>
                     setContextMenu({ fileName, x, y })
                   }
@@ -827,6 +840,15 @@ export default function Dashboard({
         {activeSection === "serial" && <SerialMonitorSection board={board} />}
       </main>
 
+      {showGitHubPublish ? (
+        <GitHubPublishDialog
+          projectName={projectName}
+          projectPath={projectPath}
+          workspaceDirty={saveProject.saveStatus !== "saved"}
+          onClose={() => setShowGitHubPublish(false)}
+        />
+      ) : null}
+
       {showSettings ? (
         <SettingsModal
           settings={settings}
@@ -1004,6 +1026,7 @@ function ProjectTree({
   onDragOverFile,
   onDropFile,
   onSetTopLevelFile,
+  onOpenGitHub,
   onOpenContextMenu,
 }: {
   files: ProjectFile[];
@@ -1020,6 +1043,7 @@ function ProjectTree({
   onDragOverFile: (fileName: string | null) => void;
   onDropFile: (sourceFileName: string, targetFileName: string) => void;
   onSetTopLevelFile: (fileName: string | null) => void;
+  onOpenGitHub: () => void;
   onOpenContextMenu: (fileName: string, x: number, y: number) => void;
 }) {
   const nodes = buildProjectTree(files, projectPath, topLevelFileName);
@@ -1043,6 +1067,7 @@ function ProjectTree({
           onDragOverFile={onDragOverFile}
           onDropFile={onDropFile}
           onSetTopLevelFile={onSetTopLevelFile}
+          onOpenGitHub={onOpenGitHub}
           onOpenContextMenu={onOpenContextMenu}
         />
       ))}
@@ -1065,6 +1090,7 @@ function ProjectTreeNode({
   onDragOverFile,
   onDropFile,
   onSetTopLevelFile,
+  onOpenGitHub,
   onOpenContextMenu,
 }: {
   node: TreeNode;
@@ -1081,6 +1107,7 @@ function ProjectTreeNode({
   onDragOverFile: (fileName: string | null) => void;
   onDropFile: (sourceFileName: string, targetFileName: string) => void;
   onSetTopLevelFile: (fileName: string | null) => void;
+  onOpenGitHub: () => void;
   onOpenContextMenu: (fileName: string, x: number, y: number) => void;
 }) {
   if (node.type === "directory") {
@@ -1100,6 +1127,7 @@ function ProjectTreeNode({
         onDragOverFile={onDragOverFile}
         onDropFile={onDropFile}
         onSetTopLevelFile={onSetTopLevelFile}
+        onOpenGitHub={onOpenGitHub}
         onOpenContextMenu={onOpenContextMenu}
       />
     );
@@ -1214,10 +1242,14 @@ type ProjectTreeDirectoryProps = Omit<
 function ProjectTreeDirectory({
   node,
   depth,
+  onOpenGitHub,
   ...props
 }: ProjectTreeDirectoryProps) {
   const generatedDirectory = ["build", "sim"].includes(node.name.toLowerCase());
-  const [expanded, setExpanded] = useState(!generatedDirectory);
+  const gitDirectory = node.kind === "git-metadata";
+  const [expanded, setExpanded] = useState(
+    !generatedDirectory && !gitDirectory,
+  );
   const fileCount = countTreeFiles(node);
 
   return (
@@ -1241,7 +1273,9 @@ function ProjectTreeDirectory({
           <Folder size={16} aria-hidden="true" />
         )}
         <span>{node.name}</span>
-        {generatedDirectory ? (
+        {gitDirectory ? (
+          <small>Git</small>
+        ) : generatedDirectory ? (
           <small>{fileCount} generated</small>
         ) : (
           <small>{fileCount}</small>
@@ -1249,14 +1283,30 @@ function ProjectTreeDirectory({
       </button>
       {expanded ? (
         <div className="project-tree-children">
-          {node.children.map((child) => (
-            <ProjectTreeNode
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              {...props}
-            />
-          ))}
+          {gitDirectory ? (
+            <button
+              type="button"
+              className="project-tree-git-action"
+              style={{ paddingLeft: `${26 + depth * 16}px` }}
+              onClick={onOpenGitHub}
+            >
+              <GitFork size={15} aria-hidden="true" />
+              <span>
+                <strong>Publish to GitHub</strong>
+                <small>Commit, connect, and push</small>
+              </span>
+            </button>
+          ) : (
+            node.children.map((child) => (
+              <ProjectTreeNode
+                key={child.path}
+                node={child}
+                depth={depth + 1}
+                onOpenGitHub={onOpenGitHub}
+                {...props}
+              />
+            ))
+          )}
         </div>
       ) : null}
     </div>
@@ -1285,6 +1335,7 @@ type TreeNode =
       path: string;
       order: number;
       children: TreeNode[];
+      kind?: "git-metadata";
     }
   | {
       type: "file";
@@ -1300,6 +1351,17 @@ function buildProjectTree(
   topLevelFileName: string | null,
 ) {
   const root: TreeNode[] = [];
+
+  // Keep Git's implementation details out of the editor while still giving
+  // version control a predictable home in the project explorer.
+  root.push({
+    type: "directory",
+    name: ".git",
+    path: ".git",
+    order: Number.MAX_SAFE_INTEGER,
+    children: [],
+    kind: "git-metadata",
+  });
 
   files.forEach((file, fileIndex) => {
     const relativePath = getRelativeProjectPath(file, projectPath);
@@ -1382,6 +1444,10 @@ function compareTreeNodes(first: TreeNode, second: TreeNode) {
 }
 
 function getTreeNodePriority(node: TreeNode) {
+  if (node.type === "directory" && node.kind === "git-metadata") {
+    return 2;
+  }
+
   if (node.type === "file" && node.isTopLevel) {
     return -2;
   }

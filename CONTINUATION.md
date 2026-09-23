@@ -2,6 +2,114 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-23 — Added secure, explicit GitHub publishing V1
+
+Changed:
+
+- Added one Publish to GitHub entry point in the project explorer and a progressive four-step workflow for account connection, local initialization/commit, repository creation or selection, safe `origin` connection, and first or subsequent pushes.
+- Promoted the entry point from a subtle header icon to a full-width, labeled **Publish to GitHub — Commit, connect, and push** action directly above Project files after UI review showed the icon was too easy to miss.
+- Kept GitHub out of project creation. Existing projects without Git can explicitly initialize local history from the publish dialog, while the existing project-setup Git option continues to perform only `git init`.
+- Added GitHub OAuth authorization-code authentication with PKCE and a dynamic `127.0.0.1` loopback callback. The flow uses the system browser and requires a project-owner-supplied `ALLORA_GITHUB_CLIENT_ID`; no client secret or invented credential is embedded.
+- Added native OS credential storage through `keyring`. Tokens remain in Rust and are never returned to React, project files, `localStorage`, settings JSON, logs, remote URLs, or Git arguments. Status validation detects revoked/expired credentials and sign-out deletes the local credential.
+- Added direct GitHub API services for current-user validation, owned writable repository listing, and empty repository creation. New repositories default to private and expose editable name and description fields.
+- Added structured native Git services for executable detection, repository/branch/upstream/origin status, dirty-file classification, ahead/behind state, explicit staging and commits, optional repository-local author identity, safe origin creation, and push with upstream tracking.
+- Added a permissions-restricted temporary askpass helper for HTTPS GitHub pushes. Tokens are read from the native vault and passed only through the child environment. SSH remotes continue to use the user's existing SSH configuration.
+- Added actionable error categories for missing Git, missing OAuth configuration, offline/API failures, expired authorization, name conflicts, permissions, existing remotes, missing identity, detached revisions, and rejected pushes. Allora never replaces an origin, pulls, merges, rebases, or force-pushes automatically.
+- Added GitHub CLI detection as optional diagnostics only. V1 does not require or invoke `gh`, avoiding a second implicit authentication path.
+- Added `GITHUB_INTEGRATION.md` with the official-source-backed OAuth/credential design, exact registration configuration, Git/API/CLI responsibility boundary, workflow safety rules, and test boundary. Updated `CONTEXT.md` and `README.md` for the shipped architecture and prerequisite.
+
+Files:
+
+- `GITHUB_INTEGRATION.md`
+- `CONTEXT.md`
+- `CONTINUATION.md`
+- `README.md`
+- `allora-fpga/src/App.css`
+- `allora-fpga/src/components/GitHubPublishDialog.tsx`
+- `allora-fpga/src/lib/github.ts`
+- `allora-fpga/src/pages/Dashboard.tsx`
+- `allora-fpga/src/styles/github.css`
+- `allora-fpga/src-tauri/Cargo.toml`
+- `allora-fpga/src-tauri/Cargo.lock`
+- `allora-fpga/src-tauri/src/github.rs`
+- `allora-fpga/src-tauri/src/lib.rs`
+
+Validated:
+
+- `npm run build`
+- `npm run lint`
+- Prettier checks for every changed frontend file
+- `cargo check`
+- `cargo test` (GitHub parser/validation tests plus temporary-repository status, initialize, commit, and origin integration coverage; no GitHub network calls)
+- `cargo fmt --check`
+- `git diff --check`
+- Browser visual QA of the signed-out/missing-runtime publish dialog in Ice and Black Ice at the available desktop viewport, including semantic headings/buttons and constrained-height scrolling.
+- Reviewed the UI state model and action gating for configured signed-out, signed-in, unpublished, publishing, success, dirty, ahead/behind, missing-tool, offline, and structured-error states. No live GitHub sign-in, repository creation, or push was performed.
+
+Configuration still required:
+
+- Register a GitHub OAuth App with callback URL `http://127.0.0.1/oauth/callback`, then build or run with `ALLORA_GITHUB_CLIENT_ID=<client-id>`. Do not configure a client secret in the desktop application.
+
+Known limitations:
+
+- Live OAuth, native keychain consent, repository creation, and push need an explicitly authorized smoke test after the real OAuth client ID exists. Development and automated tests intentionally did not touch a GitHub account.
+- V1 lists owned repositories with push access. Organization-owned repository creation/selection, GitHub Enterprise hosts, collaborators, issues, pull requests, fetch/pull/merge/rebase assistance, and automatic divergence resolution are outside this version.
+- Ahead/behind status uses the locally stored upstream refs. Refresh does not silently fetch from the network, so the value can be stale until another explicit Git operation updates those refs.
+- Closing the dialog while the system-browser OAuth callback is waiting does not cancel the native three-minute callback timeout; no token is stored unless the callback completes successfully.
+
+Next:
+
+- Supply the registered OAuth client ID and perform an explicitly authorized native smoke test covering sign-in, keychain storage/removal, private repository creation, first push, token revocation, and rejected-push recovery messaging.
+- Add an explicit Fetch/Compare action before offering any future pull or merge assistance, preserving the current no-silent-network-operation rule.
+
+## 2026-09-23 — Restructured hardware project creation and added local Git initialization
+
+Changed:
+
+- Replaced the large Starter Template card grid with a compact Starting Point dropdown inside a new Project Structure panel.
+- Changed the default hardware-project starting point from Blinky to Empty Project. Empty Project is also the safe fallback if a language change makes the current starter incompatible.
+- Added editable top-module and source-file fields. Their defaults follow the project name until the user customizes them, and source extensions track the selected HDL language.
+- Added a live preview of the exact source, optional simulation, constraints, metadata, and `.gitignore` files that project creation will write.
+- Added a Create testbench toggle. It writes `sim/<top_module>_tb.<extension>` and records the testbench name in `allora-project.json`. Verilog/SystemVerilog scaffolds include VCD setup; generated testbenches intentionally leave DUT signal declaration and instantiation as follow-up work.
+- Added an Initialize local Git repository toggle. The Rust workspace creator verifies the system `git` executable, initializes `.git` inside the new project directory, and writes a project-specific `.gitignore` for build outputs, bitstreams, waveforms, and editor/OS files.
+- Kept local Git initialization separate from commits, remotes, accounts, GitHub, and network activity. Project creation does not stage, commit, authenticate, create a GitHub repository, or push.
+- Rebalanced the three-column setup layout so Project Structure is useful but compact and Board Summary is modestly wider with a slightly larger preview.
+- Added inline project-creation error reporting and validation for top-module identifiers and source filenames.
+- Added `CONTEXT.md` beside `README.md` and this continuation log. It describes the current architecture, project format, workflows, native command boundary, local Git behavior, known limitations, and next milestone.
+
+Files:
+
+- `CONTEXT.md`
+- `allora-fpga/src/App.tsx`
+- `allora-fpga/src/pages/ProjectSetup.tsx`
+- `allora-fpga/src/lib/projectWorkspace.ts`
+- `allora-fpga/src/styles/project-setup.css`
+- `allora-fpga/src-tauri/src/lib.rs`
+
+Validated:
+
+- `npm run build`
+- `npm run lint`
+- Prettier checks for the changed frontend files
+- `cargo check`
+- `cargo fmt --check`
+- `git diff --check`
+- Browser UI QA of Colorlight i5 project setup, including project-name propagation, testbench/Git toggles, live file-preview updates, and the modestly enlarged Board Summary.
+- Confirmed the existing production bundle-size advisory remains the only frontend build warning.
+
+Known limitations:
+
+- Git initialization requires a working `git` executable on the user's system.
+- The generated testbench is a named scaffold and does not yet synthesize template port metadata into a complete DUT harness.
+- GitHub authentication, repository publishing, commits, remotes, pushes, pulls, and status services are not implemented.
+- Browser QA cannot execute the native `git init` command; the Rust path compiles successfully and requires a native Tauri smoke test when GitHub work begins.
+
+Next:
+
+- Set up GitHub OAuth and the complete GitHub service boundary in the next update. This should include secure OS-backed token storage, sign-in/sign-out and expiry handling, GitHub CLI detection/integration, repository creation or selection, explicit initial staging/commit, `origin` configuration, first push with upstream tracking, and actionable error/status feedback.
+- Decide before implementation which operations use the GitHub API and which use the `gh`/`git` CLIs. Keep local project creation usable without a GitHub account and keep every network or remote-changing action explicit.
+- Do not implement any GitHub dependencies, authentication, API calls, CLI flows, repository creation, or push behavior until that next milestone is intentionally started.
+
 ## 2026-09-22 — Corrected navigation dirty state and Build landing scroll
 
 Changed:

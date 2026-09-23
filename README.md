@@ -23,6 +23,7 @@ Allora FPGA is a desktop development environment for open-source FPGA workflows.
 - Open-source synthesis and place-and-route through Yosys and nextpnr for supported families.
 - Bitstream generation, board programming, serial monitoring, build health, and build history.
 - Icarus Verilog testbench simulation with VCD waveform inspection.
+- A local-first GitHub publishing workflow with explicit commits, repository creation/selection, safe `origin` setup, first push, and later commit/push status. GitHub sign-in is optional and never part of project creation.
 - Virtual FPGA V0.1 for interactive Verilog/SystemVerilog designs:
   - structural top-level port discovery through Yosys;
   - actual RTL execution through a persistent Verilator model;
@@ -62,6 +63,14 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 ## Development
 
 Prerequisites: Node.js/npm, Rust/Cargo, Yosys, Verilator, Icarus Verilog, and the nextpnr/packer/programmer tools for the physical board you use. OSS CAD Suite supplies most FPGA command-line tools in one package. Allora also searches common Homebrew, MacPorts, and `~/oss-cad-suite/bin` locations.
+
+Publishing requires the system `git` executable. GitHub CLI (`gh`) is detected for diagnostics but is optional. GitHub sign-in also requires the project owner to register an OAuth App with the callback URL `http://127.0.0.1/oauth/callback` and provide its public client ID at build or development time:
+
+```bash
+ALLORA_GITHUB_CLIENT_ID=your_client_id npm run tauri dev
+```
+
+Do not add a client secret to the desktop application. See [`GITHUB_INTEGRATION.md`](GITHUB_INTEGRATION.md) for the credential model, operation boundaries, registration steps, and safety behavior.
 
 ```bash
 cd allora-fpga
@@ -125,6 +134,7 @@ Each disk-backed project includes `allora-project.json`, source files, constrain
 - `allora-website/` — project website.
 - `examples/` — projects that can be opened in Allora.
 - `CONTINUATION.md` — living engineering handoff; update it after every codebase change.
+- `GITHUB_INTEGRATION.md` — OAuth, credential storage, Git/API/CLI boundaries, and publishing safety model.
 
 ## Contributing
 

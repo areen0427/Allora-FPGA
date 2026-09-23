@@ -60,7 +60,7 @@ export default function ProjectSetup({
     initialParentDirectory,
   );
   const [isChoosingLocation, setIsChoosingLocation] = useState(false);
-  const [templateId, setTemplateId] = useState("blinky");
+  const [templateId, setTemplateId] = useState("empty");
   const [topModule, setTopModule] = useState("top");
   const [sourceFileName, setSourceFileName] = useState("top.v");
   const [topModuleCustomized, setTopModuleCustomized] = useState(false);
@@ -94,7 +94,7 @@ export default function ProjectSetup({
       selected &&
       getTemplateUnavailableReason(selected, board, nextLanguage)
     ) {
-      setTemplateId("blinky");
+      setTemplateId("empty");
     }
   }
 
