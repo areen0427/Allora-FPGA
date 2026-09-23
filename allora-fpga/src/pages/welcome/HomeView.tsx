@@ -1,15 +1,24 @@
 import { useState } from "react";
 import {
+  Activity,
   ArrowLeft,
   BookOpen,
+  CheckCircle2,
   CircuitBoard,
   ExternalLink,
   FolderClock,
   FolderOpen,
+  Gauge,
   Info,
   Keyboard,
+  Layers3,
   Map as MapIcon,
+  Play,
+  Radio,
+  SlidersHorizontal,
   Sparkles,
+  Timer,
+  Zap,
   X,
 } from "lucide-react";
 import { getBoardById } from "../../data/boards";
@@ -19,10 +28,13 @@ import type { BoardCatalogItem } from "../../data/boardSupport";
 import { getBoardDefinitions } from "../../data/boardSupport";
 import { getBoardIcon } from "../boardIcons";
 import type { ExecutionTarget } from "../dashboard/types";
+import type { AppSettings } from "../../data/settings";
+import VirtualPcbDiagram from "../../components/VirtualPcbDiagram";
 
 type HomeViewProps = {
   theme: "ice" | "black-ice";
   reduceMotion: boolean;
+  settings: AppSettings;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
   showAllBoards: boolean;
@@ -37,10 +49,12 @@ type HomeViewProps = {
   onCreateSimulationProject: () => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
+  onSettingsChange: (settings: AppSettings) => void;
 };
 
 export function HomeView({
   reduceMotion,
+  settings,
   boards,
   visibleBoards,
   showAllBoards,
@@ -55,6 +69,7 @@ export function HomeView({
   onCreateSimulationProject,
   onOpenProject,
   onRemoveRecentProject,
+  onSettingsChange,
 }: HomeViewProps) {
   const [path, setPath] = useState<ExecutionTarget | null>(null);
   const [departingPath, setDepartingPath] = useState<ExecutionTarget | null>(
@@ -226,6 +241,8 @@ export function HomeView({
             onCreateProject={onCreateSimulationProject}
             onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
             onRemoveProject={onRemoveRecentProject}
+            settings={settings}
+            onSettingsChange={onSettingsChange}
           />
         ) : (
           <div className="welcome-home-layout">
@@ -432,25 +449,38 @@ function ContinueProjectTile({
   );
 }
 
-function MiniVirtualBoard() {
+function ProfessionalVirtualBoard({ clockHz }: { clockHz: number }) {
+  const [inputs, setInputs] = useState([true, false, true, false]);
+
+  const toggleInput = (index: number) => {
+    setInputs((current) =>
+      current.map((active, inputIndex) =>
+        inputIndex === index ? !active : active,
+      ),
+    );
+  };
+
   return (
-    <div className="mini-virtual-board" aria-hidden="true">
-      <div className="mini-leds">
-        {[true, false, true, true, false, true].map((active, index) => (
-          <i className={active ? "on" : ""} key={index} />
-        ))}
+    <div className="simulation-board-stage">
+      <div className="simulation-board-toolbar">
+        <span>
+          <Radio size={13} /> Interactive preview
+        </span>
+        <span className="simulation-board-live">
+          <i /> Live
+        </span>
       </div>
-      <div className="mini-chip">
-        <small>ALLORA</small>
-        <strong>VIRTUAL</strong>
-        <em>FPGA</em>
-      </div>
-      <div className="mini-controls">
-        <span />
-        <span className="up" />
-        <span />
-        <b />
-        <b />
+
+      <VirtualPcbDiagram
+        ariaLabel="Interactive virtual FPGA board preview"
+        clockHz={clockHz}
+        inputs={inputs}
+        onToggleInput={toggleInput}
+      />
+
+      <div className="simulation-board-caption">
+        <span><Zap size={13} /> Click the switches to test virtual inputs</span>
+        <span>4 inputs · 4 outputs</span>
       </div>
     </div>
   );
@@ -464,6 +494,8 @@ function SimulationHome({
   onCreateProject,
   onOpenProject,
   onRemoveProject,
+  settings,
+  onSettingsChange,
 }: {
   recentProjects: SavedProject[];
   isOpening: boolean;
@@ -472,24 +504,26 @@ function SimulationHome({
   onCreateProject: () => void;
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
+  settings: AppSettings;
+  onSettingsChange: (settings: AppSettings) => void;
 }) {
   return (
     <div className="simulation-home-layout">
       <section className="simulation-welcome-card">
-        <div className="simulation-orbit one" />
-        <div className="simulation-orbit two" />
-        <div className="simulation-welcome-copy">
-          <span>
-            <Sparkles size={15} /> No hardware required
-          </span>
-          <h2>Your RTL, running on a virtual board.</h2>
-          <p>
-            Open any Allora project, map its ports to interactive peripherals,
-            and compile the actual design with Verilator.
-          </p>
+        <div className="simulation-console-header">
+          <div className="simulation-welcome-copy">
+            <span>
+              <Sparkles size={15} /> Hardware-free RTL workspace
+            </span>
+            <h2>Validate your design before it reaches the board.</h2>
+            <p>
+              Compile real RTL, exercise mapped inputs, and inspect every signal
+              in one focused simulation workspace.
+            </p>
+          </div>
           <div className="simulation-welcome-actions">
             <button type="button" onClick={onCreateProject}>
-              <Sparkles size={17} /> New simulation project
+              <Play size={17} fill="currentColor" /> New simulation
             </button>
             <button
               type="button"
@@ -498,20 +532,105 @@ function SimulationHome({
               disabled={isOpening}
             >
               <FolderOpen size={17} />
-              {isOpening ? "Opening…" : "Open existing"}
+              {isOpening ? "Opening…" : "Open project"}
             </button>
           </div>
-          {error ? <div className="open-project-error">{error}</div> : null}
         </div>
-        <MiniVirtualBoard />
+
+        {error ? <div className="open-project-error">{error}</div> : null}
+
+        <ProfessionalVirtualBoard clockHz={settings.simulatorDefaultClockHz} />
+
+        <div className="simulation-capability-strip" aria-label="Simulation capabilities">
+          <span><Activity size={15} /><strong>Waveforms</strong><small>VCD capture</small></span>
+          <span><Layers3 size={15} /><strong>RTL compile</strong><small>Verilator</small></span>
+          <span><Timer size={15} /><strong>Clock control</strong><small>Cycle precise</small></span>
+          <span><Gauge size={15} /><strong>I/O mapping</strong><small>Live controls</small></span>
+        </div>
       </section>
-      <RecentProjectsCard
-        projects={recentProjects}
-        onOpenProject={onOpenProject}
-        onRemoveProject={onRemoveProject}
-        emptyMessage="Open an Allora project to begin simulating."
-      />
+
+      <div className="simulation-sidebar-stack">
+        <SimulationLaunchDefaults
+          settings={settings}
+          onChange={onSettingsChange}
+        />
+        <RecentProjectsCard
+          projects={recentProjects}
+          onOpenProject={onOpenProject}
+          onRemoveProject={onRemoveProject}
+          emptyMessage="Open an Allora project to begin simulating."
+          showSimulationSummary
+        />
+      </div>
     </div>
+  );
+}
+
+function SimulationLaunchDefaults({
+  settings,
+  onChange,
+}: {
+  settings: AppSettings;
+  onChange: (settings: AppSettings) => void;
+}) {
+  return (
+    <section className="liquid-home-card simulation-defaults-card">
+      <div className="simulation-defaults-heading">
+        <span><SlidersHorizontal size={15} /> Launch defaults</span>
+        <strong><i /> Verilator ready</strong>
+      </div>
+      <div className="simulation-default-controls">
+        <label>
+          <span>Clock</span>
+          <select
+            value={settings.simulatorDefaultClockHz}
+            onChange={(event) =>
+              onChange({
+                ...settings,
+                simulatorDefaultClockHz: Number(event.target.value) as AppSettings["simulatorDefaultClockHz"],
+              })
+            }
+          >
+            <option value={10_000_000}>10 MHz</option>
+            <option value={25_000_000}>25 MHz</option>
+            <option value={50_000_000}>50 MHz</option>
+            <option value={100_000_000}>100 MHz</option>
+          </select>
+        </label>
+        <label>
+          <span>Duration</span>
+          <select
+            value={settings.simulatorCycleLimit}
+            onChange={(event) =>
+              onChange({
+                ...settings,
+                simulatorCycleLimit: Number(event.target.value) as AppSettings["simulatorCycleLimit"],
+              })
+            }
+          >
+            <option value={100_000}>100K cycles</option>
+            <option value={1_000_000}>1M cycles</option>
+            <option value={10_000_000}>10M cycles</option>
+            <option value={0}>No limit</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className={`simulation-trace-toggle${settings.simulatorCaptureWaveform ? " active" : ""}`}
+          role="switch"
+          aria-checked={settings.simulatorCaptureWaveform}
+          onClick={() =>
+            onChange({
+              ...settings,
+              simulatorCaptureWaveform: !settings.simulatorCaptureWaveform,
+            })
+          }
+        >
+          <span><Activity size={14} /> Record VCD trace</span>
+          <i><b /></i>
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -643,11 +762,13 @@ function RecentProjectsCard({
   onOpenProject,
   onRemoveProject,
   emptyMessage,
+  showSimulationSummary = false,
 }: {
   projects: SavedProject[];
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
   emptyMessage?: string;
+  showSimulationSummary?: boolean;
 }) {
   return (
     <aside className="liquid-home-card recent-projects-card">
@@ -686,6 +807,9 @@ function RecentProjectsCard({
                   Last saved {formatProjectTime(project.updatedAt)} ·{" "}
                   {project.files.length} files
                 </div>
+                {showSimulationSummary ? (
+                  <SimulationRecentSummary project={project} />
+                ) : null}
               </div>
               <button
                 type="button"
@@ -705,6 +829,36 @@ function RecentProjectsCard({
       )}
     </aside>
   );
+}
+
+function SimulationRecentSummary({ project }: { project: SavedProject }) {
+  const result = project.lastSimulation;
+  if (!result) {
+    return <div className="recent-simulation-empty">No simulation run yet</div>;
+  }
+
+  return (
+    <div className="recent-simulation-summary">
+      <div className="recent-simulation-wave" aria-label="Last waveform preview">
+        {(result.waveform.length ? result.waveform : [0, 0, 0, 0, 0, 0]).map(
+          (value, index) => (
+            <i className={value ? "high" : "low"} key={index} />
+          ),
+        )}
+      </div>
+      <span className={`recent-simulation-result ${result.status}`}>
+        {result.status === "passed" ? <CheckCircle2 size={11} /> : <X size={11} />}
+        {result.status === "passed" ? "Passed" : "Failed"}
+      </span>
+      <small>{formatCycleCount(result.cycles)} cycles · {result.signalCount} signals</small>
+    </div>
+  );
+}
+
+function formatCycleCount(cycles: number) {
+  if (cycles >= 1_000_000) return `${(cycles / 1_000_000).toFixed(1)}M`;
+  if (cycles >= 1_000) return `${Math.round(cycles / 1_000)}K`;
+  return cycles.toLocaleString();
 }
 
 function getRecentProjectBoardName(boardId: string) {

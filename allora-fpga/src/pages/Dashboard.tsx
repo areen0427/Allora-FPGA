@@ -699,6 +699,7 @@ export default function Dashboard({
           <VirtualFpgaSection
             files={fileMgmt.files}
             projectPath={projectPath}
+            projectId={project?.id}
             topLevelFileName={activeTabs.topLevelFileName}
             settings={settings}
             onConfigChange={handleUpdateVirtualConfig}

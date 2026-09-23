@@ -1,6 +1,6 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 const LAST_PROJECT_PARENT_KEY = "allora-fpga-last-project-parent";
-const SETTINGS_VERSION = 4;
+const SETTINGS_VERSION = 5;
 
 export type AppSettings = {
   theme: "ice" | "black-ice";
@@ -16,6 +16,7 @@ export type AppSettings = {
   showGeneratedArtifacts: boolean;
   confirmBeforeDelete: boolean;
   simulatorDefaultRadix: "binary" | "hex" | "decimal";
+  simulatorDefaultClockHz: 10_000_000 | 25_000_000 | 50_000_000 | 100_000_000;
   simulatorStepSize: 1 | 10 | 100;
   simulatorRefreshInterval: 50 | 100 | 250;
   simulatorCaptureWaveform: boolean;
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showGeneratedArtifacts: true,
   confirmBeforeDelete: true,
   simulatorDefaultRadix: "hex",
+  simulatorDefaultClockHz: 50_000_000,
   simulatorStepSize: 1,
   simulatorRefreshInterval: 100,
   simulatorCaptureWaveform: true,
@@ -132,6 +134,14 @@ function sanitizeSettings(value: unknown): AppSettings {
     ])
       ? value.simulatorDefaultRadix
       : DEFAULT_SETTINGS.simulatorDefaultRadix,
+    simulatorDefaultClockHz: isOneOf(value.simulatorDefaultClockHz, [
+      10_000_000,
+      25_000_000,
+      50_000_000,
+      100_000_000,
+    ])
+      ? value.simulatorDefaultClockHz
+      : DEFAULT_SETTINGS.simulatorDefaultClockHz,
     simulatorStepSize: isOneOf(value.simulatorStepSize, [1, 10, 100])
       ? value.simulatorStepSize
       : DEFAULT_SETTINGS.simulatorStepSize,

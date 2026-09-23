@@ -253,6 +253,7 @@ function App() {
             language,
             parentDirectory,
             starterTemplate,
+            clockFrequencyHz: settings.simulatorDefaultClockHz,
           });
           const topLevelFileName =
             workspace.files.find((file) => isHdlFile(file.name))?.name ?? null;

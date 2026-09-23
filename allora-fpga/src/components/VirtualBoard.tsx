@@ -194,6 +194,26 @@ export default function VirtualBoard({
           rx={1.7}
           fill="none"
         />
+        <g className="vboard-base-details" aria-hidden="true">
+          {[
+            [2.2, 2.2],
+            [layout.width - 2.2, 2.2],
+            [2.2, layout.height - 2.2],
+            [layout.width - 2.2, layout.height - 2.2],
+          ].map(([x, y], index) => (
+            <circle className="vboard-mount" cx={x} cy={y} r={0.9} key={index} />
+          ))}
+          {Array.from({ length: 14 }, (_, index) => {
+            const spacing = (layout.width * 0.42) / 13;
+            const x = layout.width * 0.29 + spacing * index;
+            return (
+              <g key={index}>
+                <rect className="vboard-base-pad" x={x} y={1.35} width={0.85} height={0.85} rx={0.08} />
+                <rect className="vboard-base-pad" x={x} y={layout.height - 2.2} width={0.85} height={0.85} rx={0.08} />
+              </g>
+            );
+          })}
+        </g>
         <text
           className="vboard-board-name"
           x={layout.width - 1.6}

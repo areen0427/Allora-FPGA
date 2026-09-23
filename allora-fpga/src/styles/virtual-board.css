@@ -1,24 +1,36 @@
 /* ── Virtual board ──────────────────────────────────────────────────────
-   The PCB is rendered with fixed "physical" colors on purpose: it reads as
-   a real green board in every app theme. Text around it uses theme vars. */
+   Uses the same teal Allora PCB language as the shared welcome and pinout
+   diagrams while retaining each physical board's component placement. */
 
 .vboard-shell {
   width: 100%;
 }
 
 .vboard-pcb {
-  fill: #1b5e3b;
-  stroke: #134e2c;
+  fill: #087176;
+  stroke: #28b8bd;
   stroke-width: 0.5;
 }
 
 .vboard-pcb-inner {
-  stroke: rgba(255, 255, 255, 0.14);
+  stroke: rgba(105, 234, 229, 0.38);
   stroke-width: 0.3;
 }
 
+.vboard-mount {
+  fill: #0b3539;
+  stroke: #769da0;
+  stroke-width: 0.3;
+}
+
+.vboard-base-pad {
+  fill: #d6a53c;
+  stroke: #6f4811;
+  stroke-width: 0.08;
+}
+
 .vboard-board-name {
-  fill: rgba(255, 255, 255, 0.55);
+  fill: rgba(208, 255, 252, 0.68);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -31,8 +43,8 @@
 }
 
 .vboard-chip {
-  fill: #1f2937;
-  stroke: #0b1220;
+  fill: #111a2d;
+  stroke: #41526a;
   stroke-width: 0.3;
 }
 
@@ -49,8 +61,8 @@
 }
 
 .vboard-connector {
-  fill: #111827;
-  stroke: #374151;
+  fill: #0c2630;
+  stroke: #214b53;
   stroke-width: 0.25;
 }
 
@@ -67,7 +79,7 @@
 }
 
 .vboard-edge-connector-notch {
-  fill: #1b5e3b;
+  fill: #087176;
   stroke: rgba(255, 255, 255, 0.12);
   stroke-width: 0.08;
 }

@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
+import { saveSimulationSummary } from "../../data/projects";
 import SignalWaveformPanel, {
   type SignalWaveTrace,
 } from "../../components/SignalWaveformPanel";
+import VirtualPcbDiagram from "../../components/VirtualPcbDiagram";
 import {
   formatSignalValue,
   getConfiguredTopModule,
@@ -37,6 +39,7 @@ import "../../styles/virtual-fpga.css";
 type Props = {
   files: ProjectFile[];
   projectPath?: string;
+  projectId?: string;
   topLevelFileName: string | null;
   settings: AppSettings;
   onConfigChange: (config: VirtualFpgaConfig) => void;
@@ -64,6 +67,7 @@ const RUN_CYCLES_PER_TICK = 1;
 export default function VirtualFpgaSection({
   files,
   projectPath,
+  projectId,
   topLevelFileName,
   settings,
   onConfigChange,
@@ -257,11 +261,31 @@ export default function VirtualFpgaSection({
     } catch (error) {
       setStatus("error");
       setErrorMessage(getErrorMessage(error));
+      if (projectId) {
+        saveSimulationSummary(projectId, {
+          status: "failed",
+          completedAt: new Date().toISOString(),
+          cycles: executedCyclesRef.current,
+          simTimePs: snapshot?.simTimePs ?? 0,
+          signalCount: selectedSignals.length,
+          waveform: buildSimulationPreview(waveSamples, selectedSignals),
+        });
+      }
     }
   }
 
   async function stopSimulation() {
     if (sessionId !== null) await virtualFpgaApi.stop(sessionId);
+    if (projectId && sessionId !== null) {
+      saveSimulationSummary(projectId, {
+        status: "passed",
+        completedAt: new Date().toISOString(),
+        cycles: executedCyclesRef.current,
+        simTimePs: snapshot?.simTimePs ?? 0,
+        signalCount: selectedSignals.length,
+        waveform: buildSimulationPreview(waveSamples, selectedSignals),
+      });
+    }
     setSessionId(null);
     setStatus("idle");
   }
@@ -507,7 +531,14 @@ export default function VirtualFpgaSection({
             </div>
             <small>{ports.length} top-level ports</small>
           </div>
-          <div className="vfpga-board-silk">
+          <VirtualPcbDiagram
+            ariaLabel={`${config.topModule} interactive virtual FPGA board`}
+            boardLabel="ALLORA LABS · LIVE VIRTUAL I/O"
+            chipLabel="VIRTUAL FPGA"
+            chipSublabel={config.topModule}
+            clockHz={config.clockFrequencyHz}
+            className="vfpga-live-pcb"
+          >
             <div className="vfpga-led-bank">
               {leds.map((led) => (
                 <VirtualLed
@@ -516,11 +547,6 @@ export default function VirtualFpgaSection({
                   active={getPeripheralValue(led, snapshot) === 1}
                 />
               ))}
-            </div>
-            <div className="vfpga-chip">
-              <span>VIRTUAL</span>
-              <strong>FPGA</strong>
-              <small>{config.topModule}</small>
             </div>
             <div className="vfpga-input-bank">
               <div className="vfpga-switches">
@@ -584,7 +610,7 @@ export default function VirtualFpgaSection({
                 ))}
               </div>
             </div>
-          </div>
+          </VirtualPcbDiagram>
         </section>
 
         <section className="vfpga-panel vfpga-mapping">
@@ -731,6 +757,20 @@ export default function VirtualFpgaSection({
       </section>
     </div>
   );
+}
+
+function buildSimulationPreview(
+  samples: WaveSample[],
+  selectedSignals: string[],
+) {
+  const signal =
+    selectedSignals[0] ?? Object.keys(samples.at(-1)?.values ?? {})[0];
+  if (!signal) return [];
+  const stride = Math.max(1, Math.floor(samples.length / 18));
+  return samples
+    .filter((_, index) => index % stride === 0)
+    .slice(-18)
+    .map((sample) => Number(BigInt(sample.values[signal] ?? "0") & 1n));
 }
 
 function GuideStep({ label, done }: { label: string; done: boolean }) {

@@ -18,6 +18,16 @@ export type SavedProject = {
   topLevelFileName?: string | null;
   createdAt: string;
   updatedAt: string;
+  lastSimulation?: SimulationSummary;
+};
+
+export type SimulationSummary = {
+  status: "passed" | "failed";
+  completedAt: string;
+  cycles: number;
+  simTimePs: number;
+  signalCount: number;
+  waveform: number[];
 };
 
 export function getSavedProjects(): SavedProject[] {
@@ -46,6 +56,19 @@ export function saveProject(project: SavedProject) {
   ];
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
+}
+
+export function saveSimulationSummary(
+  projectId: string,
+  summary: SimulationSummary,
+) {
+  const project = getSavedProject(projectId);
+  if (!project) return;
+  saveProject({
+    ...project,
+    lastSimulation: summary,
+    updatedAt: summary.completedAt,
+  });
 }
 
 // Projects with a workspace folder keep their file contents on disk only.

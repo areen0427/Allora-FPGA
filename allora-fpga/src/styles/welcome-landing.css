@@ -1166,10 +1166,10 @@ html[data-theme="black-ice"]
   animation-delay: 215ms;
 }
 .welcome-destination-stage.simulate .welcome-back-button {
-  color: var(--landing-sim-accent);
+  color: #2563eb;
 }
 .welcome-destination-stage.build .welcome-back-button {
-  color: var(--landing-build-accent);
+  color: #2563eb;
 }
 .welcome-destination-stage.reduce-animation .welcome-environment,
 .welcome-destination-stage.reduce-animation .welcome-atmosphere {

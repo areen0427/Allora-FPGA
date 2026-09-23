@@ -254,6 +254,36 @@
   font-size: 8px;
   letter-spacing: 0.16em;
 }
+
+.vfpga-live-pcb {
+  width: 100%;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  flex: 1;
+  aspect-ratio: auto;
+  transform: none;
+}
+
+.vfpga-live-pcb .virtual-pcb-overlay {
+  inset: 0;
+}
+
+.vfpga-live-pcb .vfpga-led-bank {
+  position: absolute;
+  z-index: 2;
+  left: 10%;
+  right: 10%;
+  top: 16%;
+}
+
+.vfpga-live-pcb .vfpga-input-bank {
+  position: absolute;
+  z-index: 2;
+  left: 10%;
+  right: 9%;
+  bottom: 11%;
+}
 .vfpga-led-bank {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -593,6 +623,9 @@
   .vfpga-board-silk {
     min-height: 340px;
   }
+  .vfpga-live-pcb {
+    min-height: 340px;
+  }
   .vfpga-mapping {
     max-height: min(520px, 64vh);
   }
@@ -616,6 +649,10 @@
     gap: 20px;
     flex-direction: column;
     align-items: center;
+  }
+  .vfpga-live-pcb .vfpga-input-bank {
+    flex-direction: row;
+    align-items: end;
   }
   .vfpga-actions {
     margin-left: 0;

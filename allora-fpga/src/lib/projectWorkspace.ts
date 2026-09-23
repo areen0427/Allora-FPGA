@@ -84,16 +84,19 @@ export async function createSimulationProjectWorkspace({
   language,
   parentDirectory,
   starterTemplate,
+  clockFrequencyHz,
 }: {
   projectName: string;
   language: "Verilog" | "SystemVerilog";
   parentDirectory?: string | null;
   starterTemplate: "blank" | "counter" | "pwm";
+  clockFrequencyHz?: number;
 }) {
   const starterFiles = buildSimulationStarterFiles({
     projectName,
     language,
     starterTemplate,
+    clockFrequencyHz,
   });
   const folderName = sanitizeFolderName(projectName);
   const response = await invokeTauri<CreateProjectWorkspaceResponse>(
@@ -254,10 +257,12 @@ function buildSimulationStarterFiles({
   projectName,
   language,
   starterTemplate,
+  clockFrequencyHz = 50_000_000,
 }: {
   projectName: string;
   language: "Verilog" | "SystemVerilog";
   starterTemplate: "blank" | "counter" | "pwm";
+  clockFrequencyHz?: number;
 }) {
   const topModule = sanitizeModuleName(projectName || "top");
   const extension = language === "SystemVerilog" ? "sv" : "v";
@@ -302,7 +307,7 @@ function buildSimulationStarterFiles({
           template: starterTemplate,
           simulation: {
             engine: "verilator",
-            clockFrequencyHz: 50_000_000,
+            clockFrequencyHz,
             peripherals,
           },
         },

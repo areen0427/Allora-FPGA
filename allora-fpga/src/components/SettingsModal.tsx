@@ -326,6 +326,23 @@ export function SettingsModal({
             >
               <SettingsGroup>
                 <SettingSelect
+                  label="Default clock frequency"
+                  description="Initial virtual clock for new simulation projects."
+                  value={String(settings.simulatorDefaultClockHz)}
+                  onChange={(value) =>
+                    updateSetting(
+                      "simulatorDefaultClockHz",
+                      Number(value) as AppSettings["simulatorDefaultClockHz"],
+                    )
+                  }
+                  options={[
+                    { value: "10000000", label: "10 MHz" },
+                    { value: "25000000", label: "25 MHz" },
+                    { value: "50000000", label: "50 MHz" },
+                    { value: "100000000", label: "100 MHz" },
+                  ]}
+                />
+                <SettingSelect
                   label="Default signal radix"
                   description="Initial value format in the signal inspector."
                   value={settings.simulatorDefaultRadix}

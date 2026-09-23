@@ -6,105 +6,163 @@ import {
   getResourceGroupsForBrowser,
   type PinBrowserResourceGroup,
 } from "../data/pinResourceGroups";
+import VirtualBoard from "./VirtualBoard";
 
 type BoardDiagramProps = {
   board: BoardDefinition;
-  /** Smaller circles, no hint/edge-connector — for tight preview slots. */
+  /** Condensed board summary used by project setup. */
   compact?: boolean;
 };
 
 /**
- * Category-based board diagram: every pin category is a clickable circle laid
- * out on a stylized PCB. Clicking a circle opens a popup listing each pin in
- * that category with its physical pad, while the board stays visible behind it.
- * Driven entirely by the board's pins, so every pin is represented (unlike the
- * fixed physical layout in VirtualBoard).
+ * Data-driven board explorer. The physical board is rendered from the board's
+ * own layout definition while resource controls live in rails outside the PCB.
+ * At narrow widths the rails become horizontally scrollable docks, so controls
+ * never overlap the board or force the surrounding page to scroll.
  */
-export default function BoardDiagram({
-  board,
-  compact = false,
-}: BoardDiagramProps) {
+export default function BoardDiagram({ board, compact = false }: BoardDiagramProps) {
   const resourceGroups = useMemo(
     () => getResourceGroupsForBrowser(board),
     [board],
   );
-  const [activeTitle, setActiveTitle] = useState<string | null>(null);
+  const [activeTitle, setActiveTitle] = useState<string | null>(
+    compact ? null : (resourceGroups[0]?.title ?? null),
+  );
   const activeGroup = activeTitle
     ? (resourceGroups.find((group) => group.title === activeTitle) ?? null)
     : null;
 
   useEffect(() => {
-    if (!activeGroup) return;
+    if (compact) {
+      setActiveTitle(null);
+      return;
+    }
+    setActiveTitle((current) =>
+      resourceGroups.some((group) => group.title === current)
+        ? current
+        : (resourceGroups[0]?.title ?? null),
+    );
+  }, [board.id, compact, resourceGroups]);
+
+  useEffect(() => {
+    if (!compact || !activeGroup) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setActiveTitle(null);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeGroup]);
+  }, [activeGroup, compact]);
 
-  const rootClass = compact
-    ? "board-diagram board-diagram-compact"
-    : "board-diagram";
+  const highlightedPinKeys = activeGroup?.pins.map((pin) => pin.key) ?? [];
 
   return (
-    <div className={rootClass}>
-      <div className="board-diagram-board">
-        <div className="board-diagram-grid">
-          {resourceGroups.map((group) => {
-            const appearance = getCategoryAppearance(group);
+    <div className={compact ? "board-diagram board-diagram-compact" : "board-diagram"}>
+      <div className="board-diagram-scroll">
+        <div className="board-diagram-workbench">
+          <div className="board-diagram-stage">
+            <div className="board-diagram-canvas">
+              <div className="board-diagram-canvas-heading">
+                <span>{board.name}</span>
+                <small>{board.device}</small>
+              </div>
+              <div className="board-diagram-board-frame">
+                <VirtualBoard
+                  board={board}
+                  mappedPinKeys={highlightedPinKeys}
+                  maxHeight={compact ? 144 : 480}
+                  showCaption={false}
+                />
+              </div>
+              <div className="board-diagram-layout-note">
+                Physical component layout · resources stay outside the PCB
+              </div>
+            </div>
 
-            return (
-              <button
-                key={group.title}
-                type="button"
-                className="board-diagram-node"
-                onClick={() => setActiveTitle(group.title)}
-                title={`${group.title} — ${group.pins.length} pins`}
-              >
-                <span
-                  className="board-diagram-circle"
-                  style={{
-                    background: appearance.background,
-                    color: appearance.color,
-                    borderColor: appearance.color,
-                  }}
-                >
-                  <span className="board-diagram-circle-symbol">
-                    {getCategorySymbol(group)}
-                  </span>
-                  <span className="board-diagram-circle-count">
-                    {group.pins.length}
-                  </span>
-                </span>
-                <span className="board-diagram-node-label">{group.title}</span>
-              </button>
-            );
-          })}
+            <ResourceRail
+              groups={resourceGroups}
+              activeTitle={activeTitle}
+              onSelect={setActiveTitle}
+            />
+          </div>
+
+          {!compact ? <ResourceInspector group={activeGroup} /> : null}
         </div>
-
-        {compact ? null : (
-          <div className="board-diagram-fingers" aria-hidden="true" />
-        )}
-        <span className="board-diagram-silk">{board.name}</span>
       </div>
 
-      {compact ? null : (
-        <div className="board-diagram-hint">
-          Select a category to view its pins.
-        </div>
-      )}
-
-      {activeGroup ? (
-        <CategoryPopup
-          group={activeGroup}
-          onClose={() => setActiveTitle(null)}
-        />
+      {compact && activeGroup ? (
+        <CompactResourceDialog group={activeGroup} onClose={() => setActiveTitle(null)} />
       ) : null}
     </div>
   );
 }
 
-function CategoryPopup({
+function ResourceRail({
+  groups,
+  activeTitle,
+  onSelect,
+}: {
+  groups: PinBrowserResourceGroup[];
+  activeTitle: string | null;
+  onSelect: (title: string) => void;
+}) {
+  return (
+    <div className="board-resource-rail" aria-label="Board resources">
+      {groups.map((group) => {
+        const appearance = getCategoryAppearance(group);
+        const active = group.title === activeTitle;
+        return (
+          <button
+            key={group.title}
+            type="button"
+            className={active ? "board-rail-item active" : "board-rail-item"}
+            onClick={() => onSelect(group.title)}
+            aria-pressed={active}
+            title={`${group.title} — ${group.pins.length} pins`}
+          >
+            <span
+              className="board-rail-symbol"
+              style={{ background: appearance.background, color: appearance.color }}
+            >
+              {getCategorySymbol(group)}
+            </span>
+            <span className="board-rail-count">{group.pins.length}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResourceInspector({ group }: { group: PinBrowserResourceGroup | null }) {
+  if (!group) {
+    return (
+      <aside className="board-resource-inspector empty">
+        Select a resource group to inspect its pins.
+      </aside>
+    );
+  }
+
+  const appearance = getCategoryAppearance(group);
+  return (
+    <aside className="board-resource-inspector" aria-live="polite">
+      <div className="board-inspector-header">
+        <span
+          className="board-inspector-symbol"
+          style={{ background: appearance.background, color: appearance.color }}
+        >
+          {getCategorySymbol(group)}
+        </span>
+        <div>
+          <strong>{group.title}</strong>
+          <small>{group.detail} · {group.pins.length} pins</small>
+        </div>
+      </div>
+      <PinList group={group} />
+    </aside>
+  );
+}
+
+function CompactResourceDialog({
   group,
   onClose,
 }: {
@@ -112,7 +170,6 @@ function CategoryPopup({
   onClose: () => void;
 }) {
   const appearance = getCategoryAppearance(group);
-
   return (
     <div className="board-diagram-popup-backdrop" onClick={onClose}>
       <div
@@ -135,42 +192,36 @@ function CategoryPopup({
               {group.detail} · {group.pins.length} pins
             </div>
           </div>
-          <button
-            type="button"
-            className="board-diagram-popup-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="board-diagram-popup-close" onClick={onClose} aria-label="Close">
             <X size={16} />
           </button>
         </div>
-
-        <div className="board-diagram-pin-list">
-          {group.pins.map((pin) => {
-            const color = getPinTypeColor(pin.type);
-
-            return (
-              <div key={pin.key} className="board-diagram-pin-row">
-                <span
-                  className="board-diagram-pin-symbol"
-                  style={{ background: color.background, color: color.color }}
-                >
-                  {pin.symbol}
-                </span>
-                <span
-                  className="board-diagram-pin-name"
-                  title={pin.detail ?? pin.name}
-                >
-                  {pin.detail ?? pin.name}
-                </span>
-                <span className="board-diagram-pin-pad" title={pin.pin}>
-                  {pin.pin}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <PinList group={group} />
       </div>
+    </div>
+  );
+}
+
+function PinList({ group }: { group: PinBrowserResourceGroup }) {
+  return (
+    <div className="board-diagram-pin-list">
+      {group.pins.map((pin) => {
+        const color = getPinTypeColor(pin.type);
+        return (
+          <div key={pin.key} className="board-diagram-pin-row">
+            <span
+              className="board-diagram-pin-symbol"
+              style={{ background: color.background, color: color.color }}
+            >
+              {pin.symbol}
+            </span>
+            <span className="board-diagram-pin-name" title={pin.detail ?? pin.name}>
+              {pin.detail ?? pin.name}
+            </span>
+            <span className="board-diagram-pin-pad" title={pin.pin}>{pin.pin}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -199,12 +250,8 @@ function getCategoryAppearance(group: PinBrowserResourceGroup) {
   };
   if (known[type]) return known[type];
 
-  // Stable hue per category title so groups like Ethernet / LPDDR4 stay
-  // distinct from each other across renders.
   let hash = 0;
-  for (const char of group.title) {
-    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  }
+  for (const char of group.title) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
 }
 

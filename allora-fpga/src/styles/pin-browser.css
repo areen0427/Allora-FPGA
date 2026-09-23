@@ -427,6 +427,92 @@
   font-size: 10px;
 }
 
+/* The pin browser and project summary share the same Allora virtual-PCB
+   chassis as the simulation welcome screen. Resource nodes remain the active
+   layer; the die, headers, oscillator, USB port, and mounting holes establish
+   one consistent board silhouette across the product. */
+.board-diagram .resource-pcb {
+  width: 100%;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  aspect-ratio: auto;
+  border: 1px solid #28b8bd;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(21, 196, 195, 0.16), transparent 42%),
+    linear-gradient(135deg, #087176, #075a60);
+  box-shadow:
+    inset 0 0 0 4px rgba(4, 44, 50, 0.45),
+    inset 0 0 0 5px rgba(105, 234, 229, 0.18),
+    0 18px 34px rgba(0, 0, 0, 0.24);
+  display: block;
+  transform: none;
+}
+
+.board-diagram .resource-pcb::before {
+  content: none;
+}
+
+.resource-pcb .virtual-pcb-overlay {
+  position: absolute;
+  z-index: 6;
+  inset: 34px 48px 34px;
+  display: flex;
+  align-items: center;
+}
+
+.resource-pcb .board-diagram-grid {
+  max-height: 100%;
+  padding: 5px;
+  overflow: auto;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 12px 10px;
+}
+
+.resource-pcb .board-diagram-node {
+  min-width: 0;
+  max-width: 118px;
+  padding: 2px;
+  gap: 6px;
+}
+
+.resource-pcb .board-diagram-circle {
+  width: 46px;
+  height: 46px;
+  border-width: 1px;
+}
+
+.resource-pcb .board-diagram-circle::after {
+  inset: -4px;
+}
+
+.board-diagram-compact .resource-pcb .virtual-pcb-overlay {
+  inset: 27px 32px 28px;
+}
+
+.board-diagram-compact .resource-pcb .board-fpga-package,
+.board-diagram-compact .resource-pcb .board-clock,
+.board-diagram-compact .resource-pcb .board-usb {
+  opacity: 0.62;
+}
+
+.board-diagram-compact .resource-pcb .board-diagram-grid {
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 7px 6px;
+}
+
+.board-diagram-compact .resource-pcb .board-diagram-circle {
+  width: 32px;
+  height: 32px;
+}
+
+.board-diagram-compact .resource-pcb .board-diagram-node-label {
+  font-size: 8px;
+}
+
 .board-diagram-hint {
   flex: 0 0 auto;
   text-align: center;
@@ -667,6 +753,287 @@ html[data-theme="dark"] .board-diagram-pin-name {
   font-size: 14px;
   line-height: 1.45;
 }
+
+/* ── Responsive resource rails ──────────────────────────────────────────
+   The PCB is always its own unobstructed SVG surface. Controls occupy rails
+   outside it and collapse into scrollable docks when the container narrows. */
+.board-diagram {
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+.board-diagram-scroll {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.38) transparent;
+}
+
+.board-diagram-workbench {
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(220px, 0.68fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.board-diagram-stage {
+  min-width: 0;
+  min-height: 280px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  padding: 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(56, 189, 248, 0.08), transparent 48%),
+    var(--ui-control-bg);
+  box-shadow:
+    var(--ui-inset-highlight),
+    0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.board-resource-rail {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: row;
+  justify-content: safe center;
+  gap: 6px;
+  padding: 2px 1px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.34) transparent;
+}
+
+.board-rail-item {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 48px;
+  min-height: 36px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 9px;
+  background: var(--ui-control-bg);
+  color: var(--ui-text, #0f172a);
+  padding: 4px 7px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--ui-inset-highlight);
+  transition: border-color var(--ui-motion-fast), background var(--ui-motion-fast), transform var(--ui-motion-fast);
+}
+
+.board-rail-item:hover,
+.board-rail-item:focus-visible,
+.board-rail-item.active {
+  outline: none;
+  border-color: var(--ui-blue, #2563eb);
+  background: var(--ui-control-active-bg, #eff6ff);
+}
+
+.board-rail-item:hover { transform: translateY(-1px); }
+.board-rail-item.active { box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.18), 0 0 18px rgba(14, 165, 233, 0.12); }
+
+.board-rail-symbol,
+.board-inspector-symbol {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+}
+
+.board-rail-count {
+  min-width: 15px;
+  color: var(--ui-muted-text, #64748b);
+  font-size: 9px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-diagram-canvas {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-content: stretch;
+}
+
+.board-diagram-canvas-heading {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--ui-text, #0f172a);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.board-diagram-canvas-heading span,
+.board-diagram-canvas-heading small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-diagram-canvas-heading small { color: var(--ui-muted-text, #64748b); font-size: 8px; }
+
+.board-diagram-board-frame {
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(4px, 0.8vw, 9px);
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-control-bg) 78%, var(--ui-blue-soft, #dbeafe));
+  box-shadow: inset 0 0 24px rgba(15, 23, 42, 0.08);
+}
+
+.board-diagram-board-frame .vboard-shell { display: grid; place-items: center; }
+.board-diagram-board-frame .vboard-svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.28));
+}
+
+.board-diagram-layout-note {
+  color: var(--ui-muted-text, #64748b);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+
+.board-resource-inspector {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 16px;
+  background: var(--ui-control-bg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--ui-inset-highlight);
+}
+
+.board-resource-inspector.empty {
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.board-inspector-header {
+  min-width: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.board-inspector-symbol { min-width: 38px; height: 34px; font-size: 10px; }
+.board-inspector-header > div { min-width: 0; display: grid; gap: 2px; }
+.board-inspector-header strong { color: var(--ui-text, #0f172a); font-size: 14px; font-weight: 900; }
+.board-inspector-header small { color: #64748b; font-size: 10px; font-weight: 750; line-height: 1.3; }
+.board-resource-inspector .board-diagram-pin-list { grid-template-columns: 1fr; }
+
+.board-diagram-compact .board-diagram-workbench { display: block; min-height: 100%; }
+.board-diagram-compact .board-diagram-scroll { overflow-y: hidden; }
+.board-diagram-compact .board-diagram-stage {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 5px;
+  padding: 7px;
+}
+.board-diagram-compact .board-diagram-canvas { grid-column: 1; grid-row: 1; gap: 4px; min-height: 0; }
+.board-diagram-compact .board-diagram-canvas-heading { font-size: 9px; }
+.board-diagram-compact .board-diagram-board-frame { padding: 4px; }
+.board-diagram-compact .board-diagram-layout-note { display: none; }
+.board-diagram-compact .board-resource-rail { gap: 5px; scrollbar-width: none; }
+.board-diagram-compact .board-resource-rail::-webkit-scrollbar { display: none; }
+.board-diagram-compact .board-rail-item {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 42px;
+  min-height: 29px;
+  padding: 3px 6px;
+  gap: 4px;
+  border-radius: 8px;
+}
+.board-diagram-compact .board-rail-symbol { min-width: 23px; height: 21px; font-size: 7px; }
+.board-diagram-compact .board-rail-count { font-size: 8px; }
+
+@container (max-width: 720px) {
+  .board-diagram:not(.board-diagram-compact) .board-diagram-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .board-diagram:not(.board-diagram-compact) .board-diagram-stage {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: stretch;
+  }
+
+  .board-diagram:not(.board-diagram-compact) .board-diagram-canvas { grid-column: 1; grid-row: 1; }
+  .board-resource-inspector { max-height: 250px; }
+}
+
+@container (max-width: 420px) {
+  .board-diagram-stage { padding: 8px; }
+  .board-diagram-canvas-heading small { display: none; }
+  .board-diagram:not(.board-diagram-compact) .board-resource-inspector { max-height: 220px; }
+}
+
+html[data-theme="dark"] .board-resource-inspector,
+html[data-theme="black-ice"] .board-resource-inspector {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.76);
+}
+
+html[data-theme="dark"] .board-diagram-stage,
+html[data-theme="black-ice"] .board-diagram-stage {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(56, 189, 248, 0.09), transparent 48%),
+    rgba(15, 23, 42, 0.74);
+}
+
+html[data-theme="dark"] .board-diagram-board-frame,
+html[data-theme="black-ice"] .board-diagram-board-frame {
+  background: rgba(2, 16, 28, 0.48);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme="dark"] .board-inspector-header strong,
+html[data-theme="black-ice"] .board-inspector-header strong,
+html[data-theme="dark"] .board-diagram-pin-pad,
+html[data-theme="black-ice"] .board-diagram-pin-pad { color: #e2e8f0; }
 
 html[data-theme="black-ice"] .pin-detail-panel h2,
 html[data-theme="dark"] .pin-detail-panel h2 {

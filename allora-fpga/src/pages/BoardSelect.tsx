@@ -106,6 +106,7 @@ export default function BoardSelect({
           key={homeViewKey}
           theme={settings.theme}
           reduceMotion={settings.reduceMotion}
+          settings={settings}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
           showAllBoards={showAllBoards}
@@ -122,6 +123,7 @@ export default function BoardSelect({
           onCreateSimulationProject={onCreateSimulationProject}
           onOpenProject={onOpenProject}
           onRemoveRecentProject={removeRecentProject}
+          onSettingsChange={onSettingsChange}
         />
       ) : (
         <PinMappingBrowser
