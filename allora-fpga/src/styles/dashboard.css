@@ -615,6 +615,63 @@
   font-weight: 760;
 }
 
+.editor-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: 12px;
+  color: #64748b;
+}
+
+.editor-autosave-note,
+.editor-save-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.editor-autosave-note {
+  color: #64748b;
+}
+
+.editor-save-label {
+  min-width: 58px;
+  justify-content: flex-end;
+  color: #15803d;
+  font-weight: 780;
+}
+
+.editor-save-label.unsaved {
+  color: #2563eb;
+}
+
+.editor-save-label.saving {
+  color: #0369a1;
+}
+
+.editor-save-label.error {
+  color: #b91c1c;
+}
+
+.editor-save-spinner {
+  animation: editor-save-spin 0.85s linear infinite;
+}
+
+@keyframes editor-save-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 980px) {
+  .editor-autosave-note {
+    display: none;
+  }
+}
+
 .editor-body {
   position: relative;
   flex: 1;

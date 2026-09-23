@@ -18,6 +18,7 @@ import type {
 } from "./dashboard/types";
 import {
   ArrowLeft,
+  Home,
   Binary,
   Code2,
   Activity,
@@ -42,7 +43,6 @@ import {
   FolderOpen,
   ChevronRight,
 } from "lucide-react";
-import { getBoardIconForBoardId } from "./boardIcons";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
 import { buildProjectFilePath } from "../lib/projectWorkspace";
@@ -149,6 +149,7 @@ export default function Dashboard({
     initialTopLevelFileName: project?.topLevelFileName,
     setFiles: fileMgmt.setFiles,
   });
+  const setDirtyFileNames = activeTabs.setDirtyFileNames;
 
   // --- Save project hook ---
   const saveProject = useSaveProject({
@@ -161,7 +162,16 @@ export default function Dashboard({
 
   const projectName = project?.name ?? "Untitled Project";
   const projectPath = project?.projectPath;
-  const BoardHomeIcon = getBoardIconForBoardId(board.id);
+
+  useEffect(() => {
+    if (saveProject.saveStatus === "saved") {
+      setDirtyFileNames([]);
+    }
+  }, [
+    saveProject.lastSavedAt,
+    saveProject.saveStatus,
+    setDirtyFileNames,
+  ]);
 
   // --- Coordinating functions that wire hooks together ---
 
@@ -177,12 +187,10 @@ export default function Dashboard({
   function handleOpenFile(fileName: string) {
     activeTabs.openFile(fileName);
     setActiveSection("editor");
-    markWorkspaceUnsaved();
   }
 
   function handleCloseOpenFile(fileName: string) {
     activeTabs.closeOpenFile(fileName);
-    markWorkspaceUnsaved();
   }
 
   function handleCreateNewFile(fileName?: string, content?: string) {
@@ -399,7 +407,7 @@ export default function Dashboard({
               onClick={onHome}
               className="activity-home-button"
             >
-              <BoardHomeIcon size={18} color="white" strokeWidth={2.2} />
+              <Home size={18} color="white" strokeWidth={2.2} />
             </button>
             {explorerCollapsed ? (
               <button
@@ -674,6 +682,8 @@ export default function Dashboard({
             setActiveFileName={handleOpenFile}
             activeFile={activeTabs.activeFile}
             dirtyFileNames={activeTabs.dirtyFileNames}
+            saveStatus={saveProject.saveStatus}
+            lastSavedAt={saveProject.lastSavedAt}
             updateActiveFile={handleUpdateActiveFile}
             createNewFile={() => handleCreateNewFile()}
             closeOpenFile={handleCloseOpenFile}

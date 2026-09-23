@@ -115,8 +115,10 @@ export function useSaveProject({
       void saveCurrentProject();
     }
 
-    window.addEventListener("keydown", handleSaveShortcut);
-    return () => window.removeEventListener("keydown", handleSaveShortcut);
+    // Capture before Monaco's command service so the desktop/browser default
+    // never intercepts Cmd+S or Ctrl+S.
+    window.addEventListener("keydown", handleSaveShortcut, true);
+    return () => window.removeEventListener("keydown", handleSaveShortcut, true);
   }, [activeFileName, board.id, files, project, projectPath]);
 
   useEffect(() => {

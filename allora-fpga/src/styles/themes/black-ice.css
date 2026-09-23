@@ -309,6 +309,23 @@ html[data-theme="black-ice"] .editor-breadcrumbs > strong {
   color: #cbd5e1;
 }
 
+html[data-theme="black-ice"] .editor-autosave-note {
+  color: #94a3b8;
+}
+
+html[data-theme="black-ice"] .editor-save-label {
+  color: #86efac;
+}
+
+html[data-theme="black-ice"] .editor-save-label.unsaved,
+html[data-theme="black-ice"] .editor-save-label.saving {
+  color: #7dd3fc;
+}
+
+html[data-theme="black-ice"] .editor-save-label.error {
+  color: #fca5a5;
+}
+
 html[data-theme="black-ice"] .editor-shell .monaco-editor,
 html[data-theme="black-ice"] .editor-shell .monaco-editor-background,
 html[data-theme="black-ice"] .editor-shell .monaco-editor .inputarea.ime-input,

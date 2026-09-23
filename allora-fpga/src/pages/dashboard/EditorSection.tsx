@@ -3,7 +3,17 @@ import Editor, { type Monaco } from "@monaco-editor/react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
-import { ChevronRight, FileCode2, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Circle,
+  Cloud,
+  FileCode2,
+  LoaderCircle,
+  Plus,
+  TriangleAlert,
+} from "lucide-react";
+import type { SaveStatus } from "../../hooks/utils";
 
 type LintDiagnostic = {
   fileName: string;
@@ -24,6 +34,8 @@ type EditorSectionProps = {
   setActiveFileName: (fileName: string) => void;
   activeFile: ProjectFile | undefined;
   dirtyFileNames: string[];
+  saveStatus: SaveStatus;
+  lastSavedAt: string;
   updateActiveFile: (content: string) => void;
   createNewFile: () => void;
   closeOpenFile: (fileName: string) => void;
@@ -41,6 +53,8 @@ export default function EditorSection({
   setActiveFileName,
   activeFile,
   dirtyFileNames,
+  saveStatus,
+  lastSavedAt,
   updateActiveFile,
   createNewFile,
   closeOpenFile,
@@ -284,6 +298,16 @@ export default function EditorSection({
           <FileCode2 size={13} aria-hidden="true" />
           {activeFile?.name ?? "No file open"}
         </strong>
+        <div className="editor-save-state" role="status" aria-live="polite">
+          <span className="editor-autosave-note">
+            <Cloud size={12} aria-hidden="true" />
+            Autosave on · every 30 seconds
+          </span>
+          <span className={`editor-save-label ${saveStatus}`}>
+            <SaveStatusIcon status={saveStatus} />
+            {getEditorSaveLabel(saveStatus, lastSavedAt)}
+          </span>
+        </div>
       </div>
 
       <div className="editor-body">
@@ -370,6 +394,26 @@ export default function EditorSection({
       </div>
     </div>
   );
+}
+
+function SaveStatusIcon({ status }: { status: SaveStatus }) {
+  if (status === "saving") {
+    return <LoaderCircle className="editor-save-spinner" size={12} aria-hidden="true" />;
+  }
+  if (status === "error") {
+    return <TriangleAlert size={12} aria-hidden="true" />;
+  }
+  if (status === "unsaved") {
+    return <Circle size={8} fill="currentColor" aria-hidden="true" />;
+  }
+  return <Check size={12} aria-hidden="true" />;
+}
+
+function getEditorSaveLabel(status: SaveStatus, lastSavedAt: string) {
+  if (status === "saving") return "Saving…";
+  if (status === "unsaved") return "Unsaved changes";
+  if (status === "error") return "Save failed";
+  return lastSavedAt ? "Saved" : "Ready to save";
 }
 
 function getEditorFolder(file?: ProjectFile) {

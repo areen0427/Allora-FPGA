@@ -1061,7 +1061,10 @@ html[data-theme="black-ice"] .welcome-brand-lockup {
 .welcome-page:has(.welcome-destination-stage) {
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
+  /* Clip the background handoff without creating a scroll container, which
+     would prevent the navigation and project sidebars from sticking to the
+     viewport while the expanded board catalog scrolls. */
+  overflow-x: clip;
 }
 .welcome-destination-stage .welcome-environment {
   filter: var(--landing-environment-handoff-filter);
@@ -1076,6 +1079,7 @@ html[data-theme="black-ice"] .welcome-brand-lockup {
   position: relative;
 }
 .welcome-page:has(.welcome-destination-stage) .welcome-rail {
+  position: sticky;
   z-index: 30;
   isolation: isolate;
   transform: translateZ(0);
