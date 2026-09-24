@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260921c" />
+    <link rel="stylesheet" href="styles.css?v=20260924a" />
     <script src="boards-data.js"></script>
     <script>
       (() => {
@@ -32,7 +32,7 @@
           <span><strong>ALLORA</strong><small>FPGA</small></span>
         </a>
         <div class="nav-links">
-          <a href="#simulator">Simulator</a><a href="#workflow">Workflow</a><a href="#try">Try it live</a><a href="#compare">Boards</a>
+          <a href="#simulator">Simulator</a><a href="#workflow">Workflow</a><a href="#compare">Boards</a><a href="#integrations">Integrations</a>
         </div>
         <div class="nav-actions">
           <button class="theme-switch" id="themeSwitch" type="button" aria-label="Switch to Black Ice" aria-pressed="false">
@@ -123,25 +123,6 @@
         </div>
       </section>
 
-      <section class="section try-live" id="try">
-        <div class="shell">
-          <div class="section-heading split-heading reveal"><div><p class="eyebrow">Try it live</p><h2 class="display-title">Map a signal. Get a constraint.</h2></div><p class="section-lead">Choose a signal, place it on a pad, and watch Allora write the PCF. This small browser demo mirrors the mapping logic used in the app.</p></div>
-          <div class="pinmap reveal" id="pinmap">
-            <div class="pinmap-board surface">
-              <div class="panel-bar"><span>iCEBreaker · visual mapper</span><b id="pinStatus">Choose a signal</b></div>
-              <svg viewBox="0 0 620 330" role="img" aria-label="Interactive iCEBreaker pin map">
-                <defs><linearGradient id="pcb" x1="0" x2="1"><stop stop-color="#087f83"/><stop offset="1" stop-color="#0f9a94"/></linearGradient></defs>
-                <rect class="demo-board" x="36" y="42" width="548" height="228" rx="22" fill="url(#pcb)" /><rect class="demo-board-inner" x="50" y="56" width="520" height="200" rx="14" />
-                <rect class="demo-chip" x="232" y="92" width="156" height="112" rx="12" /><text class="demo-chip-kicker" x="310" y="130" text-anchor="middle">LATTICE</text><text class="demo-chip-name" x="310" y="160" text-anchor="middle">iCE40 UP5K</text>
-                <g id="pinNodes"></g><text class="demo-board-label" x="555" y="238" text-anchor="end">iCEBREAKER</text>
-              </svg>
-              <div class="signal-picker" id="signalPicker" role="group" aria-label="Signals to place"></div>
-            </div>
-            <div class="constraint-panel surface"><div class="panel-bar"><span>constraints.pcf</span><button id="copyConstraints" type="button">Copy</button></div><pre id="constraintCode"><code><span class="code-comment"># Select a signal, then choose a pad.</span></code></pre><button class="reset-map" id="resetMap" type="button">Reset mapping</button></div>
-          </div>
-        </div>
-      </section>
-
       <section class="section compare" id="compare">
         <div class="shell">
           <div class="section-heading centered reveal"><p class="eyebrow">Compare boards</p><h2 class="display-title">Choose the right target.</h2><p class="section-lead">Compare fully supported open-toolchain boards, then browse the wider pin-mapping catalog.</p></div>
@@ -169,6 +150,22 @@
             <figure class="theme-preview theme-preview-black surface"><div class="theme-preview-bar"><span>Black Ice · Virtual FPGA</span><small>Live Signals</small></div><img src="app-simulator-black-ice.png" alt="Allora Virtual FPGA simulator running in the Black Ice theme" loading="lazy" /><figcaption><strong>Signals with luminous depth</strong><p>Glowing state, layered controls, and dark glass make the running design easy to follow.</p></figcaption></figure>
           </div>
           <div class="visual-highlights reveal" aria-label="Allora visual design highlights"><article><span>01</span><div><strong>Frosted surfaces</strong><p>Layered transparency separates tools without adding visual weight.</p></div></article><article><span>02</span><div><strong>Icy highlights</strong><p>Cool edge light and crisp borders make controls easy to read at a glance.</p></div></article><article><span>03</span><div><strong>One visual system</strong><p>Matching geometry keeps every workflow familiar across both themes.</p></div></article></div>
+        </div>
+      </section>
+
+      <section class="section integrations" id="integrations" aria-labelledby="integrations-title">
+        <div class="shell">
+          <div class="section-heading reveal"><p class="eyebrow">Integrations</p><h2 class="display-title" id="integrations-title">Connect your tools to Allora.</h2></div>
+          <div class="integration-list">
+            <article class="integration-card surface reveal">
+              <div class="integration-mark" aria-hidden="true">AI</div>
+              <div class="integration-copy"><div class="integration-title"><h3>Codex &amp; Claude Code</h3><span class="integration-badge">Beta</span></div><p>Connect your Codex or Claude Code account through its installed CLI in Settings → AI Integration. The beta currently checks installation and sign-in status. We’re working toward exposing Allora’s functions to your connected AI so it can help control the app and its FPGA workflow.</p><p class="integration-detail">An installed CLI and a connected provider account are required for AI features.</p></div>
+            </article>
+            <article class="integration-card surface reveal">
+              <div class="integration-mark integration-mark-git" aria-hidden="true">git</div>
+              <div class="integration-copy"><div class="integration-title"><h3>GitHub</h3></div><p>Initialize a local Git repository when you create a project. When you’re ready to share it, use Publish to GitHub to connect your GitHub account, commit your work, create or select a repository, and push.</p><p class="integration-detail">GitHub connection uses OAuth. Local Git projects do not require a GitHub account.</p></div>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -201,44 +198,6 @@
           for (const entry of entries) if (entry.isIntersecting) entry.target.classList.add("is-visible");
         }, { threshold: 0.12 });
         document.querySelectorAll(".reveal").forEach((node) => revealObserver.observe(node));
-
-        const signals = [{ name: "clk", color: "#38bdf8" }, { name: "reset", color: "#fb7185" }, { name: "enable", color: "#60a5fa" }, { name: "leds[0]", color: "#4ade80" }];
-        const pads = [2, 4, 9, 10, 21, 23, 25, 27];
-        const pinNodes = document.getElementById("pinNodes");
-        const picker = document.getElementById("signalPicker");
-        const code = document.getElementById("constraintCode");
-        const status = document.getElementById("pinStatus");
-        const placed = {};
-        let armed = null;
-        pads.forEach((pin, index) => {
-          const x = 92 + index * 62;
-          pinNodes.insertAdjacentHTML("beforeend", `<g class="demo-pin" data-pin="${pin}" tabindex="0" role="button" aria-label="Map to pin ${pin}"><line x1="${x}" y1="60" x2="${x}" y2="88"/><circle cx="${x}" cy="58" r="14"/><text x="${x}" y="63" text-anchor="middle">${pin}</text></g>`);
-        });
-        signals.forEach((signal) => {
-          const button = document.createElement("button");
-          button.type = "button"; button.dataset.signal = signal.name; button.style.setProperty("--signal-color", signal.color); button.innerHTML = `<i></i>${signal.name}`;
-          button.addEventListener("click", () => { armed = signal.name; renderPinmap(); }); picker.append(button);
-        });
-        function mapPin(pin) {
-          if (!armed) { status.textContent = "Choose a signal first"; return; }
-          for (const key of Object.keys(placed)) if (placed[key] === armed) delete placed[key];
-          placed[pin] = armed; armed = null; renderPinmap();
-        }
-        pinNodes.addEventListener("click", (event) => { const node = event.target.closest(".demo-pin"); if (node) mapPin(node.dataset.pin); });
-        pinNodes.addEventListener("keydown", (event) => { const node = event.target.closest(".demo-pin"); if (node && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); mapPin(node.dataset.pin); } });
-        document.getElementById("resetMap").addEventListener("click", () => { Object.keys(placed).forEach((key) => delete placed[key]); armed = null; renderPinmap(); });
-        document.getElementById("copyConstraints").addEventListener("click", async (event) => {
-          const text = Object.entries(placed).map(([pin, signal]) => `set_io ${signal} ${pin}`).join("\n"); if (!text) return;
-          await navigator.clipboard.writeText(text); event.currentTarget.textContent = "Copied"; setTimeout(() => { event.currentTarget.textContent = "Copy"; }, 1200);
-        });
-        function renderPinmap() {
-          document.querySelectorAll("[data-signal]").forEach((button) => { button.classList.toggle("is-armed", button.dataset.signal === armed); button.classList.toggle("is-placed", Object.values(placed).includes(button.dataset.signal)); });
-          document.querySelectorAll(".demo-pin").forEach((node) => { const signal = placed[node.dataset.pin]; node.classList.toggle("is-mapped", Boolean(signal)); node.style.setProperty("--pin-color", signals.find((item) => item.name === signal)?.color || "#38bdf8"); });
-          const lines = Object.entries(placed).map(([pin, signal]) => `<span class="code-command">set_io</span> <span class="code-signal">${signal}</span> <span class="code-value">${pin}</span>`);
-          code.innerHTML = lines.length ? `<code>${lines.join("\n")}</code>` : `<code><span class="code-comment"># Select a signal, then choose a pad.</span></code>`;
-          const count = Object.keys(placed).length; status.textContent = armed ? `Place ${armed}` : count ? `${count} signal${count === 1 ? "" : "s"} mapped` : "Choose a signal";
-        }
-        renderPinmap();
 
         const full = window.ALLORA_BOARDS_FULL || [];
         const pins = window.ALLORA_BOARDS_PINS || [];
