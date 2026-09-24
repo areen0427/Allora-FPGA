@@ -128,6 +128,14 @@ Persistent interactive Virtual FPGA sessions are implemented in `src-tauri/src/v
 
 External tools are resolved from the environment and common install locations. A successful frontend build does not prove that a particular FPGA toolchain or programmer is installed on the user's machine.
 
+## AI Integration settings
+
+Settings has an **AI Integration** destination for OpenAI Codex and Claude Code. `src/components/AiIntegrationSettings.tsx` renders both providers from shared configuration, and `src/lib/aiIntegration.ts` exposes typed Tauri calls. Provider-specific CLI discovery, version checks, authentication status, and login initiation are isolated in `src-tauri/src/ai_integration.rs`; React does not run a shell or parse CLI output.
+
+The Rust layer executes `codex --version` and `codex login status`, or `claude --version` and `claude auth status --json`, with timeouts and structured status results. It searches the inherited PATH plus common macOS CLI locations and excludes the Codex desktop app's managed standalone runtime and app-bundled binary from independent CLI detection. Settings displays the detected executable path and a last-checked time so a PATH discrepancy or repeated scan is visible. On macOS, **Connect** opens the provider's normal login command in Terminal. The provider owns credential storage and browser authentication; Allora does not collect or persist provider credentials.
+
+The status **Connected** means the provider CLI reports an authenticated local session. It is not a live service or model request. The user's Codex CLI login was separately confirmed by a successful live `codex exec` response on the development Mac. Claude Code follows the same V1 onboarding architecture but has not had a live account validation. No MCP, Allora agent tools, AI chat, project editing, or FPGA operations through AI are implemented.
+
 ## Frontend organization
 
 - `src/pages/welcome/` — welcome shell, Simulate/Build destinations, board selection helpers, pin browser, and variant selection.
@@ -176,6 +184,7 @@ For UI changes, validate both Ice and Black Ice, the native WebView when native-
 - Generated testbenches are scaffolds, not template-aware complete verification environments.
 - GitHub publishing requires a project-owner-supplied OAuth client ID and the system `git` executable. `gh` remains optional.
 - GitHub V1 intentionally does not fetch, pull, merge, rebase, resolve divergence, manage collaborators, or work with issues and pull requests.
+- AI Integration V1 reports local CLI installation and login state only; Claude Code live sign-in and both providers' future Allora tool access remain unverified or unimplemented, respectively.
 - Project directories remain the canonical data store; Git must not replace or bypass the existing Tauri file-save path.
 
 ## GitHub services
@@ -193,7 +202,7 @@ Responsibilities are intentionally separated:
 - GitHub CLI (`gh`) is detected and displayed only as optional diagnostic information in V1. It is not required, invoked, or used as a second credential store.
 - Authenticated HTTPS pushes use a permissions-restricted temporary askpass helper. The token is read from the OS vault and passed only through the child process environment, never through a command argument.
 
-The workflow separates sign-in, local initialization, staging/commit, repository creation or selection, `origin` connection, and push into explicit user actions. New repositories default to private. Allora never replaces a mismatched existing `origin`, fetches/pulls/merges without instruction, or uses force push. A rejected push is surfaced for manual resolution. Ahead/behind status is based on existing local upstream refs and does not imply that Allora silently contacted the network.
+The guided workflow separates sign-in, local initialization, staging/commit, repository creation or selection, `origin` connection, and push into explicit user actions. New repositories default to private. A Git command mode lets users type one Git command at a time in the project directory, with output and refreshed status shown in the dialog. The native backend invokes Git directly without a shell and reuses vault-backed authentication for GitHub HTTPS pushes to `origin`. A bare first `git push` sets upstream tracking. The guided controls never replace a mismatched existing `origin`, fetch/pull/merge without instruction, or force push; the command mode runs operations explicitly typed by the user. Ahead/behind status is based on existing local upstream refs and does not imply that Allora silently contacted the network.
 
 `src/lib/github.ts` is the typed frontend service boundary and `src/components/GitHubPublishDialog.tsx` owns the progressive-disclosure UI. Full setup, security decisions, responsibility boundaries, and primary-source links are documented in `GITHUB_INTEGRATION.md`.
 

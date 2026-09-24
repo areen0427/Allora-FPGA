@@ -1,6 +1,117 @@
+## 2026-09-24 — Documented AI Integration V1 and verified Codex connection
+
+Changed:
+
+- Updated `README.md` and `CONTEXT.md` with the Codex and Claude Code Settings flow, Rust/frontend boundaries, provider-owned credentials, status semantics, and V1 feature limits.
+- Recorded that Codex CLI login was verified by a live `codex exec` response on the development Mac. Claude Code's onboarding implementation remains without a live account test.
+
+Validated:
+
+- Reviewed the current integration commands and UI state mapping; checked documentation diff and whitespace. No application code changed in this update.
+
+## 2026-09-24 — Excluded app-managed Codex runtime from CLI installation status
+
+Changed:
+
+- Codex CLI discovery now skips the Codex desktop app's managed standalone runtime and binaries inside app bundles. A desktop-bundled executable is no longer reported as a separately installed CLI.
+- Settings now shows the executable path for any detected provider CLI and a last-checked time, making PATH discrepancies and repeated checks visible. A failed recheck clears the previous status instead of leaving stale Installed/Connected indicators.
+- Added a symlink regression test for a `~/.local/bin/codex` link into the managed runtime.
+
+Validated:
+
+- Reproduced the mismatch: this process finds `~/.local/bin/codex` linked to `~/.codex/packages/standalone/...` and `/Applications/ChatGPT.app/Contents/Resources/codex`, while no independent Codex CLI installation is present among the searched paths.
+- Five AI integration Rust tests, frontend build/lint, Rust formatting, and diff check.
+- Built and launched the updated macOS `.app`; Settings reported Codex CLI Required, and Check Again advanced the checked time while keeping CLI Required.
+
+Known limitation:
+
+- A user who intentionally relies only on the desktop app's managed Codex binary will be shown as needing a separate Codex CLI installation for Allora.
+
+## 2026-09-23 — Fixed existing Codex account detection
+
+Changed:
+
+- Read bounded stdout and stderr concurrently for provider CLI checks. This detects Codex versions that write `login status` to stderr while still keeping raw CLI output out of the frontend and logs.
+- Preserved process timeouts and child reaping; status parsing now checks the combined Codex output for connected or disconnected markers.
+- Added a regression fixture that reports a successful Codex login only on stderr.
+
+Validated:
+
+- Reproduced the user's failure with the installed Codex CLI: `codex login status` exited successfully, wrote no stdout, and wrote its logged-in marker to stderr.
+- AI integration Rust tests, formatting, and diff checks passed.
+
+## 2026-09-23 — AI Integration settings V1
+
+Changed:
+
+- Added an AI Integration destination to the existing Settings modal with reusable Codex and Claude Code provider rows, installation guidance, and Ice/Black Ice styles.
+- Added Rust AI provider commands for CLI version and authentication status checks and for launching each provider's login command in macOS Terminal. The React layer receives structured status only; Allora does not collect credentials.
+- CLI discovery checks the inherited PATH and common macOS Homebrew, MacPorts, npm, nvm, fnm, Volta, mise, asdf, bun, and local binary locations. Checks have bounded timeouts and sanitized user-facing errors.
+
+Validated:
+
+- `npm run build` and `npm run lint`.
+- `cargo test --manifest-path allora-fpga/src-tauri/Cargo.toml --lib` (22 passed, including simulated provider states and timeout), `cargo fmt`, and `git diff --check`.
+- Local Codex CLI was found at `~/.local/bin/codex` and returned version `0.156.1`.
+
+Known limitations:
+
+- Provider login runs in Terminal; cancelling it must be done there. The Settings Stop checking action only stops status polling.
+- Official provider favicons are loaded from provider sites, so the icons require network access.
+- Ice and Black Ice Settings layout and official provider icons were visually checked in the Vite preview. Live sign-in and Finder-launched PATH behavior still need hands-on app QA. Claude Code is not installed on this development machine.
+- Other operating systems report a manual terminal login instruction; automatic Terminal launch is implemented for macOS only.
+
 # Allora FPGA — Continuation Log
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
+
+## 2026-09-23 — Added Git command mode to GitHub publishing
+
+Changed:
+
+- Added a Git commands view beside the guided publish workflow. It runs one typed Git command in the active project, displays output, supports command history with arrow keys, and refreshes repository status after each command.
+- Added a native Git command endpoint that parses quoted arguments and invokes the system `git` directly without a shell. It limits commands to repository operations and prevents global/system configuration changes from this project surface.
+- Reused the existing OS-vault askpass path for GitHub HTTPS pushes to `origin`. A bare first `git push` uses the existing upstream-setting push operation. Other remotes use the user's configured credentials.
+- Updated the GitHub architecture notes to distinguish explicit typed commands from the guided workflow.
+
+Validated:
+
+- Frontend build and lint.
+- Rust Git command parser and temporary-repository command tests.
+- `cargo fmt --check` and `git diff --check`.
+
+Known limitations:
+
+- GitHub repository creation still uses the guided UI; plain Git cannot create one through the GitHub API.
+- Commands are single-line, noninteractive Git invocations rather than a full terminal. Interactive rebases and prompts require an external terminal.
+- Live GitHub OAuth and push were not exercised without the registered OAuth client ID.
+
+## 2026-09-23 — Reconciled published board data with build capability and workplan
+
+Changed:
+
+- Updated Alchitry Cu V1 to HX8K CB132 with published P7 clock and LED0 J11; qualified its pin data by revision.
+- Scoped ULX3S button verification to the maker's v2.x.x and v3.0.x constraints, and recorded the published `fujprog` / `openFPGALoader` SRAM and flash paths without claiming hardware success.
+- Scoped LimeSDR Mini V2 to the documented v2.3 default LFE5U-45F-MG285 assembly. Its JTAG header needs an external probe, so the app does not claim a direct programmer.
+- Recorded the Arctic Tern schematic's ECP5UM-85 CABGA381 designation, but kept its identity unresolved and build disabled because the same schematic also has an UM5G overview line. Its external-JTAG programming path remains unconfigured.
+- Corrected Machdyne Kröte to HX4K BG121, added the maker's clock/LED/Pmod/flash constraints, and replaced `iceprog` with the maker's `ldprog` metadata. The external ISP adapter and write result remain untested.
+- Recorded Alhambra II's published `tq144:4k` package mode and left its oscillator pad unresolved. Added TinyFPGA B2's own B4 clock, header, and USB pads without using the BX pinout.
+- Replaced the UltraPlus-only build capability gate with device-and-package checks for iCE40 HX/LP/UP and ECP5, and selected nextpnr's HX4K and ECP5 U/UM/UM5G flags in Rust. Build availability is distinct from physical support; configured programming paths are labeled untested.
+- Updated the board-support DOCX workplan from these findings. It asks for board-revision confirmation and connected-hardware evidence, not pin/package details already published. The source generator is `/tmp/allora_docs/create_board_support_doc.py`; the delivered file is `/Users/areendabadghav/Downloads/Allora_FPGA_Board_Support_Workplan.docx`.
+
+Validated:
+
+- `npm run build` and `npm run lint`.
+- `cargo test` (16 passed), including new nextpnr device/package selection tests; `cargo fmt --check`.
+- nextpnr architecture/database checks for HX4K BG121, HX8K CB132 and TQ144:4K, ECP5 45K CSFBGA285, and ECP5 UM85 CABGA381. These are not complete design builds.
+- Rendered the updated DOCX and visually inspected its 15 pages.
+- `git diff --check`.
+
+Still unresolved:
+
+- No connected-board build-and-programming path was demonstrated. Do not label these profiles fully supported until synthesis, place-and-route, packing, programming, and observable behavior pass on the named revision.
+- Read Arctic Tern's populated part marking to resolve UM versus UM5G before enabling its build path. Verify Alhambra II's oscillator package pad from an authoritative constraint or schematic.
+- Test Cu, ULX3S, LimeSDR, Kröte, TinyFPGA B2, and other listed programmers on their actual adapters/headers. The app's existing filename-only programming dispatcher is not a verified board-specific SRAM/flash workflow.
 
 ## 2026-09-23 — Added Apple Silicon release automation
 

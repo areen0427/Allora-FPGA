@@ -4,6 +4,16 @@ export function getBoardCapabilities(
   board: BoardDefinition,
 ): BoardCapabilities {
   if (board.synthesisFlow === "yosys-nextpnr") {
+    const fpga = board.fpgaId.toLowerCase();
+    const packageKnown = Boolean(board.package && board.package !== "unknown");
+    const ice40Device =
+      board.family.toLowerCase().includes("ice40") &&
+      /(up5k|up3k|hx8k|hx4k|hx1k|lp8k|lp4k|lp1k)/.test(fpga);
+    const ecp5Device =
+      board.family.toLowerCase().includes("ecp5") &&
+      /lfe5u(m5g|m)?-(12f|25f|45f|85f)/.test(fpga);
+    const canBuild =
+      packageKnown && !board.identityUnresolved && (ice40Device || ecp5Device);
     return {
       toolchain: "Yosys + NextPNR",
       pinMapping: {
@@ -18,16 +28,13 @@ export function getBoardCapabilities(
           "Hardware diagrams are generated through the local Yosys flow. Yosys must be installed and available on PATH.",
       },
       bitstream: {
-        supported:
-          board.family === "iCE40 UltraPlus" || board.family === "ECP5",
-        label:
-          board.family === "iCE40 UltraPlus" || board.family === "ECP5"
-            ? "Supported"
-            : "Not wired",
-        detail:
-          board.family === "iCE40 UltraPlus" || board.family === "ECP5"
-            ? "Bitstreams are generated with local Yosys, NextPNR, and board packer commands."
-            : "This Yosys board family does not have a packer command wired up yet.",
+        supported: canBuild,
+        label: canBuild ? "Build available" : "Device or package unresolved",
+        detail: canBuild
+          ? "The local Yosys, NextPNR, and packer build path is available. This does not establish physical programming support."
+          : board.identityUnresolved
+            ? "Published sources disagree on the populated FPGA class. Confirm the physical part before building."
+            : "A supported iCE40 or ECP5 device and a known package are required before building.",
       },
       programming: getProgrammingCapability(board),
     };
@@ -82,16 +89,16 @@ function getProgrammingCapability(board: BoardDefinition) {
   if (board.programmer) {
     return {
       supported: true,
-      label: "Supported",
-      detail: `Program this board using ${board.programmer.description} (${board.programmer.command}).`,
+      label: "Configured, untested",
+      detail: `Programming is configured with ${board.programmer.description} (${board.programmer.command}); verify the adapter and result on hardware.`,
     };
   }
 
   if (board.toolchain.program) {
     return {
       supported: true,
-      label: "Supported",
-      detail: `Program this board using ${board.toolchain.program}.`,
+      label: "Configured, untested",
+      detail: `${board.toolchain.program} is listed as a programmer; verify its arguments, adapter, and result on hardware.`,
     };
   }
 

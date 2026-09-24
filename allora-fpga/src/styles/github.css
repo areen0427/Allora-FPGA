@@ -294,6 +294,138 @@ html[data-theme="black-ice"] .project-tree-git-action {
   padding: 18px 24px 26px;
 }
 
+.github-workflow-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  margin-bottom: 18px;
+  border: 1px solid var(--dashboard-control-border);
+  border-radius: 11px;
+  background: var(--dashboard-control-bg);
+}
+
+.github-workflow-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--dashboard-muted-text);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.github-workflow-switch button.active {
+  color: #0369a1;
+  background: rgba(14, 165, 233, 0.17);
+}
+
+html[data-theme="black-ice"] .github-workflow-switch button.active {
+  color: #7dd3fc;
+}
+
+.github-command-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.github-command-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dashboard-strong-text);
+}
+
+.github-command-heading span,
+.github-command-panel p,
+.github-command-panel small {
+  margin: 0;
+  color: var(--dashboard-muted-text);
+  font-size: 11px;
+}
+
+.github-command-output {
+  min-height: 170px;
+  max-height: 310px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--dashboard-control-border);
+  border-radius: 11px;
+  color: var(--dashboard-text);
+  background: rgba(7, 16, 31, 0.9);
+  font:
+    11px/1.5 "SFMono-Regular",
+    Consolas,
+    monospace;
+}
+
+.github-command-output > div + div {
+  margin-top: 13px;
+}
+
+.github-command-output strong {
+  color: #7dd3fc;
+}
+
+.github-command-output .failure strong {
+  color: #fca5a5;
+}
+
+.github-command-output pre {
+  margin: 5px 0 0;
+  color: #dbeafe;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.github-command-placeholder {
+  color: #94a3b8;
+}
+
+.github-command-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  border: 1px solid var(--dashboard-control-border);
+  border-radius: 10px;
+  color: var(--dashboard-text);
+  background: var(--dashboard-control-bg);
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.github-command-form input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.github-command-form button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.github-command-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .github-step {
   padding: 0 0 18px;
   margin-bottom: 18px;

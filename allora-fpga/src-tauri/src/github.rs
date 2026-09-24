@@ -171,6 +171,215 @@ pub(crate) struct SetOriginRequest {
     remote_url: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GitCommandRequest {
+    project_path: String,
+    command: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GitCommandResult {
+    output: String,
+    success: bool,
+    exit_code: Option<i32>,
+    status: GitRepositoryStatus,
+}
+
+pub(crate) fn run_project_git_command(
+    request: GitCommandRequest,
+) -> Result<GitCommandResult, ServiceError> {
+    let project = validate_project_path(&request.project_path)?;
+    ensure_git_available()?;
+    let words = parse_git_command(&request.command)?;
+    let subcommand = words[1].as_str();
+    let args = &words[2..];
+    if !matches!(
+        subcommand,
+        "init"
+            | "status"
+            | "add"
+            | "commit"
+            | "push"
+            | "fetch"
+            | "branch"
+            | "diff"
+            | "log"
+            | "show"
+            | "remote"
+            | "config"
+            | "tag"
+            | "rev-parse"
+    ) {
+        return Err(ServiceError::new("unsupported_git_command", "Use a standard Git repository command, such as git status, git add, git commit, or git push."));
+    }
+    if args.iter().any(|arg| {
+        matches!(
+            arg.as_str(),
+            "--exec"
+                | "--receive-pack"
+                | "--upload-pack"
+                | "--git-dir"
+                | "--work-tree"
+                | "--global"
+                | "--system"
+                | "--file"
+                | "--blob"
+        ) || arg.starts_with("--exec=")
+            || arg.starts_with("--receive-pack=")
+            || arg.starts_with("--upload-pack=")
+            || arg.starts_with("--file=")
+            || arg.starts_with("--blob=")
+    }) {
+        return Err(ServiceError::new(
+            "unsupported_git_option",
+            "This Git option is unavailable in the command area.",
+        ));
+    }
+    if subcommand == "init" && args.iter().any(|arg| !arg.starts_with('-')) {
+        return Err(ServiceError::new(
+            "unsupported_git_option",
+            "Initialize the current project without specifying another directory.",
+        ));
+    }
+
+    if subcommand == "push" && args.is_empty() {
+        let status = repository_status_at(&project)?;
+        if status.upstream.is_none() && status.origin_url.is_some() {
+            let status = push(ProjectPathRequest {
+                project_path: request.project_path,
+            })?;
+            return Ok(GitCommandResult {
+                output: format!(
+                    "Pushed {} to origin and set upstream tracking.",
+                    status.branch.as_deref().unwrap_or("current branch")
+                ),
+                success: true,
+                exit_code: Some(0),
+                status,
+            });
+        }
+    }
+
+    let mut command = Command::new("git");
+    command
+        .args(&words[1..])
+        .current_dir(&project)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_PAGER", "cat")
+        .env("GIT_NO_REPLACE_OBJECTS", "1")
+        .stdin(std::process::Stdio::null());
+
+    let mut askpass_guard = None;
+    if matches!(subcommand, "push" | "fetch") {
+        let origin = git_optional(&project, &["remote", "get-url", "origin"])?;
+        if origin.as_deref().is_some_and(is_github_https_remote) {
+            // Only attach Allora's token when Git is addressing the configured origin.
+            // A URL or another remote supplied by the user must use their own credentials.
+            let explicit_target = args.iter().find(|arg| !arg.starts_with('-'));
+            let targets_other_remotes = args.iter().any(|arg| {
+                matches!(arg.as_str(), "--all" | "--multiple" | "--repo")
+                    || arg.starts_with("--repo=")
+            });
+            if !targets_other_remotes && explicit_target.map_or(true, |target| target == "origin") {
+                match read_token() {
+                    Ok(token) => {
+                        let username = fetch_user(&token)?.login;
+                        let askpass = AskPass::new()?;
+                        command
+                            .env("GIT_ASKPASS", &askpass.script)
+                            .env("ALLORA_GIT_USERNAME", username)
+                            .env("ALLORA_GIT_TOKEN", token);
+                        askpass_guard = Some(askpass);
+                    }
+                    Err(error) if error.code == "signed_out" => {}
+                    Err(error) => return Err(error),
+                }
+            }
+        }
+    }
+    let output = command.output().map_err(map_git_launch_error)?;
+    drop(askpass_guard);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let rendered = [stdout.trim(), stderr.trim()]
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let rendered = rendered.chars().take(64_000).collect::<String>();
+    let status = repository_status_at(&project)?;
+    Ok(GitCommandResult {
+        output: if rendered.is_empty() {
+            "(no output)".to_string()
+        } else {
+            rendered
+        },
+        success: output.status.success(),
+        exit_code: output.status.code(),
+        status,
+    })
+}
+
+fn parse_git_command(input: &str) -> Result<Vec<String>, ServiceError> {
+    if input.len() > 4096 || input.contains(['\n', '\r', '\0']) {
+        return Err(ServiceError::new(
+            "invalid_git_command",
+            "Enter one Git command on a single line.",
+        ));
+    }
+    let mut words = Vec::new();
+    let mut current = String::new();
+    let mut quote = None;
+    let mut escaped = false;
+    let mut started = false;
+    for character in input.chars() {
+        if escaped {
+            current.push(character);
+            escaped = false;
+            continue;
+        }
+        if character == '\\' && quote != Some('\'') {
+            escaped = true;
+            started = true;
+        } else if let Some(delimiter) = quote {
+            if character == delimiter {
+                quote = None;
+            } else {
+                current.push(character);
+            }
+        } else if character == '\'' || character == '"' {
+            quote = Some(character);
+            started = true;
+        } else if character.is_whitespace() {
+            if started {
+                words.push(std::mem::take(&mut current));
+                started = false;
+            }
+        } else {
+            current.push(character);
+            started = true;
+        }
+    }
+    if escaped || quote.is_some() {
+        return Err(ServiceError::new(
+            "invalid_git_command",
+            "Finish the quote or escape in this Git command.",
+        ));
+    }
+    if started {
+        words.push(current);
+    }
+    if words.len() < 2 || words[0] != "git" {
+        return Err(ServiceError::new(
+            "invalid_git_command",
+            "Start with git followed by a command, such as git status.",
+        ));
+    }
+    Ok(words)
+}
+
 pub(crate) fn tool_availability() -> ToolAvailability {
     let git = command_version("git", &["--version"]);
     let gh = command_version("gh", &["--version"]);
@@ -1259,6 +1468,46 @@ impl AskPass {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_quoted_git_arguments_and_rejects_multiple_lines() {
+        assert_eq!(
+            parse_git_command("git commit -m \"Fix clock timing\"").unwrap(),
+            ["git", "commit", "-m", "Fix clock timing"]
+        );
+        assert_eq!(
+            parse_git_command("git add 'src/top module.v'").unwrap(),
+            ["git", "add", "src/top module.v"]
+        );
+        assert!(parse_git_command("git status\ngit push").is_err());
+        assert!(parse_git_command("sh -c git status").is_err());
+    }
+
+    #[test]
+    fn runs_project_git_commands_and_refreshes_status() {
+        if command_version("git", &["--version"]).is_none() {
+            return;
+        }
+        let directory = tempfile::tempdir().expect("temporary directory");
+        fs::write(directory.path().join("allora-project.json"), "{}").expect("metadata");
+        let project_path = directory.path().to_string_lossy().to_string();
+        let run = |command: &str| {
+            run_project_git_command(GitCommandRequest {
+                project_path: project_path.clone(),
+                command: command.to_string(),
+            })
+            .expect("run git command")
+        };
+        assert!(run("git init --initial-branch=main").success);
+        assert!(run("git config user.name Test").success);
+        assert!(run("git config user.email test@example.com").success);
+        assert!(run("git add allora-project.json").success);
+        let committed = run("git commit -m 'First version'");
+        assert!(committed.success, "{}", committed.output);
+        assert!(committed.status.has_commits);
+        assert!(committed.status.clean);
+        assert!(run("git status --short").success);
+    }
 
     #[test]
     fn reads_github_account_fields_and_serializes_for_the_frontend() {

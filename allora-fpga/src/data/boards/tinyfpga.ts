@@ -376,9 +376,9 @@ function createTinyFpgaVariant({
     clocks: [
       {
         name: "clk16",
-        pin: "B2",
+        pin: id === "tinyfpga-b2" ? "B4" : "B2",
         frequency: 16000000,
-        verified: id === "tinyfpga-bx",
+        verified: true,
       },
     ],
     pins,
@@ -393,10 +393,34 @@ export const tinyfpgaB2 = createTinyFpgaVariant({
   name: "TinyFPGA B2",
   program: "tinyfpgab",
   progId: "1209:2100",
-  pins: [],
+  pins: [
+    { name: "pin1_usb_dp", pin: "A3", type: "gpio", group: "USB", verified: true },
+    { name: "pin2_usb_dn", pin: "A4", type: "gpio", group: "USB", verified: true },
+    { name: "pin4", pin: "B2", type: "gpio", group: "Left header", verified: true },
+    { name: "pin5", pin: "A2", type: "gpio", group: "Left header", verified: true },
+    { name: "pin6", pin: "A1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin7", pin: "B1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin8", pin: "C1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin9", pin: "D1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin10", pin: "E1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin11", pin: "G1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin12", pin: "H1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin13", pin: "J1", type: "gpio", group: "Left header", verified: true },
+    { name: "pin14_sdo", pin: "G6", type: "spi", group: "Right header", verified: true },
+    { name: "pin15_sdi", pin: "H7", type: "spi", group: "Right header", verified: true },
+    { name: "pin16_sck", pin: "G7", type: "spi", group: "Right header", verified: true },
+    { name: "pin17_ss", pin: "F7", type: "spi", group: "Right header", verified: true },
+    { name: "pin18", pin: "D9", type: "gpio", group: "Right header", verified: true },
+    { name: "pin19", pin: "C9", type: "gpio", group: "Right header", verified: true },
+    { name: "pin20", pin: "E8", type: "gpio", group: "Right header", verified: true },
+    { name: "pin21", pin: "A9", type: "gpio", group: "Right header", verified: true },
+    { name: "pin22", pin: "A8", type: "gpio", group: "Right header", verified: true },
+    { name: "pin23", pin: "A7", type: "gpio", group: "Right header", verified: true },
+    { name: "pin24", pin: "A6", type: "gpio", group: "Right header", verified: true },
+  ],
   leds: [],
   notes:
-    "TinyFPGA B2 metadata is available, but no local constraints file was provided yet. Pin mappings are intentionally left empty until verified.",
+    "Clock B4 and the B-series header and USB pads come from the maker's icestorm_template/pins.pcf. These are published pinout checks, not a physical test. The B2 bootloader, serial port, and tinyfpgab invocation still need a connected-board test.",
 });
 
 export const tinyfpgaBx = createTinyFpgaVariant({

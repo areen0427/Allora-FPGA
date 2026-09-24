@@ -1040,3 +1040,39 @@ html[data-theme="black-ice"] .settings-reset-button {
     grid-template-columns: 1fr;
   }
 }
+
+.ai-provider-list { display: grid; gap: 14px; }
+.ai-provider-card { padding: 16px; border: 1px solid rgba(148,163,184,.22); border-radius: 14px; background: rgba(255,255,255,.38); box-shadow: inset 0 1px 0 rgba(255,255,255,.66); }
+.ai-provider-heading { display: flex; align-items: flex-start; gap: 12px; }
+.ai-provider-heading > span:last-child { display: grid; gap: 3px; }
+.ai-provider-heading strong { color: #27364c; font-size: 14px; }
+.ai-provider-heading small, .ai-provider-message, .ai-future-note, .ai-install-panel p { color: #718198; font-size: 12px; line-height: 1.45; }
+.ai-provider-logo { width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 9px; background: rgba(255,255,255,.65); }
+.ai-provider-logo img { width: 22px; height: 22px; object-fit: contain; }
+.ai-provider-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+.ai-provider-facts > div { display: grid; align-content: start; gap: 3px; padding: 10px 11px; border: 1px solid rgba(148,163,184,.16); border-radius: 10px; background: rgba(255,255,255,.24); }
+.ai-provider-facts span { color: #8190a4; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.ai-provider-facts strong { display: flex; align-items: center; gap: 5px; color: #314156; font-size: 12px; }
+.ai-provider-facts small { overflow: hidden; color: #718198; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-provider-facts svg { color: #4e9b86; }
+.ai-provider-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ai-provider-actions button, .ai-provider-actions a, .ai-install-title button, .ai-install-command button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; color: #436181; background: rgba(255,255,255,.45); font: inherit; font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.ai-provider-actions .ai-primary-action { color: #fff; border-color: #2f6bcc; background: #3478d4; }
+.ai-provider-actions button:disabled { opacity: .55; cursor: default; }
+.ai-provider-error { margin: 9px 0 0; color: #b64c54; font-size: 11px; }
+.ai-install-panel { margin-top: 13px; padding: 12px; border: 1px solid rgba(148,163,184,.22); border-radius: 10px; background: rgba(226,239,253,.4); }
+.ai-install-title { display: flex; align-items: center; justify-content: space-between; color: #27364c; font-size: 12px; }
+.ai-install-title button, .ai-install-command button { padding: 5px; }
+.ai-install-command { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border-radius: 7px; background: rgba(15,32,55,.08); }
+.ai-install-command code { overflow: auto; font-size: 10px; white-space: nowrap; }
+.ai-future-note { margin-top: 16px; }
+html[data-theme="black-ice"] .ai-provider-card { border-color: rgba(148,163,184,.2); background: rgba(20,34,53,.48); box-shadow: inset 0 1px 0 rgba(255,255,255,.045); }
+html[data-theme="black-ice"] .ai-provider-heading strong, html[data-theme="black-ice"] .ai-provider-facts strong, html[data-theme="black-ice"] .ai-install-title { color: #edf5ff; }
+html[data-theme="black-ice"] .ai-provider-heading small, html[data-theme="black-ice"] .ai-provider-message, html[data-theme="black-ice"] .ai-future-note, html[data-theme="black-ice"] .ai-install-panel p { color: #9cadc3; }
+html[data-theme="black-ice"] .ai-provider-logo, html[data-theme="black-ice"] .ai-provider-facts > div, html[data-theme="black-ice"] .ai-install-panel { background: rgba(7,16,29,.4); }
+html[data-theme="black-ice"] .ai-provider-actions button:not(.ai-primary-action), html[data-theme="black-ice"] .ai-provider-actions a, html[data-theme="black-ice"] .ai-install-title button, html[data-theme="black-ice"] .ai-install-command button { color: #b5c5d8; background: rgba(20,35,54,.54); }
+html[data-theme="black-ice"] .ai-install-command { color: #dbeafe; background: rgba(0,0,0,.24); }
+@media (max-width: 620px) { .ai-provider-facts { grid-template-columns: 1fr; } }
+
+.ai-last-checked { margin-right: auto; color: #8190a4; font-size: 10px; }
+html[data-theme="black-ice"] .ai-last-checked { color: #9cadc3; }

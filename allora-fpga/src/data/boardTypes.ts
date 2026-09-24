@@ -105,6 +105,7 @@ export type BoardDefinition = {
   leds: BoardPin[];
   buttons: BoardPin[];
   notes?: string;
+  identityUnresolved?: boolean;
 };
 
 export type BoardVariant = {

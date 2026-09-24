@@ -365,7 +365,7 @@ export default function ProgrammingSection({
           {programResult
             ? programResult.message
             : capabilities.programming.supported
-              ? "Ready to program the connected FPGA board with the selected bitstream."
+              ? "A programmer is configured. Confirm the tool, adapter, and target board before running it."
               : capabilities.programming.detail}
         </div>
 

@@ -11,6 +11,12 @@ const PROGRAMMER_COMMANDS: Record<string, BoardProgrammer> = {
     description: "Lattice iCE40 USB programmer",
     bitstreamExtensions: ["bin"],
   },
+  ldprog: {
+    backend: "ftdi_jtag",
+    command: "ldprog",
+    description: "Lone Dynamics ISP programmer (SRAM by default)",
+    bitstreamExtensions: ["bin"],
+  },
   icesprog: {
     backend: "iceprog",
     command: "icesprog",
@@ -52,13 +58,13 @@ const PROGRAMMER_COMMANDS: Record<string, BoardProgrammer> = {
     backend: "ftdi_jtag",
     command: "tinyfpgab",
     description: "TinyFPGA BX USB programmer",
-    bitstreamExtensions: ["bit"],
+    bitstreamExtensions: ["bin"],
   },
   tinyprog: {
     backend: "ftdi_jtag",
     command: "tinyprog",
     description: "TinyFPGA USB programmer",
-    bitstreamExtensions: ["bit"],
+    bitstreamExtensions: ["bin"],
   },
   openocd: {
     backend: "ftdi_jtag",

@@ -24,6 +24,7 @@ Allora FPGA is a desktop development environment for open-source FPGA workflows.
 - Bitstream generation, board programming, serial monitoring, build health, and build history.
 - Icarus Verilog testbench simulation with VCD waveform inspection.
 - A local-first GitHub publishing workflow with explicit commits, repository creation/selection, safe `origin` setup, first push, and later commit/push status. GitHub sign-in is optional and never part of project creation.
+- Settings → AI Integration detects and connects locally installed OpenAI Codex and Claude Code CLIs through each provider's own login flow. Codex CLI sign-in and a live Codex request have been verified on a development Mac; Claude Code support is implemented but has not had a live account test.
 - Virtual FPGA V0.1 for interactive Verilog/SystemVerilog designs:
   - structural top-level port discovery through Yosys;
   - actual RTL execution through a persistent Verilator model;
@@ -87,6 +88,14 @@ npm run lint
 cd src-tauri
 cargo test
 ```
+
+## AI Integration V1
+
+Open **Settings → AI Integration** to check the Codex or Claude Code CLI, view the detected version and executable path, and follow installation guidance if a CLI is missing. **Check Again** reruns detection without restarting Allora. When a CLI is installed, **Connect** starts that provider's login command in macOS Terminal; the provider handles the browser sign-in and stores its own credentials. Allora neither requests nor stores an OpenAI or Anthropic password, API key, or token.
+
+An existing CLI login can appear as **Connected** immediately. Allora determines this from `codex login status` or `claude auth status --json`; it does not make a live model request. A separate `codex exec` request succeeded on the development Mac, confirming that machine's Codex account could reach the service. Claude Code's detection and login path are implemented but have not been verified with a live Claude account. The Codex desktop app's bundled runtime is not treated as a separate CLI installation.
+
+V1 provides connection status only. It does not offer AI chat, FPGA tools, MCP integration, source editing, simulation, synthesis, or programming through either provider.
 
 ## Virtual FPGA quick start
 

@@ -10,8 +10,10 @@ import {
   RefreshCw,
   RotateCcw,
   Settings,
+  Sparkles,
   X,
 } from "lucide-react";
+import { AiIntegrationSettings } from "./AiIntegrationSettings";
 import { DEFAULT_SETTINGS } from "../data/settings";
 import type { AppSettings } from "../data/settings";
 import { hasTauriInvoke } from "../lib/tauri";
@@ -23,13 +25,14 @@ type SettingsModalProps = {
   onClose: () => void;
 };
 
-type SettingsCategory = "general" | "editor" | "workspace" | "simulator";
+type SettingsCategory = "general" | "editor" | "workspace" | "simulator" | "ai";
 
 const categories = [
   { id: "general", label: "General", icon: Palette },
   { id: "editor", label: "Editor", icon: Code2 },
   { id: "workspace", label: "Workspace", icon: Folder },
   { id: "simulator", label: "Simulator", icon: Gauge },
+  { id: "ai", label: "AI Integration", icon: Sparkles },
 ] satisfies Array<{
   id: SettingsCategory;
   label: string;
@@ -319,6 +322,8 @@ export function SettingsModal({
             </SettingsSection>
           ) : null}
 
+          {activeCategory === "ai" ? <AiIntegrationSettings /> : null}
+
           {activeCategory === "simulator" ? (
             <SettingsSection
               title="Simulator"
@@ -450,7 +455,7 @@ export function SettingsModal({
         <footer className="settings-footer">
           <span className="settings-save-status">
             <Check size={14} aria-hidden="true" />
-            Changed projects auto-save every 30 seconds
+            Auto Save: 30 seconds
           </span>
           <div className="settings-footer-actions">
             <button

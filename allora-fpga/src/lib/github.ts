@@ -76,6 +76,13 @@ export type GitHubServiceError = {
   detail?: string | null;
 };
 
+export type GitCommandResult = {
+  output: string;
+  success: boolean;
+  exitCode: number | null;
+  status: GitRepositoryStatus;
+};
+
 export function repositoryNameFromProject(projectName: string) {
   return (
     projectName
@@ -193,6 +200,12 @@ export function setGitOrigin(projectPath: string, remoteUrl: string) {
 export function pushGitProject(projectPath: string) {
   return invokeTauri<GitRepositoryStatus>("git_push_project", {
     request: { projectPath },
+  });
+}
+
+export function runProjectGitCommand(projectPath: string, command: string) {
+  return invokeTauri<GitCommandResult>("git_run_project_command", {
+    request: { projectPath, command },
   });
 }
 

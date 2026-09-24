@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Lock,
   RefreshCw,
+  TerminalSquare,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
   pollGitHubDeviceSignIn,
   pushGitProject,
   repositoryNameFromProject,
+  runProjectGitCommand,
   setGitOrigin,
   signOutOfGitHub,
   toGitHubServiceError,
@@ -75,6 +77,14 @@ export function GitHubPublishDialog({
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [workflowMode, setWorkflowMode] = useState<"guided" | "commands">(
+    "guided",
+  );
+  const [gitCommand, setGitCommand] = useState("");
+  const [commandHistory, setCommandHistory] = useState<
+    { command: string; output: string; success: boolean }[]
+  >([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [busy, setBusy] = useState<string | null>("loading");
   const [error, setError] = useState<{
     message: string;
@@ -234,6 +244,48 @@ export function GitHubPublishDialog({
         ? "success"
         : "info";
 
+  async function submitGitCommand(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const command = gitCommand.trim();
+    if (!command || !projectPath || busy) return;
+    setBusy("git-command");
+    setError(null);
+    setGitCommand("");
+    setHistoryIndex(-1);
+    try {
+      const result = await runProjectGitCommand(projectPath, command);
+      setGit(result.status);
+      setCommandHistory((history) => [
+        ...history.slice(-19),
+        { command, output: result.output, success: result.success },
+      ]);
+      if (!result.success) setGitCommand(command);
+      if (result.status.originUrl && auth.authenticated) {
+        const match = repositories.find(
+          (repository) =>
+            normalizeRemote(repository.cloneUrl) ===
+            normalizeRemote(result.status.originUrl!),
+        );
+        if (match) setSelectedRepositoryId(match.id.toString());
+      }
+    } catch (cause) {
+      const serviceError = toGitHubServiceError(cause);
+      setCommandHistory((history) => [
+        ...history.slice(-19),
+        {
+          command,
+          output: [serviceError.message, serviceError.detail]
+            .filter(Boolean)
+            .join("\n"),
+          success: false,
+        },
+      ]);
+      setGitCommand(command);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className="github-dialog-backdrop" role="presentation">
       <section
@@ -289,6 +341,22 @@ export function GitHubPublishDialog({
         </div>
 
         <div className="github-dialog-body">
+          <div className="github-workflow-switch" aria-label="Git workflow">
+            <button
+              type="button"
+              className={workflowMode === "guided" ? "active" : ""}
+              onClick={() => setWorkflowMode("guided")}
+            >
+              Guided steps
+            </button>
+            <button
+              type="button"
+              className={workflowMode === "commands" ? "active" : ""}
+              onClick={() => setWorkflowMode("commands")}
+            >
+              <TerminalSquare size={15} /> Git commands
+            </button>
+          </div>
           {!hasTauriInvoke() ? (
             <Message tone="info" icon={<CloudOff size={17} />}>
               GitHub publishing is available in the Allora desktop app. Browser
@@ -419,427 +487,552 @@ export function GitHubPublishDialog({
             )}
           </Step>
 
-          <Step
-            number="2"
-            title="Prepare local version"
-            complete={Boolean(git?.hasCommits)}
-          >
-            {!tools?.gitAvailable ? (
-              <Message tone="danger" icon={<CircleAlert size={17} />}>
-                Install Git, then restart or refresh this panel. The GitHub CLI
-                does not replace Git for local project history.
-              </Message>
-            ) : !git?.isRepository ? (
-              <div className="github-action-block">
-                <p>
-                  This creates local version history inside the project folder.
-                  It does not stage files, create a commit, contact GitHub, or
-                  add a remote.
-                </p>
-                <button
-                  type="button"
-                  className="github-primary-button"
-                  disabled={!readyForGit || Boolean(busy)}
-                  onClick={() =>
-                    void runAction("init", async () => {
-                      await initializeGitRepository(projectPath!);
-                      setGit(await getGitRepositoryStatus(projectPath!));
-                      setNotice("Local version history initialized on main.");
-                    })
-                  }
-                >
-                  Initialize local version history
-                </button>
+          {workflowMode === "commands" ? (
+            <section className="github-command-panel" aria-label="Git commands">
+              <div className="github-command-heading">
+                <strong>Git in this project</strong>
+                <span>
+                  {git?.branch ?? "No branch yet"} · {git?.changes.length ?? 0}{" "}
+                  changed files
+                </span>
               </div>
-            ) : (
-              <>
-                <div className="github-git-summary">
-                  <span>
-                    <GitBranch size={14} /> {git.branch ?? "Detached revision"}
-                  </span>
-                  <span>
-                    {git.changes.length} changed file
-                    {git.changes.length === 1 ? "" : "s"}
-                  </span>
-                  <span>
-                    {git.ahead ?? 0} ahead · {git.behind ?? 0} behind
-                  </span>
-                </div>
-                {workspaceDirty ? (
-                  <Message tone="warning" icon={<CircleAlert size={17} />}>
-                    Save the project before committing so the disk version and
-                    editor agree. Use Cmd+S or Ctrl+S, then refresh this panel.
-                  </Message>
-                ) : null}
-                {git.changes.length > 0 ? (
-                  <div
-                    className="github-change-list"
-                    aria-label="Files to include"
-                  >
-                    {git.changes.slice(0, 8).map((change) => (
-                      <div key={change.path}>
-                        <span>
-                          {change.untracked
-                            ? "New"
-                            : change.staged
-                              ? "Staged"
-                              : "Changed"}
-                        </span>
-                        <code>{change.path}</code>
-                      </div>
-                    ))}
-                    {git.changes.length > 8 ? (
-                      <small>+ {git.changes.length - 8} more files</small>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="github-muted-copy">
-                    No uncommitted project files.
-                  </p>
-                )}
-                {git.changes.length > 0 ? (
-                  <div className="github-form-stack">
-                    <label>
-                      <span>Commit message</span>
-                      <input
-                        value={commitMessage}
-                        maxLength={120}
-                        onChange={(event) =>
-                          setCommitMessage(event.target.value)
-                        }
-                      />
-                    </label>
-                    <p className="github-action-explanation">
-                      Clicking below stages every current project change and
-                      creates one local commit with this message. Nothing is
-                      sent online.
-                    </p>
-                    <button
-                      type="button"
-                      className="github-primary-button"
-                      disabled={
-                        workspaceDirty || !commitMessage.trim() || Boolean(busy)
-                      }
-                      onClick={() =>
-                        void runAction("commit", async () => {
-                          const nextGit = await commitAllProjectFiles({
-                            projectPath: projectPath!,
-                            message: commitMessage,
-                            authorName: authorName || undefined,
-                            authorEmail: authorEmail || undefined,
-                          });
-                          setGit(nextGit);
-                          setCommitMessage("Update project");
-                          setNotice(
-                            "Local commit created. Nothing has been pushed yet.",
-                          );
-                        })
-                      }
-                    >
-                      {busy === "commit" ? (
-                        <LoaderCircle className="spin" size={16} />
-                      ) : null}
-                      Stage files and create commit
-                    </button>
-                  </div>
-                ) : null}
-              </>
-            )}
-          </Step>
-
-          <Step
-            number="3"
-            title="Choose the GitHub repository"
-            complete={Boolean(git?.originUrl)}
-          >
-            {!auth.authenticated ? (
-              <p className="github-muted-copy">
-                Sign in to choose or create a repository.
+              <p>
+                Type a Git publishing command and press Enter. Commands run in
+                this project folder. Use quotes around messages or paths with
+                spaces.
               </p>
-            ) : (
-              <>
-                <div
-                  className="github-mode-switch"
-                  aria-label="Repository choice"
+              {workspaceDirty ? (
+                <Message tone="warning" icon={<CircleAlert size={17} />}>
+                  Save editor changes before using Git so the disk version is
+                  current.
+                </Message>
+              ) : null}
+              <div
+                className="github-command-output"
+                role="log"
+                aria-live="polite"
+              >
+                {commandHistory.length === 0 ? (
+                  <span className="github-command-placeholder">
+                    Try git status, git add ., git commit -m "Update project",
+                    or git push
+                  </span>
+                ) : (
+                  commandHistory.map((entry, index) => (
+                    <div
+                      key={index}
+                      className={entry.success ? "success" : "failure"}
+                    >
+                      <strong>$ {entry.command}</strong>
+                      <pre>{entry.output}</pre>
+                    </div>
+                  ))
+                )}
+              </div>
+              <form
+                className="github-command-form"
+                onSubmit={(event) => void submitGitCommand(event)}
+              >
+                <span aria-hidden="true">$</span>
+                <input
+                  aria-label="Git command"
+                  autoFocus
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="git status"
+                  value={gitCommand}
+                  onChange={(event) => setGitCommand(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "ArrowUp" && event.key !== "ArrowDown")
+                      return;
+                    const commands = commandHistory.map(
+                      (entry) => entry.command,
+                    );
+                    if (!commands.length) return;
+                    event.preventDefault();
+                    const next =
+                      event.key === "ArrowUp"
+                        ? Math.min(historyIndex + 1, commands.length - 1)
+                        : Math.max(historyIndex - 1, -1);
+                    setHistoryIndex(next);
+                    setGitCommand(
+                      next < 0 ? "" : commands[commands.length - 1 - next],
+                    );
+                  }}
+                  disabled={!readyForGit || Boolean(busy)}
+                />
+                <button
+                  type="submit"
+                  disabled={!readyForGit || !gitCommand.trim() || Boolean(busy)}
                 >
-                  <button
-                    type="button"
-                    className={repositoryMode === "new" ? "active" : ""}
-                    onClick={() => setRepositoryMode("new")}
-                  >
-                    Create new
-                  </button>
-                  <button
-                    type="button"
-                    className={repositoryMode === "existing" ? "active" : ""}
-                    onClick={() => setRepositoryMode("existing")}
-                  >
-                    Use existing
-                  </button>
-                </div>
-                {repositoryMode === "new" ? (
-                  <div className="github-form-stack">
-                    <label>
-                      <span>Repository name</span>
-                      <input
-                        value={repositoryName}
-                        maxLength={100}
-                        onChange={(event) =>
-                          setRepositoryName(event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>Description</span>
-                      <input
-                        value={description}
-                        maxLength={350}
-                        onChange={(event) => setDescription(event.target.value)}
-                      />
-                    </label>
-                    <label className="github-privacy-row">
-                      <input
-                        type="checkbox"
-                        checked={isPrivate}
-                        onChange={(event) => setIsPrivate(event.target.checked)}
-                      />
-                      <Lock size={15} />
-                      <span>
-                        <strong>Private repository</strong>
-                        <small>Recommended until you are ready to share.</small>
-                      </span>
-                    </label>
-                    <p className="github-action-explanation">
-                      This creates an empty {isPrivate ? "private" : "public"}{" "}
-                      repository on GitHub. It does not connect or push this
-                      project yet.
+                  {busy === "git-command" ? "Running…" : "Run"}
+                </button>
+              </form>
+              <small>
+                GitHub sign-in above supplies credentials for pushes to a GitHub
+                HTTPS origin. SSH remotes use your existing SSH configuration.
+              </small>
+            </section>
+          ) : (
+            <>
+              <Step
+                number="2"
+                title="Prepare local version"
+                complete={Boolean(git?.hasCommits)}
+              >
+                {!tools?.gitAvailable ? (
+                  <Message tone="danger" icon={<CircleAlert size={17} />}>
+                    Install Git, then restart or refresh this panel. The GitHub
+                    CLI does not replace Git for local project history.
+                  </Message>
+                ) : !git?.isRepository ? (
+                  <div className="github-action-block">
+                    <p>
+                      This creates local version history inside the project
+                      folder. It does not stage files, create a commit, contact
+                      GitHub, or add a remote.
                     </p>
                     <button
                       type="button"
                       className="github-primary-button"
-                      disabled={!repositoryName.trim() || Boolean(busy)}
+                      disabled={!readyForGit || Boolean(busy)}
                       onClick={() =>
-                        void runAction("create-repository", async () => {
-                          const repository = await createGitHubRepository({
-                            name: repositoryName,
-                            description,
-                            private: isPrivate,
-                          });
-                          const nextRepositories = await loadRepositories();
-                          const created =
-                            nextRepositories.find(
-                              (item) => item.id === repository.id,
-                            ) ?? repository;
-                          setSelectedRepositoryId(created.id.toString());
-                          setRepositoryMode("existing");
+                        void runAction("init", async () => {
+                          await initializeGitRepository(projectPath!);
+                          setGit(await getGitRepositoryStatus(projectPath!));
                           setNotice(
-                            `${created.fullName} was created. Review the connection step next.`,
+                            "Local version history initialized on main.",
                           );
                         })
                       }
                     >
-                      {busy === "create-repository" ? (
-                        <LoaderCircle className="spin" size={16} />
-                      ) : null}
-                      Create repository
+                      Initialize local version history
                     </button>
                   </div>
                 ) : (
-                  <div className="github-form-stack">
-                    <label>
-                      <span>Repository</span>
-                      <select
-                        value={selectedRepositoryId}
-                        onChange={(event) =>
-                          setSelectedRepositoryId(event.target.value)
-                        }
-                      >
-                        <option value="">Select a repository</option>
-                        {repositories.map((repository) => (
-                          <option key={repository.id} value={repository.id}>
-                            {repository.fullName} ·{" "}
-                            {repository.private ? "Private" : "Public"}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {repositories.length === 0 ? (
-                      <p className="github-muted-copy">
-                        No owned repositories with push access were found.
-                        Create one instead.
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-
-                {selectedRepository ? (
-                  <div className="github-connect-block">
-                    <div>
-                      <strong>{selectedRepository.fullName}</strong>
+                  <>
+                    <div className="github-git-summary">
                       <span>
-                        {selectedRepository.private ? "Private" : "Public"}
+                        <GitBranch size={14} />{" "}
+                        {git.branch ?? "Detached revision"}
+                      </span>
+                      <span>
+                        {git.changes.length} changed file
+                        {git.changes.length === 1 ? "" : "s"}
+                      </span>
+                      <span>
+                        {git.ahead ?? 0} ahead · {git.behind ?? 0} behind
                       </span>
                     </div>
-                    {originMatchesSelection ? (
-                      <StatusPill tone="success" label="Connected as origin" />
-                    ) : git?.originUrl ? (
+                    {workspaceDirty ? (
                       <Message tone="warning" icon={<CircleAlert size={17} />}>
-                        This project already uses <code>{git.originUrl}</code>{" "}
-                        as origin. Allora will not replace it. Choose the
-                        matching repository or change the remote outside Allora
-                        after review.
+                        Save the project before committing so the disk version
+                        and editor agree. Use Cmd+S or Ctrl+S, then refresh this
+                        panel.
                       </Message>
+                    ) : null}
+                    {git.changes.length > 0 ? (
+                      <div
+                        className="github-change-list"
+                        aria-label="Files to include"
+                      >
+                        {git.changes.slice(0, 8).map((change) => (
+                          <div key={change.path}>
+                            <span>
+                              {change.untracked
+                                ? "New"
+                                : change.staged
+                                  ? "Staged"
+                                  : "Changed"}
+                            </span>
+                            <code>{change.path}</code>
+                          </div>
+                        ))}
+                        {git.changes.length > 8 ? (
+                          <small>+ {git.changes.length - 8} more files</small>
+                        ) : null}
+                      </div>
                     ) : (
-                      <>
-                        <p>
-                          The next action adds this repository as the local
-                          <code> origin </code> remote. It does not push files.
+                      <p className="github-muted-copy">
+                        No uncommitted project files.
+                      </p>
+                    )}
+                    {git.changes.length > 0 ? (
+                      <div className="github-form-stack">
+                        <label>
+                          <span>Commit message</span>
+                          <input
+                            value={commitMessage}
+                            maxLength={120}
+                            onChange={(event) =>
+                              setCommitMessage(event.target.value)
+                            }
+                          />
+                        </label>
+                        <p className="github-action-explanation">
+                          Clicking below stages every current project change and
+                          creates one local commit with this message. Nothing is
+                          sent online.
                         </p>
                         <button
                           type="button"
                           className="github-primary-button"
-                          disabled={!git?.hasCommits || Boolean(busy)}
+                          disabled={
+                            workspaceDirty ||
+                            !commitMessage.trim() ||
+                            Boolean(busy)
+                          }
                           onClick={() =>
-                            void runAction("connect", async () => {
-                              setGit(
-                                await setGitOrigin(
-                                  projectPath!,
-                                  selectedRepository.cloneUrl,
-                                ),
-                              );
+                            void runAction("commit", async () => {
+                              const nextGit = await commitAllProjectFiles({
+                                projectPath: projectPath!,
+                                message: commitMessage,
+                                authorName: authorName || undefined,
+                                authorEmail: authorEmail || undefined,
+                              });
+                              setGit(nextGit);
+                              setCommitMessage("Update project");
                               setNotice(
-                                "The GitHub repository is now connected as origin.",
+                                "Local commit created. Nothing has been pushed yet.",
                               );
                             })
                           }
                         >
-                          Connect as origin
+                          {busy === "commit" ? (
+                            <LoaderCircle className="spin" size={16} />
+                          ) : null}
+                          Stage files and create commit
                         </button>
-                      </>
-                    )}
-                  </div>
-                ) : null}
-              </>
-            )}
-          </Step>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </Step>
 
-          <Step
-            number="4"
-            title={
-              git?.upstream
-                ? "Commit and push updates"
-                : "Publish the first version"
-            }
-            complete={Boolean(git?.upstream && git.ahead === 0 && git.clean)}
-          >
-            {!git?.originUrl ? (
-              <p className="github-muted-copy">
-                Connect a repository before pushing.
-              </p>
-            ) : (
-              <div className="github-action-block">
-                <p>
-                  This sends committed history from{" "}
-                  <strong>{git.branch ?? "the current branch"}</strong> to
-                  <strong> origin</strong> and records upstream tracking. It
-                  will never force-push or overwrite divergent history.
-                </p>
-                {git.behind ? (
-                  <Message tone="warning" icon={<CircleAlert size={17} />}>
-                    The tracked GitHub branch is {git.behind} commit
-                    {git.behind === 1 ? "" : "s"} ahead. Allora will not pull or
-                    merge automatically.
-                  </Message>
-                ) : null}
+              <Step
+                number="3"
+                title="Choose the GitHub repository"
+                complete={Boolean(git?.originUrl)}
+              >
+                {!auth.authenticated ? (
+                  <p className="github-muted-copy">
+                    Sign in to choose or create a repository.
+                  </p>
+                ) : (
+                  <>
+                    <div
+                      className="github-mode-switch"
+                      aria-label="Repository choice"
+                    >
+                      <button
+                        type="button"
+                        className={repositoryMode === "new" ? "active" : ""}
+                        onClick={() => setRepositoryMode("new")}
+                      >
+                        Create new
+                      </button>
+                      <button
+                        type="button"
+                        className={
+                          repositoryMode === "existing" ? "active" : ""
+                        }
+                        onClick={() => setRepositoryMode("existing")}
+                      >
+                        Use existing
+                      </button>
+                    </div>
+                    {repositoryMode === "new" ? (
+                      <div className="github-form-stack">
+                        <label>
+                          <span>Repository name</span>
+                          <input
+                            value={repositoryName}
+                            maxLength={100}
+                            onChange={(event) =>
+                              setRepositoryName(event.target.value)
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Description</span>
+                          <input
+                            value={description}
+                            maxLength={350}
+                            onChange={(event) =>
+                              setDescription(event.target.value)
+                            }
+                          />
+                        </label>
+                        <label className="github-privacy-row">
+                          <input
+                            type="checkbox"
+                            checked={isPrivate}
+                            onChange={(event) =>
+                              setIsPrivate(event.target.checked)
+                            }
+                          />
+                          <Lock size={15} />
+                          <span>
+                            <strong>Private repository</strong>
+                            <small>
+                              Recommended until you are ready to share.
+                            </small>
+                          </span>
+                        </label>
+                        <p className="github-action-explanation">
+                          This creates an empty{" "}
+                          {isPrivate ? "private" : "public"} repository on
+                          GitHub. It does not connect or push this project yet.
+                        </p>
+                        <button
+                          type="button"
+                          className="github-primary-button"
+                          disabled={!repositoryName.trim() || Boolean(busy)}
+                          onClick={() =>
+                            void runAction("create-repository", async () => {
+                              const repository = await createGitHubRepository({
+                                name: repositoryName,
+                                description,
+                                private: isPrivate,
+                              });
+                              const nextRepositories = await loadRepositories();
+                              const created =
+                                nextRepositories.find(
+                                  (item) => item.id === repository.id,
+                                ) ?? repository;
+                              setSelectedRepositoryId(created.id.toString());
+                              setRepositoryMode("existing");
+                              setNotice(
+                                `${created.fullName} was created. Review the connection step next.`,
+                              );
+                            })
+                          }
+                        >
+                          {busy === "create-repository" ? (
+                            <LoaderCircle className="spin" size={16} />
+                          ) : null}
+                          Create repository
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="github-form-stack">
+                        <label>
+                          <span>Repository</span>
+                          <select
+                            value={selectedRepositoryId}
+                            onChange={(event) =>
+                              setSelectedRepositoryId(event.target.value)
+                            }
+                          >
+                            <option value="">Select a repository</option>
+                            {repositories.map((repository) => (
+                              <option key={repository.id} value={repository.id}>
+                                {repository.fullName} ·{" "}
+                                {repository.private ? "Private" : "Public"}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {repositories.length === 0 ? (
+                          <p className="github-muted-copy">
+                            No owned repositories with push access were found.
+                            Create one instead.
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {selectedRepository ? (
+                      <div className="github-connect-block">
+                        <div>
+                          <strong>{selectedRepository.fullName}</strong>
+                          <span>
+                            {selectedRepository.private ? "Private" : "Public"}
+                          </span>
+                        </div>
+                        {originMatchesSelection ? (
+                          <StatusPill
+                            tone="success"
+                            label="Connected as origin"
+                          />
+                        ) : git?.originUrl ? (
+                          <Message
+                            tone="warning"
+                            icon={<CircleAlert size={17} />}
+                          >
+                            This project already uses{" "}
+                            <code>{git.originUrl}</code> as origin. Allora will
+                            not replace it. Choose the matching repository or
+                            change the remote outside Allora after review.
+                          </Message>
+                        ) : (
+                          <>
+                            <p>
+                              The next action adds this repository as the local
+                              <code> origin </code> remote. It does not push
+                              files.
+                            </p>
+                            <button
+                              type="button"
+                              className="github-primary-button"
+                              disabled={!git?.hasCommits || Boolean(busy)}
+                              onClick={() =>
+                                void runAction("connect", async () => {
+                                  setGit(
+                                    await setGitOrigin(
+                                      projectPath!,
+                                      selectedRepository.cloneUrl,
+                                    ),
+                                  );
+                                  setNotice(
+                                    "The GitHub repository is now connected as origin.",
+                                  );
+                                })
+                              }
+                            >
+                              Connect as origin
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </Step>
+
+              <Step
+                number="4"
+                title={
+                  git?.upstream
+                    ? "Commit and push updates"
+                    : "Publish the first version"
+                }
+                complete={Boolean(
+                  git?.upstream && git.ahead === 0 && git.clean,
+                )}
+              >
+                {!git?.originUrl ? (
+                  <p className="github-muted-copy">
+                    Connect a repository before pushing.
+                  </p>
+                ) : (
+                  <div className="github-action-block">
+                    <p>
+                      This sends committed history from{" "}
+                      <strong>{git.branch ?? "the current branch"}</strong> to
+                      <strong> origin</strong> and records upstream tracking. It
+                      will never force-push or overwrite divergent history.
+                    </p>
+                    {git.behind ? (
+                      <Message tone="warning" icon={<CircleAlert size={17} />}>
+                        The tracked GitHub branch is {git.behind} commit
+                        {git.behind === 1 ? "" : "s"} ahead. Allora will not
+                        pull or merge automatically.
+                      </Message>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="github-primary-button"
+                      disabled={
+                        !git.hasCommits || git.detached || Boolean(busy)
+                      }
+                      onClick={() =>
+                        void runAction("push", async () => {
+                          setGit(await pushGitProject(projectPath!));
+                          setNotice(
+                            "Project pushed successfully with upstream tracking.",
+                          );
+                        })
+                      }
+                    >
+                      {busy === "push" ? (
+                        <LoaderCircle className="spin" size={16} />
+                      ) : (
+                        <UploadCloud size={16} />
+                      )}
+                      {git.upstream
+                        ? "Push committed changes"
+                        : "Publish first version"}
+                    </button>
+                  </div>
+                )}
+              </Step>
+
+              <div className="github-advanced">
                 <button
                   type="button"
-                  className="github-primary-button"
-                  disabled={!git.hasCommits || git.detached || Boolean(busy)}
-                  onClick={() =>
-                    void runAction("push", async () => {
-                      setGit(await pushGitProject(projectPath!));
-                      setNotice(
-                        "Project pushed successfully with upstream tracking.",
-                      );
-                    })
-                  }
+                  aria-expanded={showAdvanced}
+                  onClick={() => setShowAdvanced((current) => !current)}
                 >
-                  {busy === "push" ? (
-                    <LoaderCircle className="spin" size={16} />
-                  ) : (
-                    <UploadCloud size={16} />
-                  )}
-                  {git.upstream
-                    ? "Push committed changes"
-                    : "Publish first version"}
+                  <ChevronDown
+                    size={15}
+                    className={showAdvanced ? "open" : ""}
+                  />
+                  Advanced Git details
                 </button>
+                {showAdvanced ? (
+                  <div className="github-advanced-content">
+                    <div className="github-identity-grid">
+                      <label>
+                        <span>Commit author name</span>
+                        <input
+                          value={authorName}
+                          onChange={(event) =>
+                            setAuthorName(event.target.value)
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Commit author email</span>
+                        <input
+                          type="email"
+                          value={authorEmail}
+                          onChange={(event) =>
+                            setAuthorEmail(event.target.value)
+                          }
+                        />
+                      </label>
+                    </div>
+                    <p>
+                      If supplied, these are saved only in this repository’s
+                      local Git configuration. Leave both blank to use your
+                      existing Git identity.
+                    </p>
+                    <dl>
+                      <div>
+                        <dt>Branch</dt>
+                        <dd>{git?.branch ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt>Upstream</dt>
+                        <dd>{git?.upstream ?? "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Origin</dt>
+                        <dd>{git?.originUrl ?? "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Git</dt>
+                        <dd>{tools?.gitVersion ?? "Unavailable"}</dd>
+                      </div>
+                      <div>
+                        <dt>GitHub CLI</dt>
+                        <dd>
+                          {tools?.ghVersion ?? "Optional · not installed"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p>
+                      Allora uses Git for local history and pushes, and GitHub’s
+                      API for account and repository actions. GitHub CLI is
+                      detected for diagnostics but is not required or invoked in
+                      this version.
+                    </p>
+                  </div>
+                ) : null}
               </div>
-            )}
-          </Step>
-
-          <div className="github-advanced">
-            <button
-              type="button"
-              aria-expanded={showAdvanced}
-              onClick={() => setShowAdvanced((current) => !current)}
-            >
-              <ChevronDown size={15} className={showAdvanced ? "open" : ""} />
-              Advanced Git details
-            </button>
-            {showAdvanced ? (
-              <div className="github-advanced-content">
-                <div className="github-identity-grid">
-                  <label>
-                    <span>Commit author name</span>
-                    <input
-                      value={authorName}
-                      onChange={(event) => setAuthorName(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span>Commit author email</span>
-                    <input
-                      type="email"
-                      value={authorEmail}
-                      onChange={(event) => setAuthorEmail(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <p>
-                  If supplied, these are saved only in this repository’s local
-                  Git configuration. Leave both blank to use your existing Git
-                  identity.
-                </p>
-                <dl>
-                  <div>
-                    <dt>Branch</dt>
-                    <dd>{git?.branch ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Upstream</dt>
-                    <dd>{git?.upstream ?? "Not set"}</dd>
-                  </div>
-                  <div>
-                    <dt>Origin</dt>
-                    <dd>{git?.originUrl ?? "Not set"}</dd>
-                  </div>
-                  <div>
-                    <dt>Git</dt>
-                    <dd>{tools?.gitVersion ?? "Unavailable"}</dd>
-                  </div>
-                  <div>
-                    <dt>GitHub CLI</dt>
-                    <dd>{tools?.ghVersion ?? "Optional · not installed"}</dd>
-                  </div>
-                </dl>
-                <p>
-                  Allora uses Git for local history and pushes, and GitHub’s API
-                  for account and repository actions. GitHub CLI is detected for
-                  diagnostics but is not required or invoked in this version.
-                </p>
-              </div>
-            ) : null}
-          </div>
+            </>
+          )}
         </div>
       </section>
     </div>

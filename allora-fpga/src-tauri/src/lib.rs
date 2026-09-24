@@ -15,6 +15,7 @@ use tauri::ipc::Channel;
 use tauri::State;
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
+mod ai_integration;
 mod github;
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
@@ -119,6 +120,15 @@ async fn git_push_project(
     request: github::ProjectPathRequest,
 ) -> Result<github::GitRepositoryStatus, github::ServiceError> {
     tauri::async_runtime::spawn_blocking(move || github::push(request))
+        .await
+        .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
+}
+
+#[tauri::command]
+async fn git_run_project_command(
+    request: github::GitCommandRequest,
+) -> Result<github::GitCommandResult, github::ServiceError> {
+    tauri::async_runtime::spawn_blocking(move || github::run_project_git_command(request))
         .await
         .map_err(|error| github::ServiceError::new("internal_error", error.to_string()))?
 }
@@ -2106,6 +2116,8 @@ fn build_nextpnr_command(
             "--lp8k"
         } else if fpga.contains("hx8k") {
             "--hx8k"
+        } else if fpga.contains("hx4k") {
+            "--hx4k"
         } else if fpga.contains("lp1k") {
             "--lp1k"
         } else if fpga.contains("hx1k") {
@@ -2141,17 +2153,30 @@ fn build_nextpnr_command(
     }
 
     if family.contains("ecp5") {
-        let size_flag = if fpga.contains("12f") {
-            "--12k"
+        let density = if fpga.contains("12f") {
+            "12k"
         } else if fpga.contains("25f") {
-            "--25k"
+            "25k"
         } else if fpga.contains("45f") {
-            "--45k"
+            "45k"
         } else if fpga.contains("85f") {
-            "--85k"
+            "85k"
         } else {
             return Err(error("Unsupported ECP5 device for nextpnr-ecp5."));
         };
+        let device_class = if fpga.starts_with("lfe5um5g-") {
+            "um5g-"
+        } else if fpga.starts_with("lfe5um-") {
+            "um-"
+        } else if fpga.starts_with("lfe5u-") {
+            ""
+        } else {
+            return Err(error("Unsupported ECP5 device class for nextpnr-ecp5."));
+        };
+        if density == "12k" && !device_class.is_empty() {
+            return Err(error("ECP5 UM and UM5G devices do not have a 12F density."));
+        }
+        let size_flag = format!("--{device_class}{density}");
 
         let package = fpga
             .rsplit('-')
@@ -2161,7 +2186,7 @@ fn build_nextpnr_command(
         let package = normalize_ecp5_package(&package);
 
         let mut args = vec![
-            size_flag.to_string(),
+            size_flag,
             "--package".to_string(),
             package,
             "--json".to_string(),
@@ -2519,6 +2544,55 @@ fn normalize_ecp5_package(package: &str) -> String {
         "BG554" | "BG554I" => "CABGA554".to_string(),
         "BG756" | "BG756C" => "CABGA756".to_string(),
         value => value.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod nextpnr_board_tests {
+    use super::*;
+
+    fn args_for(family: &str, fpga: &str, package: &str) -> Vec<String> {
+        build_nextpnr_command(
+            family,
+            fpga,
+            package,
+            Path::new("design.json"),
+            Path::new("constraints.pcf"),
+            Path::new("design.asc"),
+            None,
+            None,
+            false,
+        )
+        .unwrap()
+        .1
+    }
+
+    #[test]
+    fn selects_hx4k_and_alhambra_package_mode() {
+        let krote = args_for("iCE40 HX", "ice40-hx4k-bg121", "BG121");
+        assert!(krote.windows(1).any(|args| args == ["--hx4k"]));
+        assert!(krote.windows(2).any(|args| args == ["--package", "bg121"]));
+
+        let alhambra = args_for("iCE40 HX", "ice40-hx8k-tq144:4k", "TQ144:4K");
+        assert!(alhambra
+            .windows(2)
+            .any(|args| args == ["--package", "tq144:4k"]));
+    }
+
+    #[test]
+    fn selects_ecp5_device_class_and_package() {
+        for (fpga, flag, package) in [
+            ("lfe5u-45f-csfbga285", "--45k", "CSFBGA285"),
+            ("lfe5um-85f-cabga381", "--um-85k", "CABGA381"),
+            ("lfe5um5g-25f-cabga256", "--um5g-25k", "CABGA256"),
+        ] {
+            let args = args_for("ECP5", fpga, package);
+            assert!(args.iter().any(|arg| arg == flag), "{fpga}");
+            assert!(
+                args.windows(2).any(|pair| pair == ["--package", package]),
+                "{fpga}"
+            );
+        }
     }
 }
 
@@ -3341,6 +3415,8 @@ pub fn run() {
             open_serial_monitor,
             write_serial_monitor,
             close_serial_monitor,
+            ai_integration::ai_provider_status,
+            ai_integration::ai_provider_start_login,
             github_tool_availability,
             github_auth_status,
             github_begin_device_sign_in,
@@ -3353,7 +3429,8 @@ pub fn run() {
             git_initialize_repository,
             git_commit_all,
             git_set_origin,
-            git_push_project
+            git_push_project,
+            git_run_project_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
