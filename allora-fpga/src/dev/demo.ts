@@ -11,6 +11,7 @@ type Command = {
 type AppActions = {
   home: () => void;
   open: (path: string, target: "simulate" | "build") => Promise<void>;
+  theme: (theme: "ice" | "black-ice") => void;
 };
 let actions: AppActions | null = null;
 let started = false;
@@ -105,6 +106,24 @@ async function execute(command: Command) {
       if (!command.path) throw new Error("Project path required");
       await actions.open(command.path, command.target ?? "simulate");
       break;
+    case "theme":
+      if (command.value !== "ice" && command.value !== "black-ice")
+        throw new Error("Unsupported theme");
+      actions.theme(command.value);
+      break;
+    case "open-file":
+      if (!command.name) throw new Error("File name required");
+      {
+        const files = [...document.querySelectorAll<HTMLElement>(".project-tree-file")].filter(
+          (element) =>
+            element.getClientRects().length &&
+            normalized(element.querySelector(".project-tree-file-name")?.textContent ?? null) === command.name,
+        );
+        if (files.length !== 1)
+          throw new Error(`Expected one visible project file '${command.name}', found ${files.length}`);
+        files[0].click();
+      }
+      break;
     case "enter":
       button(
         command.target === "build" ? "Build" : "Simulate",
@@ -121,6 +140,7 @@ async function execute(command: Command) {
         "Health",
         "Bitstream",
         "Program",
+        "Serial",
       ];
       if (!allowed.includes(command.name ?? ""))
         throw new Error("Unsupported demo section");
@@ -187,6 +207,13 @@ async function execute(command: Command) {
       await until(
         () => Boolean(document.querySelector(".synthesis-report")),
         "real synthesis report",
+      );
+      break;
+    case "run-testbench":
+      button("Run Simulation").click();
+      await until(
+        () => Boolean(document.querySelector(".signal-waveform-panel .wave-trace")),
+        "testbench waveform",
       );
       break;
     case "map-pin":

@@ -1,0 +1,26 @@
+{
+  "fixture": "site-build-capture",
+  "prepare": [
+    {
+      "action": "theme",
+      "value": "black-ice"
+    },
+    {
+      "action": "open-project",
+      "target": "build"
+    },
+    {
+      "action": "section",
+      "name": "Testbench"
+    },
+    {
+      "action": "run-testbench"
+    }
+  ],
+  "steps": [
+    {
+      "shot": "testbench",
+      "wait": 1200
+    }
+  ]
+}

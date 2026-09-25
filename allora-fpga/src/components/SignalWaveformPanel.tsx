@@ -15,6 +15,7 @@ export type SignalWaveTrace = {
 };
 
 type Props = {
+  className?: string;
   title?: string;
   subtitle: string;
   traces: SignalWaveTrace[];
@@ -28,6 +29,7 @@ const ROW_HEIGHT = 42;
 const MAX_RENDERED_WAVE_POINTS = 4_000;
 
 export default function SignalWaveformPanel({
+  className,
   title = "Live waveform",
   subtitle,
   traces,
@@ -43,7 +45,7 @@ export default function SignalWaveformPanel({
   const { startTime, endTime } = getTraceTimeRange(traces);
 
   return (
-    <section className="vfpga-panel vfpga-waveform signal-waveform-panel">
+    <section className={`vfpga-panel vfpga-waveform signal-waveform-panel${className ? ` ${className}` : ""}`}>
       <div className="vfpga-section-title">
         <WavesIcon />
         <div>

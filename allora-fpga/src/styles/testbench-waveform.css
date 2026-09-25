@@ -23,6 +23,26 @@
   color: #b91c1c;
 }
 
+.testbench-waveform-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.testbench-waveform-panel .vfpga-wave-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+}
+
+.testbench-waveform-panel .vfpga-wave-empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+}
+
 .waveform-controls {
   display: flex;
   align-items: center;
@@ -402,4 +422,3 @@
   line-height: 1.5;
   white-space: pre-wrap;
 }
-

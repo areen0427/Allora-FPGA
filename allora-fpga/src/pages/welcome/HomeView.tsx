@@ -265,6 +265,7 @@ export function HomeView({
                 projects={recentProjects}
                 onOpenProject={(projectId) => onOpenProject(projectId, "build")}
                 onRemoveProject={onRemoveRecentProject}
+                expandableToFive
               />
             </div>
           </div>
@@ -763,13 +764,20 @@ function RecentProjectsCard({
   onRemoveProject,
   emptyMessage,
   showSimulationSummary = false,
+  expandableToFive = false,
 }: {
   projects: SavedProject[];
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
   emptyMessage?: string;
   showSimulationSummary?: boolean;
+  expandableToFive?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleProjects = expandableToFive && !expanded
+    ? projects.slice(0, 3)
+    : projects;
+
   return (
     <aside className="liquid-home-card recent-projects-card">
       <div className="recent-projects-header">
@@ -785,7 +793,7 @@ function RecentProjectsCard({
         </div>
       ) : (
         <div className="recent-project-list">
-          {projects.map((project) => (
+          {visibleProjects.map((project) => (
             <div
               className="recent-project-row"
               key={project.id}
@@ -825,6 +833,17 @@ function RecentProjectsCard({
               </button>
             </div>
           ))}
+          {expandableToFive && projects.length > 3 ? (
+            <button
+              type="button"
+              className="recent-projects-expand"
+              aria-label={expanded ? "Show three recent projects" : `Show ${projects.length - 3} more recent projects`}
+              aria-expanded={expanded}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              ⋯
+            </button>
+          ) : null}
         </div>
       )}
     </aside>

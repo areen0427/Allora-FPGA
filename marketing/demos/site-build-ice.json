@@ -1,0 +1,27 @@
+{
+  "fixture": "site-build-capture",
+  "prepare": [
+    { "action": "theme", "value": "ice" },
+    { "action": "open-project", "target": "build" }
+  ],
+  "steps": [
+    { "shot": "dff", "wait": 900 },
+    { "action": "open-file", "name": "mux4.sv" },
+    { "shot": "mux", "wait": 900 },
+    { "action": "open-file", "name": "traffic_fsm.sv" },
+    { "shot": "fsm", "wait": 900 },
+    { "action": "section", "name": "Synthesis" },
+    { "action": "synthesize" },
+    { "shot": "synthesis", "wait": 900 },
+    { "action": "section", "name": "Pins" },
+    { "shot": "pins", "wait": 900 },
+    { "action": "section", "name": "Bitstream" },
+    { "action": "generate-bitstream" },
+    { "shot": "bitstream", "wait": 900 },
+    { "action": "section", "name": "Program" },
+    { "action": "select-bitstream" },
+    { "shot": "program", "wait": 900 },
+    { "action": "section", "name": "Serial" },
+    { "shot": "serial", "wait": 900 }
+  ]
+}

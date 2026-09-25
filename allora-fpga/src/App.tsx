@@ -227,6 +227,7 @@ function App() {
         connectDemo({
           home: goHome,
           open: (path, target) => openProjectPath(path, target),
+          theme: (theme) => setSettings((current) => ({ ...current, theme })),
         }),
       );
     }
