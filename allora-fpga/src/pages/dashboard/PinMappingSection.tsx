@@ -444,6 +444,7 @@ function SimplePinMapper({
               </div>
 
               <select
+                aria-label={`Board pin for ${port.name}`}
                 value={selectedPin}
                 onChange={(event) =>
                   setPortMapping(port.name, event.target.value)

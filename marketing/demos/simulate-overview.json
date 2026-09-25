@@ -1,0 +1,59 @@
+{
+  "prepare": [
+    {
+      "action": "open-project",
+      "target": "simulate"
+    },
+    {
+      "action": "collapse-explorer"
+    },
+    {
+      "action": "compile"
+    },
+    {
+      "action": "reset"
+    }
+  ],
+  "steps": [
+    {
+      "shot": "simulate",
+      "wait": 800
+    },
+    {
+      "action": "switch",
+      "name": "SW0"
+    },
+    {
+      "action": "step",
+      "repeat": 8,
+      "between": 180
+    },
+    {
+      "action": "assert-signal",
+      "name": "leds",
+      "value": "0x8"
+    },
+    {
+      "action": "switch",
+      "name": "SW0",
+      "wait": 600
+    },
+    {
+      "action": "press",
+      "name": "BTN0",
+      "ms": 200,
+      "wait": 600,
+      "cycles": 3
+    },
+    {
+      "action": "assert-signal",
+      "name": "leds",
+      "value": "0xB"
+    },
+    {
+      "shot": "waveform",
+      "action": "waveform",
+      "wait": 3300
+    }
+  ]
+}

@@ -315,6 +315,7 @@ export default function ProgrammingSection({
               Bitstream
             </label>
             <select
+              aria-label="Bitstream to program"
               value={selectedBitstream}
               onChange={(event) => setSelectedBitstream(event.target.value)}
               style={{

@@ -1,0 +1,7 @@
+{
+  "name": "Async Reset DFF",
+  "boardId": "icebreaker",
+  "boardName": "iCEBreaker",
+  "language": "SystemVerilog",
+  "topModule": "async_reset_dff"
+}

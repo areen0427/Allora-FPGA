@@ -1,0 +1,87 @@
+{
+  "output": "allora-overview-12s.mp4",
+  "shots": [
+    {
+      "marker": "welcome",
+      "seconds": 1.1,
+      "title": "welcome",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.5,
+        0.025,
+        0.49,
+        0.94
+      ]
+    },
+    {
+      "marker": "simulate",
+      "offset": 0.2,
+      "seconds": 3.2,
+      "title": "simulate",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.2,
+        0.33,
+        0.58,
+        0.5
+      ]
+    },
+    {
+      "marker": "waveform",
+      "offset": 0.4,
+      "seconds": 2.2,
+      "title": "waveform",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.075,
+        0.36,
+        0.91,
+        0.62
+      ]
+    },
+    {
+      "marker": "synthesis-start",
+      "seconds": 0.75,
+      "title": "build",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.08,
+        0.045,
+        0.73,
+        0.92
+      ]
+    },
+    {
+      "marker": "synthesis-report",
+      "offset": 0.2,
+      "seconds": 3.6,
+      "title": "build",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.08,
+        0.045,
+        0.73,
+        0.92
+      ]
+    },
+    {
+      "marker": "simulate",
+      "offset": 1.55,
+      "seconds": 1.15,
+      "title": "end",
+      "layout": "fit",
+      "zoom": 0,
+      "crop": [
+        0.2,
+        0.33,
+        0.58,
+        0.5
+      ]
+    }
+  ]
+}

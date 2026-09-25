@@ -139,6 +139,10 @@ function App() {
     const projectPath = await pickExistingProjectDirectory();
     if (!projectPath) return;
 
+    await openProjectPath(projectPath, target);
+  }
+
+  async function openProjectPath(projectPath: string, target: ExecutionTarget) {
     const diskFiles = await readProjectWorkspace(projectPath);
     const metadataFile = diskFiles.find(
       (file) => file.name === "allora-project.json",
@@ -216,6 +220,17 @@ function App() {
     setProjectWarning("");
     setStage("dashboard");
   }
+
+  useEffect(() => {
+    if (import.meta.env.DEV && import.meta.env.VITE_ALLORA_DEMO_TOKEN) {
+      void import("./dev/demo").then(({ connectDemo }) =>
+        connectDemo({
+          home: goHome,
+          open: (path, target) => openProjectPath(path, target),
+        }),
+      );
+    }
+  });
 
   const selectedBoard = selectedBoardId
     ? getBoardById(selectedBoardId)

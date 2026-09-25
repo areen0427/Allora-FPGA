@@ -1,0 +1,7 @@
+.cache/
+raw/*
+frames/*
+output/*
+!raw/.gitkeep
+!frames/.gitkeep
+!output/.gitkeep

@@ -8,7 +8,11 @@
     "tauri": "tauri",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "demo:record": "node ../marketing/scripts/record.mjs",
+    "teaser": "node ../marketing/scripts/teaser.mjs",
+    "demo:inspect": "node ../marketing/scripts/inspect.mjs",
+    "demo:check": "node ../marketing/scripts/check.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

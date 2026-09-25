@@ -1,0 +1,97 @@
+{
+  "description": "Real welcome, Verilator switch/LED response and waveforms, then real Yosys synthesis. No hardware programming.",
+  "prepare": [
+    {
+      "action": "home"
+    }
+  ],
+  "steps": [
+    {
+      "wait": 900
+    },
+    {
+      "shot": "welcome",
+      "wait": 2600
+    },
+    {
+      "action": "open-project",
+      "target": "simulate"
+    },
+    {
+      "action": "collapse-explorer"
+    },
+    {
+      "action": "compile"
+    },
+    {
+      "action": "reset"
+    },
+    {
+      "shot": "simulate",
+      "wait": 500
+    },
+    {
+      "action": "switch",
+      "name": "SW0"
+    },
+    {
+      "action": "step",
+      "repeat": 8,
+      "between": 180
+    },
+    {
+      "action": "assert-signal",
+      "name": "leds",
+      "value": "0x8"
+    },
+    {
+      "action": "switch",
+      "name": "SW0",
+      "wait": 500
+    },
+    {
+      "action": "press",
+      "name": "BTN0",
+      "ms": 200,
+      "wait": 800,
+      "cycles": 3
+    },
+    {
+      "action": "assert-signal",
+      "name": "leds",
+      "value": "0xB"
+    },
+    {
+      "shot": "waveform",
+      "action": "waveform",
+      "wait": 3300
+    },
+    {
+      "action": "open-project",
+      "target": "build"
+    },
+    {
+      "action": "section",
+      "name": "Synthesis"
+    },
+    {
+      "shot": "synthesis-start",
+      "action": "synthesize",
+      "wait": 700
+    },
+    {
+      "shot": "synthesis-report",
+      "wait": 4300
+    },
+    {
+      "action": "home"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "end",
+      "wait": 2200
+    }
+  ]
+}

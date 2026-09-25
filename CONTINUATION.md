@@ -1,3 +1,64 @@
+## 2026-09-24 — iCEBreaker async-reset DFF build clip
+
+Changed:
+
+- Added a minimal `async_reset_dff` SystemVerilog example targeting iCEBreaker and a native-capture scenario for editor, synthesis, pin mapping, bitstream generation, and programming readiness.
+- Extended the developer-only bridge with semantic pin-map and programmer controls, and added accessible select labels for deterministic selection.
+- Added a separate 15-second portrait edit using the wider fitted-footage and blurred-edge treatment.
+
+Validated:
+
+- Yosys and nextpnr/icepack produced a real bitstream; the native app capture reported one ADFF, four saved pin mappings, and a 104,090-byte bitstream.
+- iceprog was detected, but no connected iCEBreaker was found. The clip does not claim a programming success.
+
+## 2026-09-24 — Wider teaser framing and blurred edges
+
+Changed:
+
+- Replaced the overly tight portrait crops with subject-specific fit crops, keeping the complete Virtual FPGA board, waveform panel, and synthesis report in view.
+- Filled the extra vertical picture area with a dimmed, blurred copy of each live shot. The 160px title bands and heavy text remain.
+
+Validated:
+
+- Reused the native capture, inspected final frames and contact sheet, and verified the exact 12-second H.264 export and full decode.
+
+## 2026-09-24 — Reframed teaser after visual feedback
+
+Changed:
+
+- Re-edited the existing real application capture with a 1080×1600 app-footage panel, leaving just 160px at the top and bottom for bold titles (16.7% combined dark bands).
+- Shortened the welcome and final shots, ending instead on the working Virtual FPGA board with lit LEDs. Enlarged the simulator, waveform, and synthesis regions using shot-specific portrait crops; no app UI or RTL behavior changed.
+- Updated reusable portrait-layout rendering validation and the editing/QA documentation.
+
+Validated:
+
+- Reused native raw footage, rendered the exact 12-second overview, and inspected full-resolution representative frames and the contact sheet. Verified duration, frame count, format and full decode.
+
+## 2026-09-24 — Developer-only native marketing capture and first teaser
+
+Changed:
+
+- Added `marketing/` semantic scenarios, token-authenticated dev-server command transport, native macOS ScreenCaptureKit recorder, reusable FFmpeg editing/inspection scripts, original title plates, usage/style/QA guides and ignored local media outputs.
+- Added `demo:check`, `demo:record`, `teaser` and `demo:inspect` package scripts. `npm run teaser -- main-overview` launches real Allora, drives the counter and synthesis, captures the single native window, and renders the final short.
+- Reused App's normal folder-loading implementation through a shared internal path loader. The automation import and storage initialization require both Vite DEV and an explicit token. Marketing uses a separate loopback origin and copied example project. Production UI/Rust services were not redesigned or replaced.
+- Exported `marketing/output/allora-overview-12s.mp4`, exactly 12 seconds / 720 frames, 1080×1920 H.264 at 60 fps, silent. Six shots show welcome, actual virtual-board response, native waveform, synthesis start/report and welcome ending.
+
+Validated:
+
+- All three demo scenarios captured through the native app. Fixed-step RTL assertions passed at LED values 0x8 and 0xB; real Yosys synthesis completed.
+- The documented one-command teaser pipeline completed end to end. Inspected raw/final contact sheets and full-resolution representative frames, corrected cropping and shot handles, verified metadata, and decoded the entire final MP4 without errors. See `marketing/QA.md`.
+- Frontend build/lint, authenticated transport test and diff whitespace check passed. Production build with an intentional demo-token sentinel excluded both token and bridge implementation.
+
+Known limitations:
+
+- Recorder requires macOS 15+ and one-time Screen Recording permission for its launching host; this Mac already had permission. No Accessibility automation is used.
+- Jobs are single-session and reuse local cache/output paths. Generated media is ignored by Git and remains available locally.
+- The example has no physical pin constraints. Build footage establishes real synthesis only; no full bitstream or connected-hardware programming was attempted. Optional audio/fades are available but not used in the first export.
+
+Next:
+
+- For another feature, inspect its real behavior, add a semantic scenario and matching edit JSON, then run and visually inspect the same pipeline. Add a constrained, board-specific fixture before marketing successful place-and-route or programming.
+
 ## 2026-09-24 — Documented AI Integration V1 and verified Codex connection
 
 Changed:

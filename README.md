@@ -152,3 +152,7 @@ Keep simulation and physical hardware as equal targets, prefer reusable typed ab
 ## License
 
 MIT
+
+## Developer marketing capture
+
+The optional native-window capture and vertical teaser pipeline lives in [`marketing/README.md`](marketing/README.md). From `allora-fpga`, run `npm run teaser -- main-overview` to launch the real app, execute a safe demo, capture it, render a 12-second MP4 and extract inspection frames. The automation bridge is excluded from release builds.

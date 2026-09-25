@@ -1,0 +1,27 @@
+{
+  "fixture": "async-reset-dff-icebreaker",
+  "prepare": [{ "action": "open-project", "target": "build" }],
+  "steps": [
+    { "shot": "editor", "wait": 2800 },
+    { "action": "section", "name": "Synthesis" },
+    { "shot": "synthesis-start", "action": "synthesize", "wait": 900 },
+    { "shot": "synthesis-report", "wait": 3100 },
+    { "action": "section", "name": "Pins" },
+    { "action": "pin-mode", "name": "Simple" },
+    { "shot": "pins-before", "wait": 1400 },
+    { "action": "map-pin", "name": "clk", "value": "clock:clk12" },
+    { "action": "map-pin", "name": "rst_n", "value": "pin:usr_rst_btn:10" },
+    { "action": "map-pin", "name": "d", "value": "pin:iCEBreaker_GPIO_I[0]:18" },
+    { "action": "map-pin", "name": "q", "value": "pin:iCEBreaker_GPIO_O[0]:25" },
+    { "action": "save-map" },
+    { "shot": "pins-after", "wait": 2700 },
+    { "action": "section", "name": "Bitstream" },
+    { "shot": "bitstream-start", "action": "generate-bitstream", "wait": 700 },
+    { "shot": "bitstream-result", "wait": 2700 },
+    { "action": "section", "name": "Program" },
+    { "action": "select-bitstream" },
+    { "action": "check-programmer" },
+    { "action": "detect-board" },
+    { "shot": "program", "wait": 3800 }
+  ]
+}
