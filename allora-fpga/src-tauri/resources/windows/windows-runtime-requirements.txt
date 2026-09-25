@@ -1,0 +1,14 @@
+# Allora FPGA Windows x64 end-user requirements.
+# Run install-windows-requirements.ps1 beside this file.
+# The Tauri NSIS installer handles WebView2 separately.
+# Rust, Node.js, and Visual Studio Build Tools are build-time requirements only.
+
+winget|Git.Git|Git for optional project history and GitHub publishing|
+winget|MSYS2.MSYS2|MSYS2 for Verilator GNU Make and C++ compilation|
+msys2-packages|make,mingw-w64-ucrt-x86_64-gcc|MSYS2 GNU Make and UCRT64 GCC|C:\msys64
+oss-cad|YosysHQ/oss-cad-suite-build|Latest OSS CAD Suite Windows x64|C:\fpga
+verilator-windows|C:\msys64|Windows Verilator launcher for Allora|C:\fpga
+runtime-env|C:\msys64|Add FPGA tools to user environment|C:\fpga
+
+# Board-specific USB/JTAG drivers are deliberately not installed automatically.
+# They depend on the board and programmer and may replace an existing driver.

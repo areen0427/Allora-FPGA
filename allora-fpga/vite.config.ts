@@ -7,8 +7,11 @@ export default defineConfig(({ command }) => {
     command === "serve" ? process.env.VITE_ALLORA_DEMO_TOKEN : undefined;
   return {
     plugins: [react(), ...(token ? [demoBridge(token)] : [])],
-    server: token
-      ? { host: "127.0.0.1", port: 5178, strictPort: true }
-      : undefined,
+    server: {
+      ...(token ? { host: "127.0.0.1", port: 5178, strictPort: true } : {}),
+      watch: {
+        ignored: ["**/src-tauri/target/**"],
+      },
+    },
   };
 });

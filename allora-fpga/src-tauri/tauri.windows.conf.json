@@ -1,0 +1,9 @@
+{
+  "bundle": {
+    "resources": [
+      "resources/windows/install-windows-requirements.ps1",
+      "resources/windows/windows-runtime-requirements.txt",
+      "resources/windows/windows-build-requirements.txt"
+    ]
+  }
+}

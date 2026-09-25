@@ -1,3 +1,11 @@
+## 2026-09-25 — Windows preview release branch
+
+- Created `codex/windows-preview` from `main` without changing the macOS `v*` release workflow.
+- Carried over the Windows-tested native folder-dialog plugin change and the Vite watcher fix from the local Downloads archive.
+- Added a Windows x64 NSIS workflow: branch pushes upload a test artifact; `windows-v*` tags create a draft prerelease with a bundled, separately downloadable requirements script.
+- The runtime setup uses Git, MSYS2 Make/GCC, and OSS CAD Suite. It omits Node, Rust, and Visual Studio Build Tools, which are source-build dependencies. Board-specific USB drivers remain manual.
+- `npm run build` and `cargo check --locked` pass on Windows. A local release/NSIS packaging attempt ran out of C: drive space, so the hosted Windows Actions build must verify packaging. The app's native workflows remain unverified on Windows.
+
 ## 2026-09-24 — iCEBreaker async-reset DFF build clip
 
 Changed:
