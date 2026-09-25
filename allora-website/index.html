@@ -50,7 +50,7 @@
           <div class="hero-copy reveal">
             <p class="eyebrow">FPGA Development Environment</p>
             <h1>RTL.<br /><span>Virtual Simulator.</span><br />Full FPGA Build<br />and Program Pipeline.</h1>
-            <p class="hero-lead">Allora brings the open FPGA workflow into one visual desktop environment. Design and simulate your hardware virtually, then synthesize, place and route, and program all supported open-hardware FPGA boards without leaving the app.</p>
+            <p class="hero-lead">Allora brings the open FPGA workflow into one desktop environment. Design and simulate your hardware virtually, then synthesize, place and route, and program all supported open-hardware FPGA boards without leaving the app.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#download">Download Allora FPGA</a>
               <a class="button button-secondary" href="#simulator">Explore Virtual FPGA</a>
@@ -67,7 +67,7 @@
             </article>
             <article class="mode-card mode-card-build surface">
               <div class="mode-card-top"><span>Physical FPGA</span><i>HW</i></div><h2>Build</h2>
-              <p>Take supported open-source boards from RTL through synthesis, place and route, bitstream, and programming.</p>
+              <p>Take your RTL from synthesis through place and route, bitstream generation, and programming on supported open source boards.</p>
               <div class="build-stages" aria-hidden="true"><span>RTL</span><b>→</b><span>PNR</span><b>→</b><span>FPGA</span></div>
             </article>
           </div>
@@ -84,8 +84,8 @@
       <section class="section simulator" id="simulator">
         <div class="shell">
           <div class="section-heading split-heading reveal">
-            <div><p class="eyebrow">Virtual FPGA V0.1</p><h2 class="display-title">Visualize your RTL in the Interactive Virtual Simulator.</h2></div>
-            <p class="section-lead">Allora discovers your top-level ports and runs the design through a Verilator model. Your RTL running visually with no hardware required.</p>
+            <div><p class="eyebrow">Virtual FPGA V0.1</p><h2 class="display-title">Visualize your RTL in the Interactive Virtual FPGA Simulator.</h2></div>
+            <p class="section-lead">Allora discovers your top level ports and runs the design through a Verilator model. See your RTL running with no hardware required.</p>
           </div>
           <div class="capture-story reveal">
             <figure class="app-capture editor-capture surface"><div class="capture-label"><span>01</span> Write the design</div><img class="theme-shot theme-shot-ice" src="app-editor-ice.png" alt="Allora editor in Ice mode showing a SystemVerilog LED counter" loading="lazy" /><img class="theme-shot theme-shot-black-ice" src="app-editor-black-ice.png" alt="Allora editor in Black Ice mode showing a SystemVerilog LED counter" loading="lazy" /></figure>
@@ -110,7 +110,7 @@
               <article class="flow-lane flow-lane-sim surface"><header><span>Virtual target</span><strong>Fast feedback</strong></header><ol>
                 <li><b>02</b><div><strong>Discover ports</strong><small>Yosys elaborates the top module.</small></div></li>
                 <li><b>03</b><div><strong>Map peripherals</strong><small>Connect signals to virtual controls.</small></div></li>
-                <li><b>04</b><div><strong>Simulate and Verify Waveforms</strong><small>Verilator executes the actual RTL.</small></div></li>
+                <li><b>04</b><div><strong>Simulate and Inspect Waveforms</strong><small>Verilator compiles the RTL into an executable model and runs it.</small></div></li>
               </ol></article>
               <article class="flow-lane flow-lane-build surface"><header><span>Open hardware target</span><strong>Running silicon</strong></header><ol>
                 <li><b>02</b><div><strong>Map pins</strong><small>Generate the board constraint file.</small></div></li>
@@ -119,7 +119,7 @@
               </ol></article>
             </div>
           </div>
-          <div class="support-note surface reveal"><div class="support-icon" aria-hidden="true">⌁</div><div><strong>Built around open hardware.</strong><p>The complete build and program path is for most open source boards. Allora includes visual pin data and constraint generation for a much wider set of mainstream boards.</p></div></div>
+          <div class="support-note surface reveal"><div class="support-icon" aria-hidden="true">⌁</div><div><strong>Built around open hardware.</strong><p>The complete build and program path is available for 41 open source boards. Allora provides visual pin mapping and constraint generation for a much wider set of mainstream boards.</p></div></div>
         </div>
       </section>
 
@@ -135,7 +135,7 @@
 
       <section class="section inside">
         <div class="shell inside-grid reveal">
-          <div class="inside-copy"><p class="eyebrow">Inside Allora</p><h2 class="display-title">One environment for open FPGA Development</h2><p class="section-lead">Project files stay ordinary. Tool output stays visible. Virtual and physical mappings remain separate, so simulation never contaminates the hardware constraint flow.</p><ul class="check-list"><li>Multi-file HDL projects</li><li>Testbench simulation and VCD waveforms</li><li>Build health and history</li><li>Serial monitor and programming</li></ul></div>
+          <div class="inside-copy"><p class="eyebrow">Inside Allora</p><h2 class="display-title">One environment for open FPGA Development</h2><p class="section-lead">Project files remain standard. Tool output stays visible. Virtual and physical mappings remain separate, so simulation settings never affect the hardware constraints.</p><ul class="check-list"><li>Multi-file HDL projects</li><li>Testbench simulation and VCD waveforms</li><li>Build health and history</li><li>Serial monitor and programming</li></ul></div>
           <figure class="welcome-capture surface"><img class="theme-shot theme-shot-ice" src="app-welcome-ice.png" alt="Allora’s Simulate and Build welcome screen in Ice mode" loading="lazy" /><img class="theme-shot theme-shot-black-ice" src="app-welcome-black-ice.png" alt="Allora’s Simulate and Build welcome screen in Black Ice mode" loading="lazy" /></figure>
         </div>
       </section>
