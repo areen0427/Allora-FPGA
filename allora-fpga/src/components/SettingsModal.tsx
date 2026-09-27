@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   AlertCircle,
   Check,
@@ -52,12 +53,20 @@ export function SettingsModal({
   const contentRef = useRef<HTMLElement>(null);
   const firstTabRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
+  const themeTransitionTimeoutRef = useRef<number | null>(null);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => () => {
+    if (themeTransitionTimeoutRef.current !== null) {
+      window.clearTimeout(themeTransitionTimeoutRef.current);
+      document.documentElement.classList.remove("theme-transitioning");
+    }
+  }, []);
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -107,6 +116,28 @@ export function SettingsModal({
     value: AppSettings[Key],
   ) {
     onChange({ ...settings, [key]: value });
+  }
+
+  function updateTheme(theme: AppSettings["theme"]) {
+    if (theme === settings.theme) return;
+    const nextSettings = { ...settings, theme };
+    if (settings.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onChange(nextSettings);
+      return;
+    }
+
+    document.documentElement.classList.add("theme-transitioning");
+    // Establish the starting styles before changing the theme so live elements animate.
+    void document.documentElement.offsetWidth;
+    flushSync(() => onChange(nextSettings));
+    document.documentElement.dataset.theme = theme;
+    if (themeTransitionTimeoutRef.current !== null) {
+      window.clearTimeout(themeTransitionTimeoutRef.current);
+    }
+    themeTransitionTimeoutRef.current = window.setTimeout(() => {
+      document.documentElement.classList.remove("theme-transitioning");
+      themeTransitionTimeoutRef.current = null;
+    }, 1000);
   }
 
   return (
@@ -179,13 +210,13 @@ export function SettingsModal({
                   name="Ice"
                   theme="ice"
                   selected={settings.theme === "ice"}
-                  onSelect={() => updateSetting("theme", "ice")}
+                  onSelect={() => updateTheme("ice")}
                 />
                 <ThemeChoice
                   name="Black Ice"
                   theme="black-ice"
                   selected={settings.theme === "black-ice"}
-                  onSelect={() => updateSetting("theme", "black-ice")}
+                  onSelect={() => updateTheme("black-ice")}
                 />
               </div>
               <SettingsGroup>
@@ -214,7 +245,6 @@ export function SettingsModal({
                 />
                 <SettingToggle
                   label="Reduce Animation"
-                  description="Skip the animated Simulate and Build screen transitions."
                   checked={settings.reduceMotion}
                   onChange={(value) => updateSetting("reduceMotion", value)}
                 />
@@ -692,7 +722,7 @@ function SettingRow({
   children,
 }: {
   label: string;
-  description: string;
+  description?: string;
   disabled?: boolean;
   children: React.ReactNode;
 }) {
@@ -700,7 +730,7 @@ function SettingRow({
     <div className={`settings-row${disabled ? " disabled" : ""}`}>
       <span className="settings-row-copy">
         <strong>{label}</strong>
-        <small>{description}</small>
+        {description ? <small>{description}</small> : null}
       </span>
       {children}
     </div>
@@ -786,7 +816,7 @@ function SettingToggle({
   onChange,
 }: {
   label: string;
-  description: string;
+  description?: string;
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {

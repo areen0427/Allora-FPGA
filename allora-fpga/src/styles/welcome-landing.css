@@ -15,7 +15,6 @@
   --landing-chip: rgba(245, 252, 255, 0.5);
   --landing-chip-border: rgba(255, 255, 255, 0.72);
   --landing-copy-scrim: rgba(231, 247, 253, 0.82);
-  --landing-image: url("/welcome_ice_molecular.png");
   --landing-environment-filter: contrast(1.1) saturate(1.04);
   --landing-environment-handoff-filter: blur(14px) saturate(0.86) contrast(0.99);
   --landing-destination-veil:
@@ -43,7 +42,6 @@ html[data-theme="black-ice"] .welcome-page:has(.welcome-destination-stage) {
   --landing-chip: rgba(6, 17, 27, 0.55);
   --landing-chip-border: rgba(151, 213, 235, 0.23);
   --landing-copy-scrim: rgba(3, 12, 21, 0.86);
-  --landing-image: url("/welcome_black_ice_molecular.png");
   --landing-environment-filter: none;
   --landing-environment-handoff-filter: blur(13px) saturate(0.84)
     brightness(0.88);
@@ -51,16 +49,6 @@ html[data-theme="black-ice"] .welcome-page:has(.welcome-destination-stage) {
     linear-gradient(rgba(2, 9, 17, 0.44), rgba(2, 8, 15, 0.58)),
     radial-gradient(circle at 78% 18%, rgba(23, 82, 112, 0.14), transparent 42%);
   background: #020812 !important;
-}
-
-html[data-background="ultramatte"] .welcome-page:has(.execution-path-stage),
-html[data-background="ultramatte"] .welcome-page:has(.welcome-destination-stage) {
-  --landing-image: url("/welcome_ice_ultramatte.png");
-}
-
-html[data-theme="black-ice"][data-background="ultramatte"] .welcome-page:has(.execution-path-stage),
-html[data-theme="black-ice"][data-background="ultramatte"] .welcome-page:has(.welcome-destination-stage) {
-  --landing-image: url("/welcome_black_ice_ultramatte.png");
 }
 
 .welcome-page:has(.execution-path-stage) .welcome-rail {
@@ -116,12 +104,41 @@ html[data-theme="black-ice"]
 }
 .welcome-environment {
   z-index: -3;
-  background: var(--landing-image) center / cover no-repeat;
   filter: var(--landing-environment-filter);
   transform: scale(1);
   transition:
     filter 620ms cubic-bezier(0.22, 0.72, 0.18, 1),
     transform 620ms cubic-bezier(0.22, 0.72, 0.18, 1);
+}
+
+.welcome-environment::before,
+.welcome-environment::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+}
+
+.welcome-environment::before {
+  background-image: url("/welcome_ice_molecular.png");
+}
+
+.welcome-environment::after {
+  background-image: url("/welcome_black_ice_molecular.png");
+  opacity: 0;
+}
+
+html[data-background="ultramatte"] .welcome-environment::before {
+  background-image: url("/welcome_ice_ultramatte.png");
+}
+
+html[data-background="ultramatte"] .welcome-environment::after {
+  background-image: url("/welcome_black_ice_ultramatte.png");
+}
+
+html[data-theme="black-ice"] .welcome-environment::after {
+  opacity: 1;
 }
 .welcome-atmosphere {
   z-index: -2;
