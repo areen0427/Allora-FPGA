@@ -63,6 +63,9 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 
 ## Development
 
+Windows users: see [Windows preview release](WINDOWS_RELEASE.md). This build is
+experimental; native project workflows have not yet been verified end to end.
+
 Prerequisites: Node.js/npm, Rust/Cargo, Yosys, Verilator, Icarus Verilog, and the nextpnr/packer/programmer tools for the physical board you use. OSS CAD Suite supplies most FPGA command-line tools in one package. Allora also searches common Homebrew, MacPorts, and `~/oss-cad-suite/bin` locations.
 
 Publishing requires the system `git` executable. GitHub CLI (`gh`) is detected for diagnostics but is optional. GitHub sign-in also requires the project owner to register an OAuth App, enable Device Flow, and provide its public client ID at build or development time:

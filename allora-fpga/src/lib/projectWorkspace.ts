@@ -1,5 +1,6 @@
 import type { BoardDefinition } from "../data/boards";
 import { createConstraintLines, getTemplateById } from "../data/templates";
+import { open } from "@tauri-apps/plugin-dialog";
 import { invokeTauri } from "./tauri";
 import type { ProjectFile } from "../pages/dashboard/types";
 
@@ -158,11 +159,21 @@ export async function writeProjectFile(path: string, content: string) {
 }
 
 export async function pickProjectParentDirectory() {
-  return invokeTauri<string | null>("pick_project_parent_directory");
+  const path = await open({
+    directory: true,
+    multiple: false,
+    title: "Choose a parent directory for your Allora FPGA project",
+  });
+  return typeof path === "string" ? path : null;
 }
 
 export async function pickExistingProjectDirectory() {
-  return invokeTauri<string | null>("pick_existing_project_directory");
+  const path = await open({
+    directory: true,
+    multiple: false,
+    title: "Choose an Allora FPGA project folder",
+  });
+  return typeof path === "string" ? path : null;
 }
 
 export async function renameProjectFile(fromPath: string, toPath: string) {
