@@ -1,0 +1,16 @@
+# ADE ignores local runtime state by default.
+*
+
+# Shared ADE project config
+!.gitignore
+
+# Shared user-authored ADE assets
+!templates/
+!templates/**
+!skills/
+!skills/**
+!workflows/
+!workflows/linear/
+!workflows/linear/**
+!project-icons/
+!project-icons/**

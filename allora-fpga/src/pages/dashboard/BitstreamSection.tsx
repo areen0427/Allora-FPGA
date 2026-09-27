@@ -24,6 +24,8 @@ import {
   type HdlPort,
 } from "./pinMappingUtils";
 import TimingAnalysis, { type TimingAnalysisResult } from "./TimingAnalysis";
+import { useBuildPreflight } from "../../hooks/useBuildPreflight";
+import { BuildPreflight } from "../../components/BuildPreflight";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -31,6 +33,8 @@ type BitstreamSectionProps = {
   projectName: string;
   projectPath?: string;
   topLevelFileName: string | null;
+  dirtyFileNames?: string[];
+  onNavigate?: (destination: "editor" | "pin-mapping") => void;
   onAddArtifact?: (artifact: {
     fileName: string;
     content: string;
@@ -70,6 +74,8 @@ export default function BitstreamSection({
   projectName,
   projectPath,
   topLevelFileName,
+  dirtyFileNames = [],
+  onNavigate,
   onAddArtifact,
   onUpdateConstraints,
 }: BitstreamSectionProps) {
@@ -79,6 +85,13 @@ export default function BitstreamSection({
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
   const logPanelRef = useRef<HTMLDivElement | null>(null);
   const capabilities = getBoardCapabilities(board);
+  const preflight = useBuildPreflight(
+    board,
+    files,
+    topLevelFileName,
+    dirtyFileNames,
+  );
+  const preflightBlocked = preflight.some((check) => check.state === "blocked");
 
   useEffect(() => {
     if (logPanelRef.current) {
@@ -165,6 +178,12 @@ export default function BitstreamSection({
   }, [board.id, buildInputKey, projectName, topLevelFileName]);
 
   async function handleGenerateBitstream() {
+    if (preflightBlocked) {
+      setErrorMessage(
+        "Resolve the build preflight blockers before generating a bitstream.",
+      );
+      return;
+    }
     if (!capabilities.bitstream.supported) {
       setErrorMessage(capabilities.bitstream.detail);
       setArtifact(null);
@@ -415,6 +434,8 @@ export default function BitstreamSection({
           wired local toolchain.
         </p>
 
+        <BuildPreflight checks={preflight} onNavigate={onNavigate} />
+
         <div
           className="bitstream-actions"
           style={{
@@ -428,9 +449,15 @@ export default function BitstreamSection({
             className="primary-action"
             type="button"
             onClick={handleGenerateBitstream}
+            title={
+              preflightBlocked
+                ? "Resolve build preflight blockers first"
+                : "Generate a bitstream"
+            }
             disabled={
               !capabilities.bitstream.supported ||
               hdlFiles.length === 0 ||
+              preflightBlocked ||
               isGenerating
             }
             style={{
@@ -439,6 +466,7 @@ export default function BitstreamSection({
               background:
                 capabilities.bitstream.supported &&
                 hdlFiles.length > 0 &&
+                !preflightBlocked &&
                 !isGenerating
                   ? "#2563eb"
                   : "#cbd5e1",
@@ -449,6 +477,7 @@ export default function BitstreamSection({
               cursor:
                 capabilities.bitstream.supported &&
                 hdlFiles.length > 0 &&
+                !preflightBlocked &&
                 !isGenerating
                   ? "pointer"
                   : "not-allowed",

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
+import type { editor as MonacoEditor } from "monaco-editor";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
@@ -41,6 +42,7 @@ type EditorSectionProps = {
   closeOpenFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => Promise<void> | void;
   settings: AppSettings;
+  navigation?: { fileName: string; line: number; id: number } | null;
 };
 
 const LINT_FILE_DELIMITER = String.fromCharCode(0);
@@ -60,14 +62,25 @@ export default function EditorSection({
   closeOpenFile,
   renameFile,
   settings,
+  navigation,
 }: EditorSectionProps) {
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [diagnostics, setDiagnostics] = useState<LintDiagnostic[]>([]);
   const monacoRef = useRef<Monaco | null>(null);
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
   const isDarkEditor = settings.theme === "black-ice";
+
+  useEffect(() => {
+    if (!navigation || activeFileName !== navigation.fileName) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.revealLineInCenter(navigation.line);
+    editor.setPosition({ lineNumber: navigation.line, column: 1 });
+    editor.focus();
+  }, [activeFileName, navigation]);
 
   const lintableFiles = projectFiles.filter(
     (file) => /\.(v|sv)$/i.test(file.name) && !file.isBinary,
@@ -317,7 +330,13 @@ export default function EditorSection({
           value={activeFile?.content ?? ""}
           language={getMonacoLanguage(activeFile?.name)}
           theme={isDarkEditor ? "allora-dark" : "allora"}
-          onMount={(_, monaco) => {
+          onMount={(editor, monaco) => {
+            editorRef.current = editor;
+            if (navigation && activeFileName === navigation.fileName) {
+              editor.revealLineInCenter(navigation.line);
+              editor.setPosition({ lineNumber: navigation.line, column: 1 });
+              editor.focus();
+            }
             monacoRef.current = monaco;
             registerHdlLanguages(monaco);
 
@@ -398,7 +417,13 @@ export default function EditorSection({
 
 function SaveStatusIcon({ status }: { status: SaveStatus }) {
   if (status === "saving") {
-    return <LoaderCircle className="editor-save-spinner" size={12} aria-hidden="true" />;
+    return (
+      <LoaderCircle
+        className="editor-save-spinner"
+        size={12}
+        aria-hidden="true"
+      />
+    );
   }
   if (status === "error") {
     return <TriangleAlert size={12} aria-hidden="true" />;

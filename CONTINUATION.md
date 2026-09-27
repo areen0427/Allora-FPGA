@@ -1,3 +1,51 @@
+# Allora FPGA — Continuation Log
+
+This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
+
+## 2026-09-27 — Build preflight and RTL hierarchy
+
+Changed:
+
+- Added a shared build preflight checklist to Health and Bitstream. It evaluates the current in-memory sources, selected top module, unmapped or conflicting pins, board capability, desktop runtime, and Yosys detection; unsaved editor changes are called out. Blocking findings prevent bitstream generation.
+- Added a Files/Hierarchy switch in the project explorer. The hierarchy reads Verilog/SystemVerilog modules and VHDL entities from current source text, expands local instances, and opens definitions at their source line.
+
+Validated:
+
+- `npm run build` and `npm run lint` passed. No visual verification was performed, per request.
+
+Known limitations:
+
+- RTL hierarchy uses lightweight source parsing and may miss complex macro-generated or unusual instantiation syntax; it does not represent a synthesized netlist.
+- Preflight verifies Yosys availability but leaves nextpnr and board packer checks to the actual build runner. It does not establish physical board correctness.
+
+Next:
+
+- Validate the two flows in the desktop UI when visual verification is requested, and expand native tool detection if full toolchain readiness becomes a requirement.
+
+## 2026-09-27 — Added project resource usage and refined popups
+
+Changed:
+
+- Added a Usage gauge above Settings in the shared project activity rail. It stays visible across Build and Simulate sections, including with the explorer collapsed, and is absent from home and path-selection screens.
+- Added a macOS Tauri command that samples CPU and resident memory for the app process and its descendants. The Usage panel polls every two seconds while open and shows memory as a share of installed RAM when available. Non-macOS platforms currently report that usage is unavailable.
+- Styled Usage as a compact panel anchored beside its rail button, matching the home screen's Allora product-information popup in Ice and Black Ice. Neither popup blurs the rest of the screen. Both close on outside click or Escape and have no close icon.
+- Restored the declared `@tauri-apps/plugin-dialog` package in the local npm installation after a merge left `node_modules` stale; this required no tracked dependency change.
+
+Validated:
+
+- `npm run build` and `npm run lint` pass after the popup refinements.
+- `cargo check --locked`, `cargo fmt --all -- --check`, and `cargo test --locked --lib usage::tests::measures_running_app_process` passed for the native sampler.
+- The user confirmed that both popup behaviors work in the running app. `git diff --check` passed.
+
+Known limitations:
+
+- Resource usage is macOS only for now. Windows preview work is paused until the macOS app works fully.
+- CPU is reported in logical-core percentages, and summed resident memory is an approximation for the app process tree.
+
+Next:
+
+- Continue macOS end-to-end QA; revisit Windows support after the macOS workflow is complete.
+
 ## 2026-09-25 — Windows preview release branch
 
 - Created `codex/windows-preview` from `main` without changing the macOS `v*` release workflow.
@@ -129,10 +177,6 @@ Known limitations:
 - Official provider favicons are loaded from provider sites, so the icons require network access.
 - Ice and Black Ice Settings layout and official provider icons were visually checked in the Vite preview. Live sign-in and Finder-launched PATH behavior still need hands-on app QA. Claude Code is not installed on this development machine.
 - Other operating systems report a manual terminal login instruction; automatic Terminal launch is implemented for macOS only.
-
-# Allora FPGA — Continuation Log
-
-This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
 ## 2026-09-23 — Added Git command mode to GitHub publishing
 

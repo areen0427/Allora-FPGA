@@ -55,6 +55,7 @@ function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.dataset.background = settings.background;
     saveSettings(settings);
   }, [settings]);
 

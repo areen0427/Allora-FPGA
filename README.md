@@ -22,9 +22,11 @@ Allora FPGA is a desktop development environment for open-source FPGA workflows.
 - A broad board catalog, physical pin mapping, and generated constraint files.
 - Open-source synthesis and place-and-route through Yosys and nextpnr for supported families.
 - Bitstream generation, board programming, serial monitoring, build health, and build history.
+- A live build preflight checklist in Health and Bitstream, and an RTL module hierarchy beside project files.
 - Icarus Verilog testbench simulation with VCD waveform inspection.
 - A local-first GitHub publishing workflow with explicit commits, repository creation/selection, safe `origin` setup, first push, and later commit/push status. GitHub sign-in is optional and never part of project creation.
 - Settings → AI Integration detects and connects locally installed OpenAI Codex and Claude Code CLIs through each provider's own login flow. Codex CLI sign-in and a live Codex request have been verified on a development Mac; Claude Code support is implemented but has not had a live account test.
+- Inside a project, a Usage gauge above Settings shows live CPU and memory use for Allora FPGA and its running child tools on macOS. The panel is available in both Simulate and Build, uses the Ice or Black Ice theme, and closes when clicked outside or with Escape.
 - Virtual FPGA V0.1 for interactive Verilog/SystemVerilog designs:
   - structural top-level port discovery through Yosys;
   - actual RTL execution through a persistent Verilator model;
@@ -41,8 +43,9 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 - All persistent controls form one compact, right-aligned column with a shared width and edge: Allora, Simulate, Build, Pin Mapper, and the conditional Continue Project card.
 - Simulate and Build are semantic buttons with matching dimensions, frosted materials, keyboard focus, and restrained hover depth. Their labels and supporting text remain accessible HTML rather than being baked into the artwork.
 - Pin Mapping is a secondary action attached to Build instead of a competing global navigation item.
-- Continue Project appears only when a recent project exists. It shows the board and date on one line, the time on a second line, and explicit Simulate and Build actions because projects do not yet persist their last execution target.
+- Continue Project appears only when a recent project exists. It shows the board and date on one line and the time on a second line. It resumes the last execution target when one is saved, or offers Simulate and Build choices for older projects without one.
 - The Allora tile opens a compact product panel with the app version, documentation, implemented shortcuts, supported-board count, and recent-project information.
+- The product panel closes on an outside click or Escape.
 - The left rail is intentionally minimal: Home remains at the top and Settings sits at the bottom.
 - Backgrounds use a sharp, edge-to-edge `cover` treatment with no blur copy, mask, or feathered border. Ice receives a small clarity correction to offset the brighter source render's atmospheric haze.
 - Responsive layouts preserve the shared right edge and card width, while reduced-motion preferences disable dimensional card movement.
@@ -65,6 +68,7 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 
 Windows users: see [Windows preview release](WINDOWS_RELEASE.md). This build is
 experimental; native project workflows have not yet been verified end to end.
+Windows preview work is currently paused while the macOS app is completed.
 
 Prerequisites: Node.js/npm, Rust/Cargo, Yosys, Verilator, Icarus Verilog, and the nextpnr/packer/programmer tools for the physical board you use. OSS CAD Suite supplies most FPGA command-line tools in one package. Allora also searches common Homebrew, MacPorts, and `~/oss-cad-suite/bin` locations.
 
@@ -146,6 +150,7 @@ Each disk-backed project includes `allora-project.json`, source files, constrain
 - `allora-website/` — project website.
 - `examples/` — projects that can be opened in Allora.
 - `CONTINUATION.md` — living engineering handoff; update it after every codebase change.
+- `CONTEXT.md` — current product and architecture orientation.
 - `GITHUB_INTEGRATION.md` — OAuth, credential storage, Git/API/CLI boundaries, and publishing safety model.
 
 ## Contributing

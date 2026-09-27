@@ -17,6 +17,7 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 mod ai_integration;
 mod github;
+mod usage;
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
 
@@ -3389,6 +3390,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            usage::resource_usage,
             create_project_workspace,
             pick_project_parent_directory,
             pick_existing_project_directory,

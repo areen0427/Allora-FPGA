@@ -51,6 +51,12 @@ Both paths operate on disk-backed Allora projects. A project can remember its mo
 
 The dashboard maintains separate Simulate and Build navigation sets. Visited dashboard sections remain mounted so generated diagrams, bitstreams, logs, simulation sessions, and other transient results are not discarded when the user changes sections.
 
+The shared explorer can switch between project files and an RTL hierarchy assembled from the current in-memory Verilog/SystemVerilog or VHDL source. Selecting a module or instance opens its definition in the editor. The hierarchy is a lightweight source view, not a synthesized netlist.
+
+Build Health and Bitstream share a live preflight checklist for board support, HDL sources, the selected top module, port mappings/conflicts, and local Yosys availability. It uses current editor contents and marks unsaved changes. Custom constraint files that cannot be parsed are flagged for review. Nextpnr and board packers are still validated by the build runner when invoked, so preflight does not claim that every tool or physical board is verified.
+
+Inside an open project, the shared activity rail has a **Usage** gauge above Settings. It appears throughout both Simulate and Build workspaces, including when the file explorer is collapsed, but not on the welcome or path-selection screens. `src/components/UsageDialog.tsx` anchors a small panel beside the rail button, refreshes while open, and dismisses on an outside click or Escape. The welcome screen's Allora product-information panel uses the same outside-click and Escape behavior. Both panels have Ice and Black Ice styling.
+
 The app can also open a lightweight secondary viewer window. `src/main.tsx` selects `ViewerApp` when the URL contains a viewer query parameter; otherwise it mounts the primary application.
 
 ## Project model and persistence
@@ -122,7 +128,10 @@ The main Rust command layer is `src-tauri/src/lib.rs`. It currently handles:
 - Icarus testbench execution and VCD discovery;
 - HDL linting;
 - serial-port enumeration and monitor sessions;
-- secondary synthesis/waveform viewer windows.
+- secondary synthesis/waveform viewer windows;
+- macOS app-resource sampling through `src-tauri/src/usage.rs`.
+
+The `resource_usage` Tauri command samples CPU percentage and resident memory for the Allora process and its current descendants, including build or simulation tools it starts. It also reports installed RAM when available. The frontend polls it every two seconds only while the Usage panel is open. The displayed CPU percentage is per logical core and can exceed 100% for multicore work; resident-memory totals are approximate. Other operating systems currently return an unavailable message.
 
 Persistent interactive Virtual FPGA sessions are implemented in `src-tauri/src/virtual_fpga.rs`. The backend discovers top-level ports with Yosys, generates a Verilator harness, compiles the model, maintains the native process, exchanges input/output values, advances simulated time, and optionally records traces.
 
@@ -186,6 +195,7 @@ For UI changes, validate both Ice and Black Ice, the native WebView when native-
 - GitHub V1 intentionally does not fetch, pull, merge, rebase, resolve divergence, manage collaborators, or work with issues and pull requests.
 - AI Integration V1 reports local CLI installation and login state only; Claude Code live sign-in and both providers' future Allora tool access remain unverified or unimplemented, respectively.
 - Project directories remain the canonical data store; Git must not replace or bypass the existing Tauri file-save path.
+- Resource Usage currently samples processes on macOS only. Windows preview work is paused while the macOS app is brought to full working order.
 
 ## GitHub services
 

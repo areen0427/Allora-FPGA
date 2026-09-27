@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowLeft,
@@ -76,6 +76,27 @@ export function HomeView({
     null,
   );
   const [showProductInfo, setShowProductInfo] = useState(false);
+  const brandRef = useRef<HTMLButtonElement>(null);
+  const productInfoRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!showProductInfo) return;
+    function dismissOutside(event: PointerEvent) {
+      const target = event.target as Node;
+      if (brandRef.current?.contains(target) || productInfoRef.current?.contains(target)) return;
+      setShowProductInfo(false);
+    }
+    function dismissOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setShowProductInfo(false);
+    }
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [showProductInfo]);
+
   if (path === null) {
     return (
       <section
@@ -97,6 +118,7 @@ export function HomeView({
         ) : null}
         <div className="welcome-action-stack">
           <button
+            ref={brandRef}
             type="button"
             className="welcome-brand-lockup"
             aria-expanded={showProductInfo}
@@ -118,18 +140,11 @@ export function HomeView({
           </button>
           {showProductInfo ? (
             <section
+              ref={productInfoRef}
               id="welcome-product-info"
               className="welcome-product-info"
               aria-label="About Allora FPGA"
             >
-              <button
-                type="button"
-                className="welcome-product-info-close"
-                aria-label="Close product information"
-                onClick={() => setShowProductInfo(false)}
-              >
-                <X size={15} />
-              </button>
               <header className="welcome-product-info-header">
                 <span className="welcome-product-info-eyebrow">
                   Allora FPGA

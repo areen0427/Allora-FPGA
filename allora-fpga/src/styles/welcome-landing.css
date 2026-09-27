@@ -53,6 +53,16 @@ html[data-theme="black-ice"] .welcome-page:has(.welcome-destination-stage) {
   background: #020812 !important;
 }
 
+html[data-background="ultramatte"] .welcome-page:has(.execution-path-stage),
+html[data-background="ultramatte"] .welcome-page:has(.welcome-destination-stage) {
+  --landing-image: url("/welcome_ice_ultramatte.png");
+}
+
+html[data-theme="black-ice"][data-background="ultramatte"] .welcome-page:has(.execution-path-stage),
+html[data-theme="black-ice"][data-background="ultramatte"] .welcome-page:has(.welcome-destination-stage) {
+  --landing-image: url("/welcome_black_ice_ultramatte.png");
+}
+
 .welcome-page:has(.execution-path-stage) .welcome-rail {
   z-index: 20;
   margin-right: -68px;
@@ -329,27 +339,6 @@ html[data-theme="black-ice"] .welcome-brand-lockup {
     inset 0 1px 0 rgba(255, 255, 255, 0.42);
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
-}
-.welcome-product-info-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 8px;
-  color: var(--landing-muted);
-  background: transparent;
-  cursor: pointer;
-}
-.welcome-product-info-close:hover {
-  background: var(--landing-chip);
-  color: var(--landing-text);
-}
-.welcome-product-info-header {
-  padding-right: 30px;
 }
 .welcome-product-info-eyebrow {
   display: block;

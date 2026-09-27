@@ -28,6 +28,7 @@ import {
   Cpu,
   Plus,
   Settings,
+  Gauge,
   Upload,
   Usb,
   Zap,
@@ -52,11 +53,13 @@ import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
 import { useSaveProject } from "../hooks/useSaveProject";
 import { isHdlFile } from "../hooks/utils";
 import { SettingsModal } from "../components/SettingsModal";
+import { UsageDialog } from "../components/UsageDialog";
 import {
   writeVirtualFpgaConfig,
   type VirtualFpgaConfig,
 } from "../lib/virtualFpga";
 import { GitHubPublishDialog } from "../components/GitHubPublishDialog";
+import { RtlHierarchy } from "../components/RtlHierarchy";
 
 // Keeps a section's component mounted (and therefore its state — generated
 // diagrams, bitstreams, testbench results, logs — alive) once it has been
@@ -114,7 +117,18 @@ export default function Dashboard({
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [usageAnchor, setUsageAnchor] = useState<HTMLButtonElement | null>(
+    null,
+  );
   const [showGitHubPublish, setShowGitHubPublish] = useState(false);
+  const [explorerView, setExplorerView] = useState<"files" | "hierarchy">(
+    "files",
+  );
+  const [editorNavigation, setEditorNavigation] = useState<{
+    fileName: string;
+    line: number;
+    id: number;
+  } | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     fileName: string;
     x: number;
@@ -188,6 +202,15 @@ export default function Dashboard({
   function handleOpenFile(fileName: string) {
     activeTabs.openFile(fileName);
     setActiveSection("editor");
+  }
+
+  function handleOpenDefinition(fileName: string, line: number) {
+    setEditorNavigation((current) => ({
+      fileName,
+      line,
+      id: (current?.id ?? 0) + 1,
+    }));
+    handleOpenFile(fileName);
   }
 
   function handleCloseOpenFile(fileName: string) {
@@ -494,6 +517,14 @@ export default function Dashboard({
           <div className="activity-rail-bottom">
             <button
               type="button"
+              aria-label="Resource usage"
+              title="Resource usage"
+              onClick={(event) => setUsageAnchor(event.currentTarget)}
+            >
+              <Gauge size={18} />
+            </button>
+            <button
+              type="button"
               aria-label="Settings"
               title="Settings"
               onClick={() => setShowSettings(true)}
@@ -609,32 +640,62 @@ export default function Dashboard({
                   </label>
                 </div>
               </div>
+              <div
+                className="project-explorer-view-switch"
+                role="group"
+                aria-label="Explorer view"
+              >
+                <button
+                  type="button"
+                  className={explorerView === "files" ? "active" : ""}
+                  aria-pressed={explorerView === "files"}
+                  onClick={() => setExplorerView("files")}
+                >
+                  Files
+                </button>
+                <button
+                  type="button"
+                  className={explorerView === "hierarchy" ? "active" : ""}
+                  aria-pressed={explorerView === "hierarchy"}
+                  onClick={() => setExplorerView("hierarchy")}
+                >
+                  Hierarchy
+                </button>
+              </div>
               <div className="project-tree-scroll">
-                <ProjectTree
-                  files={
-                    settings.showGeneratedArtifacts
-                      ? fileMgmt.files
-                      : fileMgmt.files.filter(
-                          (file) => !isGeneratedArtifact(file),
-                        )
-                  }
-                  projectPath={projectPath}
-                  activeFileName={activeTabs.activeFileName}
-                  openFileNames={activeTabs.openFileNames}
-                  dirtyFileNames={activeTabs.dirtyFileNames}
-                  topLevelFileName={activeTabs.topLevelFileName}
-                  draggedFileName={fileMgmt.draggedFileName}
-                  dragOverFileName={fileMgmt.dragOverFileName}
-                  onOpenFile={handleOpenFile}
-                  onCloseFile={handleCloseOpenFile}
-                  onDragStartFile={fileMgmt.setDraggedFileName}
-                  onDragOverFile={fileMgmt.setDragOverFileName}
-                  onDropFile={handleSidebarDrop}
-                  onSetTopLevelFile={handleMakeTopLevelFile}
-                  onOpenContextMenu={(fileName, x, y) =>
-                    setContextMenu({ fileName, x, y })
-                  }
-                />
+                {explorerView === "files" ? (
+                  <ProjectTree
+                    files={
+                      settings.showGeneratedArtifacts
+                        ? fileMgmt.files
+                        : fileMgmt.files.filter(
+                            (file) => !isGeneratedArtifact(file),
+                          )
+                    }
+                    projectPath={projectPath}
+                    activeFileName={activeTabs.activeFileName}
+                    openFileNames={activeTabs.openFileNames}
+                    dirtyFileNames={activeTabs.dirtyFileNames}
+                    topLevelFileName={activeTabs.topLevelFileName}
+                    draggedFileName={fileMgmt.draggedFileName}
+                    dragOverFileName={fileMgmt.dragOverFileName}
+                    onOpenFile={handleOpenFile}
+                    onCloseFile={handleCloseOpenFile}
+                    onDragStartFile={fileMgmt.setDraggedFileName}
+                    onDragOverFile={fileMgmt.setDragOverFileName}
+                    onDropFile={handleSidebarDrop}
+                    onSetTopLevelFile={handleMakeTopLevelFile}
+                    onOpenContextMenu={(fileName, x, y) =>
+                      setContextMenu({ fileName, x, y })
+                    }
+                  />
+                ) : (
+                  <RtlHierarchy
+                    files={fileMgmt.files}
+                    topLevelFileName={activeTabs.topLevelFileName}
+                    onOpenDefinition={handleOpenDefinition}
+                  />
+                )}
               </div>
               {saveProject.saveStatus === "error" ? (
                 <div
@@ -707,6 +768,7 @@ export default function Dashboard({
             closeOpenFile={handleCloseOpenFile}
             renameFile={handleRenameFile}
             settings={settings}
+            navigation={editorNavigation}
           />
         )}
 
@@ -729,6 +791,9 @@ export default function Dashboard({
             board={board}
             files={fileMgmt.files}
             topLevelFileName={activeTabs.topLevelFileName}
+            dirtyFileNames={activeTabs.dirtyFileNames}
+            onNavigate={setActiveSection}
+            showBuildPreflight={executionTarget === "build"}
           />
         )}
         <KeepAliveSection
@@ -803,6 +868,8 @@ export default function Dashboard({
             projectName={projectName}
             projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
+            dirtyFileNames={activeTabs.dirtyFileNames}
+            onNavigate={setActiveSection}
             onUpdateConstraints={async (fileName, content) => {
               await handleUpdateConstraintFile(fileName, content);
             }}
@@ -862,6 +929,12 @@ export default function Dashboard({
           settings={settings}
           onChange={onSettingsChange}
           onClose={() => setShowSettings(false)}
+        />
+      ) : null}
+      {usageAnchor ? (
+        <UsageDialog
+          anchor={usageAnchor}
+          onClose={() => setUsageAnchor(null)}
         />
       ) : null}
 

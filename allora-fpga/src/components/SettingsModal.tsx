@@ -10,6 +10,7 @@ import {
   RefreshCw,
   RotateCcw,
   Settings,
+  SlidersHorizontal,
   Sparkles,
   X,
 } from "lucide-react";
@@ -25,10 +26,11 @@ type SettingsModalProps = {
   onClose: () => void;
 };
 
-type SettingsCategory = "general" | "editor" | "workspace" | "simulator" | "ai";
+type SettingsCategory = "general" | "appearance" | "editor" | "workspace" | "simulator" | "ai";
 
 const categories = [
-  { id: "general", label: "General", icon: Palette },
+  { id: "general", label: "General", icon: SlidersHorizontal },
+  { id: "appearance", label: "Appearance", icon: Palette },
   { id: "editor", label: "Editor", icon: Code2 },
   { id: "workspace", label: "Workspace", icon: Folder },
   { id: "simulator", label: "Simulator", icon: Gauge },
@@ -163,10 +165,9 @@ export function SettingsModal({
           {activeCategory === "general" ? (
             <SettingsSection
               title="General"
-              description="Appearance and everyday workspace behavior."
             >
               <div className="settings-subsection-heading">
-                <strong>Appearance</strong>
+                <strong>Theme</strong>
                 <span>Applied immediately across the app.</span>
               </div>
               <div
@@ -218,6 +219,29 @@ export function SettingsModal({
                   onChange={(value) => updateSetting("reduceMotion", value)}
                 />
               </SettingsGroup>
+            </SettingsSection>
+          ) : null}
+
+          {activeCategory === "appearance" ? (
+            <SettingsSection
+              title="Appearance"
+            >
+              <div className="settings-theme-grid" role="radiogroup" aria-label="Background">
+                <BackgroundChoice
+                  name="UltraMatte"
+                  background="ultramatte"
+                  theme={settings.theme}
+                  selected={settings.background === "ultramatte"}
+                  onSelect={() => updateSetting("background", "ultramatte")}
+                />
+                <BackgroundChoice
+                  name="Molecules"
+                  background="molecules"
+                  theme={settings.theme}
+                  selected={settings.background === "molecules"}
+                  onSelect={() => updateSetting("background", "molecules")}
+                />
+              </div>
             </SettingsSection>
           ) : null}
 
@@ -572,14 +596,14 @@ function SettingsSection({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="settings-section">
       <header className="settings-section-header">
         <h3>{title}</h3>
-        <p>{description}</p>
+        {description ? <p>{description}</p> : null}
       </header>
       {children}
     </section>
@@ -612,6 +636,43 @@ function ThemeChoice({
       <span className={`settings-theme-preview ${theme}`} aria-hidden="true">
         <span className="settings-theme-light settings-theme-light-one" />
         <span className="settings-theme-light settings-theme-light-two" />
+        <span className="settings-theme-glass">
+          <span className="settings-theme-refraction" />
+        </span>
+      </span>
+      <span className="settings-theme-choice-label">
+        {name}
+        {selected ? <Check size={14} aria-hidden="true" /> : null}
+      </span>
+    </button>
+  );
+}
+
+function BackgroundChoice({
+  name,
+  background,
+  theme,
+  selected,
+  onSelect,
+}: {
+  name: string;
+  background: AppSettings["background"];
+  theme: AppSettings["theme"];
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`settings-theme-choice settings-background-choice${selected ? " selected" : ""}`}
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+    >
+      <span
+        className={`settings-background-preview ${theme} ${background}`}
+        aria-hidden="true"
+      >
         <span className="settings-theme-glass">
           <span className="settings-theme-refraction" />
         </span>

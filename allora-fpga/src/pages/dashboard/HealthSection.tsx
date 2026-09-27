@@ -9,15 +9,17 @@ import {
 import InfoCard from "./InfoCard";
 import type { ProjectFile } from "./types";
 import { hasTauriInvoke } from "../../lib/tauri";
-import {
-  virtualFpgaApi,
-  type SimulationTools,
-} from "../../lib/virtualFpga";
+import { useBuildPreflight } from "../../hooks/useBuildPreflight";
+import { BuildPreflight } from "../../components/BuildPreflight";
+import { virtualFpgaApi, type SimulationTools } from "../../lib/virtualFpga";
 
 type HealthSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
   topLevelFileName: string | null;
+  dirtyFileNames?: string[];
+  onNavigate?: (destination: "editor" | "pin-mapping") => void;
+  showBuildPreflight?: boolean;
 };
 
 type HealthMetric = {
@@ -40,14 +42,26 @@ export default function HealthSection({
   board,
   files,
   topLevelFileName,
+  dirtyFileNames = [],
+  onNavigate,
+  showBuildPreflight = true,
 }: HealthSectionProps) {
   const [simulationTools, setSimulationTools] =
     useState<SimulationTools | null>(null);
   useEffect(() => {
     if (!hasTauriInvoke()) return;
-    void virtualFpgaApi.detectTools().then(setSimulationTools).catch(() => {});
+    void virtualFpgaApi
+      .detectTools()
+      .then(setSimulationTools)
+      .catch(() => {});
   }, []);
   const capabilities = getBoardCapabilities(board);
+  const preflight = useBuildPreflight(
+    board,
+    files,
+    topLevelFileName,
+    dirtyFileNames,
+  );
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const constraintFile = files.find((file) =>
     file.name.toLowerCase().endsWith(`.${board.constraintsFile}`),
@@ -137,6 +151,12 @@ export default function HealthSection({
       </InfoCard>
 
       <BuildHistoryCard files={files} />
+
+      {showBuildPreflight ? (
+        <InfoCard title="Before you build">
+          <BuildPreflight checks={preflight} onNavigate={onNavigate} />
+        </InfoCard>
+      ) : null}
 
       <InfoCard title="Readiness">
         <div
@@ -515,7 +535,9 @@ function combineBuildReports(
   };
 }
 
-function getLatestBuildHistoryReport(records: BuildRecord[]): ParsedBuildReport {
+function getLatestBuildHistoryReport(
+  records: BuildRecord[],
+): ParsedBuildReport {
   const record = [...records]
     .reverse()
     .find(
