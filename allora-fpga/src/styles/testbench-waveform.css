@@ -67,11 +67,7 @@
 
 .waveform-scale-readout strong {
   color: var(--dashboard-strong-text, #0f172a);
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-engineering);
   font-size: 11px;
   font-weight: 900;
 }
@@ -162,6 +158,7 @@
 
 .waveform-header > div:first-child,
 .waveform-signal-name {
+  font-family: var(--font-engineering);
   position: sticky;
   left: 0;
   z-index: 1;
@@ -182,11 +179,7 @@
   display: flex;
   justify-content: space-between;
   border-left: 1px solid var(--dashboard-surface-border, #e2e8f0);
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-code);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -348,11 +341,7 @@
   border-bottom: 2px solid rgba(37, 99, 235, 0.7);
   background: transparent;
   color: #1e40af;
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-code);
   font-size: 10px;
   font-weight: 900;
   line-height: 1;
@@ -413,11 +402,7 @@
   overflow: auto;
   margin: 0;
   color: var(--dashboard-preview-text, #334155);
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-code);
   font-size: 11px;
   line-height: 1.5;
   white-space: pre-wrap;

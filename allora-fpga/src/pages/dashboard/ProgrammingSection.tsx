@@ -391,7 +391,7 @@ export default function ProgrammingSection({
               minHeight: "150px",
               flex: consoleLogs.length ? "1 1 0" : "1 1 auto",
               padding: "18px",
-              fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+              fontFamily: "var(--font-code)",
               fontSize: "13px",
               lineHeight: 1.6,
               whiteSpace: "pre-wrap",

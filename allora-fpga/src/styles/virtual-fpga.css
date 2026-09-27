@@ -145,6 +145,7 @@
   font-weight: 700;
 }
 .vfpga-frequency input {
+  font-family: var(--font-engineering);
   width: 130px;
 }
 .vfpga-actions {
@@ -505,7 +506,7 @@
 .vfpga-wave-labels button { min-height: 42px; display: grid; grid-template-columns: 7px minmax(0,1fr); column-gap: 7px; align-content: center; border: 0; border-bottom: 1px solid #edf2f7; background: transparent; color: #334155; padding: 5px 9px; text-align: left; cursor: pointer; }
 .vfpga-wave-labels .direction { width: 6px; height: 6px; border-radius: 50%; background: #38bdf8; grid-row: 1 / span 2; align-self: center; }
 .vfpga-wave-labels .direction.output { background: #4ade80; }
-.vfpga-wave-labels strong { overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+.vfpga-wave-labels strong { font-family: var(--font-engineering); overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 .vfpga-wave-labels small { color: #94a3b8; font-size: 8px; text-transform: uppercase; }
 .vfpga-wave-canvas { width: 100%; display: block; background: repeating-linear-gradient(90deg, transparent 0 79px, rgba(148,163,184,.13) 80px); }
 .vfpga-wave-stage { position: relative; min-width: 0; }
@@ -565,6 +566,7 @@
   font-weight: 900;
 }
 .vfpga-signal-table .signal-name {
+  font-family: var(--font-engineering);
   font-weight: 800;
 }
 .vfpga-signal-table button.signal-name { border: 0; background: transparent; color: inherit; padding: 0; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; text-align: left; }

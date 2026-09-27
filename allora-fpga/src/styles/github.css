@@ -299,10 +299,7 @@ html[data-theme="black-ice"] .github-workflow-switch button.active {
   border-radius: 11px;
   color: var(--dashboard-text);
   background: rgba(7, 16, 31, 0.9);
-  font:
-    11px/1.5 "SFMono-Regular",
-    Consolas,
-    monospace;
+  font: 11px/1.5 var(--font-code);
 }
 
 .github-command-output > div + div {
@@ -338,7 +335,7 @@ html[data-theme="black-ice"] .github-workflow-switch button.active {
   border-radius: 10px;
   color: var(--dashboard-text);
   background: var(--dashboard-control-bg);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-code);
 }
 
 .github-command-form input {
@@ -515,7 +512,7 @@ html[data-theme="black-ice"] .github-workflow-switch button.active {
 .github-message code,
 .github-change-list code,
 .github-connect-block code {
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-code);
   font-size: 0.95em;
 }
 
@@ -571,7 +568,7 @@ html[data-theme="black-ice"] .github-workflow-switch button.active {
   border-radius: 9px;
   color: #1d4ed8;
   background: var(--dashboard-control-bg);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-code);
   font-size: 20px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -813,7 +810,7 @@ html[data-theme="black-ice"] .github-device-code {
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--dashboard-preview-text);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-code);
 }
 
 .github-dialog .spin {

@@ -195,7 +195,7 @@
 .schematic-operator-mark,
 .schematic-pin-hint {
   fill: #0f172a;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 800;
   pointer-events: none;
 }

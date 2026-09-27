@@ -394,7 +394,7 @@ export default function Dashboard({
           gap: "14px",
           color: "#0f172a",
           fontFamily:
-            "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+            "var(--font-ui)",
           display: "flex",
           alignItems: "stretch",
         } as CSSProperties

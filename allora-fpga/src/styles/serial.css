@@ -64,7 +64,7 @@ html[data-theme="black-ice"] .serial-status.error {
   background: var(--dashboard-control-bg, #f8fafc);
   color: var(--dashboard-preview-text, #334155);
   padding: 14px;
-  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-code);
   font-size: 12.5px;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -81,7 +81,7 @@ html[data-theme="black-ice"] .serial-status.error {
 
 .serial-input {
   flex: 1 1 200px;
-  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-code);
 }
 
 .serial-tip {

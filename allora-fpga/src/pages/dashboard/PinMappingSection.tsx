@@ -1210,7 +1210,7 @@ function ConstraintPreview({
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
           fontFamily:
-            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "var(--font-code)",
         }}
       >
         {constraintPreview}

@@ -250,11 +250,7 @@
   background: rgba(248, 250, 252, 0.78);
   color: var(--dashboard-preview-text, #334155);
   padding: 18px;
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-code);
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -451,11 +447,7 @@
 .synthesis-cell-row > span {
   overflow: hidden;
   color: var(--dashboard-text, #334155);
-  font-family:
-    JetBrains Mono,
-    SFMono-Regular,
-    Consolas,
-    monospace;
+  font-family: var(--font-code);
   font-size: 10px;
   font-weight: 750;
   text-overflow: ellipsis;
@@ -871,6 +863,7 @@
 }
 
 .pin-group-count {
+  font-family: var(--font-engineering);
   flex-shrink: 0;
   border-radius: 999px;
   background: #f1f5f9;
@@ -901,6 +894,7 @@
 }
 
 .pin-tile-pin {
+  font-family: var(--font-engineering);
   font-size: 13px;
   font-weight: 900;
   color: #0f172a;
@@ -935,6 +929,7 @@
 }
 
 .pin-summary-pill-value {
+  font-family: var(--font-engineering);
   color: #0f172a;
   font-size: 13px;
   font-weight: 900;
@@ -1574,7 +1569,7 @@ html[data-theme="black-ice"]
   overscroll-behavior: contain;
   padding: 16px;
   color: var(--dashboard-preview-text);
-  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 12px/1.55 var(--font-code);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1751,7 +1746,7 @@ html[data-theme="black-ice"]
 .timing-breakdown dd {
   margin: 4px 0 0;
   color: var(--dashboard-strong-text, #0f172a);
-  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-engineering);
   font-size: 13px;
   font-weight: 800;
   overflow-wrap: anywhere;
@@ -1872,9 +1867,7 @@ html[data-theme="black-ice"]
 
 .timing-path-rank {
   color: var(--dashboard-muted-text, #64748b);
-  font:
-    750 10px "JetBrains Mono",
-    monospace;
+  font: 750 10px var(--font-engineering);
 }
 
 .timing-path-route {
@@ -1890,6 +1883,7 @@ html[data-theme="black-ice"]
 }
 
 .timing-path-route strong {
+  font-family: var(--font-engineering);
   color: var(--dashboard-strong-text, #0f172a);
   font-size: 10px;
 }
@@ -2008,9 +2002,7 @@ html[data-theme="black-ice"]
 .timing-stage strong {
   margin-top: 3px;
   color: var(--dashboard-strong-text, #0f172a);
-  font:
-    800 11px "JetBrains Mono",
-    monospace;
+  font: 800 11px var(--font-engineering);
   overflow-wrap: anywhere;
 }
 

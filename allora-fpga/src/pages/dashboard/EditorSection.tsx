@@ -379,7 +379,9 @@ export default function EditorSection({
           onChange={(value) => updateActiveFile(value ?? "")}
           options={{
             fontSize: settings.editorFontSize,
-            fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
+            fontFamily: getComputedStyle(document.documentElement)
+              .getPropertyValue("--font-code")
+              .trim(),
             minimap: { enabled: settings.editorMinimap },
             lineNumbers: "on",
             wordWrap: settings.editorWordWrap ? "on" : "off",
