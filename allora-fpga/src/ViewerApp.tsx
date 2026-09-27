@@ -3,11 +3,10 @@ import SignalWaveformPanel from "./components/SignalWaveformPanel";
 import HardwareSchematicCanvas from "./components/HardwareSchematicCanvas";
 import { getSettings } from "./data/settings";
 import type { SynthesisDiagramResponse } from "./pages/dashboard/SynthesisSection";
-import {
-  buildTestbenchWaveTraces,
-  formatWaveTick,
-  parseVcd,
-} from "./lib/vcd";
+import TimingAnalysis, {
+  type TimingAnalysisResult,
+} from "./pages/dashboard/TimingAnalysis";
+import { buildTestbenchWaveTraces, formatWaveTick, parseVcd } from "./lib/vcd";
 import {
   readViewerEnvelope,
   type ViewerEnvelope,
@@ -29,6 +28,8 @@ export default function ViewerApp() {
     useState<ViewerEnvelope<SynthesisDiagramResponse> | null>(null);
   const [waveformEnvelope, setWaveformEnvelope] =
     useState<ViewerEnvelope<WaveformViewerPayload> | null>(null);
+  const [timingEnvelope, setTimingEnvelope] =
+    useState<ViewerEnvelope<TimingAnalysisResult> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,10 +47,15 @@ export default function ViewerApp() {
           setWaveformEnvelope(
             await readViewerEnvelope<WaveformViewerPayload>(storageKey),
           );
+        } else if (kind === "timing") {
+          setTimingEnvelope(
+            await readViewerEnvelope<TimingAnalysisResult>(storageKey),
+          );
         }
       } catch {
         setSynthesisEnvelope(null);
         setWaveformEnvelope(null);
+        setTimingEnvelope(null);
       } finally {
         setIsLoading(false);
       }
@@ -62,10 +68,7 @@ export default function ViewerApp() {
     () => parseVcd(waveformEnvelope?.payload.vcd ?? ""),
     [waveformEnvelope?.payload.vcd],
   );
-  const traces = useMemo(
-    () => buildTestbenchWaveTraces(waveform),
-    [waveform],
-  );
+  const traces = useMemo(() => buildTestbenchWaveTraces(waveform), [waveform]);
 
   useEffect(() => {
     if (kind !== "waveform") return;
@@ -80,6 +83,20 @@ export default function ViewerApp() {
     );
   }
 
+  if (kind === "timing" && timingEnvelope) {
+    return (
+      <main className="viewer-page viewer-page-timing">
+        <header className="viewer-header">
+          <div>
+            <span>Build analysis</span>
+            <h1>{timingEnvelope.title}</h1>
+          </div>
+        </header>
+        <TimingAnalysis timing={timingEnvelope.payload} />
+      </main>
+    );
+  }
+
   if (kind === "waveform" && waveformEnvelope && waveform) {
     return (
       <main className="viewer-page">
@@ -89,7 +106,8 @@ export default function ViewerApp() {
             <h1>{waveformEnvelope.title}</h1>
           </div>
           <div className="viewer-summary">
-            {waveform.signals.length} signals · {formatWaveTick(waveform.endTime, waveform.timescale)}
+            {waveform.signals.length} signals ·{" "}
+            {formatWaveTick(waveform.endTime, waveform.timescale)}
           </div>
         </header>
         <section className="viewer-surface viewer-waveform">
@@ -118,9 +136,7 @@ export default function ViewerApp() {
   return (
     <main className="viewer-page viewer-error">
       <h1>{isLoading ? "Opening viewer…" : "Viewer data is unavailable"}</h1>
-      {!isLoading ? (
-        <p>Close this window and open the diagram or waveform again.</p>
-      ) : null}
+      {!isLoading ? <p>Close this window and open the report again.</p> : null}
     </main>
   );
 }

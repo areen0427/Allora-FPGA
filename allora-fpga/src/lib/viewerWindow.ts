@@ -1,6 +1,6 @@
 import { hasTauriInvoke, invokeTauri } from "./tauri";
 
-export type ViewerKind = "synthesis" | "waveform";
+export type ViewerKind = "synthesis" | "waveform" | "timing";
 
 export type ViewerEnvelope<T> = {
   title: string;

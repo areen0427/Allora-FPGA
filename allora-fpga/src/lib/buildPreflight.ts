@@ -97,12 +97,14 @@ export function getBuildPreflight({
             : unmappedCount
               ? `${unmappedCount} top-level port${unmappedCount === 1 ? " is" : "s are"} unmapped. Review pin mapping.`
               : mappings
-                ? `${ports.length} ports mapped ${savedMappings ? "in saved constraints" : "by board suggestions"}; review before building.`
+                ? `${ports.length} port${ports.length === 1 ? "" : "s"} mapped ${savedMappings ? "in saved constraints" : "by board suggestions"}.`
                 : `${constraints?.name ?? "Constraints"} uses custom assignments; review them before building.`,
       state:
         (!ports.length && !constraints) || duplicatePins || unmappedCount
           ? "blocked"
-          : "warning",
+          : mappings
+            ? "ready"
+            : "warning",
       destination: "pin-mapping",
     },
     {

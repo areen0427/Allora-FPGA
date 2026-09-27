@@ -160,7 +160,7 @@ fn open_viewer_window(
     state: State<'_, ViewerPayloadState>,
     request: ViewerWindowRequest,
 ) -> Result<(), String> {
-    if !matches!(request.kind.as_str(), "synthesis" | "waveform") {
+    if !matches!(request.kind.as_str(), "synthesis" | "waveform" | "timing") {
         return Err("Unsupported viewer kind.".to_string());
     }
     if !request
@@ -2457,7 +2457,7 @@ fn parse_nextpnr_timing_report(
     let status = if !constrained {
         "unconstrained"
     } else if clocks.is_empty() {
-        "unavailable"
+        "no-paths"
     } else if clocks.iter().any(|clock| clock.status == "fail") || !violations.is_empty() {
         "fail"
     } else {
@@ -2468,8 +2468,8 @@ fn parse_nextpnr_timing_report(
             "No clock constraint was supplied. Add a mapped board clock to evaluate timing."
                 .to_string(),
         ),
-        "unavailable" => Some(
-            "nextpnr completed, but the report did not contain clock timing information."
+        "no-paths" => Some(
+            "The build completed, but this design has no clock-to-clock path to measure. Asynchronous paths may still appear below."
                 .to_string(),
         ),
         _ => None,
@@ -2694,6 +2694,30 @@ mod timing_tests {
         assert_eq!(timing.status, "unconstrained");
         assert!(timing.worst_slack_ns.is_none());
         assert!(timing.clocks[0].target_frequency_mhz.is_none());
+    }
+
+    #[test]
+    fn report_without_clock_to_clock_path_is_not_unavailable() {
+        let report = serde_json::json!({
+            "fmax": {},
+            "critical_paths": [{
+                "from": "<async>",
+                "to": "<async>",
+                "path": [{
+                    "type": "routing",
+                    "delay": 1.5,
+                    "from": {"cell": "d$sb_io", "port": "D_IN_0"},
+                    "to": {"cell": "q$sb_io", "port": "D_OUT_0"}
+                }]
+            }]
+        });
+        let timing =
+            parse_nextpnr_timing_report(&report, "ice40up5k-sg48", Some("clk"), Some(12.0));
+
+        assert_eq!(timing.status, "no-paths");
+        assert_eq!(timing.paths.len(), 1);
+        assert!(timing.achieved_frequency_mhz.is_none());
+        assert!(timing.worst_slack_ns.is_none());
     }
 }
 

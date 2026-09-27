@@ -22,7 +22,8 @@
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
 }
 
-.dashboard-workspace {
+.dashboard-workspace,
+.viewer-page-timing {
   --dashboard-surface-border: rgba(226, 232, 240, 0.72);
   --dashboard-surface-bg:
     linear-gradient(
@@ -1446,12 +1447,208 @@ html[data-theme="black-ice"]
   color: var(--dashboard-strong-text) !important;
 }
 
-/* Post-route timing stays within the Build workspace and uses the same
-   engineering surface language as synthesis, pins, and build logs. */
-.bitstream-results {
-  overflow: auto;
-  padding-right: 4px;
+/* Bitstream workspace. */
+.bitstream-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 16px;
+  height: calc(100vh - 48px);
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
 }
+
+.bitstream-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid var(--dashboard-surface-border);
+  border-radius: 24px;
+}
+
+.bitstream-header h1 {
+  margin: 0;
+  color: var(--dashboard-strong-text);
+  font-size: 28px;
+}
+
+.bitstream-header p {
+  margin: 4px 0 0;
+  color: var(--dashboard-muted-text);
+  font-size: 13px;
+}
+
+.bitstream-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.bitstream-actions button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--dashboard-control-border);
+  border-radius: 10px;
+  background: var(--dashboard-control-bg);
+  color: var(--dashboard-text);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.bitstream-actions button.primary-action {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.bitstream-actions button.bitstream-open-timing {
+  border-color: var(--dashboard-control-active-border);
+  background: var(--dashboard-control-active-bg);
+  color: var(--dashboard-strong-text);
+}
+
+.bitstream-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bitstream-status-message {
+  margin: 10px 0 0;
+  color: var(--dashboard-muted-text);
+  font-size: 12px;
+}
+
+.bitstream-status-message.error {
+  color: #b91c1c;
+}
+
+.bitstream-results {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 18px;
+}
+
+.bitstream-output-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  border-bottom: 1px solid var(--dashboard-control-border);
+}
+
+.bitstream-output-tabs button {
+  padding: 8px 13px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--dashboard-muted-text);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.bitstream-output-tabs button[aria-selected="true"] {
+  border-bottom-color: #2563eb;
+  color: var(--dashboard-strong-text);
+}
+
+.bitstream-output-panel {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--dashboard-surface-border);
+  border-radius: 0 0 14px 14px;
+}
+
+.bitstream-output-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  color: var(--dashboard-preview-text);
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bitstream-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.bitstream-sidebar > .dashboard-glass-card {
+  padding: 18px !important;
+}
+
+.bitstream-mapping-summary,
+.bitstream-mapping-empty {
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: 13px;
+}
+
+.bitstream-mapping-details {
+  margin-top: 14px;
+}
+
+.bitstream-mapping-details summary {
+  color: var(--dashboard-strong-text);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.bitstream-mapping-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bitstream-mapping-row {
+  padding: 8px;
+  border: 1px solid var(--dashboard-surface-border);
+  border-radius: 8px;
+}
+
+.bitstream-mapping-row strong,
+.bitstream-mapping-row small {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .bitstream-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bitstream-main {
+    min-height: 0;
+  }
+
+  .bitstream-results {
+    flex: 0 0 auto;
+    height: min(60vh, 520px);
+    min-height: 280px;
+  }
+
+  .bitstream-sidebar {
+    overflow: visible;
+  }
+}
+
+/* Post-route timing report. */
 
 .timing-analysis {
   flex: 0 0 auto;
@@ -1505,6 +1702,7 @@ html[data-theme="black-ice"]
 }
 
 .timing-unconstrained .timing-status,
+.timing-no-paths .timing-status,
 .timing-unavailable .timing-status {
   border-color: rgba(245, 158, 11, 0.38);
   background: rgba(245, 158, 11, 0.1);
@@ -1636,9 +1834,13 @@ html[data-theme="black-ice"]
 
 .timing-path-workspace {
   display: grid;
-  grid-template-columns: minmax(160px, 0.32fr) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 20px;
   margin-top: 18px;
+}
+
+.timing-path-workspace.single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .timing-path-list {
@@ -1725,10 +1927,10 @@ html[data-theme="black-ice"]
 .timing-signal-path {
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: 22px;
   margin-top: 13px;
   overflow-x: auto;
-  padding: 2px 1px 8px;
+  padding: 4px 1px 10px;
 }
 
 .timing-terminal,
@@ -1736,34 +1938,52 @@ html[data-theme="black-ice"]
   position: relative;
   display: grid;
   align-content: center;
-  flex: 0 0 112px;
-  min-height: 68px;
+  flex: 0 0 144px;
+  min-height: 82px;
   box-sizing: border-box;
   border: 1px solid var(--dashboard-control-border, #dbe4f0);
   background: var(--dashboard-control-bg, #fff);
-  padding: 8px;
+  padding: 10px;
   text-align: center;
 }
 
 .timing-terminal {
-  border-radius: 9px;
+  border-radius: 12px;
   box-shadow: inset 0 2px 0 rgba(59, 130, 246, 0.5);
 }
 
 .timing-stage {
-  flex-basis: 96px;
-  margin-inline: 13px;
-  border-radius: 50%;
+  flex-basis: 128px;
+  border-radius: 12px;
   box-shadow: inset 0 2px 0 rgba(14, 165, 233, 0.4);
 }
 
 .timing-stage-line {
   position: absolute;
   top: 50%;
-  right: calc(100% + 1px);
-  width: 27px;
+  right: 100%;
+  width: 22px;
   height: 1px;
   background: linear-gradient(90deg, #60a5fa, #22d3ee);
+}
+
+.timing-terminal:last-child::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, #60a5fa, #22d3ee);
+}
+
+.timing-terminal:last-child::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 3px);
+  left: -6px;
+  border-block: 3px solid transparent;
+  border-left: 5px solid #22d3ee;
 }
 
 .timing-stage-line::after {
@@ -1778,7 +1998,7 @@ html[data-theme="black-ice"]
 .timing-terminal span,
 .timing-stage-kind {
   color: var(--dashboard-muted-text, #64748b);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -1789,7 +2009,7 @@ html[data-theme="black-ice"]
   margin-top: 3px;
   color: var(--dashboard-strong-text, #0f172a);
   font:
-    800 10px "JetBrains Mono",
+    800 11px "JetBrains Mono",
     monospace;
   overflow-wrap: anywhere;
 }
@@ -1797,7 +2017,7 @@ html[data-theme="black-ice"]
 .timing-stage small {
   margin-top: 2px;
   color: var(--dashboard-muted-text, #64748b);
-  font-size: 7px;
+  font-size: 9px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1820,6 +2040,7 @@ html[data-theme="black-ice"] .timing-path-list .negative {
 }
 
 html[data-theme="black-ice"] .timing-unconstrained .timing-status,
+html[data-theme="black-ice"] .timing-no-paths .timing-status,
 html[data-theme="black-ice"] .timing-unavailable .timing-status {
   color: #fcd34d;
 }
@@ -1839,6 +2060,18 @@ html[data-theme="black-ice"] .timing-breakdown .positive {
     border-left: 0;
     padding-top: 14px;
     padding-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .timing-summary,
+  .timing-breakdown {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timing-summary > div:nth-child(odd),
+  .timing-breakdown > div:nth-child(odd) {
+    border-left: 0;
   }
 }
 
@@ -2100,6 +2333,38 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 }
 .build-preflight-summary span.blocked {
   color: #b91c1c;
+}
+.build-preflight.compact {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--dashboard-control-border);
+  border-radius: 12px;
+  background: var(--dashboard-control-bg);
+}
+.build-preflight.compact .build-preflight-summary {
+  justify-content: flex-start;
+  margin-bottom: 0;
+}
+.build-preflight-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--dashboard-strong-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.build-preflight-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.build-preflight.compact .build-preflight-list {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 10px;
 }
 .build-preflight-list {
   display: grid;

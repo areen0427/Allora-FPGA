@@ -13,6 +13,15 @@
   overflow: hidden;
 }
 
+.viewer-page-timing {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.viewer-page-timing .timing-analysis {
+  max-width: 1500px;
+}
+
 .schematic-workspace {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

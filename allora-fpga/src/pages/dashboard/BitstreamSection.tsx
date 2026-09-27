@@ -23,9 +23,10 @@ import {
   readPinMappingsFromConstraints,
   type HdlPort,
 } from "./pinMappingUtils";
-import TimingAnalysis, { type TimingAnalysisResult } from "./TimingAnalysis";
+import type { TimingAnalysisResult } from "./TimingAnalysis";
 import { useBuildPreflight } from "../../hooks/useBuildPreflight";
 import { BuildPreflight } from "../../components/BuildPreflight";
+import { openViewerWindow } from "../../lib/viewerWindow";
 
 type BitstreamSectionProps = {
   board: BoardDefinition;
@@ -83,6 +84,7 @@ export default function BitstreamSection({
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
+  const [resultTab, setResultTab] = useState<"log" | "preview">("log");
   const logPanelRef = useRef<HTMLDivElement | null>(null);
   const capabilities = getBoardCapabilities(board);
   const preflight = useBuildPreflight(
@@ -94,10 +96,15 @@ export default function BitstreamSection({
   const preflightBlocked = preflight.some((check) => check.state === "blocked");
 
   useEffect(() => {
-    if (logPanelRef.current) {
+    if (resultTab === "log" && logPanelRef.current) {
       logPanelRef.current.scrollTop = logPanelRef.current.scrollHeight;
     }
-  }, [liveLogs]);
+  }, [liveLogs, resultTab]);
+
+  function selectResultTab(tab: "log" | "preview") {
+    if (logPanelRef.current) logPanelRef.current.scrollTop = 0;
+    setResultTab(tab);
+  }
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const selectedTopLevelFile = topLevelFileName
@@ -175,7 +182,7 @@ export default function BitstreamSection({
   useEffect(() => {
     setArtifact(null);
     setErrorMessage(null);
-  }, [board.id, buildInputKey, projectName, topLevelFileName]);
+  }, [board.id, buildInputKey, projectName, projectPath, topLevelFileName]);
 
   async function handleGenerateBitstream() {
     if (preflightBlocked) {
@@ -225,6 +232,7 @@ export default function BitstreamSection({
     setIsGenerating(true);
     setErrorMessage(null);
     setLiveLogs([]);
+    setResultTab("log");
 
     const startedAt = Date.now();
     const streamedLogs: string[] = [];
@@ -397,54 +405,28 @@ export default function BitstreamSection({
     URL.revokeObjectURL(url);
   }
 
+  async function handleOpenTimingReport() {
+    if (!artifact) return;
+    try {
+      await openViewerWindow(
+        "timing",
+        `${projectName || artifact.topModule || "Allora"} — Timing Report`,
+        artifact.timing,
+      );
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    }
+  }
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 240px",
-        gap: "22px",
-        alignItems: "start",
-        height: "calc(100vh - 48px)",
-        boxSizing: "border-box",
-        padding: "8px",
-        margin: "-8px",
-        minHeight: 0,
-        overflow: "visible",
-      }}
-    >
-      <InfoCard
-        title="Bitstream"
-        style={{
-          height: "100%",
-          minHeight: 0,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            color: "#64748b",
-            fontSize: "16px",
-            lineHeight: 1.55,
-          }}
-        >
-          Generate a real programming artifact when the selected board has a
-          wired local toolchain.
-        </p>
+    <div className="bitstream-layout">
+      <section className="dashboard-glass-card bitstream-main">
+        <header className="bitstream-header">
+          <h1>Bitstream</h1>
+          <p>Generate a programming artifact for {board.name}.</p>
+        </header>
 
-        <BuildPreflight checks={preflight} onNavigate={onNavigate} />
-
-        <div
-          className="bitstream-actions"
-          style={{
-            display: "flex",
-            gap: "10px",
-            marginTop: "22px",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="bitstream-actions">
           <button
             className="primary-action"
             type="button"
@@ -460,153 +442,88 @@ export default function BitstreamSection({
               preflightBlocked ||
               isGenerating
             }
-            style={{
-              border: "none",
-              borderRadius: "14px",
-              background:
-                capabilities.bitstream.supported &&
-                hdlFiles.length > 0 &&
-                !preflightBlocked &&
-                !isGenerating
-                  ? "#2563eb"
-                  : "#cbd5e1",
-              color: "#ffffff",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-              cursor:
-                capabilities.bitstream.supported &&
-                hdlFiles.length > 0 &&
-                !preflightBlocked &&
-                !isGenerating
-                  ? "pointer"
-                  : "not-allowed",
-            }}
           >
             {isGenerating ? "Generating..." : "Generate Bitstream"}
           </button>
-
           <button
             type="button"
             onClick={handleDownloadBitstream}
             disabled={!artifact}
-            style={{
-              border: "1px solid #dbe4f0",
-              borderRadius: "14px",
-              background: artifact ? "#ffffff" : "#f8fafc",
-              color: artifact ? "#334155" : "#94a3b8",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-              cursor: artifact ? "pointer" : "not-allowed",
-            }}
           >
             Download
           </button>
-        </div>
-
-        <div
-          style={{
-            marginTop: "14px",
-            padding: "12px 14px",
-            borderRadius: "12px",
-            background: errorMessage ? "#fef2f2" : "#f8fafc",
-            border: errorMessage ? "1px solid #fecaca" : "1px solid #e2e8f0",
-            color: errorMessage ? "#b91c1c" : "#64748b",
-            fontSize: "13px",
-            lineHeight: 1.45,
-          }}
-        >
-          {errorMessage
-            ? errorMessage
-            : artifact
-              ? constraintFile
-                ? "Bitstream generated using the project's saved constraints."
-                : "Bitstream generated. Auto constraints were created for this project."
-              : capabilities.bitstream.supported
-                ? "Ready to build with saved constraints, or auto-map ports when no constraint file exists."
-                : capabilities.bitstream.detail}
-        </div>
-
-        <div
-          className="bitstream-results"
-          style={{
-            marginTop: "18px",
-            minHeight: 0,
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-          }}
-        >
-          <div
-            className="dashboard-glass-card"
-            style={{
-              border: "1px solid #e2e8f0",
-              borderRadius: "16px",
-              background: "#f8fafc",
-              color: "#334155",
-              minHeight: "150px",
-              flex: liveLogs.length ? "1 1 0" : "1 1 auto",
-              padding: "18px",
-              fontFamily: "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-              fontSize: "13px",
-              lineHeight: 1.6,
-              whiteSpace: "pre-wrap",
-              overflow: "auto",
-            }}
+          <button
+            className="bitstream-open-timing"
+            type="button"
+            onClick={() => void handleOpenTimingReport()}
+            disabled={!artifact}
           >
-            {artifact
-              ? artifact.preview
-              : isGenerating
-                ? "Building..."
-                : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(
-                    projectName || "allora_project",
-                  )}.${extension}`}
-          </div>
-
-          {artifact ? <TimingAnalysis timing={artifact.timing} /> : null}
-
-          {liveLogs.length ? (
-            <div
-              ref={logPanelRef}
-              className="dashboard-glass-card"
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: "16px",
-                background: "#ffffff",
-                color: "#475569",
-                padding: "16px",
-                fontFamily:
-                  "JetBrains Mono, SFMono-Regular, Consolas, monospace",
-                fontSize: "12px",
-                lineHeight: 1.55,
-                whiteSpace: "pre-wrap",
-                flex: isGenerating ? "1 1 200px" : "0 0 150px",
-                overflow: "auto",
-              }}
-            >
-              {liveLogs.join("\n")}
-            </div>
-          ) : null}
+            Open Timing Report
+          </button>
         </div>
-      </InfoCard>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          maxHeight: "100%",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        <InfoCard
-          title="Output"
-          style={{ padding: "14px", borderRadius: "16px" }}
-          compact
-        >
+        <BuildPreflight
+          checks={preflight}
+          onNavigate={onNavigate}
+          collapsible
+        />
+
+        {errorMessage || artifact || !capabilities.bitstream.supported ? (
+          <p
+            className={`bitstream-status-message${errorMessage ? " error" : ""}`}
+          >
+            {errorMessage
+              ? errorMessage
+              : artifact
+                ? `Built ${artifact.fileName} · ${formatTimingStatus(artifact.timing)}`
+                : capabilities.bitstream.detail}
+          </p>
+        ) : null}
+
+        <div className="bitstream-results">
+          <div
+            className="bitstream-output-tabs"
+            role="tablist"
+            aria-label="Build output"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={resultTab === "log"}
+              onClick={() => selectResultTab("log")}
+            >
+              Build log
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={resultTab === "preview"}
+              onClick={() => selectResultTab("preview")}
+            >
+              Bitstream preview
+            </button>
+          </div>
+          <div
+            className="dashboard-glass-card bitstream-output-panel"
+            role="tabpanel"
+          >
+            <div ref={logPanelRef} className="bitstream-output-content">
+              {resultTab === "log"
+                ? liveLogs.length
+                  ? liveLogs.join("\n")
+                  : isGenerating
+                    ? "Starting build..."
+                    : "Build output will appear here when you generate a bitstream."
+                : artifact
+                  ? artifact.preview
+                  : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(projectName || "allora_project")}.${extension}`}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside className="bitstream-sidebar" aria-label="Build details">
+        <InfoCard title="Build details" compact>
           <InfoRow
             label="Filename"
             value={
@@ -615,110 +532,72 @@ export default function BitstreamSection({
             }
             compact
           />
-          <InfoRow label="Format" value={extension.toUpperCase()} compact />
-          <InfoRow
-            label="Bytes"
-            value={String(artifact?.byteLength ?? 0)}
-            compact
-          />
-        </InfoCard>
-
-        <InfoCard
-          title="Source"
-          style={{ padding: "14px", borderRadius: "16px" }}
-          compact
-        >
           <InfoRow label="Board" value={board.name} compact />
-          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
           <InfoRow
-            label="Top Module"
+            label="Top module"
             value={topModule ?? "Not found"}
             compact
           />
-          <InfoRow label="Constraints" value={constraintFileName} compact />
+          <InfoRow
+            label="Size"
+            value={
+              artifact
+                ? `${artifact.byteLength.toLocaleString()} bytes`
+                : "Not built"
+            }
+            compact
+          />
+          <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
         </InfoCard>
 
-        <InfoCard
-          title="Pin Mapping"
-          style={{
-            padding: "14px",
-            borderRadius: "16px",
-            minHeight: 0,
-            overflow: "hidden",
-          }}
-          compact
-        >
-          <InfoRow
-            label="Detected Ports"
-            value={String(topLevelPorts.length)}
-            compact
-          />
-          <InfoRow
-            label="Mapped"
-            value={`${autoMappings.length - unmappedPorts.length}/${autoMappings.length}`}
-            compact
-          />
-          <div
-            style={{
-              marginTop: "14px",
-              display: "grid",
-              gap: "8px",
-              maxHeight: "120px",
-              overflow: "auto",
-            }}
-          >
-            {autoMappings.length === 0 ? (
-              <div
-                className="bitstream-mapping-empty"
-                style={{ color: "#64748b", fontSize: "13px", lineHeight: 1.4 }}
-              >
-                No ports detected yet.
+        <InfoCard title="Pin mapping" compact>
+          <p className="bitstream-mapping-summary">
+            {autoMappings.length - unmappedPorts.length}/{autoMappings.length}{" "}
+            ports mapped
+          </p>
+          {autoMappings.length ? (
+            <details className="bitstream-mapping-details">
+              <summary>Inspect mapped ports</summary>
+              <div className="bitstream-mapping-list">
+                {autoMappings.map((mapping) => (
+                  <div
+                    className={`bitstream-mapping-row${mapping.pin ? "" : " unmapped"}`}
+                    key={mapping.port.name}
+                  >
+                    <strong className="bitstream-mapping-port">
+                      {mapping.port.name}
+                    </strong>
+                    <small className="bitstream-mapping-pin">
+                      {mapping.pin
+                        ? mapping.pin.label
+                        : "Unmapped — open Pin Mapping to assign a pin"}
+                    </small>
+                  </div>
+                ))}
               </div>
-            ) : (
-              autoMappings.map((mapping) => (
-                <div
-                  className={`bitstream-mapping-row${mapping.pin ? "" : " unmapped"}`}
-                  key={mapping.port.name}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "12px",
-                    padding: "9px 10px",
-                    background: mapping.pin ? "#f8fafc" : "#fff7ed",
-                  }}
-                >
-                  <div
-                    className="bitstream-mapping-port"
-                    style={{
-                      color: "#0f172a",
-                      fontSize: "13px",
-                      fontWeight: 850,
-                      overflowWrap: "anywhere",
-                    }}
-                  >
-                    {mapping.port.name}
-                  </div>
-                  <div
-                    className="bitstream-mapping-pin"
-                    style={{
-                      marginTop: "3px",
-                      color: mapping.pin ? "#64748b" : "#c2410c",
-                      fontSize: "12px",
-                      fontWeight: 750,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {mapping.pin
-                      ? `${mapping.pin.label}`
-                      : "Unmapped - add a matching board pin or map manually"}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+            </details>
+          ) : (
+            <p className="bitstream-mapping-empty">No ports detected yet.</p>
+          )}
         </InfoCard>
-      </div>
+      </aside>
     </div>
   );
+}
+
+function formatTimingStatus(timing: TimingAnalysisResult) {
+  switch (timing.status) {
+    case "pass":
+      return "timing met";
+    case "fail":
+      return "timing failed";
+    case "unconstrained":
+      return "timing unconstrained";
+    case "no-paths":
+      return "no clock-to-clock path";
+    default:
+      return "timing unavailable";
+  }
 }
 
 function createHexPreview(

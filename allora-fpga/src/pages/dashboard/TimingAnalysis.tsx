@@ -39,7 +39,7 @@ export type TimingClock = {
 export type TimingAnalysisResult = {
   engine: string;
   device: string;
-  status: "pass" | "fail" | "unconstrained" | "unavailable";
+  status: "pass" | "fail" | "unconstrained" | "no-paths" | "unavailable";
   targetClockName?: string | null;
   targetFrequencyMhz?: number | null;
   achievedFrequencyMhz?: number | null;
@@ -55,7 +55,11 @@ export type TimingAnalysisResult = {
   message?: string | null;
 };
 
-export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResult }) {
+export default function TimingAnalysis({
+  timing,
+}: {
+  timing: TimingAnalysisResult;
+}) {
   const [selectedClock, setSelectedClock] = useState<string | null>(
     timing.clocks[0]?.name ?? null,
   );
@@ -63,7 +67,8 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
     if (timing.clocks.length <= 1 || !selectedClock) return timing.paths;
     return timing.paths.filter(
       (path) =>
-        path.captureClock === selectedClock || path.launchClock === selectedClock,
+        path.captureClock === selectedClock ||
+        path.launchClock === selectedClock,
     );
   }, [selectedClock, timing.clocks.length, timing.paths]);
   const [selectedPathId, setSelectedPathId] = useState<string | null>(
@@ -90,6 +95,7 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
     pass: "PASS",
     fail: "FAIL",
     unconstrained: "NO CONSTRAINT",
+    "no-paths": "NO CLOCK PATH",
     unavailable: "UNAVAILABLE",
   }[timing.status];
 
@@ -100,12 +106,17 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
           <span className="timing-eyebrow">Post-route static timing</span>
           <h3>Timing Analysis</h3>
         </div>
-        <span className="timing-status" aria-label={`Timing status: ${statusLabel}`}>
+        <span
+          className="timing-status"
+          aria-label={`Timing status: ${statusLabel}`}
+        >
           {statusLabel}
         </span>
       </header>
 
-      {timing.message ? <p className="timing-message">{timing.message}</p> : null}
+      {timing.message ? (
+        <p className="timing-message">{timing.message}</p>
+      ) : null}
 
       <dl className="timing-summary">
         <SummaryMetric label="Device" value={timing.device} />
@@ -121,11 +132,13 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
         <SummaryMetric
           label="Worst slack"
           value={formatSlack(timing.worstSlackNs)}
-          tone={timing.worstSlackNs !== null && timing.worstSlackNs !== undefined
-            ? timing.worstSlackNs < 0
-              ? "negative"
-              : "positive"
-            : undefined}
+          tone={
+            timing.worstSlackNs !== null && timing.worstSlackNs !== undefined
+              ? timing.worstSlackNs < 0
+                ? "negative"
+                : "positive"
+              : undefined
+          }
         />
       </dl>
 
@@ -134,7 +147,10 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
           <div className="timing-section-label">Clock domains</div>
           <div className="timing-clock-table" role="list">
             <div className="timing-clock-row head" aria-hidden="true">
-              <span>Clock</span><span>Target</span><span>Achieved</span><span>Status</span>
+              <span>Clock</span>
+              <span>Target</span>
+              <span>Achieved</span>
+              <span>Status</span>
             </div>
             {timing.clocks.map((clock) => (
               <button
@@ -147,7 +163,9 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
                 <span>{formatFrequency(clock.targetFrequencyMhz)}</span>
                 <span>{formatFrequency(clock.achievedFrequencyMhz)}</span>
                 <span className={`timing-clock-status ${clock.status}`}>
-                  {clock.status === "unconstrained" ? "—" : clock.status.toUpperCase()}
+                  {clock.status === "unconstrained"
+                    ? "—"
+                    : clock.status.toUpperCase()}
                 </span>
               </button>
             ))}
@@ -156,7 +174,9 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
       ) : null}
 
       {selectedPath ? (
-        <div className="timing-path-workspace">
+        <div
+          className={`timing-path-workspace${visiblePaths.length > 1 ? "" : " single"}`}
+        >
           {visiblePaths.length > 1 ? (
             <div className="timing-path-list">
               <div className="timing-section-label">Critical paths</div>
@@ -172,7 +192,15 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
                     <strong>{shortPoint(path.startpoint)}</strong>
                     <small>→ {shortPoint(path.endpoint)}</small>
                   </span>
-                  <span className={path.slackNs !== null && path.slackNs !== undefined && path.slackNs < 0 ? "negative" : ""}>
+                  <span
+                    className={
+                      path.slackNs !== null &&
+                      path.slackNs !== undefined &&
+                      path.slackNs < 0
+                        ? "negative"
+                        : ""
+                    }
+                  >
                     {formatSlack(path.slackNs)}
                   </span>
                 </button>
@@ -184,45 +212,87 @@ export default function TimingAnalysis({ timing }: { timing: TimingAnalysisResul
             <div className="timing-path-title">
               <div>
                 <span className="timing-section-label">Critical path</span>
-                <strong>{shortPoint(selectedPath.startpoint)} → {shortPoint(selectedPath.endpoint)}</strong>
+                <strong>
+                  {shortPoint(selectedPath.startpoint)} →{" "}
+                  {shortPoint(selectedPath.endpoint)}
+                </strong>
               </div>
               {selectedPath.classification ? (
-                <span className="timing-cause">{selectedPath.classification.replace("-", " ")}</span>
+                <span className="timing-cause">
+                  {selectedPath.classification.replace("-", " ")}
+                </span>
               ) : null}
             </div>
 
-            <div className="timing-signal-path" aria-label="Critical path stages">
-              <PathTerminal label="Startpoint" value={selectedPath.startpoint} />
+            <div
+              className="timing-signal-path"
+              aria-label="Critical path stages"
+            >
+              <PathTerminal
+                label="Startpoint"
+                value={selectedPath.startpoint}
+              />
               {selectedPath.elements.map((element, index) => (
-                <PathStage key={`${selectedPath.id}-${index}`} element={element} />
+                <PathStage
+                  key={`${selectedPath.id}-${index}`}
+                  element={element}
+                />
               ))}
               <PathTerminal label="Endpoint" value={selectedPath.endpoint} />
             </div>
 
             <dl className="timing-breakdown">
-              <SummaryMetric label="Logic delay" value={formatNs(selectedPath.logicDelayNs)} />
-              <SummaryMetric label="Routing delay" value={formatNs(selectedPath.routingDelayNs)} />
-              <SummaryMetric label="Other delay" value={formatNs(selectedPath.otherDelayNs)} />
-              <SummaryMetric label="Total delay" value={formatNs(selectedPath.totalDelayNs)} />
-              <SummaryMetric label="Required" value={formatNs(selectedPath.requiredTimeNs)} />
+              <SummaryMetric
+                label="Logic delay"
+                value={formatNs(selectedPath.logicDelayNs)}
+              />
+              <SummaryMetric
+                label="Routing delay"
+                value={formatNs(selectedPath.routingDelayNs)}
+              />
+              <SummaryMetric
+                label="Other delay"
+                value={formatNs(selectedPath.otherDelayNs)}
+              />
+              <SummaryMetric
+                label="Total delay"
+                value={formatNs(selectedPath.totalDelayNs)}
+              />
+              <SummaryMetric
+                label="Required"
+                value={formatNs(selectedPath.requiredTimeNs)}
+              />
               <SummaryMetric
                 label="Slack"
                 value={formatSlack(selectedPath.slackNs)}
-                tone={selectedPath.slackNs !== null && selectedPath.slackNs !== undefined
-                  ? selectedPath.slackNs < 0 ? "negative" : "positive"
-                  : undefined}
+                tone={
+                  selectedPath.slackNs !== null &&
+                  selectedPath.slackNs !== undefined
+                    ? selectedPath.slackNs < 0
+                      ? "negative"
+                      : "positive"
+                    : undefined
+                }
               />
               {selectedPath.clockToQDelayNs > 0 ? (
-                <SummaryMetric label="Clock-to-Q" value={formatNs(selectedPath.clockToQDelayNs)} />
+                <SummaryMetric
+                  label="Clock-to-Q"
+                  value={formatNs(selectedPath.clockToQDelayNs)}
+                />
               ) : null}
               {selectedPath.setupDelayNs > 0 ? (
-                <SummaryMetric label="Setup" value={formatNs(selectedPath.setupDelayNs)} />
+                <SummaryMetric
+                  label="Setup"
+                  value={formatNs(selectedPath.setupDelayNs)}
+                />
               ) : null}
             </dl>
           </div>
         </div>
-      ) : timing.status !== "unavailable" ? (
-        <p className="timing-empty-path">No sequential critical path was reported for this design.</p>
+      ) : timing.status !== "unavailable" && timing.status !== "no-paths" ? (
+        <p className="timing-empty-path">
+          No sequential critical path was reported for this design.
+        </p>
       ) : null}
     </section>
   );
@@ -258,13 +328,14 @@ function PathTerminal({ label, value }: { label: string; value: string }) {
 }
 
 function PathStage({ element }: { element: TimingPathElement }) {
-  const label = {
-    logic: "Logic",
-    routing: "Routing",
-    setup: "Setup",
-    "clk-to-q": "Clock-to-Q",
-    source: "Source",
-  }[element.kind] ?? element.kind;
+  const label =
+    {
+      logic: "Logic",
+      routing: "Routing",
+      setup: "Setup",
+      "clk-to-q": "Clock-to-Q",
+      source: "Source",
+    }[element.kind] ?? element.kind;
 
   return (
     <div className={`timing-stage stage-${element.kind}`} title={element.name}>
@@ -277,7 +348,9 @@ function PathStage({ element }: { element: TimingPathElement }) {
 }
 
 function formatFrequency(value?: number | null) {
-  return value === null || value === undefined ? "—" : `${value.toFixed(2)} MHz`;
+  return value === null || value === undefined
+    ? "—"
+    : `${value.toFixed(2)} MHz`;
 }
 
 function formatNs(value?: number | null) {
@@ -290,6 +363,8 @@ function formatSlack(value?: number | null) {
 }
 
 function shortPoint(value: string) {
-  const compact = value.replace(/\$SB_[A-Z0-9_$]+/gi, "").replace(/_LC\.[A-Z0-9_]+$/i, "");
+  const compact = value
+    .replace(/\$SB_[A-Z0-9_$]+/gi, "")
+    .replace(/_LC\.[A-Z0-9_]+$/i, "");
   return compact.length > 38 ? `…${compact.slice(-37)}` : compact;
 }
