@@ -2,6 +2,29 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-28 — Peripheral Workbench V1
+
+Implemented:
+- Shared Build/Simulate navigation plus welcome entry; Register Builder and Memory Asset Studio Coming soon states.
+- Device library, persistent canvas positions, inspector, duplicate/remove, labels/polarity/initial switches, scalar/vector mapping with direction/range/conflict validation.
+- Real RTL buttons, switches, individual/banked LEDs, direct seven-segment/DP, and bidirectional 8N1 UART with queued TX, text/hex, line endings, clear, and framing diagnostics.
+- Compile/start, bounded run, pause, one-cycle step, recreate-at-zero reset, stop/restart, source/metadata invalidation, and momentary release on cancellation/blur/navigation.
+- Separate versioned `peripheralWorkbench` metadata using existing project saves; original Virtual FPGA mappings remain intact and migrate on first use.
+- Complete half-cycle traces, UART deadline scheduling, exact u64 inputs, picosecond harness timing, asynchronous discovery/compilation, and collision-resistant simulation workspaces. Parallel integration tests exposed the old timestamp-directory collision and now cover concurrent compilation.
+- Two documented example projects; production-host/real-Verilator integration tests and a non-mocked UI fixture.
+
+Validation:
+- TypeScript/Vite build, ESLint, and all 27 Rust tests passed.
+- Real Yosys/Verilator tests: controls and polarity, seven-segment patterns, 4 UART echo bytes across batches, pause/step/reset/stop/restart, configured initial state, disk metadata roundtrip, legacy migration, invalid/conflicting mappings, compile errors, clockless traces, and bit 63.
+- Browser inspection confirmed welcome entry opens the existing project flow; UI fixture renders in Ice and Black Ice with missing-runtime diagnostics rather than fabricated simulation.
+
+Environment limitations:
+- Native desktop UI verification is blocked: ADE reports Accessibility denied. Screen Recording was granted on the final recheck.
+- `tauri build --debug --bundles app` is blocked by the pre-existing opener version mismatch (Rust 2.5.5, JS 2.6.0). Existing dependency/release changes were preserved.
+- Process-usage Rust test needs execution outside the sandbox; it passed with that access.
+- Physical programming/electrical behavior has not been verified. Direct segment outputs only; no multiplexed-display claim.
+
+
 ## 2026-09-27 — Build preflight and RTL hierarchy
 
 Changed:

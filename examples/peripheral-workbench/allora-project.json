@@ -1,0 +1,191 @@
+{
+  "name": "Peripheral Workbench Demo",
+  "boardId": "icebreaker",
+  "language": "SystemVerilog",
+  "topModule": "workbench_demo",
+  "peripheralWorkbench": {
+    "version": 1,
+    "frequency": 1843200,
+    "clock": {
+      "signal": "clk",
+      "bit": 0,
+      "width": 1,
+      "offset": 0,
+      "upto": false
+    },
+    "devices": [
+      {
+        "id": "button",
+        "kind": "button",
+        "name": "Push to show 8",
+        "x": 0,
+        "y": 0,
+        "activeHigh": true,
+        "initial": false,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "signal": {
+            "signal": "controls",
+            "bit": 0,
+            "width": 2,
+            "offset": 0,
+            "upto": false
+          }
+        }
+      },
+      {
+        "id": "switch",
+        "kind": "switch",
+        "name": "Toggle XOR",
+        "x": 270,
+        "y": 0,
+        "activeHigh": true,
+        "initial": false,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "signal": {
+            "signal": "controls",
+            "bit": 1,
+            "width": 2,
+            "offset": 0,
+            "upto": false
+          }
+        }
+      },
+      {
+        "id": "leds",
+        "kind": "led-bank",
+        "name": "RTL outputs",
+        "x": 0,
+        "y": 235,
+        "activeHigh": true,
+        "initial": false,
+        "count": 2,
+        "baud": 115200,
+        "labels": [
+          "XOR",
+          "Inverted switch"
+        ],
+        "connections": {
+          "0": {
+            "signal": "leds",
+            "bit": 0,
+            "width": 2,
+            "offset": 0,
+            "upto": false
+          },
+          "1": {
+            "signal": "leds",
+            "bit": 1,
+            "width": 2,
+            "offset": 0,
+            "upto": false
+          }
+        }
+      },
+      {
+        "id": "display",
+        "kind": "seven-segment",
+        "name": "Direct segments",
+        "x": 270,
+        "y": 235,
+        "activeHigh": true,
+        "initial": false,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "a": {
+            "signal": "segments",
+            "bit": 0,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "b": {
+            "signal": "segments",
+            "bit": 1,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "c": {
+            "signal": "segments",
+            "bit": 2,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "d": {
+            "signal": "segments",
+            "bit": 3,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "e": {
+            "signal": "segments",
+            "bit": 4,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "f": {
+            "signal": "segments",
+            "bit": 5,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "g": {
+            "signal": "segments",
+            "bit": 6,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          },
+          "dp": {
+            "signal": "segments",
+            "bit": 7,
+            "width": 8,
+            "offset": 0,
+            "upto": false
+          }
+        }
+      },
+      {
+        "id": "uart",
+        "kind": "uart",
+        "name": "UART echo",
+        "x": 540,
+        "y": 0,
+        "activeHigh": true,
+        "initial": false,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "tx": {
+            "signal": "tx",
+            "bit": 0,
+            "width": 1,
+            "offset": 0,
+            "upto": false
+          },
+          "rx": {
+            "signal": "rx",
+            "bit": 0,
+            "width": 1,
+            "offset": 0,
+            "upto": false
+          }
+        }
+      }
+    ]
+  },
+  "boardName": "iCEBreaker"
+}

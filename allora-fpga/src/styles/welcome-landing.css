@@ -1377,6 +1377,87 @@ html[data-theme="black-ice"] .welcome-page:has(.welcome-destination-stage) {
   min-height: 42px;
   font-size: 11px;
 }
+
+/* Keep the working paths prominent while the previews share one compact row.
+   The artwork remains visible across the majority of the landing screen. */
+.execution-path-stage {
+  --landing-card-width: clamp(280px, 26.35vw, 357px);
+  --landing-card-right: 4%;
+}
+.execution-path-stage .welcome-action-stack {
+  padding-block: clamp(18px, 3vh, 30px);
+  gap: clamp(8px, 1.3vh, 12px);
+}
+.execution-path-stage .welcome-brand-lockup {
+  height: 52px;
+  padding-block: 8px;
+}
+.execution-path-stage .execution-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(7px, 1.2vh, 11px);
+}
+.execution-path-stage .execution-path-option {
+  width: 100%;
+  min-width: 0;
+}
+.execution-path-stage .execution-path-option:has(.simulate),
+.execution-path-stage .execution-path-option:has(.build),
+.execution-path-stage .execution-path-option:has(.workbench),
+.execution-path-stage .pin-mapping-quick-action {
+  grid-column: 1 / -1;
+}
+.execution-path-stage .execution-path-card,
+.execution-path-stage .execution-path-card.build {
+  height: clamp(86px, 13.5vh, 106px);
+  min-height: 86px;
+  padding: 12px 19px;
+}
+.execution-path-stage .execution-path-copy {
+  gap: 6px;
+}
+.execution-path-stage .execution-path-copy h2,
+.execution-path-stage .workbench .execution-path-copy h2 {
+  font-size: clamp(23px, 2.2vw, 30px);
+}
+.execution-path-stage .execution-path-card.preview-card {
+  height: 82px;
+  min-height: 82px;
+  padding: 10px 13px;
+}
+.execution-path-stage .preview-card .execution-path-copy h2 {
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.05;
+}
+.execution-path-stage .preview-card .execution-path-kicker,
+.execution-path-stage .preview-card .execution-path-microcopy {
+  font-size: 8px;
+}
+.execution-path-stage .preview-card .execution-path-microcopy {
+  display: none;
+}
+.execution-path-stage .pin-mapping-quick-action {
+  min-height: 36px;
+}
+.execution-path-stage .welcome-continue-project {
+  height: 78px;
+  min-height: 78px;
+  padding: 10px 14px;
+}
+
+@media (max-width: 720px) {
+  .execution-path-stage {
+    --landing-card-width: clamp(162px, 32.3vw, 238px);
+    --landing-card-right: 3%;
+  }
+  .execution-path-stage .execution-path-grid {
+    grid-template-columns: 1fr;
+  }
+  .execution-path-stage .execution-path-card.preview-card {
+    height: 60px;
+    min-height: 60px;
+  }
+}
 .welcome-route-pulse.peripheral-workbench {
   --route-accent: var(--landing-workbench-accent);
   --route-origin-y: 66%;
@@ -1499,6 +1580,4 @@ html[data-theme="black-ice"] .welcome-page:has(.welcome-destination-stage) {
 @media (max-width: 560px) {
   .workbench-home-steps { grid-template-columns: 1fr; }
   .workbench-home-actions button { width: 100%; }
-  .execution-path-stage .execution-path-card,
-  .execution-path-stage .execution-path-card.build { height: 154px; }
 }

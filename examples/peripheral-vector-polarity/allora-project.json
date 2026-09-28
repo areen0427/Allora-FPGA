@@ -1,0 +1,79 @@
+{
+  "name": "Vector polarity and initial states",
+  "boardId": "icebreaker",
+  "language": "SystemVerilog",
+  "topModule": "vector_polarity",
+  "peripheralWorkbench": {
+    "version": 1,
+    "frequency": 1843200,
+    "clock": null,
+    "devices": [
+      {
+        "id": "switch",
+        "kind": "switch",
+        "name": "High bit, initially on",
+        "x": 0,
+        "y": 0,
+        "activeHigh": true,
+        "initial": true,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "signal": {
+            "signal": "inputs",
+            "bit": 63,
+            "width": 64
+          }
+        }
+      },
+      {
+        "id": "button",
+        "kind": "button",
+        "name": "Active-low button",
+        "x": 270,
+        "y": 0,
+        "activeHigh": false,
+        "initial": false,
+        "count": 8,
+        "baud": 115200,
+        "labels": [],
+        "connections": {
+          "signal": {
+            "signal": "inputs",
+            "bit": 62,
+            "width": 64
+          }
+        }
+      },
+      {
+        "id": "leds",
+        "kind": "led-bank",
+        "name": "Active-low observers",
+        "x": 0,
+        "y": 235,
+        "activeHigh": false,
+        "initial": false,
+        "count": 2,
+        "baud": 115200,
+        "labels": [
+          "Bit 63",
+          "Bit 62"
+        ],
+        "connections": {
+          "0": {
+            "signal": "outputs",
+            "bit": 63,
+            "width": 64
+          },
+          "1": {
+            "signal": "outputs",
+            "bit": 62,
+            "width": 64
+          }
+        }
+      }
+    ]
+  },
+  "boardName": "iCEBreaker"
+}

@@ -24,6 +24,20 @@ jobs:
           cache: npm
           cache-dependency-path: allora-fpga/package-lock.json
 
+      - name: Check release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const version = require('./allora-fpga/package.json').version;
+          const tauriVersion = require('./allora-fpga/src-tauri/tauri.conf.json').version;
+          const cargoVersion = fs.readFileSync('./allora-fpga/src-tauri/Cargo.toml', 'utf8').match(/^version = "([^"]+)"/m)?.[1];
+          if (process.env.RELEASE_TAG !== `v${version}` || tauriVersion !== version || cargoVersion !== version) {
+            throw new Error(`Release versions differ: tag=${process.env.RELEASE_TAG}, npm=${version}, Tauri=${tauriVersion}, Cargo=${cargoVersion}`);
+          }
+          NODE
+
       - name: Install Rust for Apple Silicon
         uses: dtolnay/rust-toolchain@stable
         with:

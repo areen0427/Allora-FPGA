@@ -164,3 +164,29 @@ MIT
 ## Developer marketing capture
 
 The optional native-window capture and vertical teaser pipeline lives in [`marketing/README.md`](marketing/README.md). From `allora-fpga`, run `npm run teaser -- main-overview` to launch the real app, execute a safe demo, capture it, render a 12-second MP4 and extract inspection frames. The automation bridge is excluded from release builds.
+
+## Peripheral Workbench
+
+Open **Peripheral Workbench** from the main project navigation in either Build or Simulate mode. The welcome-screen entry opens the existing project creation/selection flow. Physical-board projects keep their board, HDL, top module, build settings, and pin constraints. **Register Builder** and **Memory Asset Studio** are clearly marked Coming soon workspaces.
+
+1. Add a momentary button, toggle switch, LED, LED bank, direct seven-segment display (a–g plus DP), or UART terminal from the library.
+2. Select a device to rename it, set polarity/initial state, and map each channel to a structurally discovered RTL port/bit. Drag its heading or edit X/Y to arrange it. Duplicate and Remove work while stopped; duplicate input connections are cleared to avoid driver conflicts.
+3. Map the optional scalar clock and set its frequency. **Compile & Start** compiles real RTL with Verilator and starts paused. **Run** advances bounded batches; **Pause** finishes the current batch (at most 256 cycles). **Step** advances one full clock cycle, or one time quantum with no clock.
+4. **Reset to initial state** recreates the model at time zero, restores configured switches and released buttons, sets UART RX idle high, and clears terminal state. It does not synthesize a reset signal or guarantee a particular value for uninitialized user registers. **Stop** destroys the session. Source/top/configuration changes require recompilation.
+5. Save with Cmd/Ctrl+S or the existing autosave. Devices, connections, layout, labels, polarity, switch initial states, clock settings, and UART preferences live in `allora-project.json` under `peripheralWorkbench`. Existing `simulation` mappings are migrated on first use without changing their original data. A legacy reset mapping becomes a momentary button.
+
+UART is **8N1, idle high**; TX maps the FPGA output and RX the FPGA input. Text uses UTF-8, hex accepts byte pairs, and line endings are selectable. Send while paused queues bytes until Run/Step; sending while stopped is disabled. Clear clears received data/framing diagnostics. The queue holds up to 4096 bytes and receive history retains the newest 8192 bytes. Use a simulation frequency at least 16× baud. UART RX transitions are placed at rounded cycle boundaries; every half-cycle in every batch is decoded, not just UI refresh snapshots. LED/display transition counts also process the complete trace. The display drawing shows the latest direct signal state.
+
+Yosys, Verilator, and a working C++ toolchain are required. V1 supports synthesizable Verilog/SystemVerilog input/output ports up to 64 bits, direct segment signals, and one optional scalar clock. VHDL, `inout`, multiplexed displays, serial flow control/parity variants, and physical electrical behavior are not supported by this workspace. Missing tools, failed compilation, invalid mappings, and simulator termination surface diagnostics. Simulation is deterministic cycle stepping, not wall-clock emulation.
+
+Try [`examples/peripheral-workbench`](examples/peripheral-workbench) for UART echo plus direct devices, [`examples/peripheral-vector-polarity`](examples/peripheral-vector-polarity) for exact high vector bits, or the existing virtual counter for mapping migration.
+
+Validation (from the repository root):
+
+```sh
+npm --prefix allora-fpga run build
+npm --prefix allora-fpga run lint
+cargo test --manifest-path allora-fpga/src-tauri/Cargo.toml --no-fail-fast
+```
+
+The `workbench_` Rust integration tests require actual Yosys and Verilator; missing tools fail instead of silently skipping. They compile the production C++ harness and run the production TypeScript peripheral models against real RTL, covering I/O, vector polarity, direct display patterns, UART echo across batches, lifecycle, initial states, metadata save/reopen/migration, invalid mappings, conflicting drivers, and exact 64-bit values. `allora-fpga/tests/workbench-ui.html` is a UI-only development fixture; it deliberately has no mock simulator and reports missing Tauri when viewed in a browser.

@@ -13,6 +13,14 @@ The product has two equal execution paths:
 
 Both paths operate on disk-backed Allora projects. A project can remember its most recent execution target, but virtual mappings and physical board constraints remain separate concerns.
 
+## Peripheral Workbench V1
+
+Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Only Peripheral Workbench is implemented; the latter two are Coming soon states. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
+
+`src/lib/peripheralWorkbench.ts` owns versioned metadata, mapping validation, legacy migration, UART host models, and serialized cycle advancement. `src/pages/dashboard/PeripheralWorkbench.tsx` owns library/canvas/inspector UI and the simulation command queue. Metadata is stored separately under `peripheralWorkbench`; physical constraints and original `simulation` metadata are preserved. Workbench source changes invalidate sessions, and leaving the workspace releases buttons and pauses execution.
+
+The existing Rust Verilator backend now compiles/discovers ports on blocking worker threads, uses collision-resistant temporary directories, returns every half-cycle trace point, uses configured picosecond timing, and accepts decimal strings for precise 64-bit inputs. Workbench run batches are bounded at 256 cycles and split at UART transmit deadlines. UART decoding and output activity capture consume all trace events before UI refresh. Reset recreates the entire model. See README and the two peripheral examples for operation and test commands.
+
 ## Repository layout
 
 - `allora-fpga/` — React/TypeScript frontend and Tauri/Rust desktop application.
