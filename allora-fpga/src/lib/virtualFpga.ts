@@ -6,6 +6,8 @@ export type RtlPort = {
   name: string;
   direction: "input" | "output" | "inout" | "unknown";
   width: number;
+  offset?: number;
+  upto?: boolean;
 };
 
 export type VirtualPeripheralType =
@@ -247,7 +249,7 @@ export const virtualFpgaApi = {
     projectPath?: string;
   }) =>
     invokeTauri<StartSimulationResult>("start_virtual_simulation", { request }),
-  setInput: (sessionId: number, signal: string, value: number) =>
+  setInput: (sessionId: number, signal: string, value: number | string) =>
     invokeTauri<SimulationSnapshot>("set_virtual_simulation_input", {
       request: { sessionId, signal, value },
     }),

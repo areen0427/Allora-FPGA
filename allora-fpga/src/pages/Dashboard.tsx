@@ -1,3 +1,5 @@
+import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
+import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
 import { useState, useEffect } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 import type { BoardDefinition } from "../data/boards";
@@ -107,7 +109,7 @@ export default function Dashboard({
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>(launchTarget);
   const [activeSection, setActiveSection] = useState<DashboardSection>(
-    launchTarget === "simulate" ? "virtual-fpga" : "editor",
+    launchTarget === "simulate" ? "peripheral-workbench" : "editor",
   );
   // Track which sections have been opened so we can keep them mounted (and
   // their generated output intact) after the user switches away.
@@ -148,13 +150,13 @@ export default function Dashboard({
 
   useEffect(() => {
     setExecutionTarget(launchTarget);
-    setActiveSection(launchTarget === "simulate" ? "virtual-fpga" : "editor");
+    setActiveSection(launchTarget === "simulate" ? "peripheral-workbench" : "editor");
   }, [launchTarget]);
 
   function changeExecutionTarget(target: ExecutionTarget) {
     if (board.id === "allora-virtual" && target === "build") return;
     setExecutionTarget(target);
-    setActiveSection(target === "simulate" ? "virtual-fpga" : "editor");
+    setActiveSection(target === "simulate" ? "peripheral-workbench" : "editor");
     onExecutionTargetChange(target);
   }
 
@@ -317,6 +319,19 @@ export default function Dashboard({
     return true;
   }
 
+  function handleUpdateWorkbench(config: Workbench) {
+    const metadata = fileMgmt.files.find(file => file.name === "allora-project.json");
+    try {
+      if (!metadata || metadata.isBinary) throw new Error("Peripheral Workbench requires readable project metadata.");
+      const content = writeWorkbench(metadata.content, config);
+      fileMgmt.setFiles(current => current.map(file => file.name === metadata.name ? { ...file, content } : file));
+      markWorkspaceUnsaved(metadata.name);
+    } catch (error) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage(String(error));
+    }
+  }
+
   function handleUpdateVirtualConfig(config: VirtualFpgaConfig) {
     const metadata = fileMgmt.files.find(
       (file) => file.name === "allora-project.json",
@@ -454,6 +469,9 @@ export default function Dashboard({
               active={activeSection === "editor"}
               onClick={() => setActiveSection("editor")}
             />
+            <SidebarButton label="Peripheral Workbench" icon={<Zap size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
+            <SidebarButton label="Register Builder" comingSoon icon={<Binary size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
+            <SidebarButton label="Memory Asset Studio" comingSoon icon={<Code2 size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
             {executionTarget === "simulate" ? (
               <SidebarButton
                 label="Virtual"
@@ -772,6 +790,10 @@ export default function Dashboard({
           />
         )}
 
+        <KeepAliveSection active={activeSection === "peripheral-workbench"} visited={visitedSections.has("peripheral-workbench")}>
+          <PeripheralWorkbench files={fileMgmt.files} topLevelFileName={activeTabs.topLevelFileName} active={activeSection === "peripheral-workbench"} onChange={handleUpdateWorkbench} />
+        </KeepAliveSection>
+        {(activeSection === "register-builder" || activeSection === "memory-asset-studio") && <section className="pw pw-coming"><span className="pw-kicker">COMING SOON</span><h1>{activeSection === "register-builder" ? "Register Builder" : "Memory Asset Studio"}</h1><p>This workspace is planned and is not available yet. Your current project remains open.</p><button onClick={() => setActiveSection("peripheral-workbench")}>Open Peripheral Workbench</button></section>}
         <KeepAliveSection
           active={activeSection === "virtual-fpga"}
           visited={visitedSections.has("virtual-fpga")}

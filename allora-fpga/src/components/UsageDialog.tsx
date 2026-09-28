@@ -21,7 +21,17 @@ export function UsageDialog({
   const [usage, setUsage] = useState<ResourceUsage | null>(null);
   const [error, setError] = useState("");
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [showNumbers, setShowNumbers] = useState(() =>
+    document.documentElement.dataset.reduceMotion === "true" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showNumbers) return;
+    const timer = window.setTimeout(() => setShowNumbers(true), 320);
+    return () => window.clearTimeout(timer);
+  }, [showNumbers]);
 
   useLayoutEffect(() => {
     function place() {
@@ -37,7 +47,7 @@ export function UsageDialog({
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [anchor, usage, error]);
+  }, [anchor, usage, error, showNumbers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,25 +114,29 @@ export function UsageDialog({
             </div>
           </div>
         </header>
-        {usage ? (
-          <div className="usage-metrics">
-            <div className="usage-metric">
-              <span>CPU</span>
-              <strong>{usage.cpuPercent.toFixed(1)}%</strong>
-            </div>
-            <div className="usage-metric">
-              <span>Memory</span>
-              <strong>{formatMemory(usage.memoryBytes)}</strong>
-              <small>
-                {usage.totalMemoryBytes
-                  ? `${((usage.memoryBytes / usage.totalMemoryBytes) * 100).toFixed(1)}% of installed RAM`
-                  : "Resident memory"}
-              </small>
-            </div>
+        <div className="usage-metrics">
+          <div className="usage-metric">
+            <span>CPU</span>
+            <strong className={showNumbers && usage ? "is-ready" : undefined}>
+              {showNumbers && usage ? `${usage.cpuPercent.toFixed(1)}%` : "—"}
+            </strong>
           </div>
-        ) : null}
-        {error ? <p className="usage-error" role="status">{error}</p> : null}
-        {!usage && !error ? <p className="usage-loading">Measuring usage…</p> : null}
+          <div className="usage-metric">
+            <span>Memory</span>
+            <strong className={showNumbers && usage ? "is-ready" : undefined}>
+              {showNumbers && usage ? formatMemory(usage.memoryBytes) : "—"}
+            </strong>
+            <small>
+              {showNumbers && usage
+                ? usage.totalMemoryBytes
+                  ? `${((usage.memoryBytes / usage.totalMemoryBytes) * 100).toFixed(1)}% of installed RAM`
+                  : "Resident memory"
+                : "\u00a0"}
+            </small>
+          </div>
+        </div>
+        {showNumbers && error ? <p className="usage-error" role="status">{error}</p> : null}
+        {showNumbers && !usage && !error ? <p className="usage-loading">Measuring usage…</p> : null}
     </div>
   );
 }

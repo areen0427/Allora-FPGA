@@ -104,7 +104,6 @@ export default function BoardSelect({
       {activeView === "home" ? (
         <HomeView
           key={homeViewKey}
-          theme={settings.theme}
           reduceMotion={settings.reduceMotion}
           settings={settings}
           boards={supportedBoards}

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { isTauri } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Activity,
   ArrowLeft,
@@ -9,7 +11,6 @@ import {
   FolderClock,
   FolderOpen,
   Gauge,
-  Info,
   Keyboard,
   Layers3,
   Map as MapIcon,
@@ -30,9 +31,9 @@ import { getBoardIcon } from "../boardIcons";
 import type { ExecutionTarget } from "../dashboard/types";
 import type { AppSettings } from "../../data/settings";
 import VirtualPcbDiagram from "../../components/VirtualPcbDiagram";
+import { version } from "../../../package.json";
 
 type HomeViewProps = {
-  theme: "ice" | "black-ice";
   reduceMotion: boolean;
   settings: AppSettings;
   boards: BoardCatalogItem[];
@@ -51,6 +52,8 @@ type HomeViewProps = {
   onRemoveRecentProject: (projectId: string) => void;
   onSettingsChange: (settings: AppSettings) => void;
 };
+
+type HomePath = ExecutionTarget | "peripheral-workbench";
 
 export function HomeView({
   reduceMotion,
@@ -71,8 +74,8 @@ export function HomeView({
   onRemoveRecentProject,
   onSettingsChange,
 }: HomeViewProps) {
-  const [path, setPath] = useState<ExecutionTarget | null>(null);
-  const [departingPath, setDepartingPath] = useState<ExecutionTarget | null>(
+  const [path, setPath] = useState<HomePath | null>(null);
+  const [departingPath, setDepartingPath] = useState<HomePath | null>(
     null,
   );
   const [showProductInfo, setShowProductInfo] = useState(false);
@@ -126,23 +129,18 @@ export function HomeView({
             onClick={() => setShowProductInfo((visible) => !visible)}
           >
             <span className="welcome-brand-mark">
-              <CircuitBoard size={18} />
+              <img src="/product-info.svg" alt="" aria-hidden="true" />
             </span>
             <span className="welcome-brand-copy">
               <strong>ALLORA</strong>
-              <small>FPGA development environment</small>
+              <small>Product Information</small>
             </span>
-            <Info
-              className="welcome-brand-info-icon"
-              size={15}
-              aria-hidden="true"
-            />
           </button>
           {showProductInfo ? (
             <section
               ref={productInfoRef}
               id="welcome-product-info"
-              className="welcome-product-info"
+              className={`welcome-product-info${reduceMotion ? "" : " glass-unfold"}`}
               aria-label="About Allora FPGA"
             >
               <header className="welcome-product-info-header">
@@ -154,14 +152,21 @@ export function HomeView({
               <div className="welcome-product-info-meta">
                 <span>
                   <small>Version</small>
-                  <strong>0.0.0</strong>
+                  <strong>{version}</strong>
                 </span>
                 <a
-                  href="https://github.com/areen0427/Allora-FPGA#readme"
+                  href="https://areen0427.github.io/Allora-FPGA/"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
+                  onClick={(event) => {
+                    if (!isTauri()) return;
+                    event.preventDefault();
+                    void openUrl(event.currentTarget.href).catch((error) => {
+                      console.error("Could not open the Allora FPGA website", error);
+                    });
+                  }}
                 >
-                  <BookOpen size={14} /> Documentation{" "}
+                  <BookOpen size={14} /> Website{" "}
                   <ExternalLink size={11} />
                 </a>
               </div>
@@ -238,9 +243,17 @@ export function HomeView({
       <div className="welcome-destination-content">
         <PageHeader
           eyebrow="Allora FPGA"
-          title={path === "simulate" ? "Simulate" : "Build"}
+          title={
+            path === "peripheral-workbench"
+              ? "Peripheral Workbench"
+              : path === "simulate"
+                ? "Simulate"
+                : "Build"
+          }
           subtitle={
-            path === "simulate"
+            path === "peripheral-workbench"
+              ? "Connect real RTL to controls, indicators, and a UART terminal."
+              : path === "simulate"
               ? "Bring RTL to life before hardware."
               : "Target a board and take your design to silicon."
           }
@@ -258,6 +271,16 @@ export function HomeView({
             onRemoveProject={onRemoveRecentProject}
             settings={settings}
             onSettingsChange={onSettingsChange}
+          />
+        ) : path === "peripheral-workbench" ? (
+          <WorkbenchHome
+            recentProjects={recentProjects}
+            isOpening={isOpeningExistingProject}
+            error={openExistingProjectError}
+            onOpenExisting={() => onOpenExistingProject("simulate")}
+            onCreateProject={onCreateSimulationProject}
+            onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
+            onRemoveProject={onRemoveRecentProject}
           />
         ) : (
           <div className="welcome-home-layout">
@@ -327,8 +350,8 @@ function ExecutionPathChooser({
   onChoose,
   onOpenPinMapping,
 }: {
-  selectedTarget: ExecutionTarget | null;
-  onChoose: (target: ExecutionTarget) => void;
+  selectedTarget: HomePath | null;
+  onChoose: (target: HomePath) => void;
   onOpenPinMapping: () => void;
 }) {
   return (
@@ -345,18 +368,13 @@ function ExecutionPathChooser({
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
             <span className="execution-path-kicker">
-              <Sparkles size={14} aria-hidden="true" /> Virtual FPGA
+              Virtual FPGA
             </span>
             <span className="execution-path-title-row">
               <h2>Simulate</h2>
-              <i className="execution-path-glyph" aria-hidden="true">
-                <b />
-                <b />
-                <b />
-              </i>
             </span>
             <span className="execution-path-microcopy">
-              RTL · Signals · No hardware
+              Test and Visualize RTL
             </span>
           </div>
         </button>
@@ -374,30 +392,92 @@ function ExecutionPathChooser({
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
             <span className="execution-path-kicker">
-              <CircuitBoard size={14} aria-hidden="true" /> Physical FPGA
+              Physical FPGA
             </span>
             <span className="execution-path-title-row">
               <h2>Build</h2>
-              <i className="execution-path-glyph" aria-hidden="true">
-                <b />
-                <b />
-                <b />
-              </i>
             </span>
             <span className="execution-path-microcopy">
-              Synthesis · Bitstream · Program
+              Build and Program FPGAs
             </span>
           </div>
         </button>
+      </div>
+
+      <div className="execution-path-option workbench-option">
         <button
           type="button"
-          className="pin-mapping-quick-action"
-          onClick={onOpenPinMapping}
+          onClick={() => onChoose("peripheral-workbench")}
+          className={`execution-path-card workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`}
           disabled={selectedTarget !== null}
         >
-          <MapIcon size={14} /> Open Pin Mapper
+          <span className="glass-edge glass-edge-top" aria-hidden="true" />
+          <span className="glass-edge glass-edge-side" aria-hidden="true" />
+          <span className="glass-specular" aria-hidden="true" />
+          <div className="execution-path-copy">
+            <span className="execution-path-kicker">
+              Interactive RTL
+            </span>
+            <span className="execution-path-title-row">
+              <h2>Peripheral Workbench</h2>
+            </span>
+            <span className="execution-path-microcopy">
+              Connect RTL to Peripherals
+            </span>
+          </div>
         </button>
       </div>
+
+      <div className="execution-path-option">
+        <button
+          type="button"
+          className="execution-path-card preview-card register-builder"
+          disabled
+        >
+          <span className="glass-edge glass-edge-top" aria-hidden="true" />
+          <span className="glass-edge glass-edge-side" aria-hidden="true" />
+          <span className="glass-specular" aria-hidden="true" />
+          <div className="execution-path-copy">
+            <span className="execution-path-kicker">Coming soon</span>
+            <span className="execution-path-title-row">
+              <h2>Register Builder</h2>
+            </span>
+            <span className="execution-path-microcopy">
+              Automated Register Mapping
+            </span>
+          </div>
+        </button>
+      </div>
+
+      <div className="execution-path-option">
+        <button
+          type="button"
+          className="execution-path-card preview-card memory-asset-studio"
+          disabled
+        >
+          <span className="glass-edge glass-edge-top" aria-hidden="true" />
+          <span className="glass-edge glass-edge-side" aria-hidden="true" />
+          <span className="glass-specular" aria-hidden="true" />
+          <div className="execution-path-copy">
+            <span className="execution-path-kicker">Coming soon</span>
+            <span className="execution-path-title-row">
+              <h2>Memory Asset Studio</h2>
+            </span>
+            <span className="execution-path-microcopy">
+              Create FPGA Memory Assets
+            </span>
+          </div>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="pin-mapping-quick-action"
+        onClick={onOpenPinMapping}
+        disabled={selectedTarget !== null}
+      >
+        <MapIcon size={14} /> Open Pin Mapper
+      </button>
     </section>
   );
 }
@@ -533,8 +613,8 @@ function SimulationHome({
             </span>
             <h2>Validate your design before it reaches the board.</h2>
             <p>
-              Compile real RTL, exercise mapped inputs, and inspect every signal
-              in one focused simulation workspace.
+              Run testbenches, inspect waveforms, and verify signal behavior in
+              one focused simulation workspace.
             </p>
           </div>
           <div className="simulation-welcome-actions">
@@ -577,6 +657,69 @@ function SimulationHome({
           emptyMessage="Open an Allora project to begin simulating."
           showSimulationSummary
         />
+      </div>
+    </div>
+  );
+}
+
+function WorkbenchHome({
+  recentProjects,
+  isOpening,
+  error,
+  onOpenExisting,
+  onCreateProject,
+  onOpenProject,
+  onRemoveProject,
+}: {
+  recentProjects: SavedProject[];
+  isOpening: boolean;
+  error: string;
+  onOpenExisting: () => void;
+  onCreateProject: () => void;
+  onOpenProject: (projectId: string) => void;
+  onRemoveProject: (projectId: string) => void;
+}) {
+  return (
+    <div className="workbench-home-layout">
+      <section className="workbench-home-intro">
+        <span className="workbench-home-eyebrow">
+          <Zap size={15} /> Interactive RTL workspace
+        </span>
+        <h2>Bring your top-level signals to life.</h2>
+        <p>
+          Open any Allora project, including one for a physical board. Add
+          buttons, switches, LEDs, direct seven-segment displays, and a UART
+          terminal, then connect them to your RTL ports.
+        </p>
+        <div className="workbench-home-actions">
+          <button type="button" onClick={onOpenExisting} disabled={isOpening}>
+            <FolderOpen size={17} />
+            {isOpening ? "Opening…" : "Open existing project"}
+          </button>
+          <button type="button" onClick={onCreateProject}>
+            <Play size={17} /> Create simulation project
+          </button>
+        </div>
+        {error ? <div className="open-project-error" role="alert">{error}</div> : null}
+        <ol className="workbench-home-steps" aria-label="Getting started">
+          <li><strong>1</strong><span>Choose a project</span></li>
+          <li><strong>2</strong><span>Map devices to RTL</span></li>
+          <li><strong>3</strong><span>Compile and run</span></li>
+        </ol>
+      </section>
+      <div className="workbench-home-sidebar">
+        <RecentProjectsCard
+          projects={recentProjects}
+          onOpenProject={onOpenProject}
+          onRemoveProject={onRemoveProject}
+          emptyMessage="Create a simulation project or open an existing project folder."
+          description="Choose any project to open its Peripheral Workbench."
+          expandableToFive
+        />
+        <p>
+          Physical projects keep their selected board and pin constraints.
+          Peripheral connections are saved separately in the project.
+        </p>
       </div>
     </div>
   );
@@ -778,6 +921,7 @@ function RecentProjectsCard({
   onOpenProject,
   onRemoveProject,
   emptyMessage,
+  description,
   showSimulationSummary = false,
   expandableToFive = false,
 }: {
@@ -785,6 +929,7 @@ function RecentProjectsCard({
   onOpenProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
   emptyMessage?: string;
+  description?: string;
   showSimulationSummary?: boolean;
   expandableToFive?: boolean;
 }) {
@@ -797,7 +942,7 @@ function RecentProjectsCard({
     <aside className="liquid-home-card recent-projects-card">
       <div className="recent-projects-header">
         <h2>Recent Projects</h2>
-        <p>Your latest FPGA workspaces will appear here.</p>
+        <p>{description ?? "Your latest FPGA workspaces will appear here."}</p>
       </div>
 
       {projects.length === 0 ? (

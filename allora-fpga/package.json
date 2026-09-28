@@ -1,7 +1,7 @@
 {
   "name": "allora-fpga",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,6 +20,7 @@
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.1.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-opener": "^2.6.0",
     "elkjs": "^0.12.0",
     "lucide-react": "^1.17.0",
     "monaco-editor-textmate": "^4.0.0",

@@ -1,5 +1,8 @@
 export type DashboardSection =
   | "editor"
+  | "peripheral-workbench"
+  | "register-builder"
+  | "memory-asset-studio"
   | "virtual-fpga"
   | "synthesis"
   | "testbench"

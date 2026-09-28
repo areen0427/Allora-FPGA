@@ -1,4 +1,4 @@
-use crate::{create_work_dir, error, tool_command, ErrorPayload};
+use crate::{error, tool_command, ErrorPayload};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,6 +29,8 @@ pub struct RtlPort {
     pub name: String,
     pub direction: String,
     pub width: usize,
+    pub offset: i64,
+    pub upto: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -93,7 +95,7 @@ struct HarnessTracePoint {
 pub struct SetInputRequest {
     pub session_id: u32,
     pub signal: String,
-    pub value: u64,
+    pub value: Value,
 }
 
 #[derive(Debug, Deserialize)]
@@ -139,10 +141,10 @@ impl Drop for VirtualFpgaSession {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct VirtualFpgaState {
-    sessions: Mutex<HashMap<u32, VirtualFpgaSession>>,
-    next_id: AtomicU32,
+    sessions: Arc<Mutex<HashMap<u32, VirtualFpgaSession>>>,
+    next_id: Arc<AtomicU32>,
 }
 
 #[tauri::command]
@@ -160,14 +162,30 @@ pub fn detect_simulation_tools() -> SimulationToolsResponse {
 }
 
 #[tauri::command]
-pub fn discover_rtl_ports(request: DiscoverPortsRequest) -> Result<Vec<RtlPort>, ErrorPayload> {
-    discover_ports(&request.source_files, &request.top_module)
+pub async fn discover_rtl_ports(
+    request: DiscoverPortsRequest,
+) -> Result<Vec<RtlPort>, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || {
+        discover_ports(&request.source_files, &request.top_module)
+    })
+    .await
+    .map_err(|err| error(&format!("Port discovery task failed: {err}")))?
 }
 
 #[tauri::command]
-pub fn start_virtual_simulation(
+pub async fn start_virtual_simulation(
     request: StartSimulationRequest,
     state: tauri::State<'_, VirtualFpgaState>,
+) -> Result<StartSimulationResponse, ErrorPayload> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || start_simulation(request, &state))
+        .await
+        .map_err(|err| error(&format!("Simulation compiler task failed: {err}")))?
+}
+
+fn start_simulation(
+    request: StartSimulationRequest,
+    state: &VirtualFpgaState,
 ) -> Result<StartSimulationResponse, ErrorPayload> {
     validate_identifier(&request.top_module, "top module")?;
     if request.source_files.is_empty() {
@@ -190,8 +208,8 @@ pub fn start_virtual_simulation(
     if let Some(clock) = request.clock_signal.as_deref() {
         validate_input_mapping(&ports, clock)?;
     }
-    let frequency = request.clock_frequency_hz.max(1);
-    let workspace = create_work_dir("virtual_fpga")?;
+    let frequency = request.clock_frequency_hz.clamp(1, 1_000_000_000);
+    let workspace = simulation_work_dir("virtual_fpga")?;
     let source_paths = write_sources(&workspace, &request.source_files)?;
     let harness_path = workspace.join("allora_harness.cpp");
     let vcd_path = request.enable_vcd.unwrap_or(true).then(|| {
@@ -209,7 +227,12 @@ pub fn start_virtual_simulation(
     }
     fs::write(
         &harness_path,
-        generate_harness(&request.top_module, &ports, vcd_path.as_deref()),
+        generate_harness(
+            &request.top_module,
+            &ports,
+            vcd_path.as_deref(),
+            1_000_000_000_000 / frequency,
+        ),
     )
     .map_err(|err| error(&format!("Unable to write the Verilator harness: {err}")))?;
 
@@ -257,7 +280,7 @@ pub fn start_virtual_simulation(
     let mut child = Command::new(&executable)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::inherit())
         .spawn()
         .map_err(|err| {
             let _ = fs::remove_dir_all(&workspace);
@@ -324,17 +347,26 @@ pub fn set_virtual_simulation_input(
     let session = sessions
         .get_mut(&request.session_id)
         .ok_or_else(|| error("The Virtual FPGA simulation is no longer running."))?;
+    set_input_value(session, &request.signal, &request.value)
+}
+
+fn set_input_value(
+    session: &mut VirtualFpgaSession,
+    signal: &str,
+    raw: &Value,
+) -> Result<SimulationSnapshot, ErrorPayload> {
     let width = *session
         .input_ports
-        .get(&request.signal)
+        .get(signal)
         .ok_or_else(|| error("The mapped signal is not an input port."))?;
-    if width < 64 && request.value >= (1u64 << width) {
+    let value = raw
+        .as_u64()
+        .or_else(|| raw.as_str().and_then(|s| s.parse::<u64>().ok()))
+        .ok_or_else(|| error("Input must be an unsigned 64-bit integer."))?;
+    if width < 64 && value >= (1u64 << width) {
         return Err(error("The input value does not fit the signal width."));
     }
-    exchange(
-        session,
-        &format!("SET {} {}", request.signal, request.value),
-    )
+    exchange(session, &format!("SET {signal} {value}"))
 }
 
 #[tauri::command]
@@ -412,6 +444,16 @@ pub fn stop_virtual_simulation(
     Ok(session.and_then(|session| session.waveform_path.clone()))
 }
 
+// Random, atomically-created directories prevent concurrent discovery/compile jobs
+// from sharing source files (timestamp-only directory names could collide).
+fn simulation_work_dir(label: &str) -> Result<PathBuf, ErrorPayload> {
+    tempfile::Builder::new()
+        .prefix(&format!("allora-{label}-"))
+        .tempdir()
+        .map(|dir| dir.keep())
+        .map_err(|err| error(&format!("Unable to create simulation workspace: {err}")))
+}
+
 fn availability(command: &str, hint: &str) -> ToolAvailability {
     let path = tool_command(command);
     let available = Command::new(&path).arg("--version").output().is_ok();
@@ -432,7 +474,7 @@ fn discover_ports(
             "No HDL source files were provided for port discovery.",
         ));
     }
-    let workspace = create_work_dir("port_discovery")?;
+    let workspace = simulation_work_dir("port_discovery")?;
     let paths = write_sources(&workspace, files)?;
     let json_path = workspace.join("design.json");
     let read_files = paths
@@ -484,6 +526,8 @@ fn discover_ports(
                 .and_then(Value::as_str)
                 .unwrap_or("unknown")
                 .to_string(),
+            offset: port.get("offset").and_then(Value::as_i64).unwrap_or(0),
+            upto: port.get("upto").and_then(Value::as_u64).unwrap_or(0) != 0,
             width: port
                 .get("bits")
                 .and_then(Value::as_array)
@@ -562,38 +606,15 @@ fn validate_input_mapping(ports: &[RtlPort], signal: &str) -> Result<(), ErrorPa
     }
 }
 
-fn step_session(
-    session: &mut VirtualFpgaSession,
-    cycles: u32,
-) -> Result<SimulationSnapshot, ErrorPayload> {
-    let command = if let Some(clock) = &session.clock_signal {
-        format!("STEP {clock} {cycles}")
-    } else {
-        format!("EVAL {cycles}")
-    };
-    let mut snapshot = exchange(session, &command)?;
-    session.sim_time_ps = session.sim_time_ps.saturating_add(
-        (1_000_000_000_000u64 / session.clock_frequency_hz).saturating_mul(cycles as u64),
-    );
-    snapshot.sim_time_ps = session.sim_time_ps;
-    Ok(snapshot)
-}
-
 fn step_session_with_trace(
     session: &mut VirtualFpgaSession,
     cycles: u32,
 ) -> Result<SimulationStepResponse, ErrorPayload> {
-    let Some(clock) = session.clock_signal.clone() else {
-        let state = step_session(session, cycles)?;
-        return Ok(SimulationStepResponse {
-            trace: vec![state.clone()],
-            state,
-        });
-    };
+    let clock = session.clock_signal.clone().unwrap_or_else(|| "-".into());
 
     let start_time_ps = session.sim_time_ps;
     let period_ps = 1_000_000_000_000u64 / session.clock_frequency_hz;
-    let captured_cycles = cycles.min(80);
+    let captured_cycles = cycles;
     let command = format!("TRACE {clock} {cycles} {captured_cycles}");
     let points = exchange_trace(session, &command)?;
     session.sim_time_ps = session
@@ -672,7 +693,12 @@ fn exchange_trace(
     }
 }
 
-fn generate_harness(top: &str, ports: &[RtlPort], vcd_path: Option<&Path>) -> String {
+fn generate_harness(
+    top: &str,
+    ports: &[RtlPort],
+    vcd_path: Option<&Path>,
+    period_ps: u64,
+) -> String {
     let set_cases = ports
         .iter()
         .filter(|port| port.direction == "input")
@@ -701,6 +727,7 @@ fn generate_harness(top: &str, ports: &[RtlPort], vcd_path: Option<&Path>) -> St
         r#"#include <verilated.h>
 #include <verilated_vcd_c.h>
 #include <iostream>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include "V{top}.h"
@@ -712,7 +739,7 @@ int main(int argc, char** argv) {{
   VerilatedVcdC trace;
   const bool tracing = {tracing};
   if (tracing) {{ context.traceEverOn(true); top.trace(&trace, 99); trace.open("{vcd_literal}"); }}
-  auto evaluate = [&]() {{ top.eval(); if (tracing) trace.dump(context.time()); }};
+  auto evaluate = [&]() {{ top.eval(); if (context.gotFinish()) std::exit(0); if (tracing) trace.dump(context.time()); }};
   auto set_input = [&](const std::string& name, unsigned long long value) {{
 {set_cases}
   }};
@@ -739,7 +766,7 @@ int main(int argc, char** argv) {{
     if (command == "SET") {{ input >> name >> value; set_input(name, value); evaluate(); }}
     else if (command == "STEP") {{
       input >> name >> cycles;
-      for (unsigned i = 0; i < cycles; ++i) {{ set_input(name, 1); evaluate(); context.timeInc(1); set_input(name, 0); evaluate(); context.timeInc(1); }}
+      for (unsigned i = 0; i < cycles; ++i) {{ set_input(name, 1); evaluate(); context.timeInc({half_period_ps}); set_input(name, 0); evaluate(); context.timeInc({remaining_period_ps}); }}
     }} else if (command == "TRACE") {{
       unsigned capture_cycles = 1;
       input >> name >> cycles >> capture_cycles;
@@ -756,20 +783,22 @@ int main(int argc, char** argv) {{
       for (unsigned i = 0; i < cycles; ++i) {{
         set_input(name, 1); evaluate();
         if (i >= capture_start) capture(static_cast<unsigned long long>(i) * 2);
-        context.timeInc(1);
+        context.timeInc({half_period_ps});
         set_input(name, 0); evaluate();
         if (i >= capture_start) capture(static_cast<unsigned long long>(i) * 2 + 1);
-        context.timeInc(1);
+        context.timeInc({remaining_period_ps});
       }}
       samples << ']';
       std::cout << "ALLORA_TRACE:" << samples.str() << std::endl;
       continue;
-    }} else if (command == "EVAL") {{ input >> cycles; for (unsigned i = 0; i < cycles; ++i) {{ evaluate(); context.timeInc(1); }} }}
+    }} else if (command == "EVAL") {{ input >> cycles; for (unsigned i = 0; i < cycles; ++i) {{ evaluate(); context.timeInc({half_period_ps}); }} }}
     send_state();
   }}
   top.final(); if (tracing) trace.close(); return 0;
 }}
 "#,
+        half_period_ps = period_ps / 2,
+        remaining_period_ps = period_ps - period_ps / 2,
         tracing = if vcd_path.is_some() { "true" } else { "false" }
     )
 }
@@ -794,20 +823,145 @@ mod tests {
     use super::*;
 
     #[test]
+    fn workbench_real_rtl_and_host_integration() {
+        // Required integration test: missing tools are a failure, never a silent pass.
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_path_buf();
+        let source = root.join("../examples/peripheral-workbench/src/workbench_demo.sv");
+        let files = vec![SimulationSourceFile {
+            name: "workbench_demo.sv".into(),
+            content: fs::read_to_string(source).unwrap(),
+        }];
+        let state = VirtualFpgaState::default();
+        let result = start_simulation(
+            StartSimulationRequest {
+                source_files: files,
+                top_module: "workbench_demo".into(),
+                clock_signal: Some("clk".into()),
+                clock_frequency_hz: 1_843_200,
+                enable_vcd: Some(false),
+                project_path: None,
+            },
+            &state,
+        )
+        .expect("compile real workbench RTL with Yosys and Verilator");
+        let mut sessions = state.sessions.lock().unwrap();
+        let session = sessions.get_mut(&result.session_id).unwrap();
+        let result = step_session_with_trace(session, 256).unwrap();
+        assert_eq!(result.trace.len(), 512);
+        assert_eq!(
+            result.state.sim_time_ps,
+            (1_000_000_000_000u64 / 1_843_200) * 256
+        );
+        let ports_file = session.workspace.join("ports.json");
+        fs::write(
+            &ports_file,
+            serde_json::to_vec(
+                &discover_ports(
+                    &[SimulationSourceFile {
+                        name: "workbench_demo.sv".into(),
+                        content: fs::read_to_string(
+                            root.join("../examples/peripheral-workbench/src/workbench_demo.sv"),
+                        )
+                        .unwrap(),
+                    }],
+                    "workbench_demo",
+                )
+                .unwrap(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let status = Command::new("node")
+            .arg("tests/workbench-integration.mjs")
+            .arg(session.workspace.join("obj_dir/Vworkbench_demo"))
+            .arg(ports_file)
+            .current_dir(&root)
+            .status()
+            .expect("run Node host integration tests");
+        assert!(status.success(), "Workbench host/RTL integration failed");
+    }
+
+    #[test]
+    fn workbench_clockless_u64_and_compile_errors() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_path_buf();
+        let state = VirtualFpgaState::default();
+        let request = |content: String| StartSimulationRequest {
+            source_files: vec![SimulationSourceFile {
+                name: "vector_polarity.sv".into(),
+                content,
+            }],
+            top_module: "vector_polarity".into(),
+            clock_signal: None,
+            clock_frequency_hz: 50_000_000,
+            enable_vcd: Some(false),
+            project_path: None,
+        };
+        assert!(start_simulation(request("module broken syntax".into()), &state).is_err());
+        let started = start_simulation(
+            request(
+                fs::read_to_string(
+                    root.join("../examples/peripheral-vector-polarity/src/vector_polarity.sv"),
+                )
+                .unwrap(),
+            ),
+            &state,
+        )
+        .unwrap();
+        let mut sessions = state.sessions.lock().unwrap();
+        let session = sessions.get_mut(&started.session_id).unwrap();
+        let snapshot = set_input_value(
+            session,
+            "inputs",
+            &Value::String("9223372036854775808".into()),
+        )
+        .unwrap();
+        assert_eq!(snapshot.values["inputs"], "9223372036854775808");
+        assert_eq!(snapshot.values["outputs"], "9223372036854775807");
+        assert!(set_input_value(session, "outputs", &Value::from(0)).is_err());
+        assert!(set_input_value(
+            session,
+            "inputs",
+            &Value::String("18446744073709551616".into())
+        )
+        .is_err());
+        let stepped = step_session_with_trace(session, 256).unwrap();
+        assert_eq!(stepped.trace.len(), 512);
+        assert_eq!(stepped.state.sim_time_ps, 20_000 * 256);
+        assert_eq!(stepped.state.values["outputs"], "9223372036854775807");
+        session.child.kill().unwrap();
+        session.child.wait().unwrap();
+        assert!(
+            step_session_with_trace(session, 1).is_err(),
+            "terminated RTL must surface an error"
+        );
+        sessions.remove(&started.session_id); // Drop removes the session and its workspace.
+    }
+
+    #[test]
     fn harness_maps_vector_and_scalar_ports() {
         let ports = vec![
             RtlPort {
                 name: "enable".into(),
                 direction: "input".into(),
                 width: 1,
+                offset: 0,
+                upto: false,
             },
             RtlPort {
                 name: "leds".into(),
                 direction: "output".into(),
                 width: 4,
+                offset: 0,
+                upto: false,
             },
         ];
-        let harness = generate_harness("counter", &ports, None);
+        let harness = generate_harness("counter", &ports, None, 10_000);
         assert!(harness.contains("top.enable = value"));
         assert!(harness.contains("top.leds"));
     }
@@ -818,6 +972,8 @@ mod tests {
             name: "wide".into(),
             direction: "output".into(),
             width: 65,
+            offset: 0,
+            upto: false,
         }];
         assert!(validate_ports(&ports).is_err());
     }
@@ -840,17 +996,23 @@ mod tests {
         assert!(ports.contains(&RtlPort {
             name: "clk".into(),
             direction: "input".into(),
-            width: 1
+            width: 1,
+            offset: 0,
+            upto: false,
         }));
         assert!(ports.contains(&RtlPort {
             name: "reset".into(),
             direction: "input".into(),
-            width: 1
+            width: 1,
+            offset: 0,
+            upto: false,
         }));
         assert!(ports.contains(&RtlPort {
             name: "leds".into(),
             direction: "output".into(),
-            width: 4
+            width: 4,
+            offset: 0,
+            upto: false,
         }));
     }
 
@@ -863,7 +1025,7 @@ mod tests {
         {
             return;
         }
-        let workspace = create_work_dir("verilator_test").expect("workspace");
+        let workspace = simulation_work_dir("verilator_test").expect("workspace");
         let source = workspace.join("counter.sv");
         fs::write(&source, "module counter(input logic clk, input logic reset, input logic enable, output logic [3:0] leds); always_ff @(posedge clk) if (reset) leds <= 0; else if (enable) leds <= leds + 1; endmodule").expect("source");
         let ports = vec![
@@ -871,25 +1033,33 @@ mod tests {
                 name: "clk".into(),
                 direction: "input".into(),
                 width: 1,
+                offset: 0,
+                upto: false,
             },
             RtlPort {
                 name: "reset".into(),
                 direction: "input".into(),
                 width: 1,
+                offset: 0,
+                upto: false,
             },
             RtlPort {
                 name: "enable".into(),
                 direction: "input".into(),
                 width: 1,
+                offset: 0,
+                upto: false,
             },
             RtlPort {
                 name: "leds".into(),
                 direction: "output".into(),
                 width: 4,
+                offset: 0,
+                upto: false,
             },
         ];
         let harness = workspace.join("harness.cpp");
-        fs::write(&harness, generate_harness("counter", &ports, None)).expect("harness");
+        fs::write(&harness, generate_harness("counter", &ports, None, 10_000)).expect("harness");
         let object_dir = workspace.join("obj_dir");
         let status = Command::new(tool_command("verilator"))
             .args([

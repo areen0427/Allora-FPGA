@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from "react";
-import { Cpu, Home, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
+import alloraIcon from "../../../src-tauri/icons/128x128.png";
 
 export type WelcomeView = "home" | "pin-mapping";
 
@@ -23,20 +24,19 @@ export function WelcomeShell({
   return (
     <div className="glass-page welcome-page">
       <aside className="home-rail welcome-rail">
-        <div className="welcome-rail-logo" aria-hidden="true">
-          <Cpu size={20} color="white" strokeWidth={2.2} />
-        </div>
-
-        <RailButton
-          active={activeView === "home"}
-          label="Home"
+        <button
+          type="button"
+          className="welcome-rail-logo"
+          title="Home"
+          aria-label="Home"
+          aria-current={activeView === "home" ? "page" : undefined}
           onClick={() => {
             onViewChange("home");
             newProjectRef.current?.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          <Home size={20} />
-        </RailButton>
+          <img src={alloraIcon} alt="" />
+        </button>
 
         <div className="welcome-rail-spacer" />
 
@@ -55,13 +55,11 @@ export function WelcomeShell({
 }
 
 function RailButton({
-  active,
   filled,
   label,
   onClick,
   children,
 }: {
-  active?: boolean;
   filled?: boolean;
   label: string;
   onClick?: () => void;
@@ -70,7 +68,7 @@ function RailButton({
   return (
     <button
       type="button"
-      className={`welcome-rail-button${active ? " active" : ""}${filled ? " filled" : ""}`}
+      className={`welcome-rail-button${filled ? " filled" : ""}`}
       title={label}
       aria-label={label}
       onClick={onClick}

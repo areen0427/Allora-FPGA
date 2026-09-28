@@ -5,6 +5,7 @@ type SidebarButtonProps = {
   icon: ReactNode;
   active: boolean;
   onClick: () => void;
+  comingSoon?: boolean;
 };
 
 export default function SidebarButton({
@@ -12,17 +13,19 @@ export default function SidebarButton({
   icon,
   active,
   onClick,
+  comingSoon = false,
 }: SidebarButtonProps) {
   return (
     <button
       type="button"
-      aria-label={label}
-      title={label}
+      aria-label={comingSoon ? `${label} (Coming soon)` : label}
+      title={comingSoon ? `${label} (Coming soon)` : label}
       className={`sidebarNavButton${active ? " active" : ""}`}
       onClick={onClick}
     >
       {icon}
       <span>{label}</span>
+      {comingSoon && <small className="sidebar-coming-soon">Coming soon</small>}
     </button>
   );
 }
