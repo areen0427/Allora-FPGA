@@ -7,6 +7,8 @@ import {
   BookOpen,
   CheckCircle2,
   CircuitBoard,
+  ChevronRight,
+  Database,
   ExternalLink,
   FolderClock,
   FolderOpen,
@@ -132,7 +134,7 @@ export function HomeView({
           <button
             ref={brandRef}
             type="button"
-            className="welcome-brand-lockup"
+            className="welcome-brand-lockup welcome-brand-compact"
             aria-expanded={showProductInfo}
             aria-controls="welcome-product-info"
             onClick={() => setShowProductInfo((visible) => !visible)}
@@ -142,7 +144,7 @@ export function HomeView({
             </span>
             <span className="welcome-brand-copy">
               <strong>ALLORA</strong>
-              <small>Product Information</small>
+              <small>Product information</small>
             </span>
           </button>
           {showProductInfo ? (
@@ -382,122 +384,45 @@ function ExecutionPathChooser({
   onOpenPinMapping: () => void;
 }) {
   return (
-    <section className="execution-path-grid">
-      <div className="execution-path-option">
-        <button
-          type="button"
-          onClick={() => onChoose("simulate")}
-          className={`execution-path-card simulate${selectedTarget === "simulate" ? " is-selected" : ""}`}
-          disabled={selectedTarget !== null}
-        >
-          <span className="glass-edge glass-edge-top" aria-hidden="true" />
-          <span className="glass-edge glass-edge-side" aria-hidden="true" />
-          <span className="glass-specular" aria-hidden="true" />
-          <div className="execution-path-copy">
-            <span className="execution-path-title-row">
-              <h2>Simulate</h2>
-            </span>
-            <span className="execution-path-microcopy">
-              Test and Visualize RTL
-            </span>
+    <div className="welcome-path-groups">
+      <section className="welcome-develop-group" aria-labelledby="welcome-develop-title">
+        <h2 className="welcome-group-label" id="welcome-develop-title">Develop</h2>
+        <div className="execution-path-grid welcome-develop-grid">
+          <div className="execution-path-option">
+            <button type="button" onClick={() => onChoose("simulate")} className={`execution-path-card simulate${selectedTarget === "simulate" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
+              <span className="glass-edge glass-edge-top" aria-hidden="true" />
+              <span className="glass-specular" aria-hidden="true" />
+              <div className="execution-path-copy"><h3>Simulate</h3><span className="execution-path-microcopy">Test & visualize RTL</span></div>
+            </button>
           </div>
-        </button>
-      </div>
-
-      <div className="execution-path-option build-option">
-        <button
-          type="button"
-          onClick={() => onChoose("build")}
-          className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`}
-          disabled={selectedTarget !== null}
-        >
-          <span className="glass-edge glass-edge-top" aria-hidden="true" />
-          <span className="glass-edge glass-edge-side" aria-hidden="true" />
-          <span className="glass-specular" aria-hidden="true" />
-          <div className="execution-path-copy">
-            <span className="execution-path-title-row">
-              <h2>Build</h2>
-            </span>
-            <span className="execution-path-microcopy">
-              Build and Program FPGAs
-            </span>
+          <div className="execution-path-option">
+            <button type="button" onClick={() => onChoose("build")} className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
+              <span className="glass-edge glass-edge-top" aria-hidden="true" />
+              <span className="glass-specular" aria-hidden="true" />
+              <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">Program your FPGA</span></div>
+            </button>
           </div>
-        </button>
-      </div>
 
-      <div className="execution-path-option workbench-option">
-        <button
-          type="button"
-          onClick={() => onChoose("peripheral-workbench")}
-          className={`execution-path-card workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`}
-          disabled={selectedTarget !== null}
-        >
-          <span className="glass-edge glass-edge-top" aria-hidden="true" />
-          <span className="glass-edge glass-edge-side" aria-hidden="true" />
-          <span className="glass-specular" aria-hidden="true" />
-          <div className="execution-path-copy">
-            <span className="execution-path-title-row">
-              <h2>Peripheral Workbench</h2>
-            </span>
-            <span className="execution-path-microcopy">
-              Connect RTL to Peripherals
-            </span>
-          </div>
-        </button>
-      </div>
-
-      <div className="execution-path-option">
-        <button
-          type="button"
-          className="execution-path-card preview-card register-builder"
-          disabled
-        >
-          <span className="glass-edge glass-edge-top" aria-hidden="true" />
-          <span className="glass-edge glass-edge-side" aria-hidden="true" />
-          <span className="glass-specular" aria-hidden="true" />
-          <div className="execution-path-copy">
-            <span className="execution-path-kicker">Coming soon</span>
-            <span className="execution-path-title-row">
-              <h2>Register Builder</h2>
-            </span>
-            <span className="execution-path-microcopy">
-              Automated Register Mapping
-            </span>
-          </div>
-        </button>
-      </div>
-
-      <div className="execution-path-option">
-        <button
-          type="button"
-          className={`execution-path-card preview-card memory-asset-studio${selectedTarget === "memory-asset-studio" ? " is-selected" : ""}`}
-          onClick={() => onChoose("memory-asset-studio")}
-          disabled={selectedTarget !== null}
-        >
-          <span className="glass-edge glass-edge-top" aria-hidden="true" />
-          <span className="glass-edge glass-edge-side" aria-hidden="true" />
-          <span className="glass-specular" aria-hidden="true" />
-          <div className="execution-path-copy">
-            <span className="execution-path-kicker">Project assets</span>
-            <span className="execution-path-title-row">
-              <h2>Memory Asset Studio</h2>
-            </span>
-            <span className="execution-path-microcopy">
-              Create FPGA Memory Assets
-            </span>
-          </div>
-        </button>
-      </div>
-
-      <button
-        type="button"
-        className="pin-mapping-quick-action"
-        onClick={onOpenPinMapping}
-        disabled={selectedTarget !== null}
-      >
-        <MapIcon size={14} /> Open Pin Mapper
-      </button>
-    </section>
+        </div>
+      </section>
+      <section className="welcome-tools-group" aria-labelledby="welcome-tools-title">
+        <h2 className="welcome-group-label" id="welcome-tools-title">Design tools</h2>
+        <div className="welcome-tools-panel">
+          <button type="button" className={`execution-path-card welcome-tool-row workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`} onClick={() => onChoose("peripheral-workbench")} disabled={selectedTarget !== null}>
+            <CircuitBoard size={18} aria-hidden="true" /><span>Peripheral Workbench</span><ChevronRight size={15} aria-hidden="true" />
+          </button>
+          <button type="button" className={`execution-path-card welcome-tool-row${selectedTarget === "memory-asset-studio" ? " is-selected" : ""}`} onClick={() => onChoose("memory-asset-studio")} disabled={selectedTarget !== null}>
+            <Database size={18} aria-hidden="true" /><span>Memory Asset Studio</span><ChevronRight size={15} aria-hidden="true" />
+          </button>
+          <button type="button" className="execution-path-card welcome-tool-row" disabled>
+            <Layers3 size={18} aria-hidden="true" /><span>Register Builder</span><small className="welcome-soon-badge">Coming soon</small>
+          </button>
+          <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenPinMapping} disabled={selectedTarget !== null}>
+            <MapIcon size={18} aria-hidden="true" /><span>Pin Mapper</span><ChevronRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
