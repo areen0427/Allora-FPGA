@@ -29,6 +29,7 @@ type Props = {
   files: ProjectFile[];
   topLevelFileName: string | null;
   active: boolean;
+  projectPath?: string;
   onChange: (config: Workbench) => void;
 };
 const message = (e: unknown) =>
@@ -41,6 +42,7 @@ export default function PeripheralWorkbench({
   files,
   topLevelFileName,
   active,
+  projectPath,
   onChange,
 }: Props) {
   const top = getConfiguredTopModule(files, topLevelFileName);
@@ -198,7 +200,7 @@ export default function PeripheralWorkbench({
     setDiscovered("");
     setPorts([]);
     void virtualFpgaApi
-      .discoverPorts(JSON.parse(sources), top)
+      .discoverPorts(JSON.parse(sources), top, projectPath)
       .then((next) => {
         if (cancelled) return;
         setPorts(next);
@@ -219,7 +221,7 @@ export default function PeripheralWorkbench({
     return () => {
       cancelled = true;
     };
-  }, [identity, sources, top]);
+  }, [identity, sources, top, projectPath]);
   useEffect(() => {
     if (runtime.current && compiledIdentity.current !== identity) {
       running.current = false;
@@ -308,6 +310,7 @@ export default function PeripheralWorkbench({
         clockSignal: config.clock?.signal ?? null,
         clockFrequencyHz: config.frequency,
         enableVcd: false,
+        projectPath,
       });
       if (!mounted.current || currentIdentity.current !== identity) {
         await virtualFpgaApi.stop(result.sessionId);

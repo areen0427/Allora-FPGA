@@ -15,11 +15,17 @@ Both paths operate on disk-backed Allora projects. A project can remember its mo
 
 ## Peripheral Workbench V1
 
-Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Only Peripheral Workbench is implemented; the latter two are Coming soon states. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
+Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Peripheral Workbench and Memory Asset Studio are implemented; Register Builder remains Coming soon. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
 
 `src/lib/peripheralWorkbench.ts` owns versioned metadata, mapping validation, legacy migration, UART host models, and serialized cycle advancement. `src/pages/dashboard/PeripheralWorkbench.tsx` owns library/canvas/inspector UI and the simulation command queue. Metadata is stored separately under `peripheralWorkbench`; physical constraints and original `simulation` metadata are preserved. Workbench source changes invalidate sessions, and leaving the workspace releases buttons and pauses execution.
 
 The existing Rust Verilator backend now compiles/discovers ports on blocking worker threads, uses collision-resistant temporary directories, returns every half-cycle trace point, uses configured picosecond timing, and accepts decimal strings for precise 64-bit inputs. Workbench run batches are bounded at 256 cycles and split at UART transmit deadlines. UART decoding and output activity capture consume all trace events before UI refresh. Reset recreates the entire model. See README and the two peripheral examples for operation and test commands.
+
+## Memory Asset Studio architecture
+
+`src/lib/memoryAssets.ts` owns the typed memory model, deterministic image/binary/table conversion, `.hex` serialization, and synchronous Verilog ROM generation. `src/pages/dashboard/MemoryAssetStudio.tsx` owns the asset list, conversion settings, preview, inspector, and generation controls. The welcome tile routes through a dedicated project-selection landing page and project creation form; the editor rail enters the active project's Studio directly.
+
+The disk manifest is `assets/memory-assets.json` (schema version 1). Imported sources stay in `assets/sources/`, and generated memories/HDL are in `src/generated/`. Native `read_asset_file`/`write_asset_file`/`delete_asset_file` commands guard collisions using expected bytes. Editor autosave excludes Studio-owned paths, preventing stale editor snapshots from overwriting regenerated files. Project reopening reads the disk manifest and registers only its current generated outputs. Icarus, Yosys, and interactive Verilator workspaces copy the project's generated hex files before invoking the tools.
 
 ## Repository layout
 

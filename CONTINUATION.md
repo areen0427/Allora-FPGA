@@ -2,6 +2,20 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-29 — Memory Asset Studio polish and reliability
+
+- Replaced the blank three-column welcome state with an import guide; unified Ice/Black Ice tokens, compact controls, and workspace-width responsive layouts. The landing page now contains both project creation paths in matching cards.
+- Conversion settings use drafts with Apply/Reset; added action locks, loading states, integer address clamping, image bitmap cleanup, explicit ROM selection, and in-app rename/remove/conflict dialogs.
+- Added guarded native batch commits for sources/outputs plus the manifest, rollback on write failure, strict metadata paths, symlink containment, and regression tests for batch conflicts and malformed/oversized input.
+- Verification uses automated build/lint/native/conversion/HDL tests. Supplied screenshots informed the fixes; no browser visual QA or new screenshots were used.
+
+## 2026-09-29 — Memory Asset Studio V1
+
+- Connected the two existing Studio buttons to a dedicated project-selection landing page, creation form, and active-project workspace.
+- Added deterministic image, binary, and numeric conversions, memory/ROM generation, inspection, project-owned sources, disk manifest, collision guards, and generated-file integration into Icarus, Yosys, and interactive Verilator workflows.
+- Verification: frontend build and lint, seven Node tests including real Icarus and Verilator ROM simulation and Yosys synthesis, Rust formatting and focused native asset tests passed. The broader Rust suite passed 28 tests with the existing process-usage test skipped; the unfiltered run failed only that test because sandbox process inspection returned `Operation not permitted`.
+- Visual verification was not performed per request.
+
 ## 2026-09-28 — Peripheral Workbench V1
 
 Implemented:

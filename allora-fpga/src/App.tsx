@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import SimulationProjectSetup from "./pages/SimulationProjectSetup";
+import MemoryProjectSetup from "./pages/MemoryProjectSetup";
 import Dashboard from "./pages/Dashboard";
 import { getBoardById, VIRTUAL_BOARD } from "./data/boards";
 import {
@@ -32,6 +33,7 @@ type AppStage =
   | "board-select"
   | "project-setup"
   | "simulation-setup"
+  | "memory-project-setup"
   | "dashboard";
 
 type ProjectMetadata = {
@@ -49,6 +51,7 @@ function App() {
   const [project, setProject] = useState<SavedProject | null>(null);
   const [settings, setSettings] = useState<AppSettings>(() => getSettings());
   const [projectWarning, setProjectWarning] = useState("");
+  const [studioLaunch, setStudioLaunch] = useState(false);
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
   const restoredStartupRef = useRef(false);
@@ -75,9 +78,11 @@ function App() {
     setSelectedBoardId(null);
     setProject(null);
     setProjectWarning("");
+    setStudioLaunch(false);
   }
 
-  async function openProject(projectId: string, target?: ExecutionTarget) {
+  async function openProject(projectId: string, target?: ExecutionTarget, studio = false) {
+    setStudioLaunch(studio);
     const savedProject = getSavedProject(projectId);
     if (!savedProject) return;
 
@@ -125,7 +130,7 @@ function App() {
     }
 
     const effectiveTarget =
-      target ??
+      nextProject.boardId === VIRTUAL_BOARD.id ? "simulate" : target ??
       nextProject.lastExecutionTarget ??
       (nextProject.projectKind === "simulation" ? "simulate" : "build");
     nextProject = { ...nextProject, lastExecutionTarget: effectiveTarget };
@@ -137,7 +142,8 @@ function App() {
     setStage("dashboard");
   }
 
-  async function openExistingProject(target: ExecutionTarget = "build") {
+  async function openExistingProject(target: ExecutionTarget = "build", studio = false) {
+    setStudioLaunch(studio);
     const projectPath = await pickExistingProjectDirectory();
     if (!projectPath) return;
 
@@ -165,6 +171,7 @@ function App() {
     }
 
     const boardId = metadata.boardId ?? VIRTUAL_BOARD.id;
+    const resolvedTarget = boardId === VIRTUAL_BOARD.id ? "simulate" : target;
     const board = getBoardById(boardId);
     if (!board) {
       throw new Error(
@@ -204,7 +211,7 @@ function App() {
         metadata.projectKind ??
         (boardId === VIRTUAL_BOARD.id ? "simulation" : "hardware"),
       starterTemplate: metadata.template,
-      lastExecutionTarget: target,
+      lastExecutionTarget: resolvedTarget,
       files: diskFiles,
       projectPath,
       language: metadata.language ?? existingProject?.language,
@@ -218,7 +225,7 @@ function App() {
     saveLastOpenedProjectId(nextProject.id);
     setProject(nextProject);
     setSelectedBoardId(boardId);
-    setExecutionTarget(target);
+    setExecutionTarget(resolvedTarget);
     setProjectWarning("");
     setStage("dashboard");
   }
@@ -246,13 +253,48 @@ function App() {
         onSettingsChange={setSettings}
         onOpenProject={openProject}
         onOpenExistingProject={openExistingProject}
-        onCreateSimulationProject={() => setStage("simulation-setup")}
+        onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
+        onOpenExistingMemoryProject={() => openExistingProject("build", true)}
+        onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
+        onCreateMemoryBoardProject={(boardId) => { setStudioLaunch(true); setSelectedBoardId(boardId); setStage("memory-project-setup"); }}
+        onCreateSimulationProject={() => { setStudioLaunch(false); setStage("simulation-setup"); }}
         onSelectBoard={(boardId) => {
+          setStudioLaunch(false);
           setSelectedBoardId(boardId);
           setStage("project-setup");
         }}
       />
     );
+  }
+
+  if (stage === "memory-project-setup") {
+    return <MemoryProjectSetup board={selectedBoard} settings={settings} onBack={() => setStage("board-select")} onCreate={async (name, language, parentDirectory) => {
+      const workspace = selectedBoard
+        ? await createProjectWorkspace({ projectName: name, board: selectedBoard, language, parentDirectory, templateId: "empty" })
+        : await createSimulationProjectWorkspace({ projectName: name, language, parentDirectory, starterTemplate: "blank", clockFrequencyHz: settings.simulatorDefaultClockHz });
+      const target = selectedBoard ? "build" : "simulate";
+      const nextProject = createProject({
+        id: window.crypto?.randomUUID?.() ?? `${Date.now()}`,
+        name,
+        boardId: selectedBoard?.id ?? VIRTUAL_BOARD.id,
+        projectKind: selectedBoard ? "hardware" : "simulation",
+        starterTemplate: "blank",
+        lastExecutionTarget: target,
+        files: workspace.files,
+        projectPath: workspace.projectPath,
+        language,
+        activeFileName: workspace.activeFileName,
+        topLevelFileName: workspace.files.find(file => isHdlFile(file.name))?.name ?? null,
+      });
+      if (parentDirectory) saveLastProjectParentDirectory(parentDirectory);
+      saveLastOpenedProjectId(nextProject.id);
+      setProject(nextProject);
+      setSelectedBoardId(selectedBoard?.id ?? VIRTUAL_BOARD.id);
+      setExecutionTarget(target);
+      setProjectWarning("");
+      setStudioLaunch(true);
+      setStage("dashboard");
+    }} />;
   }
 
   if (stage === "simulation-setup") {
@@ -376,7 +418,9 @@ function App() {
         settings={settings}
         projectWarning={projectWarning}
         launchTarget={executionTarget}
+        initialSection={studioLaunch ? "memory-asset-studio" : undefined}
         onExecutionTargetChange={(target) => {
+          setStudioLaunch(false);
           setExecutionTarget(target);
           if (!project) return;
           const nextProject = {
@@ -406,8 +450,13 @@ function App() {
       onSettingsChange={setSettings}
       onOpenProject={openProject}
       onOpenExistingProject={openExistingProject}
-      onCreateSimulationProject={() => setStage("simulation-setup")}
+      onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
+      onOpenExistingMemoryProject={() => openExistingProject("build", true)}
+      onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
+      onCreateMemoryBoardProject={(boardId) => { setStudioLaunch(true); setSelectedBoardId(boardId); setStage("memory-project-setup"); }}
+      onCreateSimulationProject={() => { setStudioLaunch(false); setStage("simulation-setup"); }}
       onSelectBoard={(boardId) => {
+        setStudioLaunch(false);
         setSelectedBoardId(boardId);
         setStage("project-setup");
       }}

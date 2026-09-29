@@ -201,8 +201,18 @@ export async function readProjectWorkspace(projectPath: string) {
     },
   );
 
-  return response.files.map((file) => ({
-    name: file.relativePath.split("/").pop() ?? file.relativePath,
+  let registeredGenerated: Set<string> | null = null;
+  const manifest = response.files.find(file => file.relativePath === "assets/memory-assets.json" && !file.binary);
+  if (manifest) {
+    try {
+      const parsed = JSON.parse(manifest.content) as { schemaVersion?: number; assets?: Array<{ outputs?: Array<{ path: string }> }> };
+      if (parsed.schemaVersion === 1 && Array.isArray(parsed.assets)) {
+        registeredGenerated = new Set(parsed.assets.flatMap(asset => asset.outputs?.map(output => output.path) ?? []));
+      }
+    } catch { /* The Studio displays the manifest error when opened. */ }
+  }
+  return response.files.filter(file => !registeredGenerated || !file.relativePath.startsWith("src/generated/") || registeredGenerated.has(file.relativePath)).map((file) => ({
+    name: file.relativePath.startsWith("src/") ? file.relativePath.slice(4) : file.relativePath.split("/").pop() ?? file.relativePath,
     path: file.absolutePath,
     content: file.content,
     isBinary: file.binary,

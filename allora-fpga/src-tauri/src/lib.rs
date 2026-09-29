@@ -272,6 +272,210 @@ struct WriteProjectFileRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct AssetFileRequest {
+    project_path: String,
+    relative_path: String,
+    content: Option<Vec<u8>>,
+    expected: Option<Vec<u8>>,
+    overwrite: Option<bool>,
+}
+
+static ASSET_WRITE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn asset_path(request: &AssetFileRequest) -> Result<PathBuf, ErrorPayload> {
+    let root = PathBuf::from(&request.project_path);
+    if !root.join("allora-project.json").is_file() {
+        return Err(error(
+            "Choose an Allora project folder with allora-project.json.",
+        ));
+    }
+    let relative = normalize_relative_path(&request.relative_path)?;
+    if relative != Path::new("assets/memory-assets.json")
+        && !relative.starts_with("assets/sources")
+        && !relative.starts_with("src/generated")
+    {
+        return Err(error(
+            "Asset files must use the manifest, source, or generated asset directories.",
+        ));
+    }
+    let root = fs::canonicalize(root)
+        .map_err(|err| error(&format!("Unable to resolve project: {err}")))?;
+    let path = root.join(relative);
+    // A project-owned path must not follow a symlink out of the project.
+    let mut ancestor = path.as_path();
+    while !ancestor.exists() {
+        ancestor = ancestor
+            .parent()
+            .ok_or_else(|| error("Invalid asset path."))?;
+    }
+    if !fs::canonicalize(ancestor)
+        .map_err(|err| error(&format!("Unable to resolve asset path: {err}")))?
+        .starts_with(&root)
+    {
+        return Err(error("Asset paths cannot leave the project folder."));
+    }
+    Ok(path)
+}
+
+#[tauri::command]
+fn read_asset_file(request: AssetFileRequest) -> Result<Option<Vec<u8>>, ErrorPayload> {
+    let path = asset_path(&request)?;
+    if !path.exists() {
+        return Ok(None);
+    }
+    fs::read(&path)
+        .map(Some)
+        .map_err(|err| error(&format!("Unable to read {}: {err}", path.display())))
+}
+
+#[tauri::command]
+fn write_asset_file(request: AssetFileRequest) -> Result<(), ErrorPayload> {
+    let _guard = ASSET_WRITE_LOCK
+        .lock()
+        .map_err(|_| error("Asset writer is unavailable."))?;
+    let path = asset_path(&request)?;
+    let content = request
+        .content
+        .as_ref()
+        .ok_or_else(|| error("Missing asset content."))?;
+    if path.exists() {
+        let previous = fs::read(&path)
+            .map_err(|err| error(&format!("Unable to read {}: {err}", path.display())))?;
+        if !request.overwrite.unwrap_or(false) && request.expected.as_ref() != Some(&previous) {
+            return Err(error(
+                "Asset output has changed or already exists. Choose overwrite or a different name.",
+            ));
+        }
+    } else if request.expected.is_some() {
+        return Err(error("An expected asset output is missing."));
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|err| error(&format!("Unable to create asset directory: {err}")))?;
+    }
+    let parent = path.parent().ok_or_else(|| error("Invalid asset path."))?;
+    let mut temporary = tempfile::NamedTempFile::new_in(parent)
+        .map_err(|err| error(&format!("Unable to stage asset output: {err}")))?;
+    use std::io::Write;
+    temporary
+        .write_all(content)
+        .map_err(|err| error(&format!("Unable to stage asset output: {err}")))?;
+    temporary
+        .persist(&path)
+        .map_err(|err| error(&format!("Unable to save asset output: {err}")))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_asset_file(request: AssetFileRequest) -> Result<(), ErrorPayload> {
+    let _guard = ASSET_WRITE_LOCK
+        .lock()
+        .map_err(|_| error("Asset writer is unavailable."))?;
+    let path = asset_path(&request)?;
+    if !path.exists() {
+        return Ok(());
+    }
+    let previous = fs::read(&path)
+        .map_err(|err| error(&format!("Unable to read {}: {err}", path.display())))?;
+    if request.expected.as_ref() != Some(&previous) && !request.overwrite.unwrap_or(false) {
+        return Err(error(
+            "Asset file was modified externally. Confirm deletion explicitly.",
+        ));
+    }
+    fs::remove_file(&path).map_err(|err| error(&format!("Unable to delete asset file: {err}")))
+}
+
+// Check every expected version before committing a group of generated files and
+// its manifest. Stage writes first and restore already committed files on failure.
+#[tauri::command]
+fn commit_asset_files(requests: Vec<AssetFileRequest>) -> Result<(), ErrorPayload> {
+    let _guard = ASSET_WRITE_LOCK
+        .lock()
+        .map_err(|_| error("Asset writer is unavailable."))?;
+    if requests.is_empty() {
+        return Ok(());
+    }
+    let project = &requests[0].project_path;
+    let mut paths = std::collections::HashSet::new();
+    let mut staged = Vec::new();
+    for request in &requests {
+        if &request.project_path != project {
+            return Err(error("An asset transaction must belong to one project."));
+        }
+        let path = asset_path(request)?;
+        if !paths.insert(path.clone()) {
+            return Err(error("Duplicate path in asset transaction."));
+        }
+        let previous = if path.exists() {
+            Some(fs::read(&path).map_err(|err| error(&format!("Unable to read asset: {err}")))?)
+        } else {
+            None
+        };
+        if previous != request.expected {
+            return Err(error(&format!(
+                "{} changed on disk. Reopen the project before retrying; no files were changed.",
+                request.relative_path
+            )));
+        }
+        let temporary = if let Some(content) = &request.content {
+            let parent = path.parent().ok_or_else(|| error("Invalid asset path."))?;
+            fs::create_dir_all(parent)
+                .map_err(|err| error(&format!("Unable to create asset directory: {err}")))?;
+            let mut file = tempfile::NamedTempFile::new_in(parent)
+                .map_err(|err| error(&format!("Unable to stage asset: {err}")))?;
+            use std::io::Write;
+            file.write_all(content)
+                .map_err(|err| error(&format!("Unable to stage asset: {err}")))?;
+            Some(file)
+        } else {
+            None
+        };
+        staged.push((path, previous, temporary));
+    }
+    for index in 0..staged.len() {
+        let (path, previous, temporary) = &mut staged[index];
+        let result = (|| -> Result<(), std::io::Error> {
+            let current = match fs::read(&path) {
+                Ok(bytes) => Some(bytes),
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
+                Err(err) => return Err(err),
+            };
+            if &current != previous {
+                return Err(std::io::Error::other("Asset changed during save"));
+            }
+            if let Some(file) = temporary.take() {
+                file.persist(&path).map_err(|err| err.error)?;
+            } else if previous.is_some() {
+                fs::remove_file(&path)?;
+            }
+            Ok(())
+        })();
+        if let Err(err) = result {
+            let mut recovery_errors = Vec::new();
+            for (path, previous, _) in staged[..index].iter().rev() {
+                let restored = match previous {
+                    Some(bytes) => fs::write(path, bytes),
+                    None => fs::remove_file(path),
+                };
+                if let Err(recovery) = restored {
+                    recovery_errors.push(format!("{}: {recovery}", path.display()));
+                }
+            }
+            return Err(error(&format!(
+                "Unable to save asset files: {err}. {}",
+                if recovery_errors.is_empty() {
+                    "Previous files restored.".to_string()
+                } else {
+                    format!("Recovery required: {}", recovery_errors.join("; "))
+                }
+            )));
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RenameProjectFileRequest {
     from_path: String,
     to_path: String,
@@ -729,6 +933,7 @@ struct SynthesisInputFile {
 #[serde(rename_all = "camelCase")]
 struct GenerateSynthesisDiagramRequest {
     project_name: String,
+    project_path: Option<String>,
     board_name: String,
     fpga_id: String,
     synthesis_flow: String,
@@ -1152,6 +1357,9 @@ async fn generate_synthesis_diagram(
     fs::create_dir_all(&source_dir)
         .map_err(|err| error(&format!("Unable to create synthesis workspace: {err}")))?;
 
+    if let Some(project_path) = &request.project_path {
+        copy_generated_memories(Path::new(project_path), &temp_dir)?;
+    }
     for file in &request.files {
         let path = source_dir.join(&file.name);
         if let Some(parent) = path.parent() {
@@ -1237,6 +1445,32 @@ async fn generate_synthesis_diagram(
     })
 }
 
+pub(crate) fn copy_generated_memories(project: &Path, work: &Path) -> Result<(), ErrorPayload> {
+    let source = project.join("src/generated");
+    if !source.is_dir() {
+        return Ok(());
+    }
+    let destination = work.join("src/generated");
+    fs::create_dir_all(&destination)
+        .map_err(|err| error(&format!("Unable to prepare generated memories: {err}")))?;
+    for entry in fs::read_dir(source)
+        .map_err(|err| error(&format!("Unable to read generated memories: {err}")))?
+    {
+        let entry =
+            entry.map_err(|err| error(&format!("Unable to inspect generated memory: {err}")))?;
+        if entry
+            .file_type()
+            .map_err(|err| error(&format!("Unable to inspect generated memory: {err}")))?
+            .is_file()
+            && entry.path().extension().is_some_and(|ext| ext == "hex")
+        {
+            fs::copy(entry.path(), destination.join(entry.file_name()))
+                .map_err(|err| error(&format!("Unable to copy generated memory: {err}")))?;
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 async fn generate_bitstream(
     request: GenerateBitstreamRequest,
@@ -1268,6 +1502,9 @@ async fn generate_bitstream(
     fs::create_dir_all(&source_dir)
         .map_err(|err| error(&format!("Unable to create bitstream workspace: {err}")))?;
 
+    if let Some(project_path) = &request.project_path {
+        copy_generated_memories(Path::new(project_path), &temp_dir)?;
+    }
     for file in &request.source_files {
         let path = source_dir.join(&file.name);
         if let Some(parent) = path.parent() {
@@ -1532,6 +1769,9 @@ async fn simulate_testbench(
     fs::create_dir_all(&source_dir)
         .map_err(|err| error(&format!("Unable to create simulation workspace: {err}")))?;
 
+    if let Some(project_path) = &request.project_path {
+        copy_generated_memories(Path::new(project_path), &temp_dir)?;
+    }
     let mut written_files = Vec::new();
     for file in request
         .source_files
@@ -3422,6 +3662,10 @@ pub fn run() {
             write_project_file,
             rename_project_file,
             delete_project_file,
+            read_asset_file,
+            write_asset_file,
+            delete_asset_file,
+            commit_asset_files,
             open_viewer_window,
             read_viewer_payload,
             generate_synthesis_diagram,
@@ -3461,4 +3705,162 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod memory_asset_tests {
+    use super::*;
+
+    fn request(
+        root: &Path,
+        relative: &str,
+        content: Option<Vec<u8>>,
+        expected: Option<Vec<u8>>,
+    ) -> AssetFileRequest {
+        AssetFileRequest {
+            project_path: root.to_string_lossy().to_string(),
+            relative_path: relative.to_string(),
+            content,
+            expected,
+            overwrite: None,
+        }
+    }
+
+    #[test]
+    fn asset_sources_manifest_reopen_and_collision_guards() {
+        let project = tempfile::tempdir().unwrap();
+        fs::write(project.path().join("allora-project.json"), "{}").unwrap();
+        let path = "assets/sources/sample.bin";
+        write_asset_file(request(project.path(), path, Some(vec![0, 1, 255]), None)).unwrap();
+        assert_eq!(
+            read_asset_file(request(project.path(), path, None, None)).unwrap(),
+            Some(vec![0, 1, 255])
+        );
+        assert!(write_asset_file(request(project.path(), path, Some(vec![2]), None)).is_err());
+        write_asset_file(request(
+            project.path(),
+            "assets/memory-assets.json",
+            Some(b"{\"schemaVersion\":1,\"assets\":[{\"name\":\"gain\",\"options\":{\"wordWidth\":16,\"fractionalBits\":4}}]}".to_vec()),
+            None,
+        ))
+        .unwrap();
+        let reopened = read_project_workspace(ReadProjectWorkspaceRequest {
+            project_path: project.path().to_string_lossy().to_string(),
+        })
+        .unwrap();
+        let manifest = reopened
+            .files
+            .iter()
+            .find(|file| file.relative_path == "assets/memory-assets.json")
+            .unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&manifest.content).unwrap();
+        assert_eq!(parsed["assets"][0]["options"]["fractionalBits"], 4);
+        let output = "src/generated/gain.hex";
+        write_asset_file(request(
+            project.path(),
+            output,
+            Some(b"0001\n".to_vec()),
+            None,
+        ))
+        .unwrap();
+        write_asset_file(request(
+            project.path(),
+            output,
+            Some(b"0002\n".to_vec()),
+            Some(b"0001\n".to_vec()),
+        ))
+        .unwrap();
+        fs::write(project.path().join(output), b"abcd\n").unwrap();
+        assert!(write_asset_file(request(
+            project.path(),
+            output,
+            Some(b"0003\n".to_vec()),
+            Some(b"0002\n".to_vec())
+        ))
+        .is_err());
+        fs::write(project.path().join(path), vec![9]).unwrap();
+        assert!(
+            delete_asset_file(request(project.path(), path, None, Some(vec![0, 1, 255]))).is_err()
+        );
+        delete_asset_file(request(project.path(), path, None, Some(vec![9]))).unwrap();
+        assert!(read_asset_file(request(project.path(), path, None, None))
+            .unwrap()
+            .is_none());
+        assert!(
+            write_asset_file(request(project.path(), "../escape", Some(vec![1]), None)).is_err()
+        );
+    }
+
+    #[test]
+    fn asset_batch_conflicts_do_not_partially_generate_or_delete() {
+        let project = tempfile::tempdir().unwrap();
+        let root = project.path();
+        fs::write(root.join("allora-project.json"), "{}").unwrap();
+        let manifest = "assets/memory-assets.json";
+        let source = "assets/sources/data.bin";
+        let output = "src/generated/data.hex";
+        commit_asset_files(vec![
+            request(root, source, Some(vec![1]), None),
+            request(root, output, Some(b"01\n".to_vec()), None),
+            request(root, manifest, Some(vec![1]), None),
+        ])
+        .unwrap();
+        // The final operation conflicts: none of the earlier writes/deletes may run.
+        assert!(commit_asset_files(vec![
+            request(root, output, Some(b"02\n".to_vec()), Some(b"01\n".to_vec())),
+            request(root, manifest, Some(vec![2]), Some(vec![0]))
+        ])
+        .is_err());
+        assert_eq!(fs::read(root.join(output)).unwrap(), b"01\n");
+        assert!(commit_asset_files(vec![
+            request(root, source, None, Some(vec![1])),
+            request(root, output, None, Some(b"01\n".to_vec())),
+            request(root, manifest, Some(vec![2]), Some(vec![0]))
+        ])
+        .is_err());
+        assert_eq!(fs::read(root.join(source)).unwrap(), vec![1]);
+        assert_eq!(fs::read(root.join(output)).unwrap(), b"01\n");
+        // Expected versions commit together, including the new manifest.
+        commit_asset_files(vec![
+            request(root, source, None, Some(vec![1])),
+            request(root, output, None, Some(b"01\n".to_vec())),
+            request(root, manifest, Some(vec![2]), Some(vec![1])),
+        ])
+        .unwrap();
+        assert!(!root.join(source).exists());
+        assert!(!root.join(output).exists());
+        assert_eq!(fs::read(root.join(manifest)).unwrap(), vec![2]);
+        assert!(write_asset_file(request(root, "src/top.v", Some(vec![1]), None)).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn asset_paths_cannot_follow_symlinks_outside_project() {
+        let project = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::write(project.path().join("allora-project.json"), "{}").unwrap();
+        fs::create_dir_all(project.path().join("assets")).unwrap();
+        std::os::unix::fs::symlink(outside.path(), project.path().join("assets/sources")).unwrap();
+        assert!(write_asset_file(request(
+            project.path(),
+            "assets/sources/file.bin",
+            Some(vec![1]),
+            None
+        ))
+        .is_err());
+        assert!(!outside.path().join("file.bin").exists());
+    }
+
+    #[test]
+    fn generated_memories_reach_simulation_and_build_workspace() {
+        let project = tempfile::tempdir().unwrap();
+        let work = tempfile::tempdir().unwrap();
+        fs::create_dir_all(project.path().join("src/generated")).unwrap();
+        fs::write(project.path().join("src/generated/rom.hex"), b"00\n7f\n").unwrap();
+        copy_generated_memories(project.path(), work.path()).unwrap();
+        assert_eq!(
+            fs::read(work.path().join("src/generated/rom.hex")).unwrap(),
+            b"00\n7f\n"
+        );
+    }
 }

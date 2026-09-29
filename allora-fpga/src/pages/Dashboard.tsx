@@ -1,4 +1,5 @@
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
+import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
 import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
 import { useState, useEffect } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
@@ -87,6 +88,7 @@ type DashboardProps = {
   settings: AppSettings;
   projectWarning?: string;
   launchTarget: ExecutionTarget;
+  initialSection?: DashboardSection;
   onSettingsChange: (settings: AppSettings) => void;
   onExecutionTargetChange: (target: ExecutionTarget) => void;
   onBack: () => void;
@@ -101,6 +103,7 @@ export default function Dashboard({
   settings,
   projectWarning,
   launchTarget,
+  initialSection,
   onSettingsChange,
   onExecutionTargetChange,
   onBack,
@@ -109,7 +112,7 @@ export default function Dashboard({
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>(launchTarget);
   const [activeSection, setActiveSection] = useState<DashboardSection>(
-    launchTarget === "simulate" ? "peripheral-workbench" : "editor",
+    initialSection ?? (launchTarget === "simulate" ? "peripheral-workbench" : "editor"),
   );
   // Track which sections have been opened so we can keep them mounted (and
   // their generated output intact) after the user switches away.
@@ -150,8 +153,8 @@ export default function Dashboard({
 
   useEffect(() => {
     setExecutionTarget(launchTarget);
-    setActiveSection(launchTarget === "simulate" ? "peripheral-workbench" : "editor");
-  }, [launchTarget]);
+    setActiveSection(initialSection ?? (launchTarget === "simulate" ? "peripheral-workbench" : "editor"));
+  }, [launchTarget, initialSection]);
 
   function changeExecutionTarget(target: ExecutionTarget) {
     if (board.id === "allora-virtual" && target === "build") return;
@@ -471,7 +474,7 @@ export default function Dashboard({
             />
             <SidebarButton label="Peripheral Workbench" icon={<Zap size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
             <SidebarButton label="Register Builder" comingSoon icon={<Binary size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
-            <SidebarButton label="Memory Asset Studio" comingSoon icon={<Code2 size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
+            <SidebarButton label="Memory Asset Studio" icon={<Code2 size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
             {executionTarget === "simulate" ? (
               <SidebarButton
                 label="Virtual"
@@ -791,9 +794,15 @@ export default function Dashboard({
         )}
 
         <KeepAliveSection active={activeSection === "peripheral-workbench"} visited={visitedSections.has("peripheral-workbench")}>
-          <PeripheralWorkbench files={fileMgmt.files} topLevelFileName={activeTabs.topLevelFileName} active={activeSection === "peripheral-workbench"} onChange={handleUpdateWorkbench} />
+          <PeripheralWorkbench files={fileMgmt.files} topLevelFileName={activeTabs.topLevelFileName} active={activeSection === "peripheral-workbench"} projectPath={projectPath} onChange={handleUpdateWorkbench} />
         </KeepAliveSection>
-        {(activeSection === "register-builder" || activeSection === "memory-asset-studio") && <section className="pw pw-coming"><span className="pw-kicker">COMING SOON</span><h1>{activeSection === "register-builder" ? "Register Builder" : "Memory Asset Studio"}</h1><p>This workspace is planned and is not available yet. Your current project remains open.</p><button onClick={() => setActiveSection("peripheral-workbench")}>Open Peripheral Workbench</button></section>}
+        {activeSection === "register-builder" && <section className="pw pw-coming"><span className="pw-kicker">COMING SOON</span><h1>Register Builder</h1><p>This workspace is planned and is not available yet.</p></section>}
+        <KeepAliveSection active={activeSection === "memory-asset-studio"} visited={visitedSections.has("memory-asset-studio")}>
+          <MemoryAssetStudio projectPath={projectPath} onOpenFile={handleOpenFile} onGenerated={(generated, removed) => {
+            fileMgmt.setFiles(current => [...current.filter(file => !removed.includes(file.name) && !generated.some(item => item.name === file.name)), ...generated]);
+            markWorkspaceUnsaved();
+          }}/>
+        </KeepAliveSection>
         <KeepAliveSection
           active={activeSection === "virtual-fpga"}
           visited={visitedSections.has("virtual-fpga")}
@@ -826,6 +835,7 @@ export default function Dashboard({
             board={board}
             files={fileMgmt.files}
             projectName={projectName}
+            projectPath={projectPath}
             topLevelFileName={activeTabs.topLevelFileName}
             onTopLevelFileNameChange={handleMakeTopLevelFile}
           />

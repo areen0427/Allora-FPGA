@@ -24,6 +24,10 @@ type BoardSelectProps = {
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onOpenExistingProject: (target: ExecutionTarget) => Promise<void>;
   onCreateSimulationProject: () => void;
+  onOpenMemoryProject: (projectId: string) => void;
+  onOpenExistingMemoryProject: () => Promise<void>;
+  onCreateMemoryProject: () => void;
+  onCreateMemoryBoardProject: (boardId: string) => void;
 };
 
 export default function BoardSelect({
@@ -33,9 +37,14 @@ export default function BoardSelect({
   onOpenProject,
   onOpenExistingProject,
   onCreateSimulationProject,
+  onOpenMemoryProject,
+  onOpenExistingMemoryProject,
+  onCreateMemoryProject,
+  onCreateMemoryBoardProject,
 }: BoardSelectProps) {
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
+  const [memoryBoardChoice, setMemoryBoardChoice] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
   const [showAllBoards, setShowAllBoards] = useState(false);
@@ -123,6 +132,18 @@ export default function BoardSelect({
           onOpenProject={onOpenProject}
           onRemoveRecentProject={removeRecentProject}
           onSettingsChange={onSettingsChange}
+          onOpenMemoryProject={onOpenMemoryProject}
+          onOpenExistingMemoryProject={() => {
+            if (isOpeningExistingProject) return;
+            setIsOpeningExistingProject(true);
+            setOpenExistingProjectError("");
+            void onOpenExistingMemoryProject().catch(error => setOpenExistingProjectError(error instanceof Error ? error.message : "Unable to open project.")).finally(() => setIsOpeningExistingProject(false));
+          }}
+          onCreateMemoryProject={onCreateMemoryProject}
+          onCreateMemoryBoardProject={(board) => {
+            if ("variants" in board) { setMemoryBoardChoice(true); setSelectedVariantBoard(board); }
+            else onCreateMemoryBoardProject(board.id);
+          }}
         />
       ) : (
         <PinMappingBrowser
@@ -135,10 +156,11 @@ export default function BoardSelect({
       {selectedVariantBoard ? (
         <VariantSelectorModal
           board={selectedVariantBoard}
-          onClose={() => setSelectedVariantBoard(null)}
+          onClose={() => { setSelectedVariantBoard(null); setMemoryBoardChoice(false); }}
           onSelectVariant={(boardId) => {
             setSelectedVariantBoard(null);
-            onSelectBoard(boardId);
+            if (memoryBoardChoice) { setMemoryBoardChoice(false); onCreateMemoryBoardProject(boardId); }
+            else onSelectBoard(boardId);
           }}
         />
       ) : null}

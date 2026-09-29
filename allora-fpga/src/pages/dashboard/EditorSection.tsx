@@ -72,6 +72,7 @@ export default function EditorSection({
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
   const isDarkEditor = settings.theme === "black-ice";
+  const managedAssetFile = /\/(?:src\/generated|assets)\//.test(activeFile?.path?.replaceAll("\\", "/") ?? "");
 
   useEffect(() => {
     if (!navigation || activeFileName !== navigation.fileName) return;
@@ -323,6 +324,7 @@ export default function EditorSection({
         </div>
       </div>
 
+      {managedAssetFile && <div className="editor-managed-note">Managed by Memory Asset Studio. Use the Studio to change assets; external file changes are detected there.</div>}
       <div className="editor-body">
         <Editor
           height="100%"
@@ -376,8 +378,9 @@ export default function EditorSection({
 
             monaco.editor.setTheme(isDarkEditor ? "allora-dark" : "allora");
           }}
-          onChange={(value) => updateActiveFile(value ?? "")}
+          onChange={(value) => { if (!managedAssetFile) updateActiveFile(value ?? ""); }}
           options={{
+            readOnly: managedAssetFile,
             fontSize: settings.editorFontSize,
             fontFamily: getComputedStyle(document.documentElement)
               .getPropertyValue("--font-code")

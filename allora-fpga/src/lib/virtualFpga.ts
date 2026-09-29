@@ -236,9 +236,10 @@ export const virtualFpgaApi = {
   discoverPorts: (
     sourceFiles: ReturnType<typeof getHdlSources>,
     topModule: string,
+    projectPath?: string,
   ) =>
     invokeTauri<RtlPort[]>("discover_rtl_ports", {
-      request: { sourceFiles, topModule },
+      request: { sourceFiles, topModule, projectPath },
     }),
   start: (request: {
     sourceFiles: ReturnType<typeof getHdlSources>;

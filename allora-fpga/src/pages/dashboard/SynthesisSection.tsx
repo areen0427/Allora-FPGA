@@ -41,6 +41,7 @@ type SynthesisSectionProps = {
   board: BoardDefinition;
   files: ProjectFile[];
   projectName: string;
+  projectPath?: string;
   topLevelFileName: string | null;
   onTopLevelFileNameChange: (fileName: string | null) => void;
 };
@@ -49,6 +50,7 @@ export default function SynthesisSection({
   board,
   files,
   projectName,
+  projectPath,
   topLevelFileName,
   onTopLevelFileNameChange,
 }: SynthesisSectionProps) {
@@ -156,6 +158,7 @@ export default function SynthesisSection({
         {
           request: {
             projectName,
+            projectPath,
             boardName: board.name,
             boardFamily: board.family,
             fpgaId: board.fpgaId,

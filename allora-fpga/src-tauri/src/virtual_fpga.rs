@@ -1,4 +1,4 @@
-use crate::{error, tool_command, ErrorPayload};
+use crate::{copy_generated_memories, error, tool_command, ErrorPayload};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -21,6 +21,7 @@ pub struct SimulationSourceFile {
 pub struct DiscoverPortsRequest {
     pub source_files: Vec<SimulationSourceFile>,
     pub top_module: String,
+    pub project_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -166,7 +167,11 @@ pub async fn discover_rtl_ports(
     request: DiscoverPortsRequest,
 ) -> Result<Vec<RtlPort>, ErrorPayload> {
     tauri::async_runtime::spawn_blocking(move || {
-        discover_ports(&request.source_files, &request.top_module)
+        discover_ports_with_project(
+            &request.source_files,
+            &request.top_module,
+            request.project_path.as_deref(),
+        )
     })
     .await
     .map_err(|err| error(&format!("Port discovery task failed: {err}")))?
@@ -203,7 +208,11 @@ fn start_simulation(
         ));
     }
 
-    let ports = discover_ports(&request.source_files, &request.top_module)?;
+    let ports = discover_ports_with_project(
+        &request.source_files,
+        &request.top_module,
+        request.project_path.as_deref(),
+    )?;
     validate_ports(&ports)?;
     if let Some(clock) = request.clock_signal.as_deref() {
         validate_input_mapping(&ports, clock)?;
@@ -211,6 +220,9 @@ fn start_simulation(
     let frequency = request.clock_frequency_hz.clamp(1, 1_000_000_000);
     let workspace = simulation_work_dir("virtual_fpga")?;
     let source_paths = write_sources(&workspace, &request.source_files)?;
+    if let Some(project_path) = &request.project_path {
+        copy_generated_memories(Path::new(project_path), &workspace)?;
+    }
     let harness_path = workspace.join("allora_harness.cpp");
     let vcd_path = request.enable_vcd.unwrap_or(true).then(|| {
         request
@@ -278,6 +290,7 @@ fn start_simulation(
 
     let executable = object_dir.join(format!("V{}", request.top_module));
     let mut child = Command::new(&executable)
+        .current_dir(&workspace)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -464,9 +477,18 @@ fn availability(command: &str, hint: &str) -> ToolAvailability {
     }
 }
 
+#[cfg(test)]
 fn discover_ports(
     files: &[SimulationSourceFile],
     top_module: &str,
+) -> Result<Vec<RtlPort>, ErrorPayload> {
+    discover_ports_with_project(files, top_module, None)
+}
+
+fn discover_ports_with_project(
+    files: &[SimulationSourceFile],
+    top_module: &str,
+    project_path: Option<&str>,
 ) -> Result<Vec<RtlPort>, ErrorPayload> {
     validate_identifier(top_module, "top module")?;
     if files.is_empty() {
@@ -476,6 +498,9 @@ fn discover_ports(
     }
     let workspace = simulation_work_dir("port_discovery")?;
     let paths = write_sources(&workspace, files)?;
+    if let Some(project_path) = project_path {
+        copy_generated_memories(Path::new(project_path), &workspace)?;
+    }
     let json_path = workspace.join("design.json");
     let read_files = paths
         .iter()

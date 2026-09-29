@@ -51,9 +51,13 @@ type HomeViewProps = {
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
   onSettingsChange: (settings: AppSettings) => void;
+  onOpenMemoryProject: (projectId: string) => void;
+  onOpenExistingMemoryProject: () => void;
+  onCreateMemoryProject: () => void;
+  onCreateMemoryBoardProject: (board: BoardCatalogItem) => void;
 };
 
-type HomePath = ExecutionTarget | "peripheral-workbench";
+type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio";
 
 export function HomeView({
   reduceMotion,
@@ -73,8 +77,13 @@ export function HomeView({
   onOpenProject,
   onRemoveRecentProject,
   onSettingsChange,
+  onOpenMemoryProject,
+  onOpenExistingMemoryProject,
+  onCreateMemoryProject,
+  onCreateMemoryBoardProject,
 }: HomeViewProps) {
   const [path, setPath] = useState<HomePath | null>(null);
+  const [memoryBoardId, setMemoryBoardId] = useState(boards[0]?.id ?? "");
   const [departingPath, setDepartingPath] = useState<HomePath | null>(
     null,
   );
@@ -244,14 +253,14 @@ export function HomeView({
         <PageHeader
           eyebrow="Allora FPGA"
           title={
-            path === "peripheral-workbench"
+            path === "memory-asset-studio" ? "Memory Asset Studio" : path === "peripheral-workbench"
               ? "Peripheral Workbench"
               : path === "simulate"
                 ? "Simulate"
                 : "Build"
           }
           subtitle={
-            path === "peripheral-workbench"
+            path === "memory-asset-studio" ? "Convert sources into project-owned FPGA memories." : path === "peripheral-workbench"
               ? "Connect real RTL to controls, indicators, and a UART terminal."
               : path === "simulate"
               ? "Bring RTL to life before hardware."
@@ -260,7 +269,25 @@ export function HomeView({
           onBack={() => setPath(null)}
         />
 
-        {path === "simulate" ? (
+        {path === "memory-asset-studio" ? (
+          <div className="mas-home-layout">
+            <div className="mas-home-main">
+              <section className="mas-home-intro">
+                <span className="mas-kicker">FPGA MEMORY WORKSPACE</span>
+                <h2>Bring data into your design.</h2>
+                <p>Turn images, binary data, and numeric tables into project-ready memories. Preview every conversion before generating files.</p>
+                <button className="mas-primary" disabled={isOpeningExistingProject} onClick={onOpenExistingMemoryProject}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>
+                <div className="mas-home-formats"><span>PNG / JPEG</span><span>Binary</span><span>CSV / TXT</span><span>HEX + Verilog</span></div>
+                {openExistingProjectError && <div className="open-project-error" role="alert">{openExistingProjectError}</div>}
+              </section>
+              <div className="mas-launch-grid">
+                <section className="mas-launch-card"><span className="mas-kicker">SIMULATE</span><h3>Start with a virtual FPGA</h3><p>Create a project to develop and test your memories without a board.</p><button onClick={onCreateMemoryProject}>Create simulation project</button></section>
+                <section className="mas-launch-card"><span className="mas-kicker">BUILD</span><h3>Target a physical board</h3><p>Create a project configured for your FPGA hardware.</p><label htmlFor="memory-board">Target board</label><select id="memory-board" value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onCreateMemoryBoardProject(board); }}>Create board project</button></section>
+              </div>
+            </div>
+            <aside className="mas-home-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={onOpenMemoryProject} onRemoveProject={onRemoveRecentProject} emptyMessage="Your memory projects will appear here." /></aside>
+          </div>
+        ) : path === "simulate" ? (
           <SimulationHome
             recentProjects={recentProjects}
             isOpening={isOpeningExistingProject}
@@ -367,9 +394,6 @@ function ExecutionPathChooser({
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
-            <span className="execution-path-kicker">
-              Virtual FPGA
-            </span>
             <span className="execution-path-title-row">
               <h2>Simulate</h2>
             </span>
@@ -391,9 +415,6 @@ function ExecutionPathChooser({
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
-            <span className="execution-path-kicker">
-              Physical FPGA
-            </span>
             <span className="execution-path-title-row">
               <h2>Build</h2>
             </span>
@@ -415,9 +436,6 @@ function ExecutionPathChooser({
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
-            <span className="execution-path-kicker">
-              Interactive RTL
-            </span>
             <span className="execution-path-title-row">
               <h2>Peripheral Workbench</h2>
             </span>
@@ -452,14 +470,15 @@ function ExecutionPathChooser({
       <div className="execution-path-option">
         <button
           type="button"
-          className="execution-path-card preview-card memory-asset-studio"
-          disabled
+          className={`execution-path-card preview-card memory-asset-studio${selectedTarget === "memory-asset-studio" ? " is-selected" : ""}`}
+          onClick={() => onChoose("memory-asset-studio")}
+          disabled={selectedTarget !== null}
         >
           <span className="glass-edge glass-edge-top" aria-hidden="true" />
           <span className="glass-edge glass-edge-side" aria-hidden="true" />
           <span className="glass-specular" aria-hidden="true" />
           <div className="execution-path-copy">
-            <span className="execution-path-kicker">Coming soon</span>
+            <span className="execution-path-kicker">Project assets</span>
             <span className="execution-path-title-row">
               <h2>Memory Asset Studio</h2>
             </span>

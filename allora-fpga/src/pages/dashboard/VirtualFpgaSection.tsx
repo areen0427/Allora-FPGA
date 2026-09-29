@@ -116,7 +116,7 @@ export default function VirtualFpgaSection({
     let cancelled = false;
     void Promise.all([
       virtualFpgaApi.detectTools(),
-      virtualFpgaApi.discoverPorts(sourceFiles, config.topModule),
+      virtualFpgaApi.discoverPorts(sourceFiles, config.topModule, projectPath),
     ])
       .then(([nextTools, nextPorts]) => {
         if (cancelled) return;
@@ -131,7 +131,7 @@ export default function VirtualFpgaSection({
     return () => {
       cancelled = true;
     };
-  }, [config.topModule, sourceFiles]);
+  }, [config.topModule, sourceFiles, projectPath]);
 
   useEffect(() => {
     if (selectedSignals.length || ports.length === 0) return;
