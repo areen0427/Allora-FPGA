@@ -280,10 +280,8 @@ export default function TestbenchSection({
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) 250px",
         gap: "18px",
-        height: "calc(100vh - 48px)",
+        height: "calc(100vh - 24px)",
         boxSizing: "border-box",
-        padding: "8px",
-        margin: "-8px",
         minHeight: 0,
         overflow: "visible",
       }}

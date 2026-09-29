@@ -135,7 +135,7 @@ export default function EditorSection({
     <div
       className="dashboard-glass-card editor-shell"
       style={{
-        height: "calc(100vh - 48px)",
+        height: "calc(100vh - 24px)",
         background: "#ffffff",
         border: "1px solid #e2e8f0",
         borderRadius: "22px",

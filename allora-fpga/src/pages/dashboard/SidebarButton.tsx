@@ -19,7 +19,6 @@ export default function SidebarButton({
     <button
       type="button"
       aria-label={comingSoon ? `${label} (Coming soon)` : label}
-      title={comingSoon ? `${label} (Coming soon)` : label}
       className={`sidebarNavButton${active ? " active" : ""}`}
       onClick={onClick}
     >

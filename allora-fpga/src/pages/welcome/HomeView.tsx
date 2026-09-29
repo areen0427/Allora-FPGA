@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   CircuitBoard,
   ChevronRight,
-  Database,
   ExternalLink,
   FolderClock,
   FolderOpen,
@@ -29,10 +28,13 @@ import { formatProjectTime } from "../../data/projects";
 import type { SavedProject } from "../../data/projects";
 import type { BoardCatalogItem } from "../../data/boardSupport";
 import { getBoardDefinitions } from "../../data/boardSupport";
-import { getBoardIcon } from "../boardIcons";
+import BoardCardIcon from "../../components/BoardCardIcon";
 import type { ExecutionTarget } from "../dashboard/types";
 import type { AppSettings } from "../../data/settings";
 import VirtualPcbDiagram from "../../components/VirtualPcbDiagram";
+import PeripheralWorkbenchIcon from "../../components/PeripheralWorkbenchIcon";
+import MemoryAssetStudioIcon from "../../components/MemoryAssetStudioIcon";
+import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
 import { version } from "../../../package.json";
 
 type HomeViewProps = {
@@ -409,13 +411,13 @@ function ExecutionPathChooser({
         <h2 className="welcome-group-label" id="welcome-tools-title">Design tools</h2>
         <div className="welcome-tools-panel">
           <button type="button" className={`execution-path-card welcome-tool-row workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`} onClick={() => onChoose("peripheral-workbench")} disabled={selectedTarget !== null}>
-            <CircuitBoard size={18} aria-hidden="true" /><span>Peripheral Workbench</span><ChevronRight size={15} aria-hidden="true" />
+            <PeripheralWorkbenchIcon /><span>Peripheral Workbench</span><ChevronRight size={15} aria-hidden="true" />
           </button>
           <button type="button" className={`execution-path-card welcome-tool-row${selectedTarget === "memory-asset-studio" ? " is-selected" : ""}`} onClick={() => onChoose("memory-asset-studio")} disabled={selectedTarget !== null}>
-            <Database size={18} aria-hidden="true" /><span>Memory Asset Studio</span><ChevronRight size={15} aria-hidden="true" />
+            <MemoryAssetStudioIcon /><span>Memory Asset Studio</span><ChevronRight size={15} aria-hidden="true" />
           </button>
           <button type="button" className="execution-path-card welcome-tool-row" disabled>
-            <Layers3 size={18} aria-hidden="true" /><span>Register Builder</span><small className="welcome-soon-badge">Coming soon</small>
+            <RegisterBuilderIcon /><span>Register Builder</span><small className="welcome-soon-badge">Coming soon</small>
           </button>
           <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenPinMapping} disabled={selectedTarget !== null}>
             <MapIcon size={18} aria-hidden="true" /><span>Pin Mapper</span><ChevronRight size={15} aria-hidden="true" />
@@ -793,8 +795,6 @@ function BoardCard({
   board: BoardCatalogItem;
   onSelect: () => void;
 }) {
-  const BoardIcon = getBoardIcon(board);
-
   return (
     <button
       className="board-card welcome-board-card"
@@ -802,7 +802,7 @@ function BoardCard({
       onClick={onSelect}
     >
       <div className="board-icon-badge">
-        <BoardIcon size={17} strokeWidth={2.2} />
+        <BoardCardIcon />
       </div>
 
       <div className="board-card-title-row">

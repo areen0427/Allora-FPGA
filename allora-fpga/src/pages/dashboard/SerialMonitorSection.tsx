@@ -143,10 +143,8 @@ export default function SerialMonitorSection({
         gridTemplateColumns: "minmax(0, 1fr) 240px",
         gap: "22px",
         alignItems: "start",
-        height: "calc(100vh - 48px)",
+        height: "calc(100vh - 24px)",
         boxSizing: "border-box",
-        padding: "8px",
-        margin: "-8px",
         minHeight: 0,
         overflow: "visible",
       }}

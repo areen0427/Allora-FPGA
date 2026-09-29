@@ -531,6 +531,10 @@ html[data-theme="black-ice"] .dashboard-activity-rail {
   );
 }
 
+html[data-theme="black-ice"] .dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) {
+  background: #15243a;
+}
+
 html[data-theme="black-ice"] .activity-rail-bottom button:hover,
 html[data-theme="black-ice"] .explorer-expand-button:hover,
 html[data-theme="black-ice"] .explorer-collapse-button:hover,

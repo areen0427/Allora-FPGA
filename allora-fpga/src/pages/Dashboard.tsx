@@ -1,4 +1,11 @@
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
+import PeripheralWorkbenchIcon from "../components/PeripheralWorkbenchIcon";
+import MemoryAssetStudioIcon from "../components/MemoryAssetStudioIcon";
+import RegisterBuilderIcon from "../components/RegisterBuilderIcon";
+import EditorIcon from "../components/EditorIcon";
+import TestbenchIcon from "../components/TestbenchIcon";
+import SynthesisIcon from "../components/SynthesisIcon";
+import ProgramIcon from "../components/ProgramIcon";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
 import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
 import { useState, useEffect } from "react";
@@ -23,12 +30,8 @@ import {
   ArrowLeft,
   Home,
   Binary,
-  Code2,
   Activity,
   MapPinned,
-  Waves,
-  SquareTerminal,
-  Cpu,
   Plus,
   Settings,
   Gauge,
@@ -408,7 +411,7 @@ export default function Dashboard({
           height: "100vh",
           overflow: "hidden",
           background: "#f1f5f9",
-          padding: "24px",
+          padding: "12px 24px",
           gap: "14px",
           color: "#0f172a",
           fontFamily:
@@ -422,7 +425,7 @@ export default function Dashboard({
         className={`dashboard-glass-card dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
           width: explorerCollapsed ? "64px" : `${sidebarWidth}px`,
-          height: "calc(100vh - 48px)",
+          height: "calc(100vh - 24px)",
           overflow: "hidden",
           minWidth: explorerCollapsed ? "64px" : "300px",
           maxWidth: explorerCollapsed ? "64px" : "480px",
@@ -437,129 +440,130 @@ export default function Dashboard({
 
           padding: 0,
           position: "sticky",
-          top: "24px",
+          top: "12px",
           display: "flex",
           flexDirection: "row",
         }}
       >
-        <div className="dashboard-activity-rail">
-          <div className="activity-rail-top">
-            <button
-              type="button"
-              aria-label="Go to home page"
-              title="Home"
-              onClick={onHome}
-              className="activity-home-button"
-            >
-              <Home size={18} color="white" strokeWidth={2.2} />
-            </button>
-            {explorerCollapsed ? (
+        <div className="dashboard-activity-rail-slot">
+          <div className="dashboard-activity-rail">
+            <div className="activity-rail-top">
               <button
                 type="button"
-                className="explorer-expand-button"
-                aria-label="Open explorer"
-                title="Open explorer"
-                onClick={() => setExplorerCollapsed(false)}
+                aria-label="Go to home page"
+                title="Home"
+                onClick={onHome}
+                className="activity-home-button"
               >
-                <PanelLeftOpen size={18} />
+                <Home size={18} color="white" strokeWidth={2.2} />
               </button>
-            ) : null}
-          </div>
-          <nav className="activity-rail-nav" aria-label="Dashboard sections">
-            <SidebarButton
-              label="Editor"
-              icon={<Code2 size={19} />}
-              active={activeSection === "editor"}
-              onClick={() => setActiveSection("editor")}
-            />
-            <SidebarButton label="Peripheral Workbench" icon={<Zap size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
-            <SidebarButton label="Register Builder" comingSoon icon={<Binary size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
-            <SidebarButton label="Memory Asset Studio" icon={<Code2 size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
-            {executionTarget === "simulate" ? (
+              {explorerCollapsed ? (
+                <button
+                  type="button"
+                  className="explorer-expand-button"
+                  aria-label="Open explorer"
+                  title="Open explorer"
+                  onClick={() => setExplorerCollapsed(false)}
+                >
+                  <PanelLeftOpen size={18} />
+                </button>
+              ) : null}
+            </div>
+            <nav className="activity-rail-nav" aria-label="Dashboard sections">
               <SidebarButton
-                label="Virtual"
-                icon={<Zap size={19} />}
-                active={activeSection === "virtual-fpga"}
-                onClick={() => setActiveSection("virtual-fpga")}
+                label="Editor"
+                icon={<EditorIcon size={19} />}
+                active={activeSection === "editor"}
+                onClick={() => setActiveSection("editor")}
               />
-            ) : null}
-            <SidebarButton
-              label="Testbench"
-              icon={<Waves size={19} />}
-              active={activeSection === "testbench"}
-              onClick={() => setActiveSection("testbench")}
-            />
-            {executionTarget === "build" ? (
-              <>
+              <SidebarButton
+                label="Testbench"
+                icon={<TestbenchIcon size={19} />}
+                active={activeSection === "testbench"}
+                onClick={() => setActiveSection("testbench")}
+              />
+              {executionTarget === "build" ? (
+                <>
+                  <SidebarButton
+                    label="Synthesis"
+                    icon={<SynthesisIcon size={19} />}
+                    active={activeSection === "synthesis"}
+                    onClick={() => setActiveSection("synthesis")}
+                  />
+                  <SidebarButton
+                    label="Pin Mapping"
+                    icon={<MapPinned size={19} />}
+                    active={activeSection === "pin-mapping"}
+                    onClick={() => setActiveSection("pin-mapping")}
+                  />
+                  <SidebarButton
+                    label="Bitstream"
+                    icon={<Binary size={19} />}
+                    active={activeSection === "bitstream"}
+                    onClick={() => setActiveSection("bitstream")}
+                  />
+                  <SidebarButton
+                    label="Program"
+                    icon={<ProgramIcon size={19} />}
+                    active={activeSection === "programming"}
+                    onClick={() => setActiveSection("programming")}
+                  />
+                </>
+              ) : null}
+              {executionTarget === "simulate" ? (
                 <SidebarButton
-                  label="Synthesis"
-                  icon={<Binary size={19} />}
-                  active={activeSection === "synthesis"}
-                  onClick={() => setActiveSection("synthesis")}
+                  label="Virtual"
+                  icon={<Zap size={19} />}
+                  active={activeSection === "virtual-fpga"}
+                  onClick={() => setActiveSection("virtual-fpga")}
                 />
-                <SidebarButton
-                  label="Pins"
-                  icon={<MapPinned size={19} />}
-                  active={activeSection === "pin-mapping"}
-                  onClick={() => setActiveSection("pin-mapping")}
-                />
-              </>
-            ) : null}
-            <SidebarButton
-              label="Health"
-              icon={<Activity size={19} />}
-              active={activeSection === "health"}
-              onClick={() => setActiveSection("health")}
-            />
-            {executionTarget === "build" ? (
-              <>
-                <SidebarButton
-                  label="Bitstream"
-                  icon={<SquareTerminal size={19} />}
-                  active={activeSection === "bitstream"}
-                  onClick={() => setActiveSection("bitstream")}
-                />
-                <SidebarButton
-                  label="Program"
-                  icon={<Cpu size={19} />}
-                  active={activeSection === "programming"}
-                  onClick={() => setActiveSection("programming")}
-                />
+              ) : null}
+              <div className="activity-rail-divider" role="separator" aria-label="Health and serial" />
+              <SidebarButton
+                label="Health"
+                icon={<Activity size={19} />}
+                active={activeSection === "health"}
+                onClick={() => setActiveSection("health")}
+              />
+              {executionTarget === "build" ? (
                 <SidebarButton
                   label="Serial"
                   icon={<Usb size={19} />}
                   active={activeSection === "serial"}
                   onClick={() => setActiveSection("serial")}
                 />
-              </>
-            ) : null}
-          </nav>
-
-          <div className="activity-rail-bottom">
-            <button
-              type="button"
-              aria-label="Resource usage"
-              title="Resource usage"
-              onClick={(event) => setUsageAnchor(event.currentTarget)}
-            >
-              <Gauge size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Settings"
-              title="Settings"
-              onClick={() => setShowSettings(true)}
-            >
-              <Settings size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Back to project setup"
-              title="Back to project setup"
-              onClick={onBack}
-            >
-              <ArrowLeft size={18} />
-            </button>
+              ) : null}
+              <div className="activity-rail-divider" role="separator" aria-label="Design tools" />
+              <SidebarButton label="Peripheral Workbench" icon={<PeripheralWorkbenchIcon size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
+              <SidebarButton label="Memory Asset Studio" icon={<MemoryAssetStudioIcon size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
+              <SidebarButton label="Register Builder" comingSoon icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
+            </nav>
+            <div className="activity-rail-bottom">
+              <button
+                type="button"
+                aria-label="Resource usage"
+                title="Resource usage"
+                onClick={(event) => setUsageAnchor(event.currentTarget)}
+              >
+                <Gauge size={18} />
+              </button>
+              <button
+                type="button"
+                aria-label="Settings"
+                title="Settings"
+                onClick={() => setShowSettings(true)}
+              >
+                <Settings size={18} />
+              </button>
+              <button
+                type="button"
+                aria-label="Back to project setup"
+                title="Back to project setup"
+                onClick={onBack}
+              >
+                <ArrowLeft size={18} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -751,7 +755,7 @@ export default function Dashboard({
             activeSection === "synthesis"
               ? "hidden"
               : "auto",
-          height: "calc(100vh - 48px)",
+          height: "calc(100vh - 24px)",
           minHeight: 0,
         }}
       >

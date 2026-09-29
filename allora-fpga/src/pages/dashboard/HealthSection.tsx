@@ -135,7 +135,7 @@ export default function HealthSection({
   ];
 
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
+    <div style={{ display: "grid", gap: "18px", minHeight: "100%", alignContent: "start" }}>
       <InfoCard title="Build Health">
         <div
           style={{

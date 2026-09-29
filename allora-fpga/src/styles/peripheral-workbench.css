@@ -272,28 +272,6 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .pw-device {
 html:is([data-theme="dark"], [data-theme="black-ice"]) .pw select {
   background: #172334;
 }
-.activity-rail-nav
-  .sidebarNavButton:is(
-    [title="Peripheral Workbench"],
-    [title^="Register Builder"],
-    [title^="Memory Asset Studio"]
-  ) {
-  min-height: 64px;
-  height: 64px;
-  flex-basis: 64px;
-}
-.activity-rail-nav
-  .sidebarNavButton:is(
-    [title="Peripheral Workbench"],
-    [title^="Register Builder"],
-    [title^="Memory Asset Studio"]
-  )
-  span {
-  white-space: normal;
-  overflow: visible;
-  font-size: 8px;
-}
-
 .sidebar-coming-soon {
   font-size: 6px;
   line-height: 1;

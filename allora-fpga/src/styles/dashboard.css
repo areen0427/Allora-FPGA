@@ -1447,9 +1447,8 @@ html[data-theme="black-ice"]
   display: grid;
   grid-template-columns: minmax(0, 1fr) 272px;
   gap: 16px;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 24px);
   min-height: 0;
-  padding: 8px;
   overflow: hidden;
 }
 
@@ -2172,9 +2171,18 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
     min-width 180ms ease;
 }
 
-.dashboard-activity-rail {
+.dashboard-activity-rail-slot {
   width: 63px;
   flex: 0 0 63px;
+  min-height: 0;
+  position: relative;
+  z-index: 3;
+}
+
+.dashboard-activity-rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 63px;
   min-height: 0;
   padding: 13px 8px 10px;
   border-right: 1px solid var(--explorer-border);
@@ -2182,6 +2190,17 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
   flex-direction: column;
   align-items: stretch;
   background: rgba(248, 250, 252, 0.34);
+  transition: width var(--ui-motion-fast, 0.15s ease);
+}
+
+.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) {
+  width: 216px;
+  background: rgba(248, 250, 252, 0.98);
+  box-shadow: 12px 0 24px rgba(15, 23, 42, 0.12);
+}
+
+.dashboard-sidebar.explorer-collapsed:has(.dashboard-activity-rail .activity-rail-nav:hover, .dashboard-activity-rail .activity-rail-nav .sidebarNavButton:focus-visible) {
+  overflow: visible !important;
 }
 
 .activity-rail-top {
@@ -2413,37 +2432,64 @@ button.build-preflight-item:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  scrollbar-width: none;
+  gap: 4px;
+  scrollbar-width: thin;
 }
 
 .activity-rail-nav::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+
+.activity-rail-divider {
+  flex: 0 0 1px;
+  height: 1px;
+  margin: 5px 7px;
+  background: var(--explorer-border);
 }
 
 .activity-rail-nav .sidebarNavButton {
   position: relative;
-  width: 46px;
-  min-height: 49px;
-  height: 49px;
-  flex: 0 0 49px;
-  padding: 5px 2px 4px;
+  width: 44px;
+  min-height: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  padding: 0;
   margin: 0 auto;
   border-radius: 11px;
-  gap: 2px;
 }
 
-.activity-rail-nav .sidebarNavButton span {
+.activity-rail-nav .sidebarNavButton span,
+.activity-rail-nav .sidebarNavButton .sidebar-coming-soon {
+  display: none;
+}
+
+.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton {
+  width: 100%;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+}
+
+.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton > svg {
+  flex-shrink: 0;
+}
+
+.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton span {
   display: block;
-  max-width: 44px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: inherit;
-  font-size: 7.5px;
-  font-weight: 760;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.activity-rail-nav .sidebarNavButton:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
 }
 
 .activity-rail-nav .sidebarNavButton.active::before {
@@ -2753,13 +2799,8 @@ button.build-preflight-item:hover {
 
 @media (max-height: 760px) {
   .activity-rail-nav .sidebarNavButton {
-    min-height: 43px;
-    height: 43px;
-    flex-basis: 43px;
-    padding-top: 3px;
-  }
-
-  .activity-rail-nav .sidebarNavButton span {
-    font-size: 7px;
+    min-height: 38px;
+    height: 38px;
+    flex-basis: 38px;
   }
 }

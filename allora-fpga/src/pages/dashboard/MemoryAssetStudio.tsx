@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
-  Database,
   Upload,
   Image as ImageIcon,
   FileDigit,
   Table2,
 } from "lucide-react";
 import { invokeTauri } from "../../lib/tauri";
+import MemoryAssetStudioIcon from "../../components/MemoryAssetStudioIcon";
 import {
   convertBinary,
   convertPixels,
@@ -762,7 +762,7 @@ export default function MemoryAssetStudio({
       ) : !manifest.assets.length ? (
         <div className="mas-empty">
           <div className="mas-empty-icon">
-            <Database size={30} aria-hidden="true" />
+            <MemoryAssetStudioIcon size={30} />
           </div>
           <span className="mas-kicker">FROM SOURCE TO SILICON</span>
           <h2>Your next memory starts here</h2>
