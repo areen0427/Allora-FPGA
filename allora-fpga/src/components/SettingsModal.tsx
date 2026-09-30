@@ -244,7 +244,7 @@ export function SettingsModal({
                   }
                 />
                 <SettingToggle
-                  label="Reduce Animation"
+                  label="Reduce Motion"
                   checked={settings.reduceMotion}
                   onChange={(value) => updateSetting("reduceMotion", value)}
                 />

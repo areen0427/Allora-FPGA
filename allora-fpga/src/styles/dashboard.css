@@ -1170,9 +1170,15 @@ html[data-theme="solar"] .pin-group-header {
 }
 
 .board-show-more {
-  background: #2563eb;
+  background: linear-gradient(180deg, #4388ef, #2563d4);
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 14px rgba(37, 99, 212, 0.2);
+}
+
+.board-show-more:hover:not(:disabled) {
+  background: linear-gradient(180deg, #4b91f7, #1d5bc8);
 }
 
 .board-card h3,

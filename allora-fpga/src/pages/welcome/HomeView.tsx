@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { getBoardById } from "../../data/boards";
+import { getFpgaById } from "../../data/fpgas";
 import { formatProjectTime } from "../../data/projects";
 import type { SavedProject } from "../../data/projects";
 import type { BoardCatalogItem } from "../../data/boardSupport";
@@ -316,6 +317,7 @@ export function HomeView({
         ) : (
           <div className="welcome-home-layout">
             <SupportedBoardGrid
+              reduceMotion={reduceMotion}
               boards={boards}
               visibleBoards={visibleBoards}
               showAllBoards={showAllBoards}
@@ -394,14 +396,14 @@ function ExecutionPathChooser({
             <button type="button" onClick={() => onChoose("simulate")} className={`execution-path-card simulate${selectedTarget === "simulate" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
               <span className="glass-edge glass-edge-top" aria-hidden="true" />
               <span className="glass-specular" aria-hidden="true" />
-              <div className="execution-path-copy"><h3>Simulate</h3><span className="execution-path-microcopy">Test & visualize RTL</span></div>
+              <div className="execution-path-copy"><h3>Simulate</h3><span className="execution-path-microcopy">TEST & VISUALIZE RTL</span></div>
             </button>
           </div>
           <div className="execution-path-option">
             <button type="button" onClick={() => onChoose("build")} className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
               <span className="glass-edge glass-edge-top" aria-hidden="true" />
               <span className="glass-specular" aria-hidden="true" />
-              <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">Program your FPGA</span></div>
+              <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">CREATE A DESIGN</span></div>
             </button>
           </div>
 
@@ -740,6 +742,7 @@ function SimulationLaunchDefaults({
 }
 
 function SupportedBoardGrid({
+  reduceMotion,
   boards,
   visibleBoards,
   showAllBoards,
@@ -747,6 +750,7 @@ function SupportedBoardGrid({
   onToggleShowAllBoards,
   onSelectBoard,
 }: {
+  reduceMotion: boolean;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
   showAllBoards: boolean;
@@ -768,7 +772,8 @@ function SupportedBoardGrid({
           <BoardCard
             key={board.id}
             board={board}
-            onSelect={() => onSelectBoard(board)}
+            reduceMotion={reduceMotion}
+            onSelect={onSelectBoard}
           />
         ))}
       </div>
@@ -789,33 +794,122 @@ function SupportedBoardGrid({
 }
 
 function BoardCard({
+  reduceMotion,
   board,
   onSelect,
 }: {
+  reduceMotion: boolean;
   board: BoardCatalogItem;
-  onSelect: () => void;
+  onSelect: (board: BoardCatalogItem) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = `board-info-${board.id}`;
+  const panelRef = useRef<HTMLElement>(null);
+  const definitions = getBoardDefinitions(board);
+
+  useLayoutEffect(() => {
+    if (!expanded || !panelRef.current) return;
+    const panel = panelRef.current;
+    panel.showPopover();
+    function positionPanel() {
+      const card = triggerRef.current?.getBoundingClientRect();
+      if (!card) return;
+      const width = Math.min(definitions.length * 300 + 36, window.innerWidth - 32);
+      panel.style.width = `${width}px`;
+      panel.style.maxHeight = `${window.innerHeight - 32}px`;
+      const height = panel.offsetHeight;
+      const below = card.bottom + 8;
+      const opensBelow = below + height <= window.innerHeight - 16;
+      panel.dataset.placement = opensBelow ? "below" : "above";
+      const top = opensBelow
+        ? below
+        : Math.max(16, card.top - height - 8);
+      panel.style.top = `${top}px`;
+      panel.style.left = `${Math.max(16, Math.min(card.left, window.innerWidth - width - 16))}px`;
+    }
+    positionPanel();
+    if (!reduceMotion) panel.classList.add("board-info-animate");
+    window.addEventListener("resize", positionPanel);
+    window.addEventListener("scroll", positionPanel, true);
+    return () => {
+      window.removeEventListener("resize", positionPanel);
+      window.removeEventListener("scroll", positionPanel, true);
+      panel.classList.remove("board-info-animate");
+      panel.hidePopover();
+    };
+  }, [expanded, definitions.length, reduceMotion]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    function dismissOutside(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setExpanded(false);
+    }
+    function dismissOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setExpanded(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [expanded]);
+
   return (
-    <button
-      className="board-card welcome-board-card"
-      type="button"
-      onClick={onSelect}
-    >
-      <div className="board-icon-badge">
-        <BoardCardIcon />
-      </div>
-
-      <div className="board-card-title-row">
-        <h3>{board.name}</h3>
-        {"variants" in board ? (
-          <span className="board-count-pill board-family-pill">
-            {board.variants.length}
-          </span>
-        ) : null}
-      </div>
-
-      <p>{getBoardSummary(board).join(" · ")}</p>
-    </button>
+    <div className={`board-info-anchor${expanded ? " is-expanded" : ""}`} ref={containerRef}>
+      <button
+        ref={triggerRef}
+        className="board-card welcome-board-card"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <div className="board-icon-badge"><BoardCardIcon /></div>
+        <div className="board-card-title-row">
+          <h3>{board.name}</h3>
+          {"variants" in board ? (
+            <span className="board-count-pill board-family-pill">{board.variants.length}</span>
+          ) : null}
+        </div>
+        <p>{getBoardSummary(board).join(" · ")}</p>
+      </button>
+      {expanded ? (
+        <section ref={panelRef} popover="manual" id={panelId} className="welcome-product-info board-info-popup" aria-label={`${board.name} specifications`}>
+          <header className="board-info-header">
+            <strong>{board.name}</strong>
+          </header>
+          <div className="board-info-variants">
+            {definitions.map((variant) => {
+              const fpga = getFpgaById(variant.fpgaId);
+              const peripherals = [...new Set(variant.pins
+                .filter((pin) => pin.type !== "clock" && pin.type !== "led" && pin.type !== "button")
+                .map((pin) => pin.group || pin.type.toUpperCase()))];
+              return (
+                <section key={variant.id} className="board-info-variant">
+                  <h4>{variant.name}</h4>
+                  <p>{variant.device} · {variant.package}</p>
+                  <dl>
+                    <div><dt>LUTs / logic cells</dt><dd>{fpga?.logicCells?.toLocaleString() ?? "Unknown"}</dd></div>
+                    <div><dt>Block RAM</dt><dd>{fpga?.bramKb !== undefined ? `${fpga.bramKb.toLocaleString()} Kbit` : "Unknown"}</dd></div>
+                    <div><dt>DSP blocks</dt><dd>{fpga?.dsp ?? "Unknown"}</dd></div>
+                    <div><dt>Board clocks</dt><dd>{variant.clocks.length ? variant.clocks.map((clock) => `${clock.name}: ${clock.frequency / 1_000_000} MHz`).join(" · ") : "Unknown"}</dd></div>
+                    <div><dt>LEDs / buttons</dt><dd>{variant.leds.length} / {variant.buttons.length}</dd></div>
+                    <div><dt>Peripherals / connectors</dt><dd>{peripherals.join(" · ") || "Unknown"}</dd></div>
+                  </dl>
+                  <button type="button" className="board-show-more board-info-select" onClick={() => onSelect(variant)}>Select {variant.name}<ChevronRight size={16} /></button>
+                </section>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+    </div>
   );
 }
 

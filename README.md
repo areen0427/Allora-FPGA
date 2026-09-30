@@ -151,6 +151,7 @@ Each disk-backed project includes `allora-project.json`, source files, constrain
 - `examples/` — projects that can be opened in Allora.
 - `CONTINUATION.md` — living engineering handoff; update it after every codebase change.
 - `CONTEXT.md` — current product and architecture orientation.
+- `PRODUCT_IDEAS.md` — living note for product directions to explore.
 - `GITHUB_INTEGRATION.md` — OAuth, credential storage, Git/API/CLI boundaries, and publishing safety model.
 
 ## Contributing

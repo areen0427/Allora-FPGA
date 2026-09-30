@@ -1706,3 +1706,62 @@ html[data-theme="black-ice"] .execution-path-stage :is(.welcome-develop-group, .
   .execution-path-stage .welcome-tools-panel .welcome-tool-row:hover:not(:disabled),
   .execution-path-stage .welcome-tools-panel .welcome-tool-row:focus-visible { transform: none; }
 }
+
+
+/* Top-layer specifications stay within the viewport without expanding the page. */
+.board-info-anchor { position: relative; min-width: 0; }
+.board-info-anchor.is-expanded { z-index: 20; }
+.board-info-anchor > .welcome-board-card { width: 100%; height: 100%; }
+.welcome-product-info.board-info-popup {
+  position: fixed;
+  margin: 0;
+  bottom: auto;
+  top: 16px;
+  left: 0;
+  right: auto;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 18px;
+  max-height: min(560px, 65vh);
+  overflow-y: auto;
+}
+.board-info-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.board-info-variants { display: flex; gap: 18px; overflow-x: auto; padding: 14px 0; }
+.board-info-variant { flex: 1 0 260px; display: flex; flex-direction: column; min-width: 0; }
+.board-info-variant + .board-info-variant { border-left: 1px solid var(--landing-panel-border); padding-left: 18px; }
+.board-info-variant dl { flex: 1; }
+.board-info-variant h4 { margin: 0 0 5px; font-size: 14px; }
+.board-info-variant p { margin: 0; font-size: 11px; line-height: 1.5; color: var(--landing-muted); }
+.board-info-variant dl { margin: 12px 0 0; font-size: 12px; }
+.board-info-variant dl > div { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.board-info-variant dt { color: var(--landing-muted); flex-shrink: 0; }
+.board-info-variant dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.board-info-select { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; flex-shrink: 0; }
+
+
+.board-info-popup.board-info-animate {
+  --glass-unfold-radius: 16px;
+  animation: glass-unfold 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.board-info-popup.board-info-animate[data-placement="above"] {
+  animation-name: board-info-unfold-up;
+}
+@keyframes board-info-unfold-up {
+  from {
+    opacity: 0;
+    clip-path: inset(88% 0 0 0 round var(--glass-unfold-radius));
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(-80px -80px -80px -80px round var(--glass-unfold-radius));
+    transform: translateY(0);
+  }
+}
+html[data-reduce-motion="true"] .board-info-popup.board-info-animate {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-info-popup.board-info-animate { animation: none; }
+}

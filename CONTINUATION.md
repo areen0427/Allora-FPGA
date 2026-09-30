@@ -2,6 +2,42 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-09-30 — Board action hover lighting
+
+- Show all boards and per-variant Select share Settings Done's base/hover blue gradients and inset highlight/shadow, alongside the existing hover lift.
+- Validation: production build and diff whitespace checks passed. Live visual verification was not performed.
+
+## 2026-09-30 — Consistent action hover motion
+
+- Settings Close, board Select/Show all boards, and all welcome/project-setup Back buttons now use the Done button's 160ms easing and one-pixel upward hover lift.
+- The shared rules preserve each button's colors and disable lifts for Settings Reduce Motion and OS reduced-motion preferences, including Done.
+- Validation: production build, lint, and diff whitespace checks passed. Live visual verification was not performed.
+
+## 2026-09-30 — Board popup copy cleanup
+
+- Removed the board popup close icon and catalog/timing note; outside-click and Escape dismissal remain available.
+- Missing board stats now display Unknown. Settings labels the existing motion toggle Reduce Motion.
+- Validation: production build, lint, and diff whitespace checks passed.
+
+## 2026-09-30 — Directional board details animation
+
+- Board popups reuse the product-info panel's 400ms easing and downward unfold; above-card panels mirror the reveal upward.
+- Placement is calculated before animation starts and uses untransformed height to remain stable during scrolling. Settings Reduce Motion and the OS reduced-motion preference disable the effect.
+- Validation: production build, lint, and diff checks passed. Live visual verification was not performed.
+
+## 2026-09-30 — Board popup placement and variant selection
+
+- Variant specifications now appear side by side, each with a Select button reusing the Show all boards button class. Selecting a variant goes directly to its project setup.
+- Native top-layer popovers preserve welcome theme variables and avoid page/sidebar overflow. Panels fit the viewport, open above cards when insufficient space remains below, and reposition on scrolling/resizing. Narrow viewports scroll variant columns inside the panel.
+- Validation: production build, lint, and diff checks passed; no live visual verification performed.
+
+## 2026-09-30 — Build board specification popups
+
+- Build catalog card clicks now open a product-style panel anchored below the card, showing every variant's device/package, LUTs/logic cells, BRAM, DSPs, board clock frequencies, LEDs/buttons, and catalog peripherals/connectors.
+- Select explicitly continues the existing board/variant setup flow. Outside click, Escape, and Close dismiss details; Escape/Close return focus to the card.
+- Resource figures reuse `fpgas.ts`; missing catalog figures are labeled Not cataloged. Clock figures describe board oscillators rather than guaranteed design timing.
+- Validation: production build, ESLint, and diff whitespace checks passed. Visual UI verification was not performed. Next useful step: expand resource metadata for FPGA devices absent from the existing catalog.
+
 ## 2026-09-29 — Memory Asset Studio polish and reliability
 
 - Replaced the blank three-column welcome state with an import guide; unified Ice/Black Ice tokens, compact controls, and workspace-width responsive layouts. The landing page now contains both project creation paths in matching cards.

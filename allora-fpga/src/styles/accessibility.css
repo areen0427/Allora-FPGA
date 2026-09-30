@@ -43,3 +43,23 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
     transform: none !important;
   }
 }
+
+
+/* Match the Settings Done button's subtle 160ms hover lift. */
+button:is(.settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back) {
+  transition: 0.16s ease;
+}
+button:is(.settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+html[data-reduce-motion="true"] button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back) {
+  transition: none;
+}
+html[data-reduce-motion="true"] button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover {
+    transform: none !important;
+  }
+}
