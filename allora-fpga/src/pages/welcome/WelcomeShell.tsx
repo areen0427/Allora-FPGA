@@ -6,6 +6,9 @@ export type WelcomeView = "home" | "pin-mapping";
 
 type WelcomeShellProps = {
   activeView: WelcomeView;
+  brandRef: RefObject<HTMLButtonElement | null>;
+  showProductInfo: boolean;
+  onOpenProductInfo?: () => void;
   maxWidth: string;
   newProjectRef: RefObject<HTMLElement | null>;
   onViewChange: (view: WelcomeView) => void;
@@ -15,6 +18,9 @@ type WelcomeShellProps = {
 
 export function WelcomeShell({
   activeView,
+  brandRef,
+  showProductInfo,
+  onOpenProductInfo,
   maxWidth,
   newProjectRef,
   onViewChange,
@@ -25,12 +31,19 @@ export function WelcomeShell({
     <div className="glass-page welcome-page">
       <aside className="home-rail welcome-rail">
         <button
+          ref={brandRef}
           type="button"
           className="welcome-rail-logo"
-          title="Home"
-          aria-label="Home"
+          title={onOpenProductInfo ? "Product information" : "Home"}
+          aria-label={onOpenProductInfo ? "Product information" : "Home"}
+          aria-expanded={onOpenProductInfo ? showProductInfo : undefined}
+          aria-controls={onOpenProductInfo ? "welcome-product-info" : undefined}
           aria-current={activeView === "home" ? "page" : undefined}
           onClick={() => {
+            if (onOpenProductInfo) {
+              onOpenProductInfo();
+              return;
+            }
             onViewChange("home");
             newProjectRef.current?.scrollIntoView({ behavior: "smooth" });
           }}

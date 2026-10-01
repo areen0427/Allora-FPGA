@@ -178,6 +178,52 @@
   gap: 14px;
 }
 
+.build-board-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 18px;
+}
+
+.board-search-field.build-board-search {
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 480px;
+  gap: 10px;
+}
+
+.build-board-search button {
+  display: flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.build-board-search:focus-within {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.build-board-empty {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 13px;
+}
+
+.build-board-empty {
+  padding: 24px 0;
+}
+
+.build-board-unresolved {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+
 .welcome-board-card {
   min-height: 136px;
   padding: 16px 18px;

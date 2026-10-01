@@ -839,7 +839,7 @@ function ResourcePinMapper({
                       label="Format"
                       value={`.${board.constraintsFile}`}
                     />
-                    <PinInspectorFact label="I/O" value="LVCMOS33" />
+                    <PinInspectorFact label="I/O" value={selectedPinOption.ioStandard} />
                   </div>
                 ) : null}
               </DashboardSurfaceCard>

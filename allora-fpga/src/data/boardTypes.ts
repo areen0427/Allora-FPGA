@@ -37,6 +37,7 @@ export type BoardPin = {
   group?: string;
   signal?: string;
   activeLow?: boolean;
+  ioStandard?: string;
   verified: boolean;
 };
 
@@ -44,6 +45,8 @@ export type BoardClock = {
   name: string;
   pin?: string;
   frequency: number;
+  ioStandard?: string;
+  source?: "external" | "internal-hfosc";
   verified: boolean;
 };
 

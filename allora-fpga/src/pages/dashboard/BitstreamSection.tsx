@@ -691,11 +691,14 @@ function createGeneratedConstraints(
       lines.push(
         `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${port.name}]`,
       );
-      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${port.name}]`);
+      lines.push(
+        `set_property IOSTANDARD ${pin.ioStandard} [get_ports ${port.name}]`,
+      );
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);
     } else if (board.constraintsFile === "lpf") {
       lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
+      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};`);
     } else if (board.constraintsFile === "cst") {
       lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
     }

@@ -1,15 +1,15 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { AppSettings } from "../data/settings";
 import { getSavedProjects, removeSavedProject } from "../data/projects";
 import {
-  getBuildSupportedBoards,
+  getBuildCatalogBoards,
   getPinMappingOnlyBoards,
 } from "../data/boardSupport";
 import type {
   BoardCatalogItem,
   VariantBoardCatalogItem,
 } from "../data/boardSupport";
-import { HomeView } from "./welcome/HomeView";
+import { HomeView, type HomePath } from "./welcome/HomeView";
 import { PinMappingBrowser } from "./welcome/PinMappingBrowser";
 import { SettingsModal } from "./welcome/SettingsModal";
 import { VariantSelectorModal } from "./welcome/VariantSelectorModal";
@@ -52,11 +52,15 @@ export default function BoardSelect({
     useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
   const [activeView, setActiveView] = useState<WelcomeView>("home");
+  const [homePath, setHomePath] = useState<HomePath | null>(null);
+  const [showProductInfo, setShowProductInfo] = useState(false);
+  const brandRef = useRef<HTMLButtonElement | null>(null);
+  const closeProductInfo = useCallback(() => setShowProductInfo(false), []);
   const [homeViewKey, setHomeViewKey] = useState(0);
   const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
   const newProjectRef = useRef<HTMLElement | null>(null);
 
-  const supportedBoards = useMemo(() => getBuildSupportedBoards(), []);
+  const supportedBoards = useMemo(() => getBuildCatalogBoards(), []);
   const pinMappingBoards = useMemo(() => getPinMappingOnlyBoards(), []);
   const recentProjects = savedProjects.slice(0, 5);
   const visibleBoards = showAllBoards
@@ -96,6 +100,8 @@ export default function BoardSelect({
 
   function handleViewChange(view: WelcomeView) {
     setActiveView(view);
+    setHomePath(null);
+    setShowProductInfo(false);
     if (view === "home") {
       setSelectedPinBoard(null);
       setHomeViewKey((current) => current + 1);
@@ -105,6 +111,11 @@ export default function BoardSelect({
   return (
     <WelcomeShell
       activeView={activeView}
+      brandRef={brandRef}
+      showProductInfo={showProductInfo}
+      onOpenProductInfo={activeView === "home" && homePath === null
+        ? () => setShowProductInfo((visible) => !visible)
+        : undefined}
       maxWidth={activeView === "home" ? "1280px" : "1680px"}
       newProjectRef={newProjectRef}
       onViewChange={handleViewChange}
@@ -113,6 +124,14 @@ export default function BoardSelect({
       {activeView === "home" ? (
         <HomeView
           key={homeViewKey}
+          path={homePath}
+          onPathChange={(path) => {
+            setHomePath(path);
+            setShowProductInfo(false);
+          }}
+          showProductInfo={showProductInfo}
+          onCloseProductInfo={closeProductInfo}
+          brandRef={brandRef}
           reduceMotion={settings.reduceMotion}
           settings={settings}
           boards={supportedBoards}

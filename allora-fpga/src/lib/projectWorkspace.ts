@@ -595,10 +595,17 @@ function createStarterSource({
 
   return [
     `module ${topModule}(`,
-    `  input  wire clk${ledPin ? "," : ""}`,
+    ...(clock?.source === "internal-hfosc" ? [] : [`  input  wire clk${ledPin ? "," : ""}`]),
     ...(ledPin ? ["  output wire led"] : []),
     ");",
     "",
+    ...(clock?.source === "internal-hfosc"
+      ? [
+          "  wire clk;",
+          '  SB_HFOSC #(.CLKHF_DIV("0b10")) oscillator (.CLKHFPU(1\'b1), .CLKHFEN(1\'b1), .CLKHF(clk));',
+          "",
+        ]
+      : []),
     "  reg [23:0] counter = 24'd0;",
     "",
     "  always @(posedge clk) begin",
@@ -657,9 +664,24 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
   if (board.constraintsFile === "lpf") {
     return [
       `# ${board.name} starter constraints for ${topModule}`,
-      ...(clock?.pin ? [`LOCATE COMP "clk" SITE "${clock.pin}";`] : []),
-      ...(led?.pin ? [`LOCATE COMP "led" SITE "${led.pin}";`] : []),
-      ...(reset?.pin ? [`LOCATE COMP "rst" SITE "${reset.pin}";`] : []),
+      ...(clock?.pin
+        ? [
+            `LOCATE COMP "clk" SITE "${clock.pin}";`,
+            `IOBUF PORT "clk" IO_TYPE=${clock.ioStandard ?? "LVCMOS33"};`,
+          ]
+        : []),
+      ...(led?.pin
+        ? [
+            `LOCATE COMP "led" SITE "${led.pin}";`,
+            `IOBUF PORT "led" IO_TYPE=${led.ioStandard ?? "LVCMOS33"};`,
+          ]
+        : []),
+      ...(reset?.pin
+        ? [
+            `LOCATE COMP "rst" SITE "${reset.pin}";`,
+            `IOBUF PORT "rst" IO_TYPE=${reset.ioStandard ?? "LVCMOS33"};`,
+          ]
+        : []),
       "",
     ].join("\n");
   }

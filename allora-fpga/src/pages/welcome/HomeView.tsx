@@ -17,6 +17,7 @@ import {
   Map as MapIcon,
   Play,
   Radio,
+  Search,
   SlidersHorizontal,
   Sparkles,
   Timer,
@@ -28,7 +29,8 @@ import { getFpgaById } from "../../data/fpgas";
 import { formatProjectTime } from "../../data/projects";
 import type { SavedProject } from "../../data/projects";
 import type { BoardCatalogItem } from "../../data/boardSupport";
-import { getBoardDefinitions } from "../../data/boardSupport";
+import { getBoardDefinitions, matchesBoardSearch } from "../../data/boardSupport";
+import { getBoardCapabilities } from "../../data/boardCapabilities";
 import BoardCardIcon from "../../components/BoardCardIcon";
 import type { ExecutionTarget } from "../dashboard/types";
 import type { AppSettings } from "../../data/settings";
@@ -39,6 +41,11 @@ import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
 import { version } from "../../../package.json";
 
 type HomeViewProps = {
+  path: HomePath | null;
+  onPathChange: (path: HomePath | null) => void;
+  showProductInfo: boolean;
+  onCloseProductInfo: () => void;
+  brandRef: React.RefObject<HTMLButtonElement | null>;
   reduceMotion: boolean;
   settings: AppSettings;
   boards: BoardCatalogItem[];
@@ -62,9 +69,14 @@ type HomeViewProps = {
   onCreateMemoryBoardProject: (board: BoardCatalogItem) => void;
 };
 
-type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio";
+export type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio";
 
 export function HomeView({
+  path,
+  onPathChange: setPath,
+  showProductInfo,
+  onCloseProductInfo,
+  brandRef,
   reduceMotion,
   settings,
   boards,
@@ -87,13 +99,10 @@ export function HomeView({
   onCreateMemoryProject,
   onCreateMemoryBoardProject,
 }: HomeViewProps) {
-  const [path, setPath] = useState<HomePath | null>(null);
   const [memoryBoardId, setMemoryBoardId] = useState(boards[0]?.id ?? "");
   const [departingPath, setDepartingPath] = useState<HomePath | null>(
     null,
   );
-  const [showProductInfo, setShowProductInfo] = useState(false);
-  const brandRef = useRef<HTMLButtonElement>(null);
   const productInfoRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -101,10 +110,10 @@ export function HomeView({
     function dismissOutside(event: PointerEvent) {
       const target = event.target as Node;
       if (brandRef.current?.contains(target) || productInfoRef.current?.contains(target)) return;
-      setShowProductInfo(false);
+      onCloseProductInfo();
     }
     function dismissOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setShowProductInfo(false);
+      if (event.key === "Escape") onCloseProductInfo();
     }
     document.addEventListener("pointerdown", dismissOutside);
     document.addEventListener("keydown", dismissOnEscape);
@@ -112,7 +121,7 @@ export function HomeView({
       document.removeEventListener("pointerdown", dismissOutside);
       document.removeEventListener("keydown", dismissOnEscape);
     };
-  }, [showProductInfo]);
+  }, [showProductInfo, onCloseProductInfo, brandRef]);
 
   if (path === null) {
     return (
@@ -133,99 +142,83 @@ export function HomeView({
             aria-hidden="true"
           />
         ) : null}
-        <div className="welcome-action-stack">
-          <button
-            ref={brandRef}
-            type="button"
-            className="welcome-brand-lockup welcome-brand-compact"
-            aria-expanded={showProductInfo}
-            aria-controls="welcome-product-info"
-            onClick={() => setShowProductInfo((visible) => !visible)}
+        {showProductInfo ? (
+          <section
+            ref={productInfoRef}
+            id="welcome-product-info"
+            className={`welcome-product-info welcome-logo-info${reduceMotion ? "" : " glass-unfold"}`}
+            aria-label="About Allora FPGA"
           >
-            <span className="welcome-brand-mark">
-              <img src="/product-info.svg" alt="" aria-hidden="true" />
-            </span>
-            <span className="welcome-brand-copy">
-              <strong>ALLORA</strong>
-              <small>Product information</small>
-            </span>
-          </button>
-          {showProductInfo ? (
-            <section
-              ref={productInfoRef}
-              id="welcome-product-info"
-              className={`welcome-product-info${reduceMotion ? "" : " glass-unfold"}`}
-              aria-label="About Allora FPGA"
-            >
-              <header className="welcome-product-info-header">
-                <span className="welcome-product-info-eyebrow">
-                  Allora FPGA
-                </span>
-                <strong>Product information</strong>
-              </header>
-              <div className="welcome-product-info-meta">
+            <header className="welcome-product-info-header">
+              <span className="welcome-product-info-eyebrow">
+                Allora FPGA
+              </span>
+              <strong>Product information</strong>
+            </header>
+            <div className="welcome-product-info-meta">
+              <span>
+                <small>Version</small>
+                <strong>{version}</strong>
+              </span>
+              <a
+                href="https://areen0427.github.io/Allora-FPGA/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => {
+                  if (!isTauri()) return;
+                  event.preventDefault();
+                  void openUrl(event.currentTarget.href).catch((error) => {
+                    console.error("Could not open the Allora FPGA website", error);
+                  });
+                }}
+              >
+                <BookOpen size={14} /> Website{" "}
+                <ExternalLink size={11} />
+              </a>
+            </div>
+            <div className="welcome-product-info-section">
+              <h3>Projects</h3>
+              <div className="welcome-product-stat-row">
                 <span>
-                  <small>Version</small>
-                  <strong>{version}</strong>
+                  <strong>{recentProjects.length}</strong>
+                  <small>Recent</small>
                 </span>
-                <a
-                  href="https://areen0427.github.io/Allora-FPGA/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => {
-                    if (!isTauri()) return;
-                    event.preventDefault();
-                    void openUrl(event.currentTarget.href).catch((error) => {
-                      console.error("Could not open the Allora FPGA website", error);
-                    });
-                  }}
-                >
-                  <BookOpen size={14} /> Website{" "}
-                  <ExternalLink size={11} />
-                </a>
+                <span>
+                  <strong>{boards.length}</strong>
+                  <small>Boards</small>
+                </span>
               </div>
-              <div className="welcome-product-info-section">
-                <h3>Projects</h3>
-                <div className="welcome-product-stat-row">
-                  <span>
-                    <strong>{recentProjects.length}</strong>
-                    <small>Recent</small>
-                  </span>
-                  <span>
-                    <strong>{boards.length}</strong>
-                    <small>Supported boards</small>
-                  </span>
+              {recentProjects[0] ? (
+                <p className="welcome-product-latest">
+                  Latest: <strong>{recentProjects[0].name}</strong>
+                  <small>
+                    {formatProjectTime(recentProjects[0].updatedAt)}
+                  </small>
+                </p>
+              ) : (
+                <p className="welcome-product-latest">
+                  No recent projects yet.
+                </p>
+              )}
+            </div>
+            <div className="welcome-product-info-section">
+              <h3>
+                <Keyboard size={13} /> Shortcuts
+              </h3>
+              <dl className="welcome-shortcut-list">
+                <div>
+                  <dt>Save project</dt>
+                  <dd>⌘/Ctrl S</dd>
                 </div>
-                {recentProjects[0] ? (
-                  <p className="welcome-product-latest">
-                    Latest: <strong>{recentProjects[0].name}</strong>
-                    <small>
-                      {formatProjectTime(recentProjects[0].updatedAt)}
-                    </small>
-                  </p>
-                ) : (
-                  <p className="welcome-product-latest">
-                    No recent projects yet.
-                  </p>
-                )}
-              </div>
-              <div className="welcome-product-info-section">
-                <h3>
-                  <Keyboard size={13} /> Shortcuts
-                </h3>
-                <dl className="welcome-shortcut-list">
-                  <div>
-                    <dt>Save project</dt>
-                    <dd>⌘/Ctrl S</dd>
-                  </div>
-                  <div>
-                    <dt>Zoom waveforms</dt>
-                    <dd>⌘/Ctrl + scroll</dd>
-                  </div>
-                </dl>
-              </div>
-            </section>
-          ) : null}
+                <div>
+                  <dt>Zoom waveforms</dt>
+                  <dd>⌘/Ctrl + scroll</dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+        ) : null}
+        <div className="welcome-action-stack">
           <ExecutionPathChooser
             selectedTarget={departingPath}
             onChoose={(target) => {
@@ -758,6 +751,12 @@ function SupportedBoardGrid({
   onToggleShowAllBoards: (showAll: boolean) => void;
   onSelectBoard: (board: BoardCatalogItem) => void;
 }) {
+  const [search, setSearch] = useState("");
+  const isSearching = Boolean(search.trim());
+  const matchingBoards = boards.filter((board) =>
+    matchesBoardSearch(board, search),
+  );
+  const displayedBoards = isSearching ? matchingBoards : visibleBoards;
   return (
     <section ref={newProjectRef}>
       <div className="welcome-section-header">
@@ -767,8 +766,29 @@ function SupportedBoardGrid({
         </div>
       </div>
 
+      <div className="build-board-toolbar">
+        <label className="board-search-field build-board-search">
+          <Search size={17} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Search build boards"
+            placeholder="Search boards, vendors, or FPGA parts"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          {search ? (
+            <button
+              type="button"
+              aria-label="Clear board search"
+              onClick={() => setSearch("")}
+            >
+              <X size={15} />
+            </button>
+          ) : null}
+        </label>
+      </div>
       <div className="supported-board-grid">
-        {visibleBoards.map((board) => (
+        {displayedBoards.map((board) => (
           <BoardCard
             key={board.id}
             board={board}
@@ -778,7 +798,12 @@ function SupportedBoardGrid({
         ))}
       </div>
 
-      {boards.length > 8 ? (
+      {displayedBoards.length === 0 ? (
+        <p className="build-board-empty">
+          No boards match “{search}”. Try a board name, vendor, or FPGA part.
+        </p>
+      ) : null}
+      {!isSearching && boards.length > 8 ? (
         <button
           type="button"
           className="board-show-more"
@@ -878,6 +903,9 @@ function BoardCard({
           ) : null}
         </div>
         <p>{getBoardSummary(board).join(" · ")}</p>
+        {definitions.some((definition) => !getBoardCapabilities(definition).bitstream.supported) ? (
+          <span className="build-board-unresolved">FPGA identity needs verification</span>
+        ) : null}
       </button>
       {expanded ? (
         <section ref={panelRef} popover="manual" id={panelId} className="welcome-product-info board-info-popup" aria-label={`${board.name} specifications`}>
@@ -893,6 +921,9 @@ function BoardCard({
               return (
                 <section key={variant.id} className="board-info-variant">
                   <h4>{variant.name}</h4>
+                  {!getBoardCapabilities(variant).bitstream.supported ? (
+                    <p>{getBoardCapabilities(variant).bitstream.detail}</p>
+                  ) : null}
                   <p>{variant.device} · {variant.package}</p>
                   <dl>
                     <div><dt>LUTs / logic cells</dt><dd>{fpga?.logicCells?.toLocaleString() ?? "Unknown"}</dd></div>

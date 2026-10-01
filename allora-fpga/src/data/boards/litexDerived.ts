@@ -37,6 +37,7 @@ function makeEcp5Variant({
   clockName,
   clockPin,
   clockFrequency,
+  deviceClass = "LFE5UM5G",
   program,
   pins,
   leds,
@@ -51,6 +52,7 @@ function makeEcp5Variant({
   clockName: string;
   clockPin: string;
   clockFrequency: number;
+  deviceClass?: "LFE5U" | "LFE5UM5G";
   program: string;
   pins: BoardPin[];
   leds: BoardPin[];
@@ -62,9 +64,9 @@ function makeEcp5Variant({
     name,
     vendor,
     family: "ECP5",
-    device: `LFE5UM5G-${device}`,
+    device: `${deviceClass}-${device}`,
     package: packageName,
-    fpgaId: `lfe5um5g-${device.toLowerCase()}-${packageName.toLowerCase()}`,
+    fpgaId: `${deviceClass.toLowerCase()}-${device.toLowerCase()}-${packageName.toLowerCase()}`,
     constraintsFile: "lpf",
     synthesisFlow: "yosys-nextpnr",
     toolchain: {
@@ -446,6 +448,7 @@ export const icesugarPro: BoardDefinition = makeEcp5Variant({
   name: "iCESugar Pro",
   vendor: "Muse Lab",
   device: "25F",
+  deviceClass: "LFE5U",
   packageName: "CABGA256",
   clockName: "clk25",
   clockPin: "P6",

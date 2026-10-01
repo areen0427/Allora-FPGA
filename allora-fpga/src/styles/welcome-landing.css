@@ -1765,3 +1765,13 @@ html[data-reduce-motion="true"] .board-info-popup.board-info-animate {
 @media (prefers-reduced-motion: reduce) {
   .board-info-popup.board-info-animate { animation: none; }
 }
+
+/* Anchor product information beside the welcome app icon. */
+.execution-path-stage .welcome-logo-info {
+  top: 18px;
+  left: 82px;
+  right: auto;
+  width: min(430px, calc(100% - 98px));
+  max-width: none;
+  box-sizing: border-box;
+}

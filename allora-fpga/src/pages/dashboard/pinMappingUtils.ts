@@ -132,7 +132,10 @@ export function createSuggestedMappings(
   const usedPins = new Set<string>();
 
   for (const port of ports) {
-    const clockMatch = findClockMatch(port, clocks);
+    const clockMatch = findClockMatch(
+      port,
+      clocks.filter((clock) => clock.pin && clock.pin !== "unknown"),
+    );
 
     if (clockMatch?.pin) {
       mappings[port.name] = `clock:${clockMatch.name}`;
@@ -375,6 +378,7 @@ export function getPinOptions(board: BoardDefinition) {
         shortLabel: `${clock.name} ${clock.pin}`,
         pin: clock.pin ?? "",
         type: "clock",
+        ioStandard: clock.ioStandard ?? "LVCMOS33",
         symbol: "CLK",
       })),
     ...board.pins.map((pin) => ({
@@ -383,6 +387,7 @@ export function getPinOptions(board: BoardDefinition) {
       shortLabel: `${pin.name} ${pin.pin}`,
       pin: pin.pin,
       type: pin.type,
+      ioStandard: pin.ioStandard ?? "LVCMOS33",
       symbol: getPinSymbol(pin),
     })),
   ];
@@ -408,12 +413,14 @@ export function createPinMappingConstraints(
       lines.push(
         `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${portRef}]`,
       );
-      lines.push(`set_property IOSTANDARD LVCMOS33 [get_ports ${portRef}]`);
+      lines.push(
+        `set_property IOSTANDARD ${pin.ioStandard} [get_ports ${portRef}]`,
+      );
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);
     } else if (board.constraintsFile === "lpf") {
       lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
-      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=LVCMOS33;`);
+      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};`);
     } else if (board.constraintsFile === "cst") {
       lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
     } else if (board.constraintsFile === "qsf") {
