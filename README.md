@@ -25,7 +25,7 @@ Allora FPGA is a desktop development environment for open-source FPGA workflows.
 - A live build preflight checklist in Health and Bitstream, and an RTL module hierarchy beside project files.
 - Icarus Verilog testbench simulation with VCD waveform inspection.
 - A local-first GitHub publishing workflow with explicit commits, repository creation/selection, safe `origin` setup, first push, and later commit/push status. GitHub sign-in is optional and never part of project creation.
-- Settings → AI Integration detects and connects locally installed OpenAI Codex and Claude Code CLIs through each provider's own login flow. Codex CLI sign-in and a live Codex request have been verified on a development Mac; Claude Code support is implemented but has not had a live account test.
+- Welcome-screen chat streams installed Codex responses and exposes Allora project, pin, simulation, build, and confirmed programming operations through a local MCP server. Settings → AI Integration detects and connects locally installed OpenAI Codex and Claude Code CLIs through each provider's own login flow. Embedded chat uses Codex; Claude Code retains installation/login support.
 - Inside a project, a Usage gauge above Settings shows live CPU and memory use for Allora FPGA and its running child tools on macOS. The panel is available in both Simulate and Build, uses the Ice or Black Ice theme, and closes when clicked outside or with Escape.
 - Virtual FPGA V0.1 for interactive Verilog/SystemVerilog designs:
   - structural top-level port discovery through Yosys;
@@ -40,13 +40,13 @@ The physical workflow remains independent of virtual mappings. A project has one
 
 The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical FPGA** as equal primary paths over a shared molecular-circuit environment. Ice and Black Ice use geometry-matched AI-authored renders with different lighting grades.
 
-- All persistent controls form one compact, right-aligned column with a shared width and edge: Allora, Simulate, Build, Pin Mapper, and the conditional Continue Project card.
+- All persistent controls form one compact, right-aligned column with a shared width and edge: Allora, Chat, Simulate, Build, Pin Mapper, and the conditional Continue Project card.
 - Simulate and Build are semantic buttons with matching dimensions, frosted materials, keyboard focus, and restrained hover depth. Their labels and supporting text remain accessible HTML rather than being baked into the artwork.
 - Pin Mapping is a secondary action attached to Build instead of a competing global navigation item.
 - Continue Project appears only when a recent project exists. It shows the board and date on one line and the time on a second line. It resumes the last execution target when one is saved, or offers Simulate and Build choices for older projects without one.
 - The Allora tile opens a compact product panel with the app version, documentation, implemented shortcuts, supported-board count, and recent-project information.
 - The product panel closes on an outside click or Escape.
-- The left rail is intentionally minimal: Home remains at the top and Settings sits at the bottom.
+- The left rail provides Home and Chat, with Settings at the bottom.
 - Backgrounds use a sharp, edge-to-edge `cover` treatment with no blur copy, mask, or feathered border. Ice receives a small clarity correction to offset the brighter source render's atmospheric haze.
 - Responsive layouts preserve the shared right edge and card width, while reduced-motion preferences disable dimensional card movement.
 - Theme artwork lives at `allora-fpga/public/welcome_ice_molecular.png` and `allora-fpga/public/welcome_black_ice_molecular.png`.
@@ -96,13 +96,21 @@ cd src-tauri
 cargo test
 ```
 
-## AI Integration V1
+## AI chat and integration
 
 Open **Settings → AI Integration** to check the Codex or Claude Code CLI, view the detected version and executable path, and follow installation guidance if a CLI is missing. **Check Again** reruns detection without restarting Allora. When a CLI is installed, **Connect** starts that provider's login command in macOS Terminal; the provider handles the browser sign-in and stores its own credentials. Allora neither requests nor stores an OpenAI or Anthropic password, API key, or token.
 
-An existing CLI login can appear as **Connected** immediately. Allora determines this from `codex login status` or `claude auth status --json`; it does not make a live model request. A separate `codex exec` request succeeded on the development Mac, confirming that machine's Codex account could reach the service. Claude Code's detection and login path are implemented but have not been verified with a live Claude account. The Codex desktop app's bundled runtime is not treated as a separate CLI installation.
+An existing CLI login can appear as **Connected** immediately. The settings check uses `codex login status` or `claude auth status --json`; it does not make a live model request. The Codex desktop app's bundled runtime is not treated as a separate CLI installation. Claude Code retains installation/login status support; embedded chat currently uses Codex.
 
-V1 provides connection status only. It does not offer AI chat, FPGA tools, MCP integration, source editing, simulation, synthesis, or programming through either provider.
+Open **Chat** on the welcome screen, choose a workspace folder, and describe what you want to build. For example: "Create a one-second LED blinker on an iCEBreaker, write a testbench, map the verified clock and LED pins, simulate it, and build the bitstream." The desktop app launches the installed Codex CLI's `app-server` using the existing CLI login. The model popup shows provider descriptions and context windows; its reasoning slider uses each model’s reported options. Context sizes come from Codex’s local model metadata and are marked Not reported when unavailable. Responses stream into chat, tool calls show their inputs and results, and **Stop** interrupts the turn and cancels running FPGA jobs. Conversations are saved on this device and resume their Codex threads. Open a generated project from its chat card to inspect files and results in the existing Allora workspace.
+
+Allora supplies its board catalog and project operations through a local stdio MCP server, launched in the same executable's `--allora-mcp` mode. Its configuration is scoped to the embedded session; it does not register a server in the user's global Codex configuration. Chat tools create projects, inspect and update files, assign verified pins, check installed tools/hardware, lint, simulate, build, and retrieve/cancel jobs. File operations stay within the selected folder, edits check expected revisions, and build artifacts are tied to source revisions and board definitions. The initial chat lives on the welcome screen: finish or stop a turn before opening its project in the editor.
+
+Programming requires an in-chat approval for the specific target and artifact. Allora rejects stale or modified artifacts. Hardware discovery can identify possible boards, but shared USB identities do not prove the exact FPGA board or revision; confirm the attached target. A successful programmer command reports the upload result, not physical LED behavior. The chat supports the same Verilog/SystemVerilog, Icarus, Yosys/NextPNR iCE40/ECP5 flows as the app; other catalog boards may provide context or pin data without a working build/program flow. Missing toolchains, login failures, unavailable MCP tools, and build failures surface in chat. Chat in a plain web browser shows a desktop-required state and does not fabricate responses.
+
+Implementation references: [Codex app-server](https://learn.chatgpt.com/docs/app-server) and [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
+
+Run `npm run test:ai-mcp` from `allora-fpga` to exercise the shipped stdio server with a real iCEBreaker design: revision-checked edits, pin validation, lint, finite simulation, a timing-checked bitstream, declined programming, and stale-artifact rejection. It requires the actual FPGA toolchain and never authorizes hardware programming. A separate ignored Rust smoke test (`ai_chat::tests::live_codex_mcp_turn`) exercises a logged-in installed Codex; `ALLORA_CHAT_SMOKE_EXPECT_BUILD=1` requires successful writes, simulation, and a real build artifact.
 
 ## Virtual FPGA quick start
 

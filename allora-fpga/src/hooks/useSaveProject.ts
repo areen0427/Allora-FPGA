@@ -55,7 +55,7 @@ export function useSaveProject({
     if (isSavingRef.current) {
       pendingSaveRef.current = true;
       setSaveStatus("saving");
-      return;
+      return false;
     }
 
     isSavingRef.current = true;
@@ -64,7 +64,7 @@ export function useSaveProject({
       do {
         pendingSaveRef.current = false;
         const snapshot = latestSaveStateRef.current;
-        if (!snapshot.project) return;
+        if (!snapshot.project) return true;
 
         setSaveStatus("saving");
         setSaveErrorMessage("");
@@ -94,9 +94,11 @@ export function useSaveProject({
       } while (pendingSaveRef.current);
 
       setSaveStatus("saved");
+      return true;
     } catch (error) {
       setSaveStatus("error");
       setSaveErrorMessage(getErrorMessage(error));
+      return false;
     } finally {
       isSavingRef.current = false;
     }

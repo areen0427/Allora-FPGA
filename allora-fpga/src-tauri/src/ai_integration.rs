@@ -131,6 +131,19 @@ fn find_executable(provider: Provider) -> Option<PathBuf> {
     None
 }
 
+/// Use the same user-installed CLI and account checks as AI settings.
+pub(crate) fn authenticated_codex() -> Result<PathBuf, String> {
+    let path = find_executable(Provider::Codex)
+        .ok_or_else(|| "Install the Codex CLI in AI settings before starting chat.".to_string())?;
+    let status = check_with_path(Provider::Codex, Some(path.clone()));
+    if !status.authenticated {
+        return Err(status.error.unwrap_or_else(|| {
+            "Connect your Codex account in AI settings before starting chat.".to_string()
+        }));
+    }
+    Ok(path)
+}
+
 struct RunOutput {
     success: bool,
     stdout: String,

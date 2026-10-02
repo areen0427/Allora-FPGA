@@ -3,7 +3,6 @@ import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Activity,
-  ArrowLeft,
   BookOpen,
   CheckCircle2,
   CircuitBoard,
@@ -14,6 +13,7 @@ import {
   Gauge,
   Keyboard,
   Layers3,
+  MessageSquare,
   Map as MapIcon,
   Play,
   Radio,
@@ -58,6 +58,7 @@ type HomeViewProps = {
   onToggleShowAllBoards: (showAll: boolean) => void;
   onSelectBoard: (board: BoardCatalogItem) => void;
   onOpenPinMapping: () => void;
+  onOpenChat: () => void;
   onOpenExistingProject: (target: ExecutionTarget) => void;
   onCreateSimulationProject: () => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
@@ -89,6 +90,7 @@ export function HomeView({
   onToggleShowAllBoards,
   onSelectBoard,
   onOpenPinMapping,
+  onOpenChat,
   onOpenExistingProject,
   onCreateSimulationProject,
   onOpenProject,
@@ -248,25 +250,6 @@ export function HomeView({
       <div className="welcome-environment" aria-hidden="true" />
       <div className="welcome-atmosphere" aria-hidden="true" />
       <div className="welcome-destination-content">
-        <PageHeader
-          eyebrow="Allora FPGA"
-          title={
-            path === "memory-asset-studio" ? "Memory Asset Studio" : path === "peripheral-workbench"
-              ? "Peripheral Workbench"
-              : path === "simulate"
-                ? "Simulate"
-                : "Build"
-          }
-          subtitle={
-            path === "memory-asset-studio" ? "Convert sources into project-owned FPGA memories." : path === "peripheral-workbench"
-              ? "Connect real RTL to controls, indicators, and a UART terminal."
-              : path === "simulate"
-              ? "Bring RTL to life before hardware."
-              : "Target a board and take your design to silicon."
-          }
-          onBack={() => setPath(null)}
-        />
-
         {path === "memory-asset-studio" ? (
           <div className="mas-home-layout">
             <div className="mas-home-main">
@@ -320,6 +303,15 @@ export function HomeView({
             />
 
             <div className="welcome-home-sidebar">
+              <section className="liquid-home-card open-project-card">
+                <button type="button" className="open-project-button" onClick={onOpenChat} disabled={isOpeningExistingProject}>
+                  <span className="open-project-icon"><MessageSquare size={19} /></span>
+                  <span className="open-project-copy">
+                    <span className="open-project-title">Build with AI</span>
+                    <span className="open-project-subtitle">Describe your idea. Create RTL with Codex.</span>
+                  </span>
+                </button>
+              </section>
               <OpenExistingProjectCard
                 isOpening={isOpeningExistingProject}
                 error={openExistingProjectError}
@@ -336,38 +328,6 @@ export function HomeView({
         )}
       </div>
     </section>
-  );
-}
-
-function PageHeader({
-  eyebrow,
-  title,
-  subtitle,
-  onBack,
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle?: string;
-  onBack?: () => void;
-}) {
-  return (
-    <header className="welcome-page-header">
-      {onBack ? (
-        <button
-          className="welcome-back-button"
-          type="button"
-          aria-label="Back to welcome"
-          onClick={onBack}
-        >
-          <ArrowLeft size={17} />
-        </button>
-      ) : null}
-      <div>
-        <div className="welcome-eyebrow">{eyebrow}</div>
-        <h1 className="welcome-title">{title}</h1>
-        {subtitle ? <p className="welcome-subtitle">{subtitle}</p> : null}
-      </div>
-    </header>
   );
 }
 

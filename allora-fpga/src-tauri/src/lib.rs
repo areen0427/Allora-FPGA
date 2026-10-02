@@ -10,12 +10,14 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use tauri::ipc::Channel;
 use tauri::State;
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 mod ai_integration;
+mod ai_chat;
+mod ai_mcp;
 mod github;
 mod usage;
 mod virtual_fpga;
@@ -1174,6 +1176,17 @@ async fn program_fpga(
     request: ProgramFpgaRequest,
     on_log: Channel<String>,
 ) -> Result<ProgramFpgaResponse, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || {
+        program_fpga_service(request, &LogSink::from_channel(on_log))
+    })
+    .await
+    .map_err(|err| error(&format!("Operation stopped unexpectedly: {err}")))?
+}
+
+fn program_fpga_service(
+    request: ProgramFpgaRequest,
+    on_log: &LogSink,
+) -> Result<ProgramFpgaResponse, ErrorPayload> {
     let command = request.programmer_command.trim();
     if command.is_empty() {
         return Err(error("No programmer command specified."));
@@ -1476,6 +1489,17 @@ async fn generate_bitstream(
     request: GenerateBitstreamRequest,
     on_log: Channel<String>,
 ) -> Result<GenerateBitstreamResponse, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || {
+        generate_bitstream_service(request, &LogSink::from_channel(on_log))
+    })
+    .await
+    .map_err(|err| error(&format!("Operation stopped unexpectedly: {err}")))?
+}
+
+fn generate_bitstream_service(
+    request: GenerateBitstreamRequest,
+    on_log: &LogSink,
+) -> Result<GenerateBitstreamResponse, ErrorPayload> {
     if request.source_files.is_empty() {
         return Err(error("No HDL files were provided."));
     }
@@ -1747,6 +1771,17 @@ async fn generate_bitstream(
 async fn simulate_testbench(
     request: SimulateTestbenchRequest,
     on_log: Channel<String>,
+) -> Result<SimulateTestbenchResponse, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || {
+        simulate_testbench_service(request, &LogSink::from_channel(on_log))
+    })
+    .await
+    .map_err(|err| error(&format!("Operation stopped unexpectedly: {err}")))?
+}
+
+fn simulate_testbench_service(
+    request: SimulateTestbenchRequest,
+    on_log: &LogSink,
 ) -> Result<SimulateTestbenchResponse, ErrorPayload> {
     if request.source_files.is_empty() {
         return Err(error("No design HDL files were provided."));
@@ -2165,18 +2200,11 @@ fn is_constant_key(bit: &str) -> bool {
 }
 
 fn create_work_dir(output_name: &str) -> Result<PathBuf, ErrorPayload> {
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|err| error(&format!("Unable to read system time: {err}")))?
-        .as_millis();
-    let work_dir = std::env::temp_dir().join(format!(
-        "allora-synth-{}-{timestamp}-{}",
-        output_name,
-        std::process::id()
-    ));
-    fs::create_dir_all(&work_dir)
-        .map_err(|err| error(&format!("Unable to create temporary work directory: {err}")))?;
-    Ok(work_dir)
+    tempfile::Builder::new()
+        .prefix(&format!("allora-synth-{}-", sanitize_name(output_name)))
+        .tempdir()
+        .map(|directory| directory.keep())
+        .map_err(|err| error(&format!("Unable to create temporary work directory: {err}")))
 }
 
 fn collect_workspace_files(
@@ -3065,8 +3093,34 @@ fn append_command_logs(logs: &mut Vec<String>, stdout: &[u8], stderr: &[u8]) {
     }
 }
 
+/// Shared log/cancellation boundary for the UI and local MCP jobs.
+#[derive(Clone)]
+struct LogSink {
+    callback: Arc<dyn Fn(String) + Send + Sync>,
+    cancellation: Option<Arc<AtomicBool>>,
+}
+
+impl LogSink {
+    fn new(callback: impl Fn(String) + Send + Sync + 'static, cancellation: Option<Arc<AtomicBool>>) -> Self {
+        Self { callback: Arc::new(callback), cancellation }
+    }
+
+    fn from_channel(channel: Channel<String>) -> Self {
+        Self::new(move |line| { let _ = channel.send(line); }, None)
+    }
+
+    fn send(&self, line: String) -> io::Result<()> {
+        (self.callback)(line);
+        Ok(())
+    }
+
+    fn cancelled(&self) -> bool {
+        self.cancellation.as_ref().is_some_and(|value| value.load(Ordering::Acquire))
+    }
+}
+
 /// Push a log line into the response log buffer and stream it to the frontend.
-fn send_log(on_log: &Channel<String>, logs: &mut Vec<String>, line: impl Into<String>) {
+fn send_log(on_log: &LogSink, logs: &mut Vec<String>, line: impl Into<String>) {
     let line = line.into();
     let _ = on_log.send(line.clone());
     logs.push(line);
@@ -3078,7 +3132,7 @@ fn run_command_streaming(
     program: &Path,
     args: &[String],
     cwd: Option<&Path>,
-    on_log: &Channel<String>,
+    on_log: &LogSink,
 ) -> io::Result<(std::process::ExitStatus, Vec<u8>, Vec<u8>)> {
     let mut command = Command::new(program);
     command
@@ -3089,6 +3143,14 @@ fn run_command_streaming(
         command.current_dir(cwd);
     }
 
+    if on_log.cancelled() {
+        return Err(io::Error::new(io::ErrorKind::Interrupted, "Operation cancelled."));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
     let mut child = command.spawn()?;
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
@@ -3099,8 +3161,11 @@ fn run_command_streaming(
         if let Some(stream) = stdout {
             for line in BufReader::new(stream).lines().map_while(Result::ok) {
                 let _ = stdout_channel.send(line.clone());
-                collected.extend_from_slice(line.as_bytes());
-                collected.push(b'\n');
+                if collected.len() < 4 * 1024 * 1024 {
+                    let remaining = 4 * 1024 * 1024 - collected.len();
+                    collected.extend_from_slice(&line.as_bytes()[..line.len().min(remaining)]);
+                    collected.push(b'\n');
+                }
             }
         }
         collected
@@ -3112,17 +3177,35 @@ fn run_command_streaming(
         if let Some(stream) = stderr {
             for line in BufReader::new(stream).lines().map_while(Result::ok) {
                 let _ = stderr_channel.send(line.clone());
-                collected.extend_from_slice(line.as_bytes());
-                collected.push(b'\n');
+                if collected.len() < 4 * 1024 * 1024 {
+                    let remaining = 4 * 1024 * 1024 - collected.len();
+                    collected.extend_from_slice(&line.as_bytes()[..line.len().min(remaining)]);
+                    collected.push(b'\n');
+                }
             }
         }
         collected
     });
 
-    let status = child.wait()?;
+    let started = std::time::Instant::now();
+    let mut interrupted = None;
+    let status = loop {
+        if on_log.cancelled() || started.elapsed() > Duration::from_secs(600) {
+            interrupted = Some(if on_log.cancelled() { "Operation cancelled." } else { "Tool exceeded the ten-minute time limit." });
+            #[cfg(unix)]
+            // Each tool has its own process group; terminate its descendants too.
+            unsafe { libc::kill(-(child.id() as i32), libc::SIGKILL); }
+            let _ = child.kill();
+            break child.wait()?;
+        }
+        if let Some(status) = child.try_wait()? { break status; }
+        thread::sleep(Duration::from_millis(40));
+    };
     let stdout_bytes = stdout_thread.join().unwrap_or_default();
     let stderr_bytes = stderr_thread.join().unwrap_or_default();
-
+    if let Some(message) = interrupted {
+        return Err(io::Error::new(io::ErrorKind::Interrupted, message));
+    }
     Ok((status, stdout_bytes, stderr_bytes))
 }
 
@@ -3360,6 +3443,12 @@ struct LintHdlResponse {
 
 #[tauri::command]
 async fn lint_hdl(request: LintHdlRequest) -> Result<LintHdlResponse, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || lint_hdl_service(request))
+        .await
+        .map_err(|err| error(&format!("Lint stopped unexpectedly: {err}")))?
+}
+
+fn lint_hdl_service(request: LintHdlRequest) -> Result<LintHdlResponse, ErrorPayload> {
     if request.files.is_empty() {
         return Ok(LintHdlResponse {
             available: true,
@@ -3635,6 +3724,11 @@ fn close_serial_monitor(
     Ok(())
 }
 
+/// Headless MCP mode shares the same FPGA services as the desktop UI.
+pub fn run_mcp_stdio() -> Result<(), String> {
+    ai_mcp::run_stdio()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -3643,6 +3737,7 @@ pub fn run() {
         .manage(SerialState::default())
         .manage(VirtualFpgaState::default())
         .manage(ViewerPayloadState::default())
+        .manage(ai_chat::AiChatState::default())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -3686,6 +3781,12 @@ pub fn run() {
             open_serial_monitor,
             write_serial_monitor,
             close_serial_monitor,
+            ai_chat::ai_chat_models,
+            ai_chat::ai_chat_start,
+            ai_chat::ai_chat_send,
+            ai_chat::ai_chat_cancel,
+            ai_chat::ai_chat_approve,
+            ai_chat::ai_chat_close,
             ai_integration::ai_provider_status,
             ai_integration::ai_provider_start_login,
             github_tool_availability,
@@ -3703,8 +3804,13 @@ pub fn run() {
             git_push_project,
             git_run_project_command
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<ai_chat::AiChatState>().shutdown_all();
+            }
+        });
 }
 
 #[cfg(test)]
@@ -3862,5 +3968,34 @@ mod memory_asset_tests {
             fs::read(work.path().join("src/generated/rom.hex")).unwrap(),
             b"00\n7f\n"
         );
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tool_job_tests {
+    use super::*;
+
+    #[test]
+    fn cancellation_stops_a_running_tool_and_its_pipe_holders() {
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let sink = LogSink::new(|_| {}, Some(cancelled.clone()));
+        let started = std::time::Instant::now();
+        let worker = thread::spawn(move || run_command_streaming(
+            Path::new("/bin/sh"),
+            &["-c".into(), "printf 'started\n'; sleep 30 & wait".into()],
+            None,
+            &sink,
+        ));
+        thread::sleep(Duration::from_millis(100));
+        cancelled.store(true, Ordering::Release);
+        assert_eq!(worker.join().unwrap().unwrap_err().kind(), io::ErrorKind::Interrupted);
+        assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[test]
+    fn cancelled_job_never_launches_the_next_tool() {
+        let sink = LogSink::new(|_| {}, Some(Arc::new(AtomicBool::new(true))));
+        let result = run_command_streaming(Path::new("/no/such/program"), &[], None, &sink);
+        assert_eq!(result.unwrap_err().kind(), io::ErrorKind::Interrupted);
     }
 }

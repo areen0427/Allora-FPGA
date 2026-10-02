@@ -151,17 +151,22 @@ Persistent interactive Virtual FPGA sessions are implemented in `src-tauri/src/v
 
 External tools are resolved from the environment and common install locations. A successful frontend build does not prove that a particular FPGA toolchain or programmer is installed on the user's machine.
 
-## AI Integration settings
+## AI Integration and embedded chat
 
 Settings has an **AI Integration** destination for OpenAI Codex and Claude Code. `src/components/AiIntegrationSettings.tsx` renders both providers from shared configuration, and `src/lib/aiIntegration.ts` exposes typed Tauri calls. Provider-specific CLI discovery, version checks, authentication status, and login initiation are isolated in `src-tauri/src/ai_integration.rs`; React does not run a shell or parse CLI output.
 
 The Rust layer executes `codex --version` and `codex login status`, or `claude --version` and `claude auth status --json`, with timeouts and structured status results. It searches the inherited PATH plus common macOS CLI locations and excludes the Codex desktop app's managed standalone runtime and app-bundled binary from independent CLI detection. Settings displays the detected executable path and a last-checked time so a PATH discrepancy or repeated scan is visible. On macOS, **Connect** opens the provider's normal login command in Terminal. The provider owns credential storage and browser authentication; Allora does not collect or persist provider credentials.
 
-The status **Connected** means the provider CLI reports an authenticated local session. It is not a live service or model request. The user's Codex CLI login was separately confirmed by a successful live `codex exec` response on the development Mac. Claude Code follows the same V1 onboarding architecture but has not had a live account validation. No MCP, Allora agent tools, AI chat, project editing, or FPGA operations through AI are implemented.
+The status **Connected** means the provider CLI reports an authenticated local session. It is not a live service or model request. Claude Code retains installation/login support; embedded chat uses Codex.
+
+Welcome **Chat** opens `src/pages/ChatPage.tsx`, with streamed replies, local conversation history, workspace selection, resumable Codex threads, tool cards, cancellation, and queued hardware confirmations. `src/lib/aiChat.ts` exposes six typed Tauri commands. `src-tauri/src/ai_chat.rs` runs the installed CLI's JSON-RPC `app-server` using its existing account. It configures only Allora's MCP server for the thread and disables ambient execution tools. This does not alter the user's global Codex configuration.
+
+The same executable's `--allora-mcp` mode runs `src-tauri/src/ai_mcp.rs`. Tools expose catalog/toolchain/hardware context, project creation and revision-checked file edits, verified pin assignments, HDL lint, finite Icarus simulation, Yosys/NextPNR builds, job polling/cancellation, and confirmed programming through shared production Rust services. Paths are scoped to the selected workspace; artifacts are tied to source, board, and bitstream hashes. MCP form elicitation requires a real approval from the chat user before programming. A real installed Codex has completed an iCEBreaker RTL/testbench/pins/simulation/bitstream workflow with passing timing. Physical programming has not been verified.
 
 ## Frontend organization
 
 - `src/pages/welcome/` — welcome shell, Simulate/Build destinations, board selection helpers, pin browser, and variant selection.
+- `src/pages/ChatPage.tsx` — embedded Codex chat and local conversation history.
 - `src/pages/ProjectSetup.tsx` — physical-board project creation.
 - `src/pages/SimulationProjectSetup.tsx` — board-agnostic simulation project creation.
 - `src/pages/Dashboard.tsx` — main workspace coordinator and execution-target boundary.
@@ -207,7 +212,7 @@ For UI changes, validate both Ice and Black Ice, the native WebView when native-
 - Generated testbenches are scaffolds, not template-aware complete verification environments.
 - GitHub publishing requires a project-owner-supplied OAuth client ID and the system `git` executable. `gh` remains optional.
 - GitHub V1 intentionally does not fetch, pull, merge, rebase, resolve divergence, manage collaborators, or work with issues and pull requests.
-- AI Integration V1 reports local CLI installation and login state only; Claude Code live sign-in and both providers' future Allora tool access remain unverified or unimplemented, respectively.
+- Embedded chat currently uses Codex and lives on the welcome screen. It supports the existing Verilog/SystemVerilog, Icarus, and iCE40/ECP5 build services; automated programmers are currently `iceprog`, `icesprog`, and `ecpprog`. Finish or stop a turn before opening its project. Native chat UI verification and physical programming remain unverified; Claude Code has no embedded chat support.
 - Project directories remain the canonical data store; Git must not replace or bypass the existing Tauri file-save path.
 - Resource Usage currently samples processes on macOS only. Windows preview work is paused while the macOS app is brought to full working order.
 

@@ -253,6 +253,7 @@ function App() {
         onSettingsChange={setSettings}
         onOpenProject={openProject}
         onOpenExistingProject={openExistingProject}
+        onOpenChatProject={(path) => openProjectPath(path, "build")}
         onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
         onOpenExistingMemoryProject={() => openExistingProject("build", true)}
         onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
@@ -450,6 +451,7 @@ function App() {
       onSettingsChange={setSettings}
       onOpenProject={openProject}
       onOpenExistingProject={openExistingProject}
+      onOpenChatProject={(path) => openProjectPath(path, "build")}
       onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
       onOpenExistingMemoryProject={() => openExistingProject("build", true)}
       onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}

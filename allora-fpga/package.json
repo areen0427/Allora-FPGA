@@ -1,7 +1,7 @@
 {
   "name": "allora-fpga",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "demo:record": "node ../marketing/scripts/record.mjs",
     "teaser": "node ../marketing/scripts/teaser.mjs",
     "demo:inspect": "node ../marketing/scripts/inspect.mjs",
-    "demo:check": "node ../marketing/scripts/check.mjs"
+    "demo:check": "node ../marketing/scripts/check.mjs",
+    "test:ai-mcp": "cargo build --manifest-path src-tauri/Cargo.toml && node tests/ai-mcp-integration.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

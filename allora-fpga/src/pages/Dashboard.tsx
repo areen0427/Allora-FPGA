@@ -452,7 +452,11 @@ export default function Dashboard({
                 type="button"
                 aria-label="Go to home page"
                 title="Home"
-                onClick={onHome}
+                disabled={saveProject.saveStatus === "saving"}
+                onClick={async () => {
+                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+                  onHome();
+                }}
                 className="activity-home-button"
               >
                 <Home size={18} color="white" strokeWidth={2.2} />
@@ -559,7 +563,11 @@ export default function Dashboard({
                 type="button"
                 aria-label="Back to project setup"
                 title="Back to project setup"
-                onClick={onBack}
+                disabled={saveProject.saveStatus === "saving"}
+                onClick={async () => {
+                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+                  onBack();
+                }}
               >
                 <ArrowLeft size={18} />
               </button>

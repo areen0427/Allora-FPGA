@@ -25,6 +25,7 @@ type SettingsModalProps = {
   settings: AppSettings;
   onChange: (settings: AppSettings) => void;
   onClose: () => void;
+  initialCategory?: SettingsCategory;
 };
 
 type SettingsCategory = "general" | "appearance" | "editor" | "workspace" | "simulator" | "ai";
@@ -46,9 +47,10 @@ export function SettingsModal({
   settings,
   onChange,
   onClose,
+  initialCategory = "general",
 }: SettingsModalProps) {
   const [activeCategory, setActiveCategory] =
-    useState<SettingsCategory>("general");
+    useState<SettingsCategory>(initialCategory);
   const dialogRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const firstTabRef = useRef<HTMLButtonElement>(null);

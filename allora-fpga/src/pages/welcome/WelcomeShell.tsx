@@ -1,8 +1,8 @@
 import type { ReactNode, RefObject } from "react";
-import { Settings } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import alloraIcon from "../../../src-tauri/icons/128x128.png";
 
-export type WelcomeView = "home" | "pin-mapping";
+export type WelcomeView = "home" | "pin-mapping" | "chat";
 
 type WelcomeShellProps = {
   activeView: WelcomeView;
@@ -13,6 +13,7 @@ type WelcomeShellProps = {
   newProjectRef: RefObject<HTMLElement | null>;
   onViewChange: (view: WelcomeView) => void;
   onOpenSettings: () => void;
+  onBack?: () => void;
   children: ReactNode;
 };
 
@@ -25,6 +26,7 @@ export function WelcomeShell({
   newProjectRef,
   onViewChange,
   onOpenSettings,
+  onBack,
   children,
 }: WelcomeShellProps) {
   return (
@@ -51,6 +53,12 @@ export function WelcomeShell({
           <img src={alloraIcon} alt="" />
         </button>
 
+        {onBack && (
+          <RailButton filled label={activeView === "chat" ? "Back to Build" : "Back to welcome"} onClick={onBack}>
+            <ArrowLeft size={20} />
+          </RailButton>
+        )}
+
         <div className="welcome-rail-spacer" />
 
         <RailButton filled label="Settings" onClick={onOpenSettings}>
@@ -69,11 +77,13 @@ export function WelcomeShell({
 
 function RailButton({
   filled,
+  active,
   label,
   onClick,
   children,
 }: {
   filled?: boolean;
+  active?: boolean;
   label: string;
   onClick?: () => void;
   children: ReactNode;
@@ -84,6 +94,7 @@ function RailButton({
       className={`welcome-rail-button${filled ? " filled" : ""}`}
       title={label}
       aria-label={label}
+      aria-current={active ? "page" : undefined}
       onClick={onClick}
     >
       {children}

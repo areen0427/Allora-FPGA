@@ -16,6 +16,7 @@ import { VariantSelectorModal } from "./welcome/VariantSelectorModal";
 import { WelcomeShell } from "./welcome/WelcomeShell";
 import type { WelcomeView } from "./welcome/WelcomeShell";
 import type { ExecutionTarget } from "./dashboard/types";
+import ChatPage from "./ChatPage";
 
 type BoardSelectProps = {
   settings: AppSettings;
@@ -28,6 +29,7 @@ type BoardSelectProps = {
   onOpenExistingMemoryProject: () => Promise<void>;
   onCreateMemoryProject: () => void;
   onCreateMemoryBoardProject: (boardId: string) => void;
+  onOpenChatProject: (projectPath: string) => Promise<void>;
 };
 
 export default function BoardSelect({
@@ -41,11 +43,13 @@ export default function BoardSelect({
   onOpenExistingMemoryProject,
   onCreateMemoryProject,
   onCreateMemoryBoardProject,
+  onOpenChatProject,
 }: BoardSelectProps) {
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
   const [memoryBoardChoice, setMemoryBoardChoice] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsCategory, setSettingsCategory] = useState<"general" | "ai">("general");
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
   const [showAllBoards, setShowAllBoards] = useState(false);
   const [isOpeningExistingProject, setIsOpeningExistingProject] =
@@ -111,6 +115,13 @@ export default function BoardSelect({
   return (
     <WelcomeShell
       activeView={activeView}
+      onBack={activeView === "chat"
+        ? () => { handleViewChange("home"); setHomePath("build"); }
+        : activeView === "pin-mapping"
+        ? () => handleViewChange("home")
+        : activeView === "home" && homePath !== null
+          ? () => setHomePath(null)
+          : undefined}
       brandRef={brandRef}
       showProductInfo={showProductInfo}
       onOpenProductInfo={activeView === "home" && homePath === null
@@ -119,7 +130,7 @@ export default function BoardSelect({
       maxWidth={activeView === "home" ? "1280px" : "1680px"}
       newProjectRef={newProjectRef}
       onViewChange={handleViewChange}
-      onOpenSettings={() => setShowSettings(true)}
+      onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}
     >
       {activeView === "home" ? (
         <HomeView
@@ -144,6 +155,7 @@ export default function BoardSelect({
           onToggleShowAllBoards={setShowAllBoards}
           onSelectBoard={handleSelectBoard}
           onOpenPinMapping={() => handleViewChange("pin-mapping")}
+          onOpenChat={() => handleViewChange("chat")}
           onOpenExistingProject={(target) =>
             void handleOpenExistingProject(target)
           }
@@ -164,6 +176,8 @@ export default function BoardSelect({
             else onCreateMemoryBoardProject(board.id);
           }}
         />
+      ) : activeView === "chat" ? (
+        <ChatPage onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }} onOpenProject={onOpenChatProject} />
       ) : (
         <PinMappingBrowser
           boards={pinMappingBoards}
@@ -187,6 +201,7 @@ export default function BoardSelect({
       {showSettings ? (
         <SettingsModal
           settings={settings}
+          initialCategory={settingsCategory}
           onChange={onSettingsChange}
           onClose={() => setShowSettings(false)}
         />

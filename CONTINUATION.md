@@ -2,6 +2,117 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-10-02 — Prepare v0.2.5 release version
+
+- Updated npm, Tauri, and Rust app manifests plus their lockfile root package versions to 0.2.5. Dependency versions remain unchanged.
+- Validation: release workflow's version check passes for v0.2.5; npm and Cargo lockfile root versions match. No commit, tag, or push performed.
+
+## 2026-10-02 — Reasoning labels only
+
+- Removed the reasoning description paragraph and description text from slider accessibility values; supported level names remain.
+- Validation: frontend build and five model/control regression tests; no visual verification.
+
+## 2026-10-01 — VIBECODE integration landing
+
+- Replaced the empty-chat introduction and suggestion cards with the requested always/posedge Verilog text. VIBECODE is oversized, bold, italic, and gradient-colored; a faint fading grid sits behind it with Ice/Black Ice colors. Typography uses the editor's --font-code (Geist Mono).
+- Header is AI Integration with the adjacent Codex badge removed; composer placeholder is Build Anything you Dream.... Existing conversations retain their normal message layout.
+- Validation: frontend production build/lint and diff whitespace checks pass; no visual verification.
+
+## 2026-10-01 — Pointer-driven reasoning slider
+
+- Replaced the native range control with an accessible custom slider driven by pointer coordinates/capture. Continuous fractional positioning during drag, nearest-level snapping on release, pointer cancellation cleanup, and discrete keyboard navigation remain.
+- Added contrasting dark-blue Ice / pale-cyan Black Ice tick dots. Popup is left-anchored so changing the trigger label width does not shift its position. Snap transitions respect reduced motion.
+- Validation: frontend build/lint and five model/control regression tests; no visual verification.
+
+## 2026-10-01 — Smooth reasoning slider and model access diagnosis
+
+- Removed model search and shortened the reasoning trigger to its selected level. Removed focus-loss dismissal; the reasoning popup stays open during drag and closes on a pointer click outside its own anchor.
+- Range input tracks fractional positions during dragging, snaps/persists the nearest supported effort on release, and retains discrete keyboard navigation. Added an event-handler regression test without browser/visual verification.
+- Fresh GPT-6.1 Sol read-only live test reached the service through Allora's bridge but returned HTTP 400: model not supported when using Codex with a ChatGPT account. CLI version is 0.156.1. Official docs confirm September 29 release; ADE session availability does not prove this CLI session has the same access. No CLI installation/account configuration was changed.
+- Validation: frontend build/lint and five model/control regressions pass. The live GPT-6.1 Sol diagnostic was rejected as recorded above; no visual verification.
+
+## 2026-10-01 — Simplified model and reasoning popups
+
+- Removed the model-popup subtitle, close button, and reasoning list; descriptions and context windows remain. Reasoning now opens on click from its current-level button, with outside-click/Escape dismissal and theme-aware Ultra animation.
+- New preferences default to Medium and GPT-6.1 Sol; saved preferences remain. The installed Codex 0.156.1 catalog does not currently advertise GPT-6.1 Sol (verified including hidden entries), so a real available model is used until it appears.
+- Model discovery depends on connection state rather than the status object: focus checks no longer reload the catalog while the connection stays ready.
+- Validation: frontend build/lint and reasoning regression tests; no visual verification.
+
+## 2026-10-01 — Model popup and real reasoning control
+
+- Replaced the native select with a searchable keyboard-accessible model popup: descriptions, context window from Codex model metadata, and actual supported reasoning levels. Missing context metadata is explicitly Not reported.
+- Added a discrete reasoning slider using model/list values, preserving valid choices and falling back to advertised Low/default when switching models. Both settings are persisted and passed to turn/start. Ultra enables an Ice/Black Ice gradient glow; reduced-motion settings disable it.
+- Validation: build/lint, five Rust bridge tests, three reasoning-selection regressions, and live discovery of seven models with seven context windows. A read-only live Ultra request verifies the selected model/effort protocol; no visual verification.
+
+## 2026-10-01 — Composer material and Codex model selection
+
+- Composer overrides the global dark textarea material so only its main border is visible in Ice/Black Ice. Local workspace caption replaced with a model picker beside Codex.
+- Models come from installed Codex app-server model/list; selection is persisted locally and passed as turn/start model, including resumed conversations. Discovery uses a short-lived server with no thread or FPGA tool execution.
+- Validation: frontend build/lint, Rust check/tests, actual logged-in Codex model discovery, and diff checks; no visual verification.
+
+## 2026-10-01 — AI chat sidebar Back
+
+- Replaced the active Chat rail button with Back to Build; navigation unmounts chat through the existing session cleanup.
+- Validation: production build, lint, and diff checks; no visual verification.
+
+## 2026-10-01 — Pin Mapper back and centered Simulate landing
+
+- Pin Mapper now includes sidebar Back returning to welcome and clearing its selected board. Simulate uses symmetric page padding and vertical centering; other landing insets remain unchanged.
+- Validation: production build, lint, and diff checks; no visual verification.
+
+## 2026-10-01 — Catalog button width selector fix
+
+- Corrected Show all Boards sizing selector to match its actual section parent. The section uses display: contents but remains in the DOM; the previous direct-child selector never matched. Button now uses start alignment and its original intrinsic width.
+- Validation: production build and diff checks; no visual verification.
+
+## 2026-10-01 — Landing card vertical alignment
+
+- Lowered Simulate, Memory Asset Studio, and Peripheral Workbench content to the Build search-row height. Build itself retains its current spacing and board/sidebar alignment.
+- Validation: production build and diff checks; no visual verification.
+
+## 2026-10-01 — Consistent landing navigation and catalog action width
+
+- Simulate, Memory Asset Studio, and Peripheral Workbench now omit their outer header and use sidebar Back like Build. Shared top inset keeps their content compact.
+- Show all Boards uses content-sized grid alignment rather than stretching across its column.
+- Validation: production build, lint, and diff checks; no visual verification.
+
+## 2026-10-01 — Build spacing and AI card alignment
+
+- Increased Build top inset to 32px. Sidebar cards share the first board-grid row so Build with AI aligns regardless of header/search height; narrow layouts stack naturally.
+- Validation: build and diff checks; no visual verification.
+
+## 2026-10-01 — Compact Build landing
+
+- Removed Build eyebrow/title/subtitle, moved Back to the rail, and reduced top spacing and default board-grid spacing for shorter desktop windows. Expanded catalogs and small windows retain scrolling.
+- Validation: production build, lint, and diff checks; no visual verification.
+
+## 2026-10-01 — AI creation entry moved to Build
+
+- Removed the AI button from the welcome launcher and its rail. Build now offers Build with AI above Open Existing Project, reusing that card styling in Ice and Black Ice. The active chat still shows its rail indicator.
+- Validation: build, lint, and diff checks; no visual verification.
+
+## 2026-10-01 — Build with AI in Develop
+
+- Moved the welcome AI entry inside Develop below Simulate/Build and renamed it Build w/ AI. Sidebar retains AI Integration. Existing click handler, theme materials, and disabled state are preserved.
+- Validation: production build and diff checks; no visual verification.
+
+## 2026-10-01 — AI Integration entry label
+
+- Renamed the welcome chat entry and sidebar tooltip/accessibility label from Chat with Allora to AI Integration.
+- Validation: source search and diff checks; no visual verification.
+
+## 2026-10-01 — Shared welcome Chat hover and rail treatment
+
+- Welcome Chat reuses the existing execution-card material and Design tools hover/focus rules, including reflection, white border, shadow, easing, and subtle lift in both Ice and Black Ice.
+- The Chat rail button uses Settings' filled class; removed its separate active-page color override while preserving semantic current-page state.
+- Validation: production build, lint, and diff checks. No visual verification performed.
+
+## 2026-10-01 — Chat styling aligned with Ice and Black Ice
+
+- Chat reuses Allora's shared text, borders, control surfaces, focus rings, and code font rather than a separate flat palette. Added theme-matched frosted history panels, blue gradient send/approval actions, and the existing subtle hover motion.
+- The welcome Chat card uses the landing material, reflection, and shadow tokens for both themes. Reduced Motion disables hover lifts and transitions.
+- The user confirmed the chat works. This styling update is checked with production build, lint, and source inspection only; no visual verification was performed for this update.
+
 ## 2026-09-30 — Board action hover lighting
 
 - Show all boards and per-variant Select share Settings Done's base/hover blue gradients and inset highlight/shadow, alongside the existing hover lift.
