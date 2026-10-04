@@ -16,6 +16,7 @@
 @import "./styles/serial.css";
 @import "./styles/accessibility.css";
 @import "./styles/welcome-landing.css";
+@import "./styles/button-glass.css";
 
 html.theme-transitioning,
 html.theme-transitioning *,

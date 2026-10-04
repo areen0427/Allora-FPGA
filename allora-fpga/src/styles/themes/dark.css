@@ -3,10 +3,6 @@ html[data-theme="dark"] .dashboard-workspace {
   background: #0f172a !important;
 }
 
-html[data-theme="dark"] .dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) {
-  background: #1f2937;
-}
-
 html[data-theme="dark"] .dashboard-workspace {
   --dashboard-surface-border: #374151;
   --dashboard-surface-bg: #1f2937;

@@ -81,6 +81,7 @@ pub enum AiChatEvent {
 pub struct ChatStartRequest {
     workspace_path: String,
     thread_id: Option<String>,
+    model: String,
     boards: Vec<Value>,
 }
 
@@ -789,6 +790,7 @@ fn start_session(
             "env":{"ALLORA_WORKSPACE_PATH":workspace,"ALLORA_BOARD_CATALOG_PATH":session._catalog.path()}
         }));
         let mut thread_params = json!({
+            "model":request.model,
             "cwd":workspace,"runtimeWorkspaceRoots":[workspace],"sandbox":"read-only",
             "approvalPolicy":"on-request","approvalsReviewer":"user",
             "developerInstructions":INSTRUCTIONS,
@@ -1069,6 +1071,9 @@ mod tests {
         let models =
             tauri::async_runtime::block_on(ai_chat_models()).expect("live model discovery");
         assert!(!models.is_empty(), "Codex must expose available models");
+        if let Ok(expected) = std::env::var("ALLORA_CHAT_SMOKE_MODEL") {
+            assert!(models.iter().any(|model| model.model == expected), "expected model {expected} must be available");
+        }
         assert!(models
             .iter()
             .all(|model| !model.model.is_empty() && !model.display_name.is_empty()));
@@ -1161,6 +1166,7 @@ mod tests {
                 workspace_path,
                 boards,
                 thread_id: None,
+                model: std::env::var("ALLORA_CHAT_SMOKE_MODEL").expect("set an available smoke-test model"),
             },
             channel,
         )

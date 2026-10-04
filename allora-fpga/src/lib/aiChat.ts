@@ -48,12 +48,14 @@ export const aiChatApi = {
   start: (
     workspacePath: string,
     threadId: string | undefined,
+    model: string,
     onEvent: (event: AiChatEvent) => void,
   ) =>
     invokeTauri<AiChatSession>("ai_chat_start", {
       request: {
         workspacePath,
         threadId,
+        model,
         boards: REAL_BOARDS.map((board) => ({
           ...board,
           capabilities: getBoardCapabilities(board),

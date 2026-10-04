@@ -98,6 +98,28 @@ cargo test
 
 ## AI chat and integration
 
+Allora checks for the latest stable Codex CLI once per app launch in the
+background on macOS and Linux, then checks the account and preloads its model
+catalog. Build with AI reuses this prepared state rather than starting a new
+check. Opening chat during startup joins the same in-flight preparation.
+The official installer stages a private
+runtime in Allora's cache; your global CLI, shell profiles, and account state
+are unchanged. The new executable is selected only after its version check
+succeeds. Offline or failed updates keep the last verified runtime and show a
+warning in AI Integration. Running chats keep the executable they started with.
+
+For local development, run `npm run tauri dev` from `allora-fpga` after
+`npm install`. The project's pinned CLI (0.160.0) is an offline fallback when
+no private runtime has been installed. GPT-6.1 Sol was added to the CLI catalog
+in 0.159.1; older CLIs can omit it even when the ChatGPT app offers it.
+
+`ALLORA_CODEX_PATH` selects a CLI explicitly for status, login, model discovery,
+and chat, bypassing automatic updates. An invalid override does not silently
+fall back to another CLI. Global installations are a final fallback. Windows
+currently uses the installed CLI and manual updates. AI Integration shows
+update guidance for pre-0.159.1 releases. For an npm installation, run
+`npm install -g @openai/codex@latest`, choose Check Again, and start a new chat.
+
 Open **Settings → AI Integration** to check the Codex or Claude Code CLI, view the detected version and executable path, and follow installation guidance if a CLI is missing. **Check Again** reruns detection without restarting Allora. When a CLI is installed, **Connect** starts that provider's login command in macOS Terminal; the provider handles the browser sign-in and stores its own credentials. Allora neither requests nor stores an OpenAI or Anthropic password, API key, or token.
 
 An existing CLI login can appear as **Connected** immediately. The settings check uses `codex login status` or `claude auth status --json`; it does not make a live model request. The Codex desktop app's bundled runtime is not treated as a separate CLI installation. Claude Code retains installation/login status support; embedded chat currently uses Codex.

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Sparkles } from "lucide-react";
 import type { AiChatModel } from "../lib/aiChat";
 
@@ -27,6 +27,7 @@ export default function ChatModelControls(props: Props) {
   const dragging = useRef(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const popup = useRef<HTMLDivElement>(null);
   const popupId = useId();
   const model = props.models.find((item) => item.model === props.selectedModel)
     ?? props.models.find((item) => item.isDefault) ?? props.models[0];
@@ -46,6 +47,34 @@ export default function ChatModelControls(props: Props) {
     const fraction = Math.max(0, Math.min(1, (clientX - bounds.left - 9) / Math.max(1, bounds.width - 18)));
     return fraction * Math.max(0, choices.length - 1);
   }
+
+  useLayoutEffect(() => {
+    if (!open || props.disabled || !popup.current || !trigger.current) return;
+    const element = popup.current;
+    function place() {
+      const anchor = trigger.current!.getBoundingClientRect();
+      const main = root.current?.closest(".chat-main")?.getBoundingClientRect();
+      const leftEdge = Math.max(12, main?.left ?? 0);
+      const rightEdge = Math.min(window.innerWidth - 12, main?.right ?? window.innerWidth);
+      const width = Math.min(440, Math.max(0, rightEdge - leftEdge - 12));
+      element.style.width = `${width}px`;
+      element.style.left = `${Math.max(leftEdge, Math.min(anchor.left, rightEdge - width))}px`;
+      element.style.bottom = `${window.innerHeight - anchor.top + 12}px`;
+      element.style.maxHeight = `${Math.max(0, anchor.top - 24)}px`;
+    }
+    place();
+    element.showPopover();
+    const observer = new ResizeObserver(place);
+    observer.observe(root.current!);
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      if (element.matches(":popover-open")) element.hidePopover();
+    };
+  }, [open, props.disabled]);
 
   useEffect(() => {
     if (!open && !reasoningOpen) return;
@@ -76,7 +105,7 @@ export default function ChatModelControls(props: Props) {
         <ChevronDown size={13} />
       </button>
       {open && !props.disabled && (
-        <div id={popupId} className="chat-model-popup" role="dialog" aria-label="Choose Codex model"
+        <div ref={popup} popover="manual" id={popupId} className="chat-model-popup" role="dialog" aria-label="Choose Codex model"
           onKeyDown={(event) => {
             if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
             const options = [...root.current!.querySelectorAll<HTMLButtonElement>(".chat-model-option")];

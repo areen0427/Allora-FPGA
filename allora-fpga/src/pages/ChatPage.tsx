@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { aiChatApi } from "../lib/aiChat";
 import type { AiChatEvent, AiChatSession, AiChatModel } from "../lib/aiChat";
-import { aiIntegrationApi } from "../lib/aiIntegration";
+import { prepareCodexReadiness, readCodexReadiness } from "../lib/codexReadiness";
 import type { AiProviderStatus } from "../lib/aiIntegration";
 import { hasTauriInvoke } from "../lib/tauri";
 import { pickProjectParentDirectory } from "../lib/projectWorkspace";
@@ -141,9 +141,9 @@ export default function ChatPage({
     () => getLastProjectParentDirectory() ?? "",
   );
   const [draft, setDraft] = useState("");
-  const [models, setModels] = useState<AiChatModel[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
-  const [modelError, setModelError] = useState("");
+  const [models, setModels] = useState<AiChatModel[]>(() => readCodexReadiness()?.models ?? []);
+  const [loadingModels, setLoadingModels] = useState(() => desktopAvailable && !readCodexReadiness());
+  const [modelError, setModelError] = useState(() => readCodexReadiness()?.modelError ?? "");
   const [selectedModel, setSelectedModel] = useState(() => {
     try { return localStorage.getItem("allora-codex-model") ?? "gpt-6.1-sol"; } catch { return "gpt-6.1-sol"; }
   });
@@ -153,8 +153,8 @@ export default function ChatPage({
   });
   const [busy, setBusy] = useState(false);
   const [changingConversation, setChangingConversation] = useState(false);
-  const [status, setStatus] = useState<AiProviderStatus | null>(null);
-  const [checking, setChecking] = useState(desktopAvailable);
+  const [status, setStatus] = useState<AiProviderStatus | null>(() => readCodexReadiness()?.status ?? null);
+  const [checking, setChecking] = useState(() => desktopAvailable && !readCodexReadiness());
   const [notice, setNotice] = useState("");
   const [activity, setActivity] = useState("");
   const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -184,12 +184,20 @@ export default function ChatPage({
   const reasoningEffort = reasoningFor(effectiveModel, preferredReasoning);
 
 
-  const checkStatus = useCallback(async () => {
+  const loadReadiness = useCallback(async (refresh = false) => {
     if (!desktopAvailable) return;
-    setChecking(true);
+    if (refresh || !readCodexReadiness()) {
+      setChecking(true);
+      setLoadingModels(true);
+    }
     try {
-      const next = await aiIntegrationApi.status("codex");
-      if (alive.current) setStatus(next);
+      const next = await prepareCodexReadiness(refresh);
+      if (alive.current) {
+        setStatus(next.status);
+        setModels(next.models);
+        setModelError(next.modelError);
+        setSelectedModel((previous) => next.models.some((item) => item.model === previous) ? previous : (next.models.find((item) => item.isDefault) ?? next.models[0])?.model ?? "");
+      }
     } catch (error) {
       if (alive.current)
         setStatus({
@@ -200,36 +208,27 @@ export default function ChatPage({
           error: errorText(error),
         });
     } finally {
-      if (alive.current) setChecking(false);
+      if (alive.current) {
+        setChecking(false);
+        setLoadingModels(false);
+      }
     }
   }, [desktopAvailable]);
 
-  useEffect(() => {
-    if (!desktopAvailable || status?.state !== "ready") return;
-    let current = true;
-    setLoadingModels(true);
-    setModelError("");
-    void aiChatApi.models().then((available) => {
-      if (current) {
-        setModels(available);
-        setSelectedModel((previous) => available.some((item) => item.model === previous) ? previous : "gpt-6.1-sol");
-      }
-    }).catch((error) => { if (current) setModelError(errorText(error)); })
-      .finally(() => { if (current) setLoadingModels(false); });
-    return () => { current = false; };
-  }, [desktopAvailable, status?.state]);
+  const checkStatus = useCallback(() => loadReadiness(true), [loadReadiness]);
 
   useEffect(() => {
     alive.current = true;
-    void checkStatus();
-    window.addEventListener("focus", checkStatus);
+    const applyPreparedState = () => { void loadReadiness(); };
+    applyPreparedState();
+    window.addEventListener("focus", applyPreparedState);
     return () => {
       alive.current = false;
-      window.removeEventListener("focus", checkStatus);
+      window.removeEventListener("focus", applyPreparedState);
       if (session.current)
         void aiChatApi.close(session.current.sessionId).catch(() => {});
     };
-  }, [checkStatus]);
+  }, [loadReadiness]);
 
   useEffect(() => {
     try {
@@ -479,6 +478,7 @@ export default function ChatPage({
       }
     };
     try {
+      if (!effectiveModel) throw new Error("Load an available Codex model before sending a message.");
       if (
         !session.current ||
         session.current.conversationId !== conversationId
@@ -487,6 +487,7 @@ export default function ChatPage({
         const started = await aiChatApi.start(
           workspacePath,
           activeConversation?.threadId,
+          effectiveModel.model,
           onEvent,
         );
         if (!alive.current) {

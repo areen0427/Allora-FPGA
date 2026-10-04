@@ -21,6 +21,7 @@ import SerialMonitorSection from "./dashboard/SerialMonitorSection";
 import HealthSection from "./dashboard/HealthSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
 import SidebarButton from "./dashboard/SidebarButton";
+import { FloatingDockNav } from "../components/ui/floating-dock-navigation";
 import type {
   DashboardSection,
   ExecutionTarget,
@@ -407,7 +408,7 @@ export default function Dashboard({
       className="dashboard-workspace"
       style={
         {
-          "--dashboard-sidebar-width": `${explorerCollapsed ? 64 : sidebarWidth}px`,
+          "--dashboard-sidebar-width": `${explorerCollapsed ? 72 : sidebarWidth}px`,
           height: "100vh",
           overflow: "hidden",
           background: "#f1f5f9",
@@ -421,23 +422,15 @@ export default function Dashboard({
         } as CSSProperties
       }
     >
-      <aside
-        className={`dashboard-glass-card dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
+      <div
+        className={`dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
-          width: explorerCollapsed ? "64px" : `${sidebarWidth}px`,
+          width: explorerCollapsed ? "72px" : `${sidebarWidth}px`,
           height: "calc(100vh - 24px)",
-          overflow: "hidden",
-          minWidth: explorerCollapsed ? "64px" : "300px",
-          maxWidth: explorerCollapsed ? "64px" : "480px",
-          background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-
-          border: "1px solid rgba(226,232,240,0.5)",
-
-          borderRadius: "24px",
-
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08)",
-
+          overflow: "visible",
+          gap: explorerCollapsed ? 0 : "14px",
+          minWidth: explorerCollapsed ? "72px" : "300px",
+          maxWidth: explorerCollapsed ? "72px" : "480px",
           padding: 0,
           position: "sticky",
           top: "12px",
@@ -473,7 +466,7 @@ export default function Dashboard({
                 </button>
               ) : null}
             </div>
-            <nav className="activity-rail-nav" aria-label="Dashboard sections">
+            <FloatingDockNav className="activity-rail-nav" aria-label="Dashboard sections">
               <SidebarButton
                 label="Editor"
                 icon={<EditorIcon size={19} />}
@@ -541,42 +534,36 @@ export default function Dashboard({
               <SidebarButton label="Peripheral Workbench" icon={<PeripheralWorkbenchIcon size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
               <SidebarButton label="Memory Asset Studio" icon={<MemoryAssetStudioIcon size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
               <SidebarButton label="Register Builder" comingSoon icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
-            </nav>
-            <div className="activity-rail-bottom">
-              <button
-                type="button"
-                aria-label="Resource usage"
-                title="Resource usage"
+            </FloatingDockNav>
+            <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
+              <SidebarButton
+                label="Resource usage"
+                icon={<Gauge size={18} />}
+                active={false}
                 onClick={(event) => setUsageAnchor(event.currentTarget)}
-              >
-                <Gauge size={18} />
-              </button>
-              <button
-                type="button"
-                aria-label="Settings"
-                title="Settings"
+              />
+              <SidebarButton
+                label="Settings"
+                icon={<Settings size={18} />}
+                active={false}
                 onClick={() => setShowSettings(true)}
-              >
-                <Settings size={18} />
-              </button>
-              <button
-                type="button"
-                aria-label="Back to project setup"
-                title="Back to project setup"
+              />
+              <SidebarButton
+                label="Back to project setup"
+                icon={<ArrowLeft size={18} />}
+                active={false}
                 disabled={saveProject.saveStatus === "saving"}
                 onClick={async () => {
                   if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
                   onBack();
                 }}
-              >
-                <ArrowLeft size={18} />
-              </button>
-            </div>
+              />
+            </FloatingDockNav>
           </div>
         </div>
 
         {!explorerCollapsed ? (
-          <div className="dashboard-explorer">
+          <aside className="dashboard-glass-card dashboard-explorer" aria-label="Project explorer">
             <header className="explorer-project-header">
               <div className="explorer-project-copy">
                 <strong title={projectName}>
@@ -739,7 +726,7 @@ export default function Dashboard({
                 </div>
               ) : null}
             </section>
-          </div>
+          </aside>
         ) : null}
 
         {!explorerCollapsed ? (
@@ -750,7 +737,7 @@ export default function Dashboard({
             title="Double-click to restore default width"
           />
         ) : null}
-      </aside>
+      </div>
 
       <main
         className="dashboard-main"

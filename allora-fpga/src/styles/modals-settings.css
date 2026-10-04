@@ -512,6 +512,14 @@ html .variant-modal.settings-modal {
   background: linear-gradient(90deg, transparent, rgba(161, 224, 255, 0.32), transparent);
 }
 
+.settings-background-preview.ice.trace {
+  --background-preview: url("/welcome_ice_trace.png");
+  --background-average: #badcfa;
+}
+.settings-background-preview.black-ice.trace {
+  --background-preview: url("/welcome_black_ice_trace.png");
+  --background-average: #03416a;
+}
 .settings-background-preview.ice.ultramatte {
   --background-preview: url("/welcome_ice_ultramatte.png");
   --background-average: #a4c1e9;

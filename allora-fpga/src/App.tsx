@@ -28,6 +28,8 @@ import {
 } from "./lib/projectWorkspace";
 import "./App.css";
 import type { ExecutionTarget } from "./pages/dashboard/types";
+import { prepareCodexReadiness } from "./lib/codexReadiness";
+import { hasTauriInvoke } from "./lib/tauri";
 
 type AppStage =
   | "board-select"
@@ -55,6 +57,10 @@ function App() {
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
   const restoredStartupRef = useRef(false);
+
+  useEffect(() => {
+    if (hasTauriInvoke()) void prepareCodexReadiness().catch(() => {});
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;

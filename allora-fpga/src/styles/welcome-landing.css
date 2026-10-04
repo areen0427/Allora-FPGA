@@ -129,6 +129,14 @@ html[data-theme="black-ice"]
   opacity: 0;
 }
 
+html[data-background="trace"] .welcome-environment::before {
+  background-image: url("/welcome_ice_trace.png");
+}
+
+html[data-background="trace"] .welcome-environment::after {
+  background-image: url("/welcome_black_ice_trace.png");
+}
+
 html[data-background="ultramatte"] .welcome-environment::before {
   background-image: url("/welcome_ice_ultramatte.png");
 }

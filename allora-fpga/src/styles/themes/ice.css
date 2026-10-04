@@ -230,7 +230,3 @@ html[data-theme="ice"] .dashboard-activity-rail {
     rgba(239, 246, 255, 0.3)
   );
 }
-
-html[data-theme="ice"] .dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) {
-  background: #f1f7ff;
-}

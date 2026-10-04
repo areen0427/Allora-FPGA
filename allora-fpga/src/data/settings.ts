@@ -4,7 +4,7 @@ const SETTINGS_VERSION = 6;
 
 export type AppSettings = {
   theme: "ice" | "black-ice";
-  background: "molecules" | "ultramatte";
+  background: "molecules" | "ultramatte" | "trace";
   startupView: "home" | "last-project";
   restorePreviousSession: boolean;
   reduceMotion: boolean;
@@ -28,7 +28,7 @@ export type AppSettings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "ice",
-  background: "ultramatte",
+  background: "trace",
   startupView: "home",
   restorePreviousSession: true,
   reduceMotion: false,
@@ -79,7 +79,7 @@ function sanitizeSettings(value: unknown): AppSettings {
     theme: isOneOf(value.theme, ["ice", "black-ice"])
       ? value.theme
       : DEFAULT_SETTINGS.theme,
-    background: isOneOf(value.background, ["molecules", "ultramatte"])
+    background: isOneOf(value.background, ["molecules", "ultramatte", "trace"])
       ? value.background
       : DEFAULT_SETTINGS.background,
     startupView: isOneOf(value.startupView, ["home", "last-project"])

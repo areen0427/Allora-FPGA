@@ -892,9 +892,10 @@ html .allora-chat .chat-composer textarea {
 .chat-model-trigger svg { flex-shrink: 0; color: var(--chat-muted); }
 .chat-model-trigger:hover:not(:disabled) { border-color: var(--chat-accent); }
 .chat-model-popup {
-  position: absolute;
-  bottom: calc(100% + 14px);
-  right: 0;
+  position: fixed;
+  margin: 0;
+  top: auto;
+  right: auto;
   width: min(440px, calc(100vw - 110px));
   max-height: min(540px, calc(100dvh - 140px));
   display: flex;
@@ -907,6 +908,7 @@ html .allora-chat .chat-composer textarea {
   box-shadow: var(--chat-shadow), 0 16px 48px rgba(15, 23, 42, .2);
   color: var(--chat-text);
 }
+.chat-model-popup::backdrop { background: transparent; }
 html[data-theme="black-ice"] .chat-model-popup {
   background: #101d30;
   box-shadow: var(--chat-shadow), 0 16px 48px rgba(0, 0, 0, .45);

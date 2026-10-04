@@ -10,7 +10,15 @@ export type AiProviderStatus = {
   authenticated: boolean;
   state: AiProviderState;
   error?: string;
+  warning?: string;
 };
+
+export function codexNeedsUpdate(version: string | undefined) {
+  const parts = version?.match(/^codex-cli (\d+)\.(\d+)\.(\d+)(?:\s|$|-)/);
+  if (!parts) return false;
+  const [major, minor, patch] = parts.slice(1).map(Number);
+  return major === 0 && (minor < 159 || (minor === 159 && patch < 1));
+}
 
 export const aiIntegrationApi = {
   status: (provider: AiProvider) => invokeTauri<AiProviderStatus>("ai_provider_status", { provider }),

@@ -1,0 +1,283 @@
+/* Material only: variants still own their fill, border, geometry and focus ring.
+   Both layers inherit the control radius; neither participates in layout. */
+@property --allora-glass-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -75deg;
+}
+
+:root {
+  --button-glass-light: 255, 255, 255;
+  --button-glass-shadow: 15, 23, 42;
+  --button-glass-sheen: 0.12;
+  --button-glass-edge: 0.42;
+  --button-glass-depth: 0.09;
+  --button-glass-ease: cubic-bezier(0.25, 1, 0.5, 1);
+}
+html[data-theme="black-ice"] {
+  --button-glass-sheen: 0.065;
+  --button-glass-edge: 0.23;
+  --button-glass-depth: 0.24;
+  --button-glass-shadow: 0, 0, 0;
+}
+
+/* Dense rows/close affordances remain flat. Cards already own both pseudo
+   elements. The dock's material belongs on its icon tile, not its hit target.
+   data-glass="off" is the opt-out for future precision/custom controls. */
+:where(#root)
+  :is(
+    button:not(
+      :where(
+        [data-glass="off"],
+        .sidebarNavButton,
+        .execution-path-card,
+        .board-card,
+        .variant-card,
+        .template-card,
+        .pin-tile,
+        .fileClose,
+        .welcome-rail-logo,
+        .activity-home-button,
+        .explorer-collapse-button,
+        .explorer-expand-button,
+        .project-tree-root button,
+        .project-explorer-actions button,
+        .editor-tab-bar button,
+        .open-project-button,
+        .project-tree-close,
+        .chat-history-item > button:first-child,
+        .vfpga-wave-labels button,
+        .vfpga-wave-picker button,
+        .timing-path-list button
+      )
+    ),
+    .sidebarNavButton > .dock-icon
+  ) {
+  /* A zero-specificity positioning default lets existing absolute/fixed
+     controls keep their positioning. No background/color/border reset. */
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 15%,
+      rgba(var(--button-glass-light), var(--button-glass-sheen)) 38%,
+      rgba(var(--button-glass-light), 0.025) 48%,
+      transparent 65%
+    );
+    background-size: 220% 100%;
+    background-position: 100% 0;
+    -webkit-backdrop-filter: blur(3px) saturate(1.04);
+    backdrop-filter: blur(3px) saturate(1.04);
+    box-shadow:
+      inset 0 1px 1px rgba(var(--button-glass-light), 0.22),
+      inset 0 -1px 1px rgba(var(--button-glass-shadow), 0.08),
+      0 2px 4px -2px rgba(var(--button-glass-shadow), var(--button-glass-depth));
+    transition:
+      background-position 280ms var(--button-glass-ease),
+      backdrop-filter 220ms var(--button-glass-ease),
+      -webkit-backdrop-filter 220ms var(--button-glass-ease),
+      box-shadow 220ms var(--button-glass-ease),
+      opacity 160ms ease;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--allora-glass-angle) at 50% 50%,
+      rgba(var(--button-glass-light), var(--button-glass-edge)),
+      transparent 8% 38%,
+      rgba(var(--button-glass-light), var(--button-glass-edge)) 50%,
+      transparent 62% 94%,
+      rgba(var(--button-glass-light), var(--button-glass-edge))
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    transition:
+      --allora-glass-angle 280ms var(--button-glass-ease),
+      opacity 160ms ease;
+  }
+
+  &:is(:disabled, [aria-disabled="true"])::before,
+  &:is(:disabled, [aria-disabled="true"])::after {
+    opacity: 0.35;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled, [aria-disabled="true"])::before {
+      background-position: 65% 0;
+      -webkit-backdrop-filter: blur(2px) saturate(1.06);
+      backdrop-filter: blur(2px) saturate(1.06);
+    }
+    &:hover:not(:disabled, [aria-disabled="true"])::after {
+      --allora-glass-angle: -115deg;
+    }
+  }
+
+  &:active:not(:disabled, [aria-disabled="true"])::before {
+    background-position: 35% 0;
+    box-shadow:
+      inset 0 1px 2px rgba(var(--button-glass-shadow), 0.13),
+      inset 0 -1px 1px rgba(var(--button-glass-light), 0.16),
+      0 1px 2px -1px rgba(var(--button-glass-shadow), var(--button-glass-depth));
+  }
+  &:active:not(:disabled, [aria-disabled="true"])::after {
+    --allora-glass-angle: -60deg;
+  }
+}
+
+/* Existing transition lists take precedence over this fallback. */
+:where(#root button) {
+  transition: scale 180ms var(--button-glass-ease);
+}
+
+/* Keep this default weaker than every existing class/inline positioning rule. */
+:where(#root button, #root .dock-icon) {
+  position: relative;
+}
+
+/* Independent scale composes with the existing hover transforms and dock
+   magnification. Tabs, switches, rows and tiny dismiss buttons stay still. */
+:where(#root)
+  button:not(
+    :where(
+      [data-glass="off"],
+      [role="switch"],
+      [role="tab"],
+      .sidebarNavButton,
+      .fileClose,
+      .welcome-rail-logo,
+      .activity-home-button,
+      .explorer-collapse-button,
+      .explorer-expand-button,
+      .project-tree-root button,
+      .project-explorer-actions button,
+      .editor-tab-bar button,
+      .open-project-button,
+      .project-tree-close,
+      .execution-path-card,
+      .board-card,
+      .variant-card,
+      .template-card,
+      .pin-tile,
+      .editor-file-tab,
+      .chat-history-item > button:first-child,
+      .vfpga-wave-labels button,
+      .vfpga-wave-picker button,
+      .timing-path-list button
+    )
+  ) {
+  &:active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.99;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled, [aria-disabled="true"]):not(:active) {
+      scale: 0.997;
+    }
+  }
+}
+
+/* The large welcome cards already have a specular surface. Use that layer
+   for optical feedback without replacing their artwork/geometry. */
+.execution-path-stage .execution-path-card:not(:disabled)::after {
+  background-size: 160% 100%;
+  background-position: 80% 0;
+  transition:
+    background-position 280ms var(--button-glass-ease),
+    opacity 280ms ease;
+}
+.execution-path-stage .execution-path-card:hover:not(:disabled)::after {
+  background-position: 65% 0;
+}
+.execution-path-stage .execution-path-card:active:not(:disabled)::after {
+  background-position: 45% 0;
+}
+
+/* Preserve all existing focus rings; glass layers never own box-shadow on
+   the actual button. Motion opt-outs cover the OS and Allora preference. */
+html[data-reduce-motion="true"] :where(#root button, #root .dock-icon) {
+  scale: none !important;
+}
+html[data-reduce-motion="true"] :where(#root button, #root .dock-icon)::before,
+html[data-reduce-motion="true"] :where(#root button, #root .dock-icon)::after {
+  transition: none !important;
+  background-position: 100% 0 !important;
+  --allora-glass-angle: -75deg !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(#root button, #root .dock-icon) {
+    scale: none !important;
+  }
+  :where(#root button, #root .dock-icon)::before,
+  :where(#root button, #root .dock-icon)::after {
+    transition: none !important;
+    background-position: 100% 0 !important;
+    --allora-glass-angle: -75deg !important;
+  }
+}
+
+/* Borderless navigation only acquires the glass edge under the pointer. */
+#root .settings-navigation-item:not(:hover)::before,
+#root .settings-navigation-item:not(:hover)::after,
+#root .welcome-rail-button:not(:hover)::after {
+  opacity: 0;
+}
+#root .settings-navigation-item:not(:hover):not(:focus-visible) {
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Tab dismiss/add affordances stay borderless, including the old separator. */
+#root .editor-tab-bar button {
+  border: none !important;
+}
+
+/* Preserve wide synthesis/memory glyphs inside the existing dock tile. */
+.sidebarNavButton:is([aria-label="Synthesis"], [aria-label^="Memory Asset Studio"]) .dock-icon svg {
+  width: calc(100% - 6px);
+  height: auto;
+  max-height: calc(100% - 6px);
+}
+
+/* Settings/back use the same translucent material in both supported themes. */
+html[data-theme="ice"] {
+  --button-glass-navigation-fill: rgba(255, 255, 255, 0.16);
+}
+html[data-theme="black-ice"] {
+  --button-glass-navigation-fill: rgba(30, 41, 59, 0.24);
+}
+html:is([data-theme="ice"], [data-theme="black-ice"])
+  #root
+  :is(.welcome-rail-button, .welcome-back-button) {
+  background: var(--button-glass-navigation-fill) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  backdrop-filter: blur(12px) saturate(1.1);
+}
+
+#root .welcome-rail-button:not(:hover)::before {
+  box-shadow: none;
+}
+
+/* Switch groups keep individual control edges without an enclosing frame. */
+#root :is(.dashboard-target-switch, .project-explorer-view-switch) {
+  border-color: transparent !important;
+  box-shadow: none;
+}

@@ -260,7 +260,14 @@ export function SettingsModal({
             >
               <div className="settings-theme-grid" role="radiogroup" aria-label="Background">
                 <BackgroundChoice
-                  name="UltraMatte"
+                  name="Trace"
+                  background="trace"
+                  theme={settings.theme}
+                  selected={settings.background === "trace"}
+                  onSelect={() => updateSetting("background", "trace")}
+                />
+                <BackgroundChoice
+                  name="Refraction"
                   background="ultramatte"
                   theme={settings.theme}
                   selected={settings.background === "ultramatte"}

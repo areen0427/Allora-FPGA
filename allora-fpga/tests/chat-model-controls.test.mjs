@@ -5,7 +5,7 @@ import ts from "typescript";
 
 // Exercise the component's event handlers without a browser or visual capture.
 const source = (await readFile(new URL("../src/components/ChatModelControls.tsx", import.meta.url), "utf8"))
-  .replace(/import .* from "react";/, "const { useEffect, useId, useRef, useState, React } = globalThis.chatControlHarness;")
+  .replace(/import .* from "react";/, "const { useEffect, useId, useLayoutEffect, useRef, useState, React } = globalThis.chatControlHarness;")
   .replace(/import .* from "lucide-react";/, 'const Check = "check", ChevronDown = "chevron", Sparkles = "sparkles";');
 const compiled = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022, jsx: ts.JsxEmit.React },
@@ -35,6 +35,7 @@ test("reasoning drag stays open, moves continuously and commits the nearest leve
     },
     useId: () => "test-model-popup",
     useEffect: () => {},
+    useLayoutEffect: () => {},
     React: { createElement: (type, props, ...children) => ({ type, props: props ?? {}, children }) },
   };
   try {

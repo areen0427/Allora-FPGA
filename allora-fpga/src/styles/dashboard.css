@@ -52,7 +52,7 @@
 }
 
 .dashboard-sidebar {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-main {
@@ -1187,8 +1187,8 @@ html[data-theme="solar"] .pin-group-header {
 }
 
 .board-icon-badge {
-  width: 30px;
-  height: 30px;
+  width: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
+  height: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
   flex-shrink: 0;
   border: none;
   background: transparent;
@@ -2172,14 +2172,16 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
     rgba(239, 246, 255, 0.62)
   );
   --explorer-control: rgba(255, 255, 255, 0.72);
+  --dock-accent: #2563eb;
+  --dock-selected-border: rgba(37, 99, 235, 0.48);
   transition:
     width 180ms ease,
     min-width 180ms ease;
 }
 
 .dashboard-activity-rail-slot {
-  width: 63px;
-  flex: 0 0 63px;
+  width: 72px;
+  flex: 0 0 72px;
   min-height: 0;
   position: relative;
   z-index: 3;
@@ -2188,35 +2190,38 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 .dashboard-activity-rail {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 63px;
+  width: 72px;
+  /* Both docks span the same full height as the adjacent file tree. */
+  height: 100%;
+  --dock-row-size: clamp(24px, calc((100vh - 304px) / 11), 38px);
+  max-height: 100%;
   min-height: 0;
-  padding: 13px 8px 10px;
-  border-right: 1px solid var(--explorer-border);
+  padding: 10px;
+  border: 1px solid var(--explorer-border);
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  background: rgba(248, 250, 252, 0.34);
-  transition: width var(--ui-motion-fast, 0.15s ease);
+  background: var(--explorer-control);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 12px 30px rgba(15, 23, 42, 0.16);
 }
 
-.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) {
-  width: 216px;
-  background: rgba(248, 250, 252, 0.98);
-  box-shadow: 12px 0 24px rgba(15, 23, 42, 0.12);
-}
-
-.dashboard-sidebar.explorer-collapsed:has(.dashboard-activity-rail .activity-rail-nav:hover, .dashboard-activity-rail .activity-rail-nav .sidebarNavButton:focus-visible) {
-  overflow: visible !important;
+html:is([data-theme="black-ice"], [data-theme="dark"]) .dashboard-sidebar {
+  --dock-accent: #93c5fd;
+  --dock-selected-border: rgba(96, 165, 250, 0.64);
 }
 
 .activity-rail-top {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   justify-content: center;
-  padding-bottom: 12px;
-  margin-bottom: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--explorer-border);
 }
 
@@ -2438,7 +2443,7 @@ button.build-preflight-item:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   scrollbar-width: thin;
 }
 
@@ -2449,48 +2454,75 @@ button.build-preflight-item:hover {
 .activity-rail-divider {
   flex: 0 0 1px;
   height: 1px;
-  margin: 5px 7px;
+  margin: 4px 7px;
   background: var(--explorer-border);
 }
 
 .activity-rail-nav .sidebarNavButton {
   position: relative;
-  width: 44px;
-  min-height: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 50px;
+  min-height: var(--dock-row-size);
+  height: var(--dock-row-size);
+  flex: 0 0 var(--dock-row-size);
   padding: 0;
   margin: 0 auto;
   border-radius: 11px;
 }
 
-.activity-rail-nav .sidebarNavButton span,
-.activity-rail-nav .sidebarNavButton .sidebar-coming-soon {
+/* Scale the glass tile inside a stable hit target, so the rail never widens. */
+.activity-rail-nav .sidebarNavButton > span:not(.dock-icon),
+.activity-rail-nav .sidebar-coming-soon {
   display: none;
 }
 
-.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton {
-  width: 100%;
-  flex-direction: row;
-  justify-content: flex-start;
-  gap: 10px;
-  padding: 0 10px;
+.activity-rail-nav .sidebarNavButton .dock-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
+  height: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
+  max-width: none;
+  overflow: visible;
+  border: 1px solid var(--explorer-border);
+  border-radius: 9px;
+  background: var(--explorer-control);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  transition: transform 300ms ease-out, background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
-.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton > svg {
-  flex-shrink: 0;
-}
-
-.dashboard-activity-rail:has(.activity-rail-nav:hover, .activity-rail-nav .sidebarNavButton:focus-visible) .activity-rail-nav .sidebarNavButton span {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.floating-dock-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  transform: translateY(-50%);
+  padding: 8px 12px;
+  border: 1px solid var(--dashboard-surface-border, rgba(148, 163, 184, 0.3));
+  border-radius: 10px;
+  color: var(--dashboard-text, #334155);
+  background: var(--dashboard-control-bg, rgba(248, 250, 252, 0.92));
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(16px);
+  font-size: 12px;
+  font-weight: 650;
   white-space: nowrap;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 750;
-  line-height: 1.2;
+}
+
+html:is([data-theme="dark"], [data-theme="black-ice"]) .floating-dock-tooltip {
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.92);
+}
+
+html[data-reduce-motion="true"] .activity-rail-nav .sidebarNavButton .dock-icon {
+  transition: none;
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-rail-nav .sidebarNavButton .dock-icon {
+    transition: none;
+    transform: none !important;
+  }
 }
 
 .activity-rail-nav .sidebarNavButton:focus-visible {
@@ -2498,21 +2530,42 @@ button.build-preflight-item:hover {
   outline-offset: 2px;
 }
 
+/* Override theme gradients on the hit target; selection lives on the tile border. */
+.dashboard-activity-rail .activity-rail-nav .sidebarNavButton,
+.dashboard-activity-rail .activity-rail-nav .sidebarNavButton:is(.active, :hover, :focus-visible) {
+  background: transparent !important;
+}
+
+.activity-rail-nav .sidebarNavButton:is(:hover, :focus-visible) .dock-icon {
+  background: var(--explorer-control);
+  border-color: var(--dock-selected-border);
+}
+
+.activity-rail-nav .sidebarNavButton.active .dock-icon {
+  color: var(--dock-accent);
+  background: var(--explorer-control);
+  border-color: var(--dock-selected-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 3px 8px rgba(15, 23, 42, 0.08);
+}
+
 .activity-rail-nav .sidebarNavButton.active::before {
   content: "";
   position: absolute;
-  left: -8px;
-  top: 11px;
-  bottom: 11px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #2563eb;
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.42);
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dock-accent);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.45);
 }
 
 .activity-rail-bottom {
+  flex: 0 0 auto;
+  overflow: visible;
   display: grid;
-  gap: 4px;
+  gap: 3px;
   padding-top: 8px;
   border-top: 1px solid var(--explorer-border);
 }
@@ -2520,7 +2573,7 @@ button.build-preflight-item:hover {
 .activity-rail-bottom button,
 .explorer-expand-button {
   width: 42px;
-  height: 38px;
+  height: 32px;
   padding: 0;
   margin: 0 auto;
   border: 0;
@@ -2543,6 +2596,12 @@ button.build-preflight-item:hover {
   min-width: 0;
   min-height: 0;
   padding: 15px 13px 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--explorer-border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
 }
@@ -2583,8 +2642,8 @@ button.build-preflight-item:hover {
 .explorer-collapse-button,
 .project-explorer-actions button,
 .project-explorer-actions label {
-  width: 30px;
-  height: 30px;
+  width: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
+  height: clamp(20px, calc(var(--dock-row-size) - 10px), 28px);
   flex: 0 0 30px;
   padding: 0;
   border: 1px solid var(--explorer-border);
@@ -2791,7 +2850,7 @@ button.build-preflight-item:hover {
   font-weight: 750;
 }
 .explorer-expand-button {
-  flex: 0 0 38px;
+  flex: 0 0 32px;
 }
 .dashboard-sidebar-resizer {
   position: absolute;
@@ -2801,12 +2860,4 @@ button.build-preflight-item:hover {
   height: 100%;
   cursor: col-resize;
   z-index: 5;
-}
-
-@media (max-height: 760px) {
-  .activity-rail-nav .sidebarNavButton {
-    min-height: 38px;
-    height: 38px;
-    flex-basis: 38px;
-  }
 }

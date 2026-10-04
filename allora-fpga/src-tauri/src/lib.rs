@@ -3739,6 +3739,7 @@ pub fn run() {
         .manage(ViewerPayloadState::default())
         .manage(ai_chat::AiChatState::default())
         .setup(|app| {
+            ai_integration::configure_codex_runtime(app.path().app_cache_dir()?.join("codex-runtime"));
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
