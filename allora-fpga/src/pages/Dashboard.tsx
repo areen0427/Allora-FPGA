@@ -7,6 +7,7 @@ import TestbenchIcon from "../components/TestbenchIcon";
 import SynthesisIcon from "../components/SynthesisIcon";
 import ProgramIcon from "../components/ProgramIcon";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
+import RegisterBuilder from "./dashboard/RegisterBuilder";
 import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
 import { useState, useEffect } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
@@ -261,6 +262,7 @@ export default function Dashboard({
   }
 
   async function handleRenameFile(oldName: string, newName: string) {
+    if (oldName.startsWith("Register_Map/")) return;
     const result = await fileMgmt.renameFile(oldName, newName);
     if (!result) return;
     if ("error" in result) {
@@ -277,6 +279,11 @@ export default function Dashboard({
   }
 
   async function handleDeleteFileFromProject(fileName: string) {
+    if (fileName.startsWith("Register_Map/")) {
+      saveProject.setSaveStatus("error");
+      saveProject.setSaveErrorMessage("Register Builder owns this file. Edit the map and regenerate from Register Builder.");
+      return;
+    }
     const result = await fileMgmt.deleteFileFromProject(fileName);
     if (!result) return;
     if ("error" in result) {
@@ -533,7 +540,7 @@ export default function Dashboard({
               <div className="activity-rail-divider" role="separator" aria-label="Design tools" />
               <SidebarButton label="Peripheral Workbench" icon={<PeripheralWorkbenchIcon size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
               <SidebarButton label="Memory Asset Studio" icon={<MemoryAssetStudioIcon size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
-              <SidebarButton label="Register Builder" comingSoon icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
+              <SidebarButton label="Register Builder" icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
             </FloatingDockNav>
             <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
               <SidebarButton
@@ -795,7 +802,17 @@ export default function Dashboard({
         <KeepAliveSection active={activeSection === "peripheral-workbench"} visited={visitedSections.has("peripheral-workbench")}>
           <PeripheralWorkbench files={fileMgmt.files} topLevelFileName={activeTabs.topLevelFileName} active={activeSection === "peripheral-workbench"} projectPath={projectPath} onChange={handleUpdateWorkbench} />
         </KeepAliveSection>
-        {activeSection === "register-builder" && <section className="pw pw-coming"><span className="pw-kicker">COMING SOON</span><h1>Register Builder</h1><p>This workspace is planned and is not available yet.</p></section>}
+        <KeepAliveSection active={activeSection === "register-builder"} visited={visitedSections.has("register-builder")}>
+          <RegisterBuilder projectPath={projectPath} files={fileMgmt.files} topLevelFileName={activeTabs.topLevelFileName} onOpenFile={handleOpenFile} onGenerated={(generated, removed) => {
+            fileMgmt.setFiles(current => [...current.filter(file => !removed.includes(file.name) && !generated.some(item => item.name === file.name)), ...generated]);
+          }} onActivateTop={(name, module) => {
+            const metadata = fileMgmt.files.find(file => file.name === "allora-project.json");
+            if (!metadata) throw new Error("Project metadata is missing. Select the generated wrapper as top level manually.");
+            const parsed = JSON.parse(metadata.content);
+            fileMgmt.setFiles(current => current.map(file => file.name === metadata.name ? { ...file, content: JSON.stringify({ ...parsed, topModule: module, sourceFileName: name }, null, 2) + "\n" } : file));
+            handleMakeTopLevelFile(name);
+          }} />
+        </KeepAliveSection>
         <KeepAliveSection active={activeSection === "memory-asset-studio"} visited={visitedSections.has("memory-asset-studio")}>
           <MemoryAssetStudio projectPath={projectPath} onOpenFile={handleOpenFile} onGenerated={(generated, removed) => {
             fileMgmt.setFiles(current => [...current.filter(file => !removed.includes(file.name) && !generated.some(item => item.name === file.name)), ...generated]);
@@ -1308,7 +1325,7 @@ function ProjectTreeNode({
         className="project-tree-file-icon"
         aria-hidden="true"
       />
-      <span className="project-tree-file-name">{node.name}</span>
+      <span className="project-tree-file-name">{node.name.split("/").pop()}</span>
       {isDirty ? (
         <span
           className="project-tree-dirty-indicator"
@@ -1351,7 +1368,7 @@ function ProjectTreeDirectory({
   ...props
 }: ProjectTreeDirectoryProps) {
   const generatedDirectory = ["build", "sim"].includes(node.name.toLowerCase());
-  const [expanded, setExpanded] = useState(node.path === "src");
+  const [expanded, setExpanded] = useState(node.path === "src" || node.name === "Register_Map");
   const fileCount = countTreeFiles(node);
 
   return (

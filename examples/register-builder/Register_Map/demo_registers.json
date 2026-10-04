@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "name": "demo_registers",
+  "addressWidth": 8,
+  "dataWidth": 32,
+  "resetActiveLow": false,
+  "registers": [
+    {
+      "id": "CONTROL",
+      "name": "CONTROL",
+      "offset": "0x00",
+      "width": 8,
+      "access": "RW",
+      "reset": "0",
+      "description": "Counter control",
+      "fields": [
+        {
+          "id": "ENABLE",
+          "name": "ENABLE",
+          "lsb": 0,
+          "msb": 0,
+          "access": "RW",
+          "reset": "0",
+          "description": "Enable the hardware counter"
+        }
+      ]
+    },
+    {
+      "id": "STATUS",
+      "name": "STATUS",
+      "offset": "0x04",
+      "width": 8,
+      "access": "RO",
+      "reset": "0",
+      "description": "Hardware counter value",
+      "fields": [
+        {
+          "id": "COUNT",
+          "name": "COUNT",
+          "lsb": 0,
+          "msb": 7,
+          "access": "RO",
+          "reset": "0",
+          "description": "Live counter status"
+        }
+      ]
+    },
+    {
+      "id": "COMMAND",
+      "name": "COMMAND",
+      "offset": "0x08",
+      "width": 8,
+      "access": "WO",
+      "reset": "0",
+      "description": "Write-only command value",
+      "fields": []
+    },
+    {
+      "id": "FLAGS",
+      "name": "FLAGS",
+      "offset": "0x0c",
+      "width": 8,
+      "access": "W1C",
+      "reset": "3",
+      "description": "Sticky flags; hardware set wins simultaneous clear",
+      "fields": []
+    }
+  ]
+}

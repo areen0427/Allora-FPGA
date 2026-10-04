@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "name": "demo_registers",
+    "addressWidth": 8,
+    "dataWidth": 32,
+    "resetActiveLow": false,
+    "registers": [
+      {
+        "id": "CONTROL",
+        "name": "CONTROL",
+        "offset": "0x00",
+        "width": 8,
+        "access": "RW",
+        "reset": "0",
+        "description": "Counter control",
+        "fields": [
+          {
+            "id": "ENABLE",
+            "name": "ENABLE",
+            "lsb": 0,
+            "msb": 0,
+            "access": "RW",
+            "reset": "0",
+            "description": "Enable the hardware counter"
+          }
+        ]
+      },
+      {
+        "id": "STATUS",
+        "name": "STATUS",
+        "offset": "0x04",
+        "width": 8,
+        "access": "RO",
+        "reset": "0",
+        "description": "Hardware counter value",
+        "fields": [
+          {
+            "id": "COUNT",
+            "name": "COUNT",
+            "lsb": 0,
+            "msb": 7,
+            "access": "RO",
+            "reset": "0",
+            "description": "Live counter status"
+          }
+        ]
+      },
+      {
+        "id": "COMMAND",
+        "name": "COMMAND",
+        "offset": "0x08",
+        "width": 8,
+        "access": "WO",
+        "reset": "0",
+        "description": "Write-only command value",
+        "fields": []
+      },
+      {
+        "id": "FLAGS",
+        "name": "FLAGS",
+        "offset": "0x0c",
+        "width": 8,
+        "access": "W1C",
+        "reset": "3",
+        "description": "Sticky flags; hardware set wins simultaneous clear",
+        "fields": []
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "path": "Register_Map/demo_registers.sv",
+      "hash": "136ce3b87dd06ac118bfc091d92f5cd5c660f5433c7d90f5751fe10b95258a4e"
+    },
+    {
+      "path": "Register_Map/demo_registers.h",
+      "hash": "c5e97eeb02680229f8255ac9f4369d670e782e11d7bf67deaf3ab164ba716533"
+    },
+    {
+      "path": "Register_Map/demo_registers.json",
+      "hash": "8b810166d6018530742d464ee0fee941a1ccb636dc6dc45aaebf8a6dd9e76f43"
+    },
+    {
+      "path": "Register_Map/demo_registers_instantiation.txt",
+      "hash": "8630bf56484b3895b2efab43f7faf63858ba1d01a778149621744073ff43c911"
+    },
+    {
+      "path": "Register_Map/demo_registers_top.sv",
+      "hash": "195a16b961a695bd296e274675f3059962a2ab5aa5f6f2f3fbf5602a736565f2"
+    }
+  ],
+  "generatedKey": "{\"map\":{\"name\":\"demo_registers\",\"addressWidth\":8,\"dataWidth\":32,\"resetActiveLow\":false,\"registers\":[{\"id\":\"CONTROL\",\"name\":\"CONTROL\",\"offset\":\"0x00\",\"width\":8,\"access\":\"RW\",\"reset\":\"0\",\"description\":\"Counter control\",\"fields\":[{\"id\":\"ENABLE\",\"name\":\"ENABLE\",\"lsb\":0,\"msb\":0,\"access\":\"RW\",\"reset\":\"0\",\"description\":\"Enable the hardware counter\"}]},{\"id\":\"STATUS\",\"name\":\"STATUS\",\"offset\":\"0x04\",\"width\":8,\"access\":\"RO\",\"reset\":\"0\",\"description\":\"Hardware counter value\",\"fields\":[{\"id\":\"COUNT\",\"name\":\"COUNT\",\"lsb\":0,\"msb\":7,\"access\":\"RO\",\"reset\":\"0\",\"description\":\"Live counter status\"}]},{\"id\":\"COMMAND\",\"name\":\"COMMAND\",\"offset\":\"0x08\",\"width\":8,\"access\":\"WO\",\"reset\":\"0\",\"description\":\"Write-only command value\",\"fields\":[]},{\"id\":\"FLAGS\",\"name\":\"FLAGS\",\"offset\":\"0x0c\",\"width\":8,\"access\":\"W1C\",\"reset\":\"3\",\"description\":\"Sticky flags; hardware set wins simultaneous clear\",\"fields\":[]}]},\"integration\":{\"topModule\":\"register_demo\",\"ports\":[{\"name\":\"clk\",\"direction\":\"input\",\"width\":1},{\"name\":\"rst\",\"direction\":\"input\",\"width\":1},{\"name\":\"enable\",\"direction\":\"input\",\"width\":1},{\"name\":\"count\",\"direction\":\"output\",\"width\":8}],\"clock\":\"clk\",\"reset\":\"rst\",\"designInputs\":{\"enable\":\"field_CONTROL_ENABLE_value_o\"},\"bankInputs\":{\"field_STATUS_COUNT_i\":\"count\"}}}",
+  "integration": {
+    "topModule": "register_demo",
+    "ports": [
+      {
+        "name": "clk",
+        "direction": "input",
+        "width": 1
+      },
+      {
+        "name": "rst",
+        "direction": "input",
+        "width": 1
+      },
+      {
+        "name": "enable",
+        "direction": "input",
+        "width": 1
+      },
+      {
+        "name": "count",
+        "direction": "output",
+        "width": 8
+      }
+    ],
+    "clock": "clk",
+    "reset": "rst",
+    "designInputs": {
+      "enable": "field_CONTROL_ENABLE_value_o"
+    },
+    "bankInputs": {
+      "field_STATUS_COUNT_i": "count"
+    }
+  }
+}

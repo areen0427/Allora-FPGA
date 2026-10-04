@@ -1874,3 +1874,8 @@ html[data-reduce-motion="true"] .board-info-popup.board-info-animate {
 .welcome-destination-stage.simulate .welcome-destination-content {
   width: 100%;
 }
+
+/* Keep each Build board's chip badge aligned with the left edge of its title. */
+.welcome-destination-stage.build .welcome-board-card .board-icon-badge {
+  align-self: flex-start;
+}

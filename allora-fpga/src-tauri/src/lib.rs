@@ -295,9 +295,10 @@ fn asset_path(request: &AssetFileRequest) -> Result<PathBuf, ErrorPayload> {
     if relative != Path::new("assets/memory-assets.json")
         && !relative.starts_with("assets/sources")
         && !relative.starts_with("src/generated")
+        && !relative.starts_with("Register_Map")
     {
         return Err(error(
-            "Asset files must use the manifest, source, or generated asset directories.",
+            "Design-tool files must use the manifest, source, or generated asset directories.",
         ));
     }
     let root = fs::canonicalize(root)
@@ -3833,6 +3834,115 @@ mod memory_asset_tests {
         }
     }
 
+    #[test]
+    fn register_builder_transaction_reopen_and_conflicts() {
+        let project = tempfile::tempdir().unwrap();
+        let root = project.path();
+        fs::write(root.join("allora-project.json"), "{}").unwrap();
+        let manifest = "Register_Map/register-builder.json";
+        let rtl = "Register_Map/bank.sv";
+        commit_asset_files(vec![
+            request(root, rtl, Some(b"module bank; endmodule".to_vec()), None),
+            request(
+                root,
+                manifest,
+                Some(b"{\"schemaVersion\":1}".to_vec()),
+                None,
+            ),
+        ])
+        .unwrap();
+        let files = read_project_workspace(ReadProjectWorkspaceRequest {
+            project_path: root.to_string_lossy().to_string(),
+        })
+        .unwrap()
+        .files;
+        assert!(files
+            .iter()
+            .any(|f| f.relative_path == rtl && f.content.contains("module bank")));
+        assert!(files.iter().any(|f| f.relative_path == manifest));
+        assert!(commit_asset_files(vec![
+            request(root, "Register_Map/bank.h", Some(b"header".to_vec()), None),
+            request(root, rtl, Some(b"overwrite".to_vec()), None),
+        ])
+        .is_err());
+        assert!(!root.join("Register_Map/bank.h").exists());
+        assert_eq!(fs::read(root.join(rtl)).unwrap(), b"module bank; endmodule");
+        assert!(write_asset_file(request(
+            root,
+            "Register_Map/../src/top.v",
+            Some(vec![1]),
+            None
+        ))
+        .is_err());
+    }
+
+    #[test]
+    fn register_builder_project_uses_native_synthesis() {
+        let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/register-builder");
+        let files = [
+            "src/register_demo.sv",
+            "Register_Map/demo_registers.sv",
+            "Register_Map/demo_registers_top.sv",
+        ]
+        .iter()
+        .map(|name| SynthesisInputFile {
+            name: name.strip_prefix("src/").unwrap_or(name).to_string(),
+            content: fs::read_to_string(example.join(name)).unwrap(),
+        })
+        .collect();
+        let response = tauri::async_runtime::block_on(generate_synthesis_diagram(
+            GenerateSynthesisDiagramRequest {
+                project_name: "register_builder_test".to_string(),
+                project_path: None,
+                board_name: "iCEBreaker".to_string(),
+                fpga_id: "ice40up5k".to_string(),
+                synthesis_flow: "yosys-nextpnr".to_string(),
+                top_module: Some("demo_registers_top".to_string()),
+                files,
+            },
+        ))
+        .unwrap();
+        assert_eq!(response.top_module, "demo_registers_top");
+        assert!(!response.nodes.is_empty());
+    }
+
+    #[test]
+    fn register_builder_project_uses_native_simulation_and_source_paths() {
+        let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/register-builder");
+        let source_files = [
+            "src/register_demo.sv",
+            "Register_Map/demo_registers.sv",
+            "Register_Map/demo_registers_top.sv",
+        ]
+        .iter()
+        .map(|name| SynthesisInputFile {
+            name: name.strip_prefix("src/").unwrap_or(name).to_string(),
+            content: fs::read_to_string(example.join(name)).unwrap(),
+        })
+        .collect();
+        let project = tempfile::tempdir().unwrap();
+        fs::write(project.path().join("allora-project.json"), "{}").unwrap();
+        let sink = LogSink::new(|_| {}, None);
+        let response = simulate_testbench_service(
+            SimulateTestbenchRequest {
+                project_name: "register_builder_test".to_string(),
+                source_files,
+                testbench_file: SynthesisInputFile {
+                    name: "register_demo_tb.sv".to_string(),
+                    content: fs::read_to_string(example.join("sim/register_demo_tb.sv")).unwrap(),
+                },
+                top_module: Some("register_demo_tb".to_string()),
+                project_path: Some(project.path().to_string_lossy().to_string()),
+            },
+            &sink,
+        )
+        .unwrap();
+        assert!(response
+            .logs
+            .iter()
+            .any(|line| line.contains("REGISTER_PROJECT_PASS")));
+        assert!(response.vcd.contains("rb_rd_data"));
+    }
     #[test]
     fn asset_sources_manifest_reopen_and_collision_guards() {
         let project = tempfile::tempdir().unwrap();

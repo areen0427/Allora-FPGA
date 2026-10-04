@@ -1,0 +1,41 @@
+// Insert inside your design module. Connect each named wire to your design.
+// addr is a byte offset. No bus master or protocol bridge is generated.
+wire rb_clk; // Rising-edge clock
+wire rb_rst; // Synchronous active-high reset
+wire [7:0] rb_addr; // Byte address; full-word aligned
+wire [31:0] rb_wr_data; // Full-word write data; no byte strobes
+wire [31:0] rb_rd_data; // Combinational read data; zero when disabled/unmapped and for WO bits
+wire rb_wr_en; // Write on rising edge
+wire rb_rd_en; // Enable combinational read
+wire [7:0] rb_reg_CONTROL_value_o; // CONTROL: complete hardware value (including WO bits)
+wire rb_reg_CONTROL_write_o; // CONTROL: combinational accepted-write strobe; sample on clk
+wire rb_field_CONTROL_ENABLE_value_o; // RW field value
+wire [7:0] rb_reg_STATUS_value_o; // STATUS: complete hardware value (including WO bits)
+wire rb_reg_STATUS_write_o; // STATUS: combinational accepted-write strobe; sample on clk
+wire [7:0] rb_field_STATUS_COUNT_i; // Live hardware-driven RO value; reset is a software constant, hardware owns initialization
+wire [7:0] rb_reg_COMMAND_value_o; // COMMAND: complete hardware value (including WO bits)
+wire rb_reg_COMMAND_write_o; // COMMAND: combinational accepted-write strobe; sample on clk
+wire [7:0] rb_reg_FLAGS_value_o; // FLAGS: complete hardware value (including WO bits)
+wire rb_reg_FLAGS_write_o; // FLAGS: combinational accepted-write strobe; sample on clk
+wire [7:0] rb_reg_FLAGS_set_i; // Hardware set bits; set wins over simultaneous software clear
+
+demo_registers u_register_map (
+  .clk(rb_clk),
+  .rst(rb_rst),
+  .addr(rb_addr),
+  .wr_data(rb_wr_data),
+  .rd_data(rb_rd_data),
+  .wr_en(rb_wr_en),
+  .rd_en(rb_rd_en),
+  .reg_CONTROL_value_o(rb_reg_CONTROL_value_o),
+  .reg_CONTROL_write_o(rb_reg_CONTROL_write_o),
+  .field_CONTROL_ENABLE_value_o(rb_field_CONTROL_ENABLE_value_o),
+  .reg_STATUS_value_o(rb_reg_STATUS_value_o),
+  .reg_STATUS_write_o(rb_reg_STATUS_write_o),
+  .field_STATUS_COUNT_i(rb_field_STATUS_COUNT_i),
+  .reg_COMMAND_value_o(rb_reg_COMMAND_value_o),
+  .reg_COMMAND_write_o(rb_reg_COMMAND_write_o),
+  .reg_FLAGS_value_o(rb_reg_FLAGS_value_o),
+  .reg_FLAGS_write_o(rb_reg_FLAGS_write_o),
+  .reg_FLAGS_set_i(rb_reg_FLAGS_set_i)
+);

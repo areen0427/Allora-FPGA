@@ -73,7 +73,7 @@ test('both existing Studio entries route to the dedicated workspace', () => {
   assert.match(home,/onClick=\{\(\) => onChoose\("memory-asset-studio"\)\}/);
   assert.match(home,/path === "memory-asset-studio"/);
   assert.match(dashboard,/<MemoryAssetStudio projectPath=/);
-  assert.match(app,/initialSection=\{studioLaunch \? "memory-asset-studio"/);
+  assert.match(app,/initialSection=\{registerLaunch \? "register-builder" : studioLaunch \? "memory-asset-studio"/);
   assert.match(app,/onCreateMemoryProject=\{\(\) => \{ setStudioLaunch\(true\); setSelectedBoardId\(null\); setStage\("memory-project-setup"\)/);
   assert.match(app,/<MemoryProjectSetup board=/);
 });

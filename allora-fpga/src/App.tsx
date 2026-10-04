@@ -30,6 +30,7 @@ import "./App.css";
 import type { ExecutionTarget } from "./pages/dashboard/types";
 import { prepareCodexReadiness } from "./lib/codexReadiness";
 import { hasTauriInvoke } from "./lib/tauri";
+import { findTopModuleFile } from "./hooks/utils";
 
 type AppStage =
   | "board-select"
@@ -54,6 +55,7 @@ function App() {
   const [settings, setSettings] = useState<AppSettings>(() => getSettings());
   const [projectWarning, setProjectWarning] = useState("");
   const [studioLaunch, setStudioLaunch] = useState(false);
+  const [registerLaunch, setRegisterLaunch] = useState(false);
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
   const restoredStartupRef = useRef(false);
@@ -80,6 +82,7 @@ function App() {
   }, []);
 
   function goHome() {
+    setRegisterLaunch(false);
     setStage("board-select");
     setSelectedBoardId(null);
     setProject(null);
@@ -255,6 +258,7 @@ function App() {
   if (stage === "board-select") {
     return (
       <BoardSelect
+        onDesignToolChange={setRegisterLaunch}
         settings={settings}
         onSettingsChange={setSettings}
         onOpenProject={openProject}
@@ -425,8 +429,9 @@ function App() {
         settings={settings}
         projectWarning={projectWarning}
         launchTarget={executionTarget}
-        initialSection={studioLaunch ? "memory-asset-studio" : undefined}
+        initialSection={registerLaunch ? "register-builder" : studioLaunch ? "memory-asset-studio" : undefined}
         onExecutionTargetChange={(target) => {
+          setRegisterLaunch(false);
           setStudioLaunch(false);
           setExecutionTarget(target);
           if (!project) return;
@@ -453,6 +458,7 @@ function App() {
 
   return (
     <BoardSelect
+        onDesignToolChange={setRegisterLaunch}
       settings={settings}
       onSettingsChange={setSettings}
       onOpenProject={openProject}
@@ -484,17 +490,6 @@ function isHdlFile(fileName: string) {
     fileName.endsWith(".sv") ||
     fileName.endsWith(".vhd") ||
     fileName.endsWith(".vhdl")
-  );
-}
-
-function findTopModuleFile(files: SavedProject["files"], topModule?: string) {
-  if (!topModule) return null;
-
-  return (
-    files.find((file) => {
-      const fileBaseName = file.name.replace(/\.(sv|v|vhd|vhdl)$/i, "");
-      return fileBaseName === topModule;
-    })?.name ?? null
   );
 }
 

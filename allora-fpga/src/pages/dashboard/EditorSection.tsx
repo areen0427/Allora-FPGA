@@ -72,7 +72,7 @@ export default function EditorSection({
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
   const isDarkEditor = settings.theme === "black-ice";
-  const managedAssetFile = /\/(?:src\/generated|assets)\//.test(activeFile?.path?.replaceAll("\\", "/") ?? "");
+  const managedAssetFile = /\/(?:src\/generated|assets|Register_Map)\//.test(activeFile?.path?.replaceAll("\\", "/") ?? "");
 
   useEffect(() => {
     if (!navigation || activeFileName !== navigation.fileName) return;
@@ -324,7 +324,7 @@ export default function EditorSection({
         </div>
       </div>
 
-      {managedAssetFile && <div className="editor-managed-note">Managed by Memory Asset Studio. Use the Studio to change assets; external file changes are detected there.</div>}
+      {managedAssetFile && <div className="editor-managed-note">{activeFile?.name.startsWith("Register_Map/") ? "Managed by Register Builder. Edit the map and regenerate there; handwritten design files are preserved." : "Managed by Memory Asset Studio. Use the Studio to change assets; external file changes are detected there."}</div>}
       <div className="editor-body">
         <Editor
           height="100%"
@@ -489,6 +489,8 @@ function getMonacoLanguage(fileName?: string) {
   if (fileName.endsWith(".sv")) return "verilog";
   if (fileName.endsWith(".vhd")) return "vhdl";
   if (fileName.endsWith(".vhdl")) return "vhdl";
+  if (fileName.endsWith(".h")) return "c";
+  if (fileName.endsWith(".json")) return "json";
   return "plaintext";
 }
 

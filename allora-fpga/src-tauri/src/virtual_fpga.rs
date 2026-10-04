@@ -969,6 +969,49 @@ mod tests {
     }
 
     #[test]
+    fn register_builder_runs_in_production_verilator_session() {
+        let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/register-builder");
+        let files = [
+            "src/register_demo.sv",
+            "Register_Map/demo_registers.sv",
+            "Register_Map/demo_registers_top.sv",
+        ]
+        .iter()
+        .map(|name| SimulationSourceFile {
+            name: name.strip_prefix("src/").unwrap_or(name).to_string(),
+            content: fs::read_to_string(example.join(name)).unwrap(),
+        })
+        .collect();
+        let state = VirtualFpgaState::default();
+        let started = start_simulation(
+            StartSimulationRequest {
+                source_files: files,
+                top_module: "demo_registers_top".to_string(),
+                clock_signal: Some("clk".to_string()),
+                clock_frequency_hz: 50_000_000,
+                enable_vcd: Some(false),
+                project_path: None,
+            },
+            &state,
+        )
+        .unwrap();
+        let mut sessions = state.sessions.lock().unwrap();
+        let session = sessions.get_mut(&started.session_id).unwrap();
+        set_input_value(session, "rst", &Value::from(1)).unwrap();
+        step_session_with_trace(session, 1).unwrap();
+        set_input_value(session, "rst", &Value::from(0)).unwrap();
+        set_input_value(session, "rb_wr_data", &Value::from(1)).unwrap();
+        set_input_value(session, "rb_wr_en", &Value::from(1)).unwrap();
+        step_session_with_trace(session, 1).unwrap();
+        set_input_value(session, "rb_wr_en", &Value::from(0)).unwrap();
+        let snapshot = step_session_with_trace(session, 2).unwrap().state;
+        assert_eq!(snapshot.values["count"], "2");
+        set_input_value(session, "rb_addr", &Value::from(4)).unwrap();
+        let snapshot = set_input_value(session, "rb_rd_en", &Value::from(1)).unwrap();
+        assert_eq!(snapshot.values["rb_rd_data"], "2");
+        sessions.remove(&started.session_id);
+    }
+    #[test]
     fn harness_maps_vector_and_scalar_ports() {
         let ports = vec![
             RtlPort {

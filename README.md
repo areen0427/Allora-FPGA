@@ -212,7 +212,7 @@ Run `node --test allora-fpga/tests/memory-assets.test.mjs` to verify converters,
 
 ## Peripheral Workbench
 
-Open **Peripheral Workbench** from the main project navigation in either Build or Simulate mode. The welcome-screen entry opens the existing project creation/selection flow. Physical-board projects keep their board, HDL, top module, build settings, and pin constraints. **Register Builder** remains Coming soon. **Memory Asset Studio** is available from the welcome screen and the editor rail.
+Open **Peripheral Workbench** from the main project navigation in either Build or Simulate mode. The welcome-screen entry opens the existing project creation/selection flow. Physical-board projects keep their board, HDL, top module, build settings, and pin constraints. **Register Builder V1** is also available from the welcome screen and shared project navigation. **Memory Asset Studio** is available from the welcome screen and the editor rail.
 
 1. Add a momentary button, toggle switch, LED, LED bank, direct seven-segment display (a–g plus DP), or UART terminal from the library.
 2. Select a device to rename it, set polarity/initial state, and map each channel to a structurally discovered RTL port/bit. Drag its heading or edit X/Y to arrange it. Duplicate and Remove work while stopped; duplicate input connections are cleared to avoid driver conflicts.
@@ -235,3 +235,65 @@ cargo test --manifest-path allora-fpga/src-tauri/Cargo.toml --no-fail-fast
 ```
 
 The `workbench_` Rust integration tests require actual Yosys and Verilator; missing tools fail instead of silently skipping. They compile the production C++ harness and run the production TypeScript peripheral models against real RTL, covering I/O, vector polarity, direct display patterns, UART echo across batches, lifecycle, initial states, metadata save/reopen/migration, invalid mappings, conflicting drivers, and exact 64-bit values. `allora-fpga/tests/workbench-ui.html` is a UI-only development fixture; it deliberately has no mock simulator and reports missing Tauri when viewed in a browser.
+
+
+## Register Builder V1
+
+Open **Register Builder** from the existing welcome entry or the design-tools rail in either project mode. Create a simulation/board project or open an existing project. Add registers, duplicate/reorder them, edit byte offsets, and add named bit fields. The bit diagram shows high-to-low positions, named fields, unfielded bits, and overlaps. Validation runs while editing and disables generation for conflicting addresses, misalignment, out-of-range or overlapping fields, duplicate names/IDs, invalid identifiers/access modes or testbench-style module names, oversized resets, and generated-signal/C-constant collisions.
+
+One map belongs to each project. Map edits save immediately through the same guarded native transaction used by Memory Asset Studio, including semantically invalid drafts that can be reopened and repaired. **Save map** retries a failed save. Wait for the saved status before exiting the app. Closing and reopening a project restores register/field definitions, ordering, descriptions, configuration, and generated-file ownership from `Register_Map/register-builder.json`.
+
+**Generate files** writes these normal project files (using the module name selected in the builder):
+
+```text
+Register_Map/
+  register-builder.json          # versioned editable-map manifest and output hashes
+  <name>.sv                     # synthesizable register bank
+  <name>.h                      # firmware offsets, widths, masks, shifts and resets
+  <name>.json                    # software-facing map definition
+  <name>_instantiation.txt       # documented manual wiring snippet
+  <name>_top.sv                  # optional reviewed integration wrapper
+```
+
+The explorer expands `Register_Map/` by default; output buttons open files in the normal editor. Generated files are read-only there and excluded from editor autosave. Regeneration checks SHA-256 ownership and expected disk contents before committing files and the manifest together. It refuses unowned collisions and externally edited outputs, preserves unrelated files, recreates missing owned outputs, and removes obsolete outputs only when their contents still match recorded ownership. For edited output conflicts, preserve/move the edited file before regeneration; for an unowned filename collision, choose another module name. Renaming a map regenerates its filenames.
+
+### Native interface and access behavior
+
+| Signal | Meaning |
+| --- | --- |
+| `clk` | Rising-edge clock |
+| `rst` / `rst_n` | Selected synchronous active-high / active-low reset |
+| `addr` | Byte offset, 1–32 address bits |
+| `wr_data` / `rd_data` | 8, 16, 32, or 64-bit data bus |
+| `wr_en` | Full-word write on a rising edge |
+| `rd_en` | Enables combinational read; disabled or unmapped reads return zero |
+
+Registers can be 1 bit through the data-bus width; every address reserves a full data-bus word and must be word-aligned. Field access/reset overrides register defaults. Unfielded bits inherit those defaults. Decimal, `0x` hexadecimal, and `0b` binary values are supported with exact 64-bit arithmetic.
+
+- **RW** stores software writes and exposes the value to hardware.
+- **RO** reads a live hardware input and ignores software writes. Its configured reset is a firmware constant; the surrounding hardware owns initialization of this input.
+- **WO** stores writes and exposes their values to hardware; software reads return zero for those bits. Each register also exposes an accepted-write strobe, sampled on `clk`, for command consumption.
+- **W1C** clears stored bits written as one and exposes a hardware-set input. Hardware set wins simultaneous software clear; reset has priority over both.
+
+Every register has a complete hardware value output. Named stored fields have individual value outputs; RO fields/registers have input signals; W1C segments have set inputs. The generated C header documents access modes and includes `UINT64_C` constants, avoiding truncated 64-bit masks.
+
+### Integration
+
+**Manual:** Generate files and expand **Manual instantiation snippet**. Copy its declarations and instance into your design module, connecting every input explicitly. This preserves your selected top and handwritten RTL. Generated HDL already participates in the shared Icarus, Verilator/Peripheral Workbench, synthesis-diagram, and bitstream source lists.
+
+**Assisted:** Choose **Connect to Top Level**. Allora uses the existing Yosys structural port discovery on the actual project sources. Select clock/reset ports and matching-width hardware connections; defaults expose separate inputs rather than guessing. Review the complete generated wrapper before choosing **Generate wrapper & use as top level**. It instantiates both the original design and bank, preserves the original HDL, updates project top selection plus `allora-project.json` top/source metadata, and leaves design-specific bus/set/status inputs visible as `rb_*` ports. Regeneration rechecks the original top's ports. **Use original top for manual integration** restores the original design selection; ordinary regeneration does not change the selected top.
+
+A bus master or your own protocol adapter must drive address/data/enables. Review physical pin constraints and virtual/peripheral mappings for new wrapper ports before building or running. V1 does not synthesize a bus master, CPU, AXI/APB/Wishbone adapter, byte strobes, or a handshake. Assisted wrappers support ordinary descending, zero-based Verilog/SystemVerilog input/output ports up to 64 bits; VHDL, inout, ascending/nonzero-index ports, unavailable tools, or ambiguous/unsupported port structures use manual integration. The builder supports at most 256 registers and 64 fields per register.
+
+Try [`examples/register-builder`](examples/register-builder), containing all four access modes, a register-enabled hardware counter, a reviewed wrapper, and an assertion-based testbench. In Allora, open **Testbench → Run Simulation** to inspect its real waveforms.
+
+Validation from `allora-fpga`:
+
+```sh
+node --test tests/register-builder.test.mjs
+cargo test --manifest-path src-tauri/Cargo.toml --lib register_builder
+npm run build
+npm run lint
+```
+
+Tests exercise map validation, exact resets, C compilation, persistence/conflict handling, deterministic regeneration, actual Icarus access-mode simulation, Yosys synthesis, Verilator lint, and production native synthesis/testbench/interactive simulation services. Native UI checks covered Ice/Black Ice, conflict diagnostics, reviewed wrapper generation, generated-file editor access, waveform simulation, and project close/reopen. Physical programming and board-level timing for a register design have not been verified.

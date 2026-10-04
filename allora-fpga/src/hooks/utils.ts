@@ -22,6 +22,17 @@ export function findTopModule(files: ProjectFile[]) {
   return null;
 }
 
+/** Locate a declared HDL top even when the project file has a generated-folder prefix. */
+export function findTopModuleFile(files: ProjectFile[], topModule?: string) {
+  if (!topModule) return null;
+  return files.find(file => {
+    if (!isHdlFile(file.name) || file.isBinary) return false;
+    const vhdl = /\.vhdl?$/i.test(file.name);
+    const source = vhdl ? file.content.replace(/--[^\n]*/g, " ") : file.content.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, " ");
+    return [...source.matchAll(/\b(?:module|entity)\s+(?:automatic\s+)?([A-Za-z_]\w*)\b/gi)].some(match => vhdl ? match[1].toLowerCase() === topModule.toLowerCase() : match[1] === topModule);
+  })?.name ?? null;
+}
+
 function normalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }

@@ -1,0 +1,8 @@
+{
+  "name": "register-builder-demo",
+  "boardId": "allora-virtual",
+  "projectKind": "simulation",
+  "language": "SystemVerilog",
+  "topModule": "demo_registers_top",
+  "sourceFileName": "Register_Map/demo_registers_top.sv"
+}

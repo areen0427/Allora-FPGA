@@ -304,6 +304,10 @@ export function connectDemo(next: AppActions) {
     "x-allora-demo-token": import.meta.env.VITE_ALLORA_DEMO_TOKEN,
   };
   void (async () => {
+    // Optional isolated native QA fixture, never loaded in production.
+    if (import.meta.env.VITE_ALLORA_DEMO_PROJECT) {
+      await actions?.open(import.meta.env.VITE_ALLORA_DEMO_PROJECT, "simulate");
+    }
     for (;;) {
       try {
         const item = await fetch("/__allora_demo/poll", { headers }).then((r) =>

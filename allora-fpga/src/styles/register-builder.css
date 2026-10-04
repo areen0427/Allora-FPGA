@@ -1,0 +1,216 @@
+.rb {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.rb button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.rb fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.rb label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--mas-muted);
+  font-size: 12px;
+}
+.rb input,
+.rb select {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--mas-input);
+  color: var(--mas-text);
+  border: 1px solid var(--mas-border);
+  border-radius: 7px;
+  padding: 8px;
+  min-width: 0;
+}
+.rb h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.rb h3 {
+  font-size: 14px;
+}
+.rb-actions,
+.rb-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb-panel-title {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.rb-status {
+  color: var(--mas-accent);
+  margin: 12px 0;
+  font-size: 13px;
+}
+.rb-config {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 2fr;
+  gap: 12px;
+  margin-bottom: 18px !important;
+}
+.rb-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.rb-panel {
+  border: 1px solid var(--mas-border);
+  background: var(--mas-panel);
+  border-radius: 14px;
+  padding: 18px;
+  min-width: 0;
+  margin-bottom: 16px;
+}
+.rb-register-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 15px;
+  max-height: 620px;
+  overflow: auto;
+}
+.rb-register-list button {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  text-align: left;
+  justify-content: stretch;
+}
+.rb-register-list button span {
+  font-size: 11px;
+  color: var(--mas-muted);
+}
+.rb-register-list button.selected {
+  background: var(--mas-tint);
+  border-color: var(--mas-accent);
+}
+.rb-register-form {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr 2fr;
+  gap: 10px;
+}
+.rb-description {
+  grid-column: 1 / -1;
+}
+.rb-bits {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  margin: 22px 0;
+}
+.rb-bit {
+  background: var(--mas-surface);
+  border: 1px solid var(--mas-border);
+  display: flex;
+  flex-direction: column;
+  padding: 7px 4px;
+  text-align: center;
+  overflow: hidden;
+}
+.rb-bit small {
+  color: var(--mas-muted);
+  font-family: var(--font-mono);
+}
+.rb-bit span {
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rb-bit.field {
+  background: var(--mas-tint);
+  border-bottom: 3px solid var(--mas-accent);
+}
+.rb-bit.overlap {
+  background: #a8262633;
+  border-color: #b43c3c;
+}
+.rb-fields {
+  display: grid;
+  gap: 12px;
+}
+.rb-field {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 2fr auto;
+  gap: 8px;
+  border-top: 1px solid var(--mas-border) !important;
+  padding-top: 14px !important;
+}
+.rb-error,
+.rb-invalid {
+  color: #c43c3c;
+}
+.rb-error {
+  padding: 12px;
+  border: 1px solid #c43c3c;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.rb-help {
+  font-size: 12px !important;
+}
+.rb-empty {
+  padding: 50px 15px;
+  text-align: center;
+  color: var(--mas-muted);
+}
+.rb-validation ul {
+  padding-left: 18px;
+}
+.rb-validation li button {
+  border: 0;
+  text-align: left;
+  padding: 2px 0;
+  color: #c43c3c;
+  background: none;
+}
+.rb pre {
+  max-height: 350px;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--mas-surface);
+  border: 1px solid var(--mas-border);
+  color: var(--mas-text);
+  font-size: 12px;
+}
+.rb-integration {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.rb-output-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb details summary {
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+@container (max-width: 850px) {
+  .rb-layout {
+    grid-template-columns: 1fr;
+  }
+  .rb-config {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 550px) {
+  .rb-register-form,
+  .rb-field {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

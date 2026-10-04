@@ -15,7 +15,7 @@ Both paths operate on disk-backed Allora projects. A project can remember its mo
 
 ## Peripheral Workbench V1
 
-Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Peripheral Workbench and Memory Asset Studio are implemented; Register Builder remains Coming soon. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
+Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Peripheral Workbench, Memory Asset Studio, and Register Builder V1 are implemented. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
 
 `src/lib/peripheralWorkbench.ts` owns versioned metadata, mapping validation, legacy migration, UART host models, and serialized cycle advancement. `src/pages/dashboard/PeripheralWorkbench.tsx` owns library/canvas/inspector UI and the simulation command queue. Metadata is stored separately under `peripheralWorkbench`; physical constraints and original `simulation` metadata are preserved. Workbench source changes invalidate sessions, and leaving the workspace releases buttons and pauses execution.
 
@@ -26,6 +26,14 @@ The existing Rust Verilator backend now compiles/discovers ports on blocking wor
 `src/lib/memoryAssets.ts` owns the typed memory model, deterministic image/binary/table conversion, `.hex` serialization, and synchronous Verilog ROM generation. `src/pages/dashboard/MemoryAssetStudio.tsx` owns the asset list, conversion settings, preview, inspector, and generation controls. The welcome tile routes through a dedicated project-selection landing page and project creation form; the editor rail enters the active project's Studio directly.
 
 The disk manifest is `assets/memory-assets.json` (schema version 1). Imported sources stay in `assets/sources/`, and generated memories/HDL are in `src/generated/`. Native `read_asset_file`/`write_asset_file`/`delete_asset_file` commands guard collisions using expected bytes. Editor autosave excludes Studio-owned paths, preventing stale editor snapshots from overwriting regenerated files. Project reopening reads the disk manifest and registers only its current generated outputs. Icarus, Yosys, and interactive Verilator workspaces copy the project's generated hex files before invoking the tools.
+
+## Register Builder V1 architecture
+
+`src/lib/registerBuilder.ts` owns the typed map, continuous validation, deterministic synthesizable RTL, C constants, instantiation snippets, and reviewed wrapper generation. The native bus uses byte offsets, aligned full-word writes, synchronous reset, and combinational reads. Field access/reset overrides register defaults. RO is hardware-driven; WO reads zero; W1C has hardware-set inputs with set priority over clear.
+
+`src/lib/registerBuilderProject.ts` serializes map drafts and owns generated-file relationships in `Register_Map/register-builder.json`, independently of board and peripheral metadata. It reuses Memory Asset Studio's `read_asset_file`/`commit_asset_files` service with expected bytes and SHA-256 ownership. Missing owned outputs can be recreated; modified or unowned files block destructive regeneration. The editor and autosave protect the generated folder. `src/pages/dashboard/RegisterBuilder.tsx` provides map/bit-field editing, validation, generation, and integration review using the existing Studio palette for both themes.
+
+The existing HDL source lists already include `Register_Map/*.sv`. Normal project reopening retains relative generated filenames, and top resolution matches actual module declarations in nested files. Assisted integration uses production Yosys port discovery, explicit selections, and a generated `<name>_top.sv` wrapper. Applying selects that wrapper and updates only top/source fields in project metadata; original RTL remains untouched. Returning to manual integration restores the original top selection. New wrapper ports require pin/peripheral mapping review. One map per project, up to 256 registers, full-word 8/16/32/64-bit data, and ordinary zero-based descending input/output wrapper ports are V1 boundaries. No protocol adapter or physical-programming verification is included. See README and `examples/register-builder` for usage and validation.
 
 ## Repository layout
 

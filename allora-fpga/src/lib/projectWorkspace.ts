@@ -212,7 +212,7 @@ export async function readProjectWorkspace(projectPath: string) {
     } catch { /* The Studio displays the manifest error when opened. */ }
   }
   return response.files.filter(file => !registeredGenerated || !file.relativePath.startsWith("src/generated/") || registeredGenerated.has(file.relativePath)).map((file) => ({
-    name: file.relativePath.startsWith("src/") ? file.relativePath.slice(4) : file.relativePath.split("/").pop() ?? file.relativePath,
+    name: file.relativePath.startsWith("Register_Map/") ? file.relativePath : file.relativePath.startsWith("src/") ? file.relativePath.slice(4) : file.relativePath.split("/").pop() ?? file.relativePath,
     path: file.absolutePath,
     content: file.content,
     isBinary: file.binary,

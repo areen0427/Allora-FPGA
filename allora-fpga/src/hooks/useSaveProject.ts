@@ -84,7 +84,7 @@ export function useSaveProject({
         if (snapshot.projectPath) {
           await Promise.all(
             snapshot.files
-              .filter((file) => file.path && !file.isBinary && !file.path.replaceAll("\\", "/").includes("/src/generated/") && !file.path.replaceAll("\\", "/").includes("/assets/"))
+              .filter((file) => file.path && !file.isBinary && !file.path.replaceAll("\\", "/").includes("/src/generated/") && !file.path.replaceAll("\\", "/").includes("/assets/") && !file.path.replaceAll("\\", "/").includes("/Register_Map/"))
               .map((file) =>
                 writeProjectFile(file.path as string, file.content),
               ),

@@ -19,6 +19,7 @@ import type { ExecutionTarget } from "./dashboard/types";
 import ChatPage from "./ChatPage";
 
 type BoardSelectProps = {
+  onDesignToolChange: (register: boolean) => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
   onSelectBoard: (boardId: string) => void;
@@ -33,6 +34,7 @@ type BoardSelectProps = {
 };
 
 export default function BoardSelect({
+  onDesignToolChange,
   settings,
   onSettingsChange,
   onSelectBoard,
@@ -103,6 +105,7 @@ export default function BoardSelect({
   }
 
   function handleViewChange(view: WelcomeView) {
+    onDesignToolChange(false);
     setActiveView(view);
     setHomePath(null);
     setShowProductInfo(false);
@@ -138,6 +141,7 @@ export default function BoardSelect({
           path={homePath}
           onPathChange={(path) => {
             setHomePath(path);
+            onDesignToolChange(path === "register-builder");
             setShowProductInfo(false);
           }}
           showProductInfo={showProductInfo}

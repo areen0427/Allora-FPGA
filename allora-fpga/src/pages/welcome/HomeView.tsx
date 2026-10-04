@@ -70,7 +70,7 @@ type HomeViewProps = {
   onCreateMemoryBoardProject: (board: BoardCatalogItem) => void;
 };
 
-export type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio";
+export type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio" | "register-builder";
 
 export function HomeView({
   path,
@@ -268,6 +268,8 @@ export function HomeView({
             </div>
             <aside className="mas-home-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={onOpenMemoryProject} onRemoveProject={onRemoveRecentProject} emptyMessage="Your memory projects will appear here." /></aside>
           </div>
+        ) : path === "register-builder" ? (
+          <div className="mas-home-layout"><div className="mas-home-main"><section className="mas-home-intro"><span className="mas-kicker">REGISTER BUILDER V1</span><h2>Give your hardware a software interface.</h2><p>Define registers and bit fields, validate their layout, and generate RTL, C definitions, and an integration wrapper in your Allora project.</p><button className="mas-primary" disabled={isOpeningExistingProject} onClick={() => onOpenExistingProject("simulate")}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>{openExistingProjectError && <div role="alert">{openExistingProjectError}</div>}</section><div className="mas-launch-grid"><section className="mas-launch-card"><h3>Start a simulation project</h3><p>Design and test your register bank without a board.</p><button onClick={onCreateSimulationProject}>Create simulation project</button></section><section className="mas-launch-card"><h3>Target a physical board</h3><label>Target board<select value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select></label><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onSelectBoard(board); }}>Create board project</button></section></div></div><aside className="mas-home-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={projectId => onOpenProject(projectId, "simulate")} onRemoveProject={onRemoveRecentProject} emptyMessage="Open a project to start your register map." /></aside></div>
         ) : path === "simulate" ? (
           <SimulationHome
             recentProjects={recentProjects}
@@ -371,8 +373,8 @@ function ExecutionPathChooser({
           <button type="button" className={`execution-path-card welcome-tool-row${selectedTarget === "memory-asset-studio" ? " is-selected" : ""}`} onClick={() => onChoose("memory-asset-studio")} disabled={selectedTarget !== null}>
             <MemoryAssetStudioIcon /><span>Memory Asset Studio</span><ChevronRight size={15} aria-hidden="true" />
           </button>
-          <button type="button" className="execution-path-card welcome-tool-row" disabled>
-            <RegisterBuilderIcon /><span>Register Builder</span><small className="welcome-soon-badge">Coming soon</small>
+          <button type="button" className="execution-path-card welcome-tool-row" onClick={() => onChoose("register-builder")} disabled={selectedTarget !== null}>
+            <RegisterBuilderIcon /><span>Register Builder</span><ChevronRight size={15} aria-hidden="true" />
           </button>
           <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenPinMapping} disabled={selectedTarget !== null}>
             <MapIcon size={18} aria-hidden="true" /><span>Pin Mapper</span><ChevronRight size={15} aria-hidden="true" />
