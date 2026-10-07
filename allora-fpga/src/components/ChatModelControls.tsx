@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import type { AiChatModel } from "../lib/aiChat";
 
 type Props = {
@@ -102,7 +102,6 @@ export default function ChatModelControls(props: Props) {
         disabled={props.disabled} title={props.error || "Choose a model"}
         onClick={() => { setReasoningOpen(false); setOpen((value) => !value); }}>
         <span>{props.loading ? "Loading models…" : model?.displayName ?? "Choose model"}</span>
-        <ChevronDown size={13} />
       </button>
       {open && !props.disabled && (
         <div ref={popup} popover="manual" id={popupId} className="chat-model-popup" role="dialog" aria-label="Choose Codex model"
@@ -137,13 +136,18 @@ export default function ChatModelControls(props: Props) {
       <button ref={reasoningTrigger} type="button" className={`chat-model-trigger chat-reasoning-control${effort?.reasoningEffort === "ultra" ? " is-ultra" : ""}`}
         disabled={props.disabled || !choices.length} aria-haspopup="dialog" aria-expanded={reasoningOpen} aria-controls={`${popupId}-reasoning`}
         onClick={() => { setOpen(false); setSliderPosition(null); setReasoningOpen(true); }}>
-        {effort?.reasoningEffort === "ultra" && <Sparkles size={13} />}
-        <span>{effort ? effortName(effort.reasoningEffort) : "Default"}</span><ChevronDown size={13} />
+        <span>{effort ? effortName(effort.reasoningEffort) : "Default"}</span>
       </button>
       {reasoningOpen && !props.disabled && <div id={`${popupId}-reasoning`} role="dialog" aria-label="Reasoning amount" className={`chat-reasoning-popup chat-reasoning-control${effort?.reasoningEffort === "ultra" ? " is-ultra" : ""}`}>
-        <label htmlFor={`${popupId}-effort`}><span>{effort?.reasoningEffort === "ultra" && <Sparkles size={11} />} Reasoning</span><strong>{preview ? effortName(preview.reasoningEffort) : "Default"}</strong></label>
+        <label htmlFor={`${popupId}-effort`}><span>Reasoning</span><strong>{preview ? effortName(preview.reasoningEffort) : "Default"}</strong></label>
+        {preview?.reasoningEffort === "ultra" && (
+          <p id={`${popupId}-ultra-description`} className="chat-reasoning-subtitle">
+            Delegates work across subagents. Will consume usage limits faster.
+          </p>
+        )}
         <div ref={range} id={`${popupId}-effort`} role="slider" tabIndex={0}
           className={`chat-reasoning-slider${sliderPosition !== null ? " is-dragging" : ""}`}
+          aria-describedby={preview?.reasoningEffort === "ultra" ? `${popupId}-ultra-description` : undefined}
           aria-label="Reasoning amount" aria-valuemin={0} aria-valuemax={Math.max(0, choices.length - 1)} aria-valuenow={position}
           aria-disabled={choices.length < 2}
           aria-valuetext={preview ? effortName(preview.reasoningEffort) : "Model default"}

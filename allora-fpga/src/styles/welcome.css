@@ -54,14 +54,15 @@
   overflow: hidden;
   background: transparent;
   cursor: pointer;
+  transition: transform var(--ui-motion-fast);
 }
 
 .welcome-rail-logo:hover {
-  transform: translateY(-1px);
+  transform: var(--ui-lift-subtle);
 }
 
 .welcome-rail-logo:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--ui-accent-text);
   outline-offset: 3px;
 }
 
@@ -77,19 +78,19 @@
   color: #64748b;
   cursor: pointer;
   transition:
-    background 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s ease;
+    background var(--ui-motion-fast),
+    color var(--ui-motion-fast),
+    transform var(--ui-motion-fast);
 }
 
 .welcome-rail-button:hover,
 .welcome-rail-button.filled {
   background: #eff6ff;
-  color: #2563eb;
+  color: var(--ui-accent-text);
 }
 
 .welcome-rail-button:hover {
-  transform: translateY(-1px);
+  transform: var(--ui-lift-subtle);
 }
 
 .welcome-rail-spacer {
@@ -275,7 +276,7 @@
   height: 38px;
   border-radius: 12px;
   background: #eff6ff;
-  color: #2563eb;
+  color: var(--ui-accent-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -431,13 +432,14 @@
   flex-direction: column;
   gap: 24px;
   transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
+    transform var(--ui-motion-fast),
+    box-shadow var(--ui-motion-fast),
+    border-color var(--ui-motion-fast);
 }
 
-.execution-path-card:hover {
-  transform: translateY(-5px);
+.execution-path-card:hover:not(:disabled),
+.execution-path-card:focus-visible:not(:disabled) {
+  transform: var(--ui-lift-subtle);
 }
 
 .execution-path-card.simulate {
@@ -460,9 +462,9 @@
   box-shadow: 0 24px 70px rgba(8, 145, 178, 0.15);
 }
 
-.execution-path-card.simulate:hover {
-  border-color: rgba(6, 182, 212, 0.45);
-  box-shadow: 0 30px 80px rgba(8, 145, 178, 0.22);
+.execution-path-card.simulate:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+  box-shadow: var(--ui-hover-shadow);
 }
 
 .execution-path-card.build {
@@ -480,9 +482,9 @@
   box-shadow: 0 24px 70px rgba(79, 70, 229, 0.12);
 }
 
-.execution-path-card.build:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 30px 80px rgba(79, 70, 229, 0.19);
+.execution-path-card.build:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+  box-shadow: var(--ui-hover-shadow);
 }
 
 .execution-path-copy {
@@ -499,7 +501,7 @@
 }
 
 .execution-path-kicker {
-  color: #0284c7;
+  color: var(--ui-accent-text);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.11em;
@@ -507,7 +509,7 @@
 }
 
 .build .execution-path-kicker {
-  color: #4f46e5;
+  color: var(--ui-accent-text);
 }
 
 .execution-path-copy h2 {
@@ -530,14 +532,14 @@
   padding: 9px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
-  color: #0369a1;
+  color: var(--ui-accent-text);
   font-size: 12px;
   font-weight: 900;
   box-shadow: 0 7px 20px rgba(15, 23, 42, 0.07);
 }
 
 .build .execution-path-cta {
-  color: #4338ca;
+  color: var(--ui-accent-text);
 }
 
 .execution-path-features {
@@ -828,7 +830,7 @@
   border: 1px solid #dfe3f5;
   border-radius: 10px;
   background: #fff;
-  color: #4338ca;
+  color: var(--ui-accent-text);
   font-size: 10px;
   font-weight: 900;
   box-shadow: 0 8px 18px rgba(79, 70, 229, 0.08);
@@ -907,7 +909,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #0284c7;
+  color: var(--ui-accent-text);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -931,14 +933,18 @@
   padding: 10px 13px;
   border: 0;
   border-radius: 12px;
-  background: #0284c7;
-  color: white;
+  background: var(--ui-primary-bg);
+  color: var(--ui-primary-text);
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-weight: 850;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.24);
+  box-shadow: var(--ui-control-shadow);
+  transition:
+    background var(--ui-motion-fast),
+    border-color var(--ui-motion-fast),
+    transform var(--ui-motion-fast);
 }
 .simulation-welcome-actions {
   display: flex;
@@ -951,11 +957,20 @@
   margin-top: 0;
 }
 .simulation-welcome-actions button.secondary {
-  border: 1px solid rgba(2, 132, 199, 0.2);
-  background: rgba(255, 255, 255, 0.72);
-  color: #0369a1;
+  border: 1px solid var(--ui-border-control);
+  background: var(--ui-control-bg);
+  color: var(--ui-accent-text);
   box-shadow: none;
 }
+.simulation-welcome-actions button:hover:not(:disabled) {
+  background: var(--ui-primary-hover-bg);
+  transform: var(--ui-lift-subtle);
+}
+
+.simulation-welcome-actions button.secondary:hover:not(:disabled) {
+  background: var(--ui-control-hover-bg);
+}
+
 .simulation-capability-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -967,7 +982,7 @@
   padding: 7px 9px;
   border: 1px solid rgba(14, 165, 233, 0.14);
   border-radius: 12px;
-  color: #0284c7;
+  color: var(--ui-accent-text);
   background: rgba(255, 255, 255, 0.46);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1001,7 +1016,7 @@
 }
 
 .simulation-defaults-heading > span { color: #1e3a4f; font-size: 13px; font-weight: 850; }
-.simulation-defaults-heading > span svg { color: #0284c7; }
+.simulation-defaults-heading > span svg { color: var(--ui-accent-text); }
 .simulation-defaults-heading > strong { color: #059669; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; }
 .simulation-defaults-heading > strong i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 9px rgba(52, 211, 153, 0.72); }
 
@@ -1044,9 +1059,9 @@
 
 .simulation-trace-toggle > span { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; }
 .simulation-trace-toggle > i { width: 27px; height: 16px; padding: 2px; border-radius: 999px; background: #94a3b8; display: flex; }
-.simulation-trace-toggle > i b { width: 12px; height: 12px; border-radius: 50%; background: white; transition: transform .16s ease; }
-.simulation-trace-toggle.active { color: #0369a1; border-color: rgba(14, 165, 233, .3); }
-.simulation-trace-toggle.active > i { background: #0ea5e9; }
+.simulation-trace-toggle > i b { width: 12px; height: 12px; border-radius: 50%; background: white; transition: transform var(--ui-motion-fast); }
+.simulation-trace-toggle.active { color: var(--ui-accent-text); border-color: var(--ui-accent); }
+.simulation-trace-toggle.active > i { background: var(--ui-accent); }
 .simulation-trace-toggle.active > i b { transform: translateX(11px); }
 
 .recent-simulation-empty {

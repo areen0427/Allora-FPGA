@@ -80,11 +80,11 @@ html[data-theme="black-ice"] {
       inset 0 -1px 1px rgba(var(--button-glass-shadow), 0.08),
       0 2px 4px -2px rgba(var(--button-glass-shadow), var(--button-glass-depth));
     transition:
-      background-position 280ms var(--button-glass-ease),
-      backdrop-filter 220ms var(--button-glass-ease),
-      -webkit-backdrop-filter 220ms var(--button-glass-ease),
-      box-shadow 220ms var(--button-glass-ease),
-      opacity 160ms ease;
+      background-position var(--ui-motion-fast),
+      backdrop-filter var(--ui-motion-fast),
+      -webkit-backdrop-filter var(--ui-motion-fast),
+      box-shadow var(--ui-motion-fast),
+      opacity var(--ui-motion-fast);
   }
 
   &::after {
@@ -112,8 +112,8 @@ html[data-theme="black-ice"] {
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     transition:
-      --allora-glass-angle 280ms var(--button-glass-ease),
-      opacity 160ms ease;
+      --allora-glass-angle var(--ui-motion-fast),
+      opacity var(--ui-motion-fast);
   }
 
   &:is(:disabled, [aria-disabled="true"])::before,
@@ -146,7 +146,7 @@ html[data-theme="black-ice"] {
 
 /* Existing transition lists take precedence over this fallback. */
 :where(#root button) {
-  transition: scale 180ms var(--button-glass-ease);
+  transition: var(--ui-control-transition);
 }
 
 /* Keep this default weaker than every existing class/inline positioning rule. */
@@ -154,14 +154,17 @@ html[data-theme="black-ice"] {
   position: relative;
 }
 
-/* Independent scale composes with the existing hover transforms and dock
-   magnification. Tabs, switches, rows and tiny dismiss buttons stay still. */
+/* Shared subtle lift for actions. Tabs, switches, rows and tiny dismiss
+   buttons stay still; the dock retains its own magnification. */
 :where(#root)
   button:not(
     :where(
       [data-glass="off"],
       [role="switch"],
       [role="tab"],
+      .vfpga-switch,
+      .vfpga-button,
+      .board-input-bank button,
       .sidebarNavButton,
       .fileClose,
       .welcome-rail-logo,
@@ -190,7 +193,7 @@ html[data-theme="black-ice"] {
   }
   @media (hover: hover) and (pointer: fine) {
     &:hover:not(:disabled, [aria-disabled="true"]):not(:active) {
-      scale: 0.997;
+      transform: var(--ui-lift-subtle);
     }
   }
 }
@@ -201,7 +204,7 @@ html[data-theme="black-ice"] {
   background-size: 160% 100%;
   background-position: 80% 0;
   transition:
-    background-position 280ms var(--button-glass-ease),
+    background-position var(--ui-motion-fast),
     opacity 280ms ease;
 }
 .execution-path-stage .execution-path-card:hover:not(:disabled)::after {

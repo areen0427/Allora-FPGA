@@ -36,6 +36,7 @@ import {
   MapPinned,
   Plus,
   Settings,
+  MessageSquare,
   Gauge,
   Upload,
   Usb,
@@ -98,6 +99,7 @@ type DashboardProps = {
   onExecutionTargetChange: (target: ExecutionTarget) => void;
   onBack: () => void;
   onHome: () => void;
+  onChat: () => void;
 };
 
 const DEFAULT_SIDEBAR_WIDTH = 368;
@@ -113,6 +115,7 @@ export default function Dashboard({
   onExecutionTargetChange,
   onBack,
   onHome,
+  onChat,
 }: DashboardProps) {
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>(launchTarget);
@@ -543,6 +546,16 @@ export default function Dashboard({
               <SidebarButton label="Register Builder" icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
             </FloatingDockNav>
             <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
+              <SidebarButton
+                label="Chat"
+                icon={<MessageSquare size={18} />}
+                active={false}
+                disabled={saveProject.saveStatus === "saving"}
+                onClick={async () => {
+                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+                  onChat();
+                }}
+              />
               <SidebarButton
                 label="Resource usage"
                 icon={<Gauge size={18} />}

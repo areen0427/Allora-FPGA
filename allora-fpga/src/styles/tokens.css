@@ -1,0 +1,117 @@
+/* Shared UI values inherit into every screen, dialog, and viewer window.
+   Screen styles own layout; supported themes only override these values. */
+:root {
+  color-scheme: light;
+  --ui-canvas-bg: #eef7ff;
+  --ui-page-bg:
+    radial-gradient(circle at 10% 0%, rgba(219, 234, 254, 0.52), transparent 30%),
+    radial-gradient(circle at 92% 8%, rgba(186, 230, 253, 0.28), transparent 34%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 239, 255, 0.76));
+  --ui-primary-bg: linear-gradient(180deg, #4388ef, #2563d4);
+  --ui-primary-hover-bg: linear-gradient(180deg, #4b91f7, #1d5bc8);
+  --ui-primary-text: #ffffff;
+  --ui-primary-border: rgba(29, 78, 216, 0.48);
+  --ui-primary-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 14px rgba(37, 99, 212, 0.2);
+  --ui-disabled-bg: #cbd5e1;
+  --ui-disabled-text: #475569;
+  --ui-control-hover-bg: var(--ui-control-active-bg);
+  --ui-control-fill: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.72));
+  --ui-control-solid: #ffffff;
+  --ui-surface: #f7fbff;
+  --ui-panel: #ffffff;
+  --ui-border-hover: rgba(37, 99, 235, 0.48);
+  --ui-control-transition:
+    transform var(--ui-motion-fast),
+    scale var(--ui-motion-fast),
+    background var(--ui-motion-fast),
+    border-color var(--ui-motion-fast),
+    color var(--ui-motion-fast),
+    box-shadow var(--ui-motion-fast);
+  --font-mono: var(--font-code);
+  --ui-radius-xs: 10px;
+  --ui-radius-sm: 12px;
+  --ui-radius-md: 14px;
+  --ui-radius-lg: 16px;
+  --ui-radius-xl: 18px;
+  --ui-radius-2xl: 20px;
+  --ui-border-subtle: rgba(226, 232, 240, 0.72);
+  --ui-border-control: rgba(203, 213, 225, 0.72);
+  --ui-border-control-strong: rgba(203, 213, 225, 0.8);
+  --ui-accent: #2563eb;
+  --ui-accent-text: #2563eb;
+  --ui-blue: var(--ui-accent);
+  --ui-blue-soft: rgba(37, 99, 235, 0.12);
+  --ui-cyan: var(--ui-accent);
+  --ui-text: #0f172a;
+  --ui-text-muted: #64748b;
+  --ui-text-soft: #94a3b8;
+  --ui-surface-glass:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.66),
+      rgba(255, 255, 255, 0.28)
+    ),
+    rgba(248, 250, 252, 0.42);
+  --ui-dashboard-glass:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(248, 250, 252, 0.5)
+    ),
+    rgba(255, 255, 255, 0.56);
+  --ui-control-bg:
+    var(--ui-control-fill), var(--ui-control-solid);
+  --ui-control-active-bg:
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.98),
+      rgba(219, 234, 254, 0.76)
+    ),
+    #eff6ff;
+  --ui-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  --ui-surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  --ui-dashboard-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  --ui-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+  --ui-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  --ui-motion-fast: 160ms ease;
+  --ui-motion-base: var(--ui-motion-fast);
+  --ui-lift-subtle: translateY(-1px);
+  --ui-lift-card: var(--ui-lift-subtle);
+}
+
+html[data-theme="black-ice"] {
+  color-scheme: dark;
+  --ui-accent-text: #93c5fd;
+  --ui-canvas-bg: #0f172a;
+  --ui-page-bg:
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 32, 56, 0.94));
+  --ui-surface: #101c2c;
+  --ui-panel: #152335;
+  --ui-disabled-bg: #334155;
+  --ui-disabled-text: #cbd5e1;
+  --ui-border-hover: rgba(96, 165, 250, 0.52);
+  --ui-border-subtle: rgba(148, 163, 184, 0.24);
+  --ui-border-control: rgba(148, 163, 184, 0.24);
+  --ui-border-control-strong: rgba(148, 163, 184, 0.28);
+  --ui-text: #e2e8f0;
+  --ui-text-muted: #94a3b8;
+  --ui-text-soft: #cbd5e1;
+  --ui-control-bg:
+    var(--ui-control-fill), var(--ui-control-solid);
+  --ui-control-fill: linear-gradient(180deg, rgba(30, 41, 59, 0.64), rgba(15, 23, 42, 0.42));
+  --ui-control-solid: rgba(15, 23, 42, 0.5);
+  --ui-control-active-bg: rgba(37, 99, 235, 0.18);
+  --ui-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --ui-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --ui-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}

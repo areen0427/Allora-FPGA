@@ -19,47 +19,38 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
   color: #cbd5e1 !important;
 }
 
+/* One motion policy covers every screen and detached viewer. Token-based
+   lifts disappear without altering layout transforms on precise controls. */
+html[data-reduce-motion="true"] {
+  --ui-motion-fast: 0.001ms linear;
+  --ui-motion-base: 0.001ms linear;
+  --ui-lift-subtle: none;
+  --ui-lift-card: none;
+}
+
+html[data-reduce-motion="true"] #root *,
+html[data-reduce-motion="true"] #root *::before,
+html[data-reduce-motion="true"] #root *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .glass-page *,
-  .glass-page *::before,
-  .glass-page *::after {
+  :root {
+    --ui-motion-fast: 0.001ms linear;
+    --ui-motion-base: 0.001ms linear;
+    --ui-lift-subtle: none;
+    --ui-lift-card: none;
+  }
+
+  #root *,
+  #root *::before,
+  #root *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
-  }
-
-  .open-project-card:not(.is-opening):hover,
-  .open-project-card:focus-within,
-  .board-card:hover,
-  .variant-card:hover,
-  .pin-board-item:hover,
-  .template-card:hover,
-  .synthesis-generate-button:not(:disabled):hover,
-  .project-create-button:hover,
-  .project-setup-back:hover,
-  .project-location-card button:hover:not(:disabled),
-  .variant-modal-header button:hover {
-    transform: none !important;
-  }
-}
-
-
-/* Match the Settings Done button's subtle 160ms hover lift. */
-button:is(.settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back) {
-  transition: 0.16s ease;
-}
-button:is(.settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-html[data-reduce-motion="true"] button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back) {
-  transition: none;
-}
-html[data-reduce-motion="true"] button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover {
-  transform: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  button:is(.settings-done-button, .settings-close-button, .board-show-more, .welcome-back-button, .project-setup-back):hover {
-    transform: none !important;
+    scroll-behavior: auto !important;
   }
 }

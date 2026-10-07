@@ -166,6 +166,7 @@ struct Artifact {
 
 struct Server {
     workspace: PathBuf,
+    created_projects: Mutex<Vec<PathBuf>>,
     boards: BTreeMap<String, Board>,
     writer: Mutex<io::Stdout>,
     initialized: AtomicBool,
@@ -203,6 +204,7 @@ impl Server {
         }
         Ok(Arc::new(Self {
             workspace,
+            created_projects: Mutex::new(Vec::new()),
             boards,
             writer: Mutex::new(io::stdout()),
             initialized: AtomicBool::new(false),
@@ -254,14 +256,22 @@ impl Server {
         } else {
             self.workspace.join(safe_relative(path)?)
         };
-        if !path.starts_with(&self.workspace) {
-            return Err("Project is outside the selected chat workspace.".into());
-        }
-        reject_symlinks(&self.workspace, &path)?;
+        let roots = self
+            .created_projects
+            .lock()
+            .map_err(|_| "Project scope is unavailable.")?;
+        let root = if path.starts_with(&self.workspace) {
+            &self.workspace
+        } else {
+            roots.iter().find(|root| path.starts_with(root)).ok_or(
+                "Project is outside the selected workspace and projects created in this session.",
+            )?
+        };
+        reject_symlinks(root, &path)?;
         let canonical =
             fs::canonicalize(&path).map_err(|e| format!("Unable to open project: {e}"))?;
-        if !canonical.starts_with(&self.workspace) {
-            return Err("Project is outside the selected chat workspace.".into());
+        if !canonical.starts_with(root) {
+            return Err("Project is outside the authorized project scope.".into());
         }
         project_file(&canonical, "allora-project.json")?;
         if !canonical.join("allora-project.json").is_file() {
@@ -308,7 +318,12 @@ impl Server {
             }
             "get_board_definition" => Ok(self.board(string(args, "boardId")?)?.description()),
             "get_toolchain_status" => {
-                let mut names = BTreeSet::from(["iverilog".to_string(), "vvp".to_string()]);
+                let mut names = BTreeSet::from([
+                    "iverilog".to_string(),
+                    "vvp".to_string(),
+                    "yosys".to_string(),
+                    "verilator".to_string(),
+                ]);
                 if let Some(id) = args.get("boardId").and_then(Value::as_str) {
                     let board = self.board(id)?;
                     for key in ["synth", "placeRoute", "pack", "program"] {
@@ -429,6 +444,21 @@ impl Server {
                     lint_hdl_service(LintHdlRequest { files: sources }).map_err(|e| e.message)?;
                 serde_json::to_value(result).map_err(|e| e.to_string())
             }
+            "discover_design_ports" => {
+                let project = self.project(string(args, "projectPath")?)?;
+                let metadata = self.metadata(&project)?;
+                let sources = simulation_sources(&project_entries(&project)?)?;
+                let ports = virtual_fpga::discover_ports_with_project(
+                    &sources,
+                    string(&metadata, "topModule")?,
+                    project.to_str(),
+                )
+                .map_err(|e| e.message)?;
+                Ok(json!({"ports":ports}))
+            }
+            "configure_simulator" => self.configure_simulator(args),
+            "compile_simulator" => self.compile_simulator(args),
+            "generate_synthesis_diagram" => self.synthesis_diagram(args),
             "simulate_testbench" => self.start_simulation(args),
             "build_bitstream" => self.start_build(args),
             "get_job_status" | "get_job_result" => {
@@ -491,11 +521,27 @@ impl Server {
             .and_then(Value::as_str)
             .unwrap_or("top");
         identifier(top)?;
+        let parent = match args.get("parentDirectory") {
+            None => return Err("Ask the user where to save the project before creating it. Pass their requested absolute parentDirectory.".into()),
+            Some(value) => {
+                let destination = value
+                    .as_str()
+                    .ok_or("parentDirectory must be an absolute path.")?;
+                let path = PathBuf::from(destination);
+                if !path.is_absolute() {
+                    return Err("parentDirectory must be an absolute path.".into());
+                }
+                // Reject traversal and symlinks before creating any directories.
+                let root = path.ancestors().last().ok_or("Invalid parent directory.")?;
+                reject_symlinks(root, &path)?;
+                path
+            }
+        };
         let folder = sanitize_name(name);
         let response = create_project_workspace(CreateProjectWorkspaceRequest {
             project_name: name.into(),
             folder_name: folder,
-            parent_directory: Some(self.workspace.to_string_lossy().into()),
+            parent_directory: Some(parent.to_string_lossy().into()),
             initialize_git: false,
             files: vec![WorkspaceFileSpec {
                 relative_path: "allora-project.json".into(),
@@ -507,6 +553,12 @@ impl Server {
             }],
         })
         .map_err(|e| e.message)?;
+        let created = fs::canonicalize(&response.project_path)
+            .map_err(|e| format!("Unable to resolve created project: {e}"))?;
+        self.created_projects
+            .lock()
+            .map_err(|_| "Project scope is unavailable.")?
+            .push(created);
         let mut value = serde_json::to_value(response).map_err(|e| e.to_string())?;
         value["projectName"] = json!(name);
         Ok(value)
@@ -566,6 +618,13 @@ impl Server {
                 .ok_or("Provide assignments or call set_pin_assignments first.")?,
         )
         .map_err(|e| format!("Invalid pin assignments: {e}"))?;
+        let design_ports = virtual_fpga::discover_ports_with_project(
+            &simulation_sources(&project_entries(&project)?)?,
+            string(&metadata, "topModule")?,
+            project.to_str(),
+        )
+        .map_err(|e| e.message)?;
+        validate_pin_coverage(&design_ports, &assignments)?;
         let constraints = verified_constraints(&board, &assignments)?;
         let constraint_path = format!("constraints/constraints.{}", board.constraints_file);
         if write {
@@ -689,6 +748,136 @@ impl Server {
         Ok(json!({"jobId":id,"status":"running","pollWith":"get_job_result"}))
     }
 
+    fn configure_simulator(&self, args: &Value) -> ToolResult {
+        let _lock = self
+            .mutations
+            .lock()
+            .map_err(|_| "Project writer unavailable.")?;
+        let project = self.project(string(args, "projectPath")?)?;
+        let bytes = bounded_read(&project_file(&project, "allora-project.json")?, MAX_FILE)?;
+        let mut metadata = self.metadata(&project)?;
+        let top = string(&metadata, "topModule")?.to_string();
+        let sources = simulation_sources(&project_entries(&project)?)?;
+        let ports = virtual_fpga::discover_ports_with_project(&sources, &top, project.to_str())
+            .map_err(|e| e.message)?;
+        let (simulation, workbench) = simulator_configuration(args, &top, &ports)?;
+        metadata["simulation"] = simulation.clone();
+        metadata["peripheralWorkbench"] = workbench.clone();
+        apply_changes(
+            &project,
+            &[FileChange {
+                path: "allora-project.json".into(),
+                content: Some(serde_json::to_string_pretty(&metadata).map_err(|e| e.to_string())?),
+                expected_revision: Some(revision(&bytes)),
+            }],
+        )?;
+        Ok(
+            json!({"saved":true,"simulation":simulation,"peripheralWorkbench":workbench,"ports":ports,
+            "note":"Connections are saved in both simulator views. Call compile_simulator to verify Compile & Start; testbench simulation is separate."}),
+        )
+    }
+
+    fn compile_simulator(self: &Arc<Self>, args: &Value) -> ToolResult {
+        let project = self.project(string(args, "projectPath")?)?;
+        let metadata = self.metadata(&project)?;
+        let config = metadata
+            .get("simulation")
+            .cloned()
+            .ok_or("Use configure_simulator before compiling the interactive simulator.")?;
+        let top = string(&metadata, "topModule")?.to_string();
+        let peripherals = config["peripherals"]
+            .as_array()
+            .ok_or("Invalid saved simulator mappings.")?;
+        let clock_signal = peripherals
+            .iter()
+            .find(|p| p["type"] == "clock")
+            .map(|clock| string(clock, "signal").map(String::from))
+            .transpose()?;
+        let frequency = config["clockFrequencyHz"]
+            .as_u64()
+            .ok_or("Invalid simulator frequency.")?;
+        let mut inputs = BTreeMap::<String, u64>::new();
+        for p in peripherals
+            .iter()
+            .filter(|p| matches!(p["type"].as_str(), Some("reset" | "button" | "switch")))
+        {
+            let signal = string(p, "signal")?.to_string();
+            let bit = p["bit"].as_u64().unwrap_or(0);
+            if bit >= 64 {
+                return Err("Invalid saved simulator bit; configure_simulator again.".into());
+            }
+            let value = inputs.entry(signal).or_default();
+            if p["activeHigh"] == false {
+                *value |= 1 << bit;
+            }
+        }
+        let entries = project_entries(&project)?;
+        let source_files = source_files(&entries, None)?;
+        let memory_files = generated_memory_sources(project.to_str()).map_err(|e| e.message)?;
+        let sources = simulation_sources(&entries)?;
+        let ports = virtual_fpga::discover_ports_with_project(&sources, &top, project.to_str())
+            .map_err(|e| e.message)?;
+        let mapped: Vec<Value> = peripherals
+            .iter()
+            .filter(|p| p["signal"].is_string())
+            .cloned()
+            .collect();
+        let (_, workbench) = simulator_configuration(
+            &json!({"clockFrequencyHz":frequency,"peripherals":mapped}),
+            &top,
+            &ports,
+        )?;
+        if metadata["peripheralWorkbench"] != workbench {
+            return Err("Simulator views have different connections. Re-run configure_simulator before compiling.".into());
+        }
+        project_file(&project, "build/interactive-simulation.json")?;
+        let cycles = args
+            .get("cycles")
+            .and_then(Value::as_u64)
+            .unwrap_or(1)
+            .clamp(1, 1000) as u32;
+        let server = self.clone();
+        let job_project = project.clone();
+        self.start_job("interactive-simulation", &project, move |_sink| {
+            let result = virtual_fpga::verify_saved_simulation(virtual_fpga::StartSimulationRequest {
+                source_files:sources, top_module:top.clone(), clock_signal,
+                clock_frequency_hz:frequency, enable_vcd:Some(false), project_path:Some(job_project.to_string_lossy().into()),
+            }, inputs.into_iter().collect(), cycles).map_err(|e| e.message)?;
+            let _lock = server.mutations.lock().map_err(|_| "Project writer unavailable.")?;
+            // Never label changed RTL or mappings as verified.
+            if snapshot(&project_entries(&job_project)?) != snapshot(&entries) {
+                return Err("Project changed during simulator compilation; compile again.".into());
+            }
+            let path = project_file(&job_project, "build/interactive-simulation.json")?;
+            fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
+            let saved = json!({"topModule":top,"sourceFiles":source_files,"memoryFiles":memory_files,"simulation":config,
+                "peripheralWorkbench":metadata["peripheralWorkbench"],"result":result});
+            fs::write(&path, serde_json::to_vec_pretty(&saved).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+            Ok(json!({"compiled":true,"saved":true,"reportPath":path,"result":result}))
+        })
+    }
+
+    fn synthesis_diagram(self: &Arc<Self>, args: &Value) -> ToolResult {
+        let project = self.project(string(args, "projectPath")?)?;
+        let metadata = self.metadata(&project)?;
+        let board = self.project_board(&metadata)?;
+        project_file(&project, "build/synthesis-diagram.json")?;
+        let request = GenerateSynthesisDiagramRequest {
+            project_name: string(&metadata, "name")?.into(),
+            project_path: Some(project.to_string_lossy().into()),
+            board_name: board.name,
+            fpga_id: board.fpga_id,
+            synthesis_flow: board.synthesis_flow,
+            top_module: Some(string(&metadata, "topModule")?.into()),
+            files: source_files(&project_entries(&project)?, None)?,
+        };
+        self.start_job("synthesis-diagram", &project, move |_sink| {
+            let result = generate_synthesis_diagram_service(request).map_err(|e| e.message)?;
+            Ok(json!({"saved":true,"topModule":result.top_module,"nodes":result.nodes.len(),"edges":result.edges.len(),
+                "reportPath":"build/synthesis-diagram.json","logs":result.logs}))
+        })
+    }
+
     fn start_simulation(self: &Arc<Self>, args: &Value) -> ToolResult {
         let project = self.project(string(args, "projectPath")?)?;
         let metadata = self.metadata(&project)?;
@@ -750,6 +939,15 @@ impl Server {
                 "Use set_pin_assignments to generate verified board constraints before building.",
             )?)
             .map_err(|e| format!("Invalid project pin assignments: {e}"))?;
+        validate_pin_coverage(
+            &virtual_fpga::discover_ports_with_project(
+                &simulation_sources(&entries)?,
+                top,
+                project.to_str(),
+            )
+            .map_err(|e| e.message)?,
+            &assignments,
+        )?;
         let constraints = verified_constraints(&board, &assignments)?;
         let constraint_path = format!("constraints/constraints.{}", board.constraints_file);
         let actual = entries
@@ -1226,6 +1424,125 @@ fn snapshot(entries: &[(String, Vec<u8>)]) -> String {
     format!("{:x}", hash.finalize())
 }
 
+fn simulation_sources(
+    entries: &[(String, Vec<u8>)],
+) -> Result<Vec<virtual_fpga::SimulationSourceFile>, String> {
+    Ok(source_files(entries, None)?
+        .into_iter()
+        .map(|file| virtual_fpga::SimulationSourceFile {
+            name: file.name,
+            content: file.content,
+        })
+        .collect())
+}
+
+fn validate_pin_coverage(
+    ports: &[virtual_fpga::RtlPort],
+    assignments: &[Assignment],
+) -> Result<(), String> {
+    let expected: BTreeSet<String> = ports
+        .iter()
+        .flat_map(|port| {
+            (0..port.width).map(move |bit| {
+                if port.width == 1 {
+                    port.name.clone()
+                } else {
+                    format!("{}[{}]", port.name, port.offset + bit as i64)
+                }
+            })
+        })
+        .collect();
+    let assigned: BTreeSet<String> = assignments.iter().map(|a| a.port.clone()).collect();
+    if expected != assigned {
+        return Err(format!(
+            "Pin mappings must cover all actual top-level ports. Missing: {:?}; unknown: {:?}.",
+            expected.difference(&assigned).collect::<Vec<_>>(),
+            assigned.difference(&expected).collect::<Vec<_>>()
+        ));
+    }
+    Ok(())
+}
+
+fn simulator_configuration(
+    args: &Value,
+    top: &str,
+    ports: &[virtual_fpga::RtlPort],
+) -> Result<(Value, Value), String> {
+    let frequency = args["clockFrequencyHz"]
+        .as_u64()
+        .filter(|f| (1..=1_000_000_000).contains(f))
+        .ok_or("clockFrequencyHz must be 1–1000000000 Hz.")?;
+    let mappings = args["peripherals"]
+        .as_array()
+        .filter(|p| !p.is_empty() && p.len() <= 128)
+        .ok_or("Provide 1–128 simulator peripheral mappings.")?;
+    let mut peripherals = Vec::new();
+    let mut devices = Vec::new();
+    let mut clock = None;
+    let mut counts = BTreeMap::<String, usize>::new();
+    let mut driven = HashSet::new();
+    for mapping in mappings {
+        let kind = string(mapping, "type")?;
+        if !matches!(kind, "clock" | "reset" | "button" | "switch" | "led") {
+            return Err("Unsupported simulator peripheral type.".into());
+        }
+        let signal = string(mapping, "signal")?;
+        let port = ports
+            .iter()
+            .find(|p| p.name == signal)
+            .ok_or_else(|| format!("Unknown RTL port {signal}. Use discover_design_ports."))?;
+        let input = kind != "led";
+        if port.direction != if input { "input" } else { "output" } {
+            return Err(format!("Wrong port direction for {kind}: {signal}."));
+        }
+        let bit = match mapping.get("bit") {
+            Some(v) => v.as_u64().ok_or("bit must be a nonnegative integer.")?,
+            None if port.width == 1 => 0,
+            None => return Err(format!("Specify bit for vector port {signal}.")),
+        };
+        if bit >= port.width as u64 || port.width > 64 {
+            return Err(format!("Invalid simulator bit for {signal}."));
+        }
+        if input && !driven.insert((signal.to_string(), bit)) {
+            return Err(format!("Duplicate input driver for {signal}[{bit}]."));
+        }
+        let count = counts.entry(kind.to_string()).or_default();
+        let id = format!("{kind}-{count}");
+        *count += 1;
+        let active_high = match mapping.get("activeHigh") {
+            Some(v) => v.as_bool().ok_or("activeHigh must be boolean.")?,
+            None => true,
+        };
+        let label = mapping
+            .get("label")
+            .and_then(Value::as_str)
+            .unwrap_or(signal);
+        peripherals.push(json!({"id":id,"type":kind,"label":label,"signal":signal,"bit":bit,"activeHigh":active_high}));
+        let connection = json!({"signal":signal,"bit":bit,"width":port.width,"offset":port.offset,"upto":port.upto});
+        if kind == "clock" {
+            if clock.is_some() || port.width != 1 {
+                return Err("Map exactly one scalar input clock.".into());
+            }
+            clock = Some(connection);
+        } else {
+            let index = devices.len();
+            devices.push(
+                json!({"id":id,"kind":if kind == "reset" {"button"} else {kind},"name":label,
+                "x":(index % 3)*270,"y":(index / 3)*310,"activeHigh":active_high,"initial":false,
+                "count":8,"baud":115200,"labels":[],"connections":{"signal":connection}}),
+            );
+        }
+    }
+    let clock = clock.unwrap_or(Value::Null);
+    if devices.is_empty() {
+        return Err("Map at least one visible simulator peripheral.".into());
+    }
+    Ok((
+        json!({"topModule":top,"engine":"verilator","clockFrequencyHz":frequency,"enableVcd":true,"peripherals":peripherals}),
+        json!({"version":1,"frequency":frequency,"clock":clock,"devices":devices}),
+    ))
+}
+
 fn source_files(
     entries: &[(String, Vec<u8>)],
     excluded: Option<&str>,
@@ -1440,7 +1757,7 @@ fn tool(
 
 fn tool_definitions() -> Vec<Value> {
     let text = json!({"type":"string"});
-    let project = json!({"type":"string","description":"Absolute project path returned by create_project, within the selected workspace."});
+    let project = json!({"type":"string","description":"Absolute project path returned by create_project, within the selected workspace or created in this session."});
     let assignment = json!({"type":"object","properties":{"port":{"type":"string"},"boardPin":{"type":"string","description":"Exact verified board pin or clock name from get_board_definition."}},"required":["port","boardPin"],"additionalProperties":false});
     vec![
         tool("list_supported_boards","Find Allora board IDs and local build support. Use the named board requested by the user; choose an alternative only with user agreement.",json!({"query":text}),&[],true),
@@ -1449,12 +1766,16 @@ fn tool_definitions() -> Vec<Value> {
         tool("detect_hardware","Inspect USB candidate boards and programmer availability. Discovery does not verify the exact hardware target.",json!({"boardId":text}),&["boardId"],true),
         tool("get_project_context","Without projectPath, discover the selected workspace and its projects. With projectPath, read saved metadata, file list/revisions and source snapshot. Use this before changing or building a project.",json!({"projectPath":project}),&[],true),
         tool("read_file","Read a project text file and its SHA-256 revision. A missing file returns revision:null, required to create it with apply_file_changes.",json!({"projectPath":project,"path":text}),&["projectPath","path"],true),
-        tool("create_project","Create an empty Allora project in the selected workspace with verified target metadata. Then write RTL under src/ and testbenches under sim/.",json!({"name":text,"boardId":text,"topModule":text}),&["name","boardId"],false),
+        tool("create_project","Create an empty Allora project with verified target metadata. Before creation, ask where to save unless the user has explicitly requested a destination or selected one in the workspace picker. Always pass parentDirectory. When the user requests another location, pass its absolute parentDirectory; missing parent folders are created automatically. Only the new project becomes accessible, not other projects at that location. Then write RTL under src/ and testbenches under sim/.",json!({"name":text,"boardId":text,"topModule":text,"parentDirectory":{"type":"string","description":"Absolute parent folder explicitly requested by the user; may not exist yet."}}),&["name","boardId","parentDirectory"],false),
         tool("apply_file_changes","Apply a checked transaction of project text changes. Always read existing files first; expectedRevision must match read_file. Null expectedRevision requires absence; null content deletes a file. Keep board constraints generated by set_pin_assignments.",json!({"projectPath":project,"changes":{"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","properties":{"path":text,"content":{"type":["string","null"]},"expectedRevision":{"type":["string","null"]}},"required":["path","content","expectedRevision"],"additionalProperties":false}}}),&["projectPath","changes"],false),
         tool("configure_project","Set project target, top module, source filename or testbench module. Switching board invalidates pin assignments and prior artifacts.",json!({"projectPath":project,"boardId":text,"topModule":text,"sourceFile":text,"testbench":text}),&["projectPath"],false),
         tool("set_pin_assignments","Generate and save verified PCF/LPF constraints from board pin names. Include all top-level ports. Honors verified pins and rejects duplicates and reserved flash pins.",json!({"projectPath":project,"assignments":{"type":"array","items":assignment}}),&["projectPath","assignments"],false),
         tool("validate_pin_assignments","Validate supplied or saved pin assignments against the authoritative board catalog without writing files.",json!({"projectPath":project,"assignments":{"type":"array","items":assignment}}),&["projectPath"],true),
         tool("lint_hdl","Run Allora's production Icarus HDL lint on saved design sources; testbenches under sim/ are excluded.",json!({"projectPath":project}),&["projectPath"],true),
+        tool("discover_design_ports","Discover elaborated top-level RTL ports through the same Yosys service used by Allora's simulator. Use before mapping simulator peripherals.",json!({"projectPath":project}),&["projectPath"],true),
+        tool("configure_simulator","Wire and SAVE the interactive Virtual FPGA and Peripheral Workbench. Testbench simulation does not wire these views. Map visible LEDs/buttons/switches/reset and a scalar clock if the design has one, using discovered ports; bit is the zero-based value bit, not the HDL index. Use verified board frequency/polarity. Then call compile_simulator.",json!({"projectPath":project,"clockFrequencyHz":{"type":"integer","minimum":1,"maximum":1000000000},"peripherals":{"type":"array","minItems":1,"maxItems":128,"items":{"type":"object","properties":{"type":{"type":"string","enum":["clock","reset","button","switch","led"]},"signal":text,"bit":{"type":"integer","minimum":0,"maximum":63},"label":text,"activeHigh":{"type":"boolean"}},"required":["type","signal"],"additionalProperties":false}}}),&["projectPath","clockFrequencyHz","peripherals"],false),
+        tool("compile_simulator","Run Allora's actual interactive Verilator Compile & Start engine against the saved connections, step it, close the verification session, and save a report. Poll the job to success. The app starts a fresh interactive session when opening this verified configuration. This proves compilation, not functional correctness; also run an assertion-based testbench.",json!({"projectPath":project,"cycles":{"type":"integer","minimum":1,"maximum":1000}}),&["projectPath"],false),
+        tool("generate_synthesis_diagram","Run the same Generate Diagram action as Allora's Synthesis view and save its graph/report for reopening. A bitstream build alone does not generate this view. Poll the job to success.",json!({"projectPath":project}),&["projectPath"],false),
         tool("simulate_testbench","Start Allora's production Icarus simulation using saved design and a testbench with a finite finish. Returns a job ID; poll get_job_result until terminal status and inspect waveform/logs.",json!({"projectPath":project,"testbenchPath":text,"topModule":text}),&["projectPath","testbenchPath"],false),
         tool("build_bitstream","Start synthesis, NextPNR place/route, timing analysis and packing with verified board settings. Pin assignments must be generated first. Returns a job ID; only a successful nonstale build yields a programmable artifact ID.",json!({"projectPath":project}),&["projectPath"],false),
         tool("get_job_status","Read bounded live job logs and status. Terminal statuses are succeeded, failed, cancelled.",json!({"jobId":text}),&["jobId"],true),
@@ -1539,7 +1860,7 @@ pub fn run_stdio() -> Result<(), String> {
                 server.initialized.store(true, Ordering::Release);
                 server.result(id,json!({"protocolVersion":chosen,"capabilities":{"tools":{"listChanged":false}},
                     "serverInfo":{"name":"allora","version":env!("CARGO_PKG_VERSION")},
-                    "instructions":"Allora is an FPGA design application. For an end-to-end task: discover board metadata and local tools; create or inspect a project; write Verilog/SystemVerilog RTL and a finite testbench; use verified board pins and clock Hz/polarity; save constraints with set_pin_assignments; lint, simulate, and inspect results; build and inspect timing; program only a fresh artifact after the user's hardware confirmation. All paths are restricted to the selected workspace. Put design sources under src/ and testbenches under sim/. Builds/simulation/programming return job IDs: poll get_job_result until terminal status; do not claim success from job creation. USB discovery is only suggestive and cannot verify exact physical targets. Never claim observed LED behavior from programmer output. Unsupported proprietary flows must be reported accurately."}));
+                    "instructions":"Allora is an FPGA design application. For an end-to-end task: discover board metadata and local tools; create or inspect a project; write Verilog/SystemVerilog RTL and a finite testbench; use verified board pins and clock Hz/polarity; save constraints with set_pin_assignments; lint and run an assertion-based testbench; for simulation requests also discover_design_ports, configure_simulator and compile_simulator to save and verify interactive connections; for synthesis/build requests generate_synthesis_diagram to persist the app graph, then build and inspect timing; program only a fresh artifact after the user's hardware confirmation. Ask where to save before creating a project unless the user has already requested or selected a destination. Always pass parentDirectory. When the user explicitly requests a different location, use create_project parentDirectory to create missing folders and a project there; projects created in this session are also accessible. Put design sources under src/ and testbenches under sim/. Builds/simulation/programming return job IDs: poll get_job_result until terminal status; do not claim success from job creation. USB discovery is only suggestive and cannot verify exact physical targets. Never claim observed LED behavior from programmer output. Unsupported proprietary flows must be reported accurately."}));
             }
             "ping" => server.result(id, json!({})),
             _ if !server.initialized.load(Ordering::Acquire) => {
@@ -1629,10 +1950,24 @@ fn validate_arguments(args: &Value, schema: &Value) -> Result<(), String> {
             "boolean" => value.is_boolean(),
             "null" => value.is_null(),
             "number" => value.is_number(),
+            "integer" => value.is_i64() || value.is_u64(),
             _ => false,
         });
         if !allowed.is_empty() && !matches {
             return Err(format!("Invalid type for tool argument '{path}'."));
+        }
+        if schema["enum"]
+            .as_array()
+            .is_some_and(|values| !values.contains(value))
+        {
+            return Err(format!("Invalid value for tool argument '{path}'."));
+        }
+        if let Some(number) = value.as_f64() {
+            if schema["minimum"].as_f64().is_some_and(|min| number < min)
+                || schema["maximum"].as_f64().is_some_and(|max| number > max)
+            {
+                return Err(format!("Out-of-range tool argument '{path}'."));
+            }
         }
         if let Some(object) = value.as_object() {
             let properties = schema["properties"]
@@ -1699,6 +2034,7 @@ mod tests {
     fn server(root: &Path) -> Arc<Server> {
         Arc::new(Server {
             workspace: fs::canonicalize(root).unwrap(),
+            created_projects: Mutex::new(Vec::new()),
             boards: BTreeMap::from([("icebreaker".into(), board())]),
             writer: Mutex::new(io::stdout()),
             initialized: AtomicBool::new(true),
@@ -1710,6 +2046,149 @@ mod tests {
             jobs: Mutex::new(BTreeMap::new()),
             artifacts: Mutex::new(BTreeMap::new()),
         })
+    }
+
+    #[test]
+    fn requested_destination_creates_folders_and_scopes_access_to_new_project() {
+        let root = project();
+        let server = server(root.path());
+        assert!(server
+            .create_project(&json!({"name":"Unapproved", "boardId":"icebreaker"}))
+            .is_err());
+        assert!(!server.workspace.join("Unapproved").exists());
+        let outside = tempfile::tempdir().unwrap();
+        let parent = fs::canonicalize(outside.path())
+            .unwrap()
+            .join("requested projects")
+            .join("nested");
+        let result = server
+            .create_project(&json!({
+                "name": "Pulse", "boardId": "icebreaker", "parentDirectory": parent
+            }))
+            .unwrap();
+        let path = result["projectPath"].as_str().unwrap();
+        assert!(parent.is_dir());
+        assert!(server.project(path).is_ok());
+        fs::write(outside.path().join("allora-project.json"), "{}").unwrap();
+        assert!(server.project(outside.path().to_str().unwrap()).is_err());
+        assert!(server
+            .create_project(&json!({
+                "name": "Invalid", "boardId": "icebreaker", "parentDirectory": "relative"
+            }))
+            .is_err());
+        let default = server
+            .create_project(&json!({"name":"Default", "boardId":"icebreaker", "parentDirectory":server.workspace}))
+            .unwrap();
+        assert!(Path::new(default["projectPath"].as_str().unwrap()).starts_with(&server.workspace));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn requested_destination_rejects_symlinks_and_traversal() {
+        let root = project();
+        let server = server(root.path());
+        let outside = tempfile::tempdir().unwrap();
+        let link = root.path().join("link");
+        std::os::unix::fs::symlink(outside.path(), &link).unwrap();
+        for parent in [link.join("new"), root.path().join("../new")] {
+            assert!(server
+                .create_project(&json!({
+                    "name":"Invalid", "boardId":"icebreaker", "parentDirectory":parent
+                }))
+                .is_err());
+        }
+        assert!(!outside.path().join("new").exists());
+    }
+
+    #[test]
+    fn simulator_schema_accepts_integer_arguments_and_rejects_invalid_ranges() {
+        let schema = tool_definitions()
+            .into_iter()
+            .find(|tool| tool["name"] == "configure_simulator")
+            .unwrap()["inputSchema"]
+            .clone();
+        let args = json!({"projectPath":"/project","clockFrequencyHz":25000000,"peripherals":[
+            {"type":"clock","signal":"clk"}, {"type":"led","signal":"led","bit":7,"activeHigh":false}
+        ]});
+        validate_arguments(&args, &schema).unwrap();
+        for frequency in [json!(-1), json!(1.5), json!(1000000001u64)] {
+            let mut bad = args.clone();
+            bad["clockFrequencyHz"] = frequency;
+            assert!(validate_arguments(&bad, &schema).is_err());
+        }
+        let mut bad = args.clone();
+        bad["peripherals"][1]["type"] = json!("made-up");
+        assert!(validate_arguments(&bad, &schema).is_err());
+    }
+
+    #[test]
+    fn pin_coverage_rejects_partial_unknown_and_missing_bus_bits() {
+        let ports = vec![virtual_fpga::RtlPort {
+            name: "led".into(),
+            direction: "output".into(),
+            width: 2,
+            offset: 4,
+            upto: false,
+        }];
+        let mut assignments = vec![Assignment {
+            port: "led[4]".into(),
+            board_pin: "led0".into(),
+        }];
+        assert!(validate_pin_coverage(&ports, &assignments).is_err());
+        assignments.push(Assignment {
+            port: "led[5]".into(),
+            board_pin: "led1".into(),
+        });
+        validate_pin_coverage(&ports, &assignments).unwrap();
+        assignments[1].port = "led[0]".into();
+        assert!(validate_pin_coverage(&ports, &assignments).is_err());
+    }
+
+    #[test]
+    fn simulator_connections_use_discovered_widths_and_persist_both_views() {
+        let ports = vec![
+            virtual_fpga::RtlPort {
+                name: "clk".into(),
+                direction: "input".into(),
+                width: 1,
+                offset: 0,
+                upto: false,
+            },
+            virtual_fpga::RtlPort {
+                name: "led".into(),
+                direction: "output".into(),
+                width: 8,
+                offset: 4,
+                upto: false,
+            },
+        ];
+        let args = json!({"clockFrequencyHz":25000000,"peripherals":[
+            {"type":"clock","signal":"clk"},
+            {"type":"led","signal":"led","bit":0,"label":"LED0","activeHigh":false},
+            {"type":"led","signal":"led","bit":7,"label":"LED7"}
+        ]});
+        let (simulation, workbench) = simulator_configuration(&args, "top", &ports).unwrap();
+        assert_eq!(simulation["peripherals"][1]["id"], "led-0");
+        assert_eq!(simulation["peripherals"][2]["id"], "led-1");
+        assert_eq!(workbench["devices"][0]["connections"]["signal"]["width"], 8);
+        assert_eq!(
+            workbench["devices"][0]["connections"]["signal"]["offset"],
+            4
+        );
+        assert_eq!(workbench["devices"][0]["activeHigh"], false);
+        for bad in [
+            json!({"type":"led","signal":"missing"}),
+            json!({"type":"led","signal":"clk"}),
+            json!({"type":"led","signal":"led","bit":8}),
+            json!({"type":"led","signal":"led"}),
+        ] {
+            let mut invalid = args.clone();
+            invalid["peripherals"][1] = bad;
+            assert!(simulator_configuration(&invalid, "top", &ports).is_err());
+        }
+        let mut duplicate = args.clone();
+        duplicate["peripherals"][1] = json!({"type":"switch","signal":"clk"});
+        assert!(simulator_configuration(&duplicate, "top", &ports).is_err());
     }
 
     #[test]

@@ -3,28 +3,17 @@
 .mas-home-layout,
 .mas-project-page,
 .mas-dialog {
-  --mas-text: #162e42;
-  --mas-muted: #526a7d;
-  --mas-surface: #f7fbff;
-  --mas-panel: #ffffff;
-  --mas-border: #cedee9;
-  --mas-accent: #176b9c;
-  --mas-tint: #e8f3fb;
-  --mas-input: #fff;
+  --mas-text: var(--ui-text);
+  --mas-muted: var(--ui-text-muted);
+  --mas-surface: var(--ui-surface);
+  --mas-panel: var(--ui-panel);
+  --mas-border: var(--ui-border-control);
+  --mas-accent: var(--ui-accent-text);
+  --mas-tint: var(--ui-blue-soft);
+  --mas-input: var(--ui-control-bg);
   color: var(--mas-text);
   font-size: 14px;
   line-height: 1.5;
-}
-html:is([data-theme="dark"], [data-theme="black-ice"])
-  :is(.mas, .mas-home-layout, .mas-project-page, .mas-dialog) {
-  --mas-text: #e8f0f7;
-  --mas-muted: #9fb2c6;
-  --mas-surface: #101c2c;
-  --mas-panel: #152335;
-  --mas-border: #2c4056;
-  --mas-accent: #75c7f0;
-  --mas-tint: #203d54;
-  --mas-input: #101c2b;
 }
 .mas {
   padding: 24px;
@@ -72,20 +61,19 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
   padding: 8px 13px;
   border-radius: 8px;
   border: 1px solid var(--mas-border);
-  background: var(--mas-panel);
+  background: var(--ui-control-bg);
   color: var(--mas-text);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: var(--ui-control-transition);
 }
 :is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog)
   button:hover:not(:disabled) {
-  background: var(--mas-tint);
-  border-color: var(--mas-accent);
+  background: var(--ui-control-hover-bg);
+  border-color: var(--ui-border-hover);
+  transform: var(--ui-lift-subtle);
 }
 :is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog)
   :is(button, input, select):focus-visible {
@@ -95,17 +83,6 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 :is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog) button:disabled {
   opacity: 0.48;
   cursor: default;
-}
-:is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog)
-  :is(.mas-primary, .mas-create) {
-  background: #1676ae;
-  border-color: #1676ae;
-  color: #fff;
-}
-:is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog)
-  :is(.mas-primary, .mas-create):hover:not(:disabled) {
-  background: #125f8e;
-  border-color: #125f8e;
 }
 .mas-header > button {
   flex-shrink: 0;
@@ -630,7 +607,7 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .mas-project-error {
 }
 /* This entry is available, so it uses an active accent rather than the preview treatment. */
 .execution-path-stage .execution-path-card.memory-asset-studio {
-  --selected-accent: #67b7e0;
+  --selected-accent: var(--ui-accent-text);
   background: linear-gradient(
     145deg,
     var(--landing-panel),

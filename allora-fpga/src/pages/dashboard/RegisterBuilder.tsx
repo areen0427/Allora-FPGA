@@ -325,7 +325,7 @@ export default function RegisterBuilder({
       <header className="mas-header">
         <div>
           <span className="mas-kicker">
-            <RegisterBuilderIcon size={18} /> REGISTER BUILDER V1
+            <RegisterBuilderIcon size={18} /> REGISTER BUILDER
           </span>
           <h1>Register map workspace</h1>
           <p>Define the software interface. Connect it to your hardware.</p>

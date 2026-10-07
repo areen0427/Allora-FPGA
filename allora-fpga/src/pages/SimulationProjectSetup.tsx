@@ -10,9 +10,7 @@ import {
   Waves,
 } from "lucide-react";
 import type { AppSettings } from "../data/settings";
-import { getLastProjectParentDirectory } from "../data/settings";
-import { hasTauriInvoke } from "../lib/tauri";
-import { pickProjectParentDirectory } from "../lib/projectWorkspace";
+import { useProjectLocation } from "../hooks/useProjectLocation";
 
 export type SimulationStarter = "blank" | "counter" | "pwm";
 
@@ -65,41 +63,34 @@ export default function SimulationProjectSetup({
   onBack,
   onCreateProject,
 }: Props) {
-  const initialParentDirectory =
-    settings.projectLocationMode === "last-used"
-      ? getLastProjectParentDirectory()
-      : null;
+  const {
+    parentDirectory,
+    nativeAvailable,
+    requiresLocation,
+    locationLabel,
+    isChoosingLocation,
+    locationError,
+    chooseLocation,
+    clearLocationError,
+  } = useProjectLocation(settings.projectLocationMode, "AlloraProjects");
   const [projectName, setProjectName] = useState("virtual-led-counter");
   const [language, setLanguage] = useState<"Verilog" | "SystemVerilog">(
     "SystemVerilog",
   );
   const [starter, setStarter] = useState<SimulationStarter>("counter");
-  const [parentDirectory, setParentDirectory] = useState<string | null>(
-    initialParentDirectory,
-  );
-  const [isChoosingLocation, setIsChoosingLocation] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-
-  const requiresLocation =
-    hasTauriInvoke() &&
-    (settings.projectLocationMode === "ask" ||
-      settings.projectLocationMode === "last-used") &&
-    !parentDirectory;
-
-  async function chooseLocation() {
-    if (!hasTauriInvoke() || isChoosingLocation) return;
-    setIsChoosingLocation(true);
-    try {
-      const directory = await pickProjectParentDirectory();
-      if (directory) setParentDirectory(directory);
-    } finally {
-      setIsChoosingLocation(false);
-    }
-  }
+  const [creationError, setCreationError] = useState("");
 
   async function createProject() {
-    if (!projectName.trim() || requiresLocation || isCreating) return;
+    if (
+      !projectName.trim() ||
+      requiresLocation ||
+      isCreating ||
+      isChoosingLocation
+    ) return;
     setIsCreating(true);
+    setCreationError("");
+    clearLocationError();
     try {
       await onCreateProject(
         projectName.trim(),
@@ -107,18 +98,13 @@ export default function SimulationProjectSetup({
         parentDirectory,
         starter,
       );
+    } catch (error) {
+      setCreationError(
+        error instanceof Error ? error.message : "Unable to create the project.",
+      );
     } finally {
       setIsCreating(false);
     }
-  }
-
-  function getLocationLabel() {
-    if (parentDirectory) return parentDirectory;
-    if (settings.projectLocationMode === "ask") return "Choose a location";
-    if (settings.projectLocationMode === "last-used") {
-      return "Choose a location (no previous location found)";
-    }
-    return "AlloraProjects";
   }
 
   return (
@@ -170,17 +156,25 @@ export default function SimulationProjectSetup({
               <FolderOpen size={18} />
               <div>
                 <div>Project location</div>
-                <p title={getLocationLabel()}>{getLocationLabel()}</p>
+                <p title={locationLabel}>{locationLabel}</p>
               </div>
             </div>
             <button
               type="button"
-              disabled={!hasTauriInvoke() || isChoosingLocation}
-              onClick={() => void chooseLocation()}
+              disabled={!nativeAvailable || isChoosingLocation || isCreating}
+              onClick={() => {
+                setCreationError("");
+                void chooseLocation();
+              }}
             >
               {isChoosingLocation ? "Choosing…" : "Change"}
             </button>
           </div>
+          {creationError || locationError ? (
+            <div className="project-creation-error" role="alert">
+              {creationError || locationError}
+            </div>
+          ) : null}
           <div className="simulation-setup-facts">
             <span><CheckCircle2 size={14} /> Verilator-ready</span>
             <span><CheckCircle2 size={14} /> Live waveform</span>
@@ -227,7 +221,9 @@ export default function SimulationProjectSetup({
             <button
               className="project-create-button"
               type="button"
-              disabled={!projectName.trim() || requiresLocation || isCreating}
+              disabled={
+                !projectName.trim() || requiresLocation || isCreating || isChoosingLocation
+              }
               onClick={() => void createProject()}
             >
               <Play size={16} fill="currentColor" />

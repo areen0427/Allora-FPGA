@@ -1,0 +1,123 @@
+/* Shared interaction and action variants. Screen CSS owns size and layout.
+   Existing action classes remain aliases so their event handlers stay intact. */
+:where(#root) button {
+  transition: var(--ui-control-transition);
+}
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-button:hover:not(:disabled, [aria-disabled="true"]) {
+  background: var(--ui-control-hover-bg);
+  border-color: var(--ui-border-hover);
+  transform: var(--ui-lift-subtle);
+}
+
+/* Tool landing actions share feedback; keyboard outlines belong to focus only. */
+:is(.mas-home-layout, .workbench-home-actions) button {
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+  border-color: var(--ui-border-control);
+  transition: var(--ui-control-transition);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--ui-control-hover-bg);
+    color: var(--ui-text);
+    border-color: var(--ui-border-hover);
+    transform: var(--ui-lift-subtle);
+  }
+}
+
+:is(
+  .ui-button-secondary,
+  button.settings-reset-button,
+  button.settings-close-button,
+  button.welcome-back-button,
+  button.project-setup-back,
+  button.synthesis-secondary-button,
+  button.github-secondary-button,
+  button.github-refresh-button,
+  button.board-show-more,
+  button.mas-back,
+  .vfpga-map-control > button,
+  .simulation-welcome-actions > button.secondary
+) {
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+  border-color: var(--ui-border-control);
+  box-shadow: var(--ui-control-shadow);
+  transition: var(--ui-control-transition);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--ui-control-hover-bg);
+    color: var(--ui-accent-text);
+    border-color: var(--ui-border-hover);
+    transform: var(--ui-lift-subtle);
+  }
+}
+
+:is(
+  .ui-button-primary,
+  button.primary-action,
+  button.synthesis-generate-button,
+  button.project-create-button,
+  button.settings-done-button,
+  button.github-primary-button,
+  .github-command-form > button,
+  button.ai-primary-action,
+  button.chat-send-button,
+  button.chat-approve-button,
+  button.mas-primary,
+  button.mas-create,
+  .pw-toolbar > button:first-child,
+  .workbench-home-actions > button:first-child,
+  .simulation-welcome-actions > button:not(.secondary),
+  .vfpga-actions > button.primary
+) {
+  background: var(--ui-primary-bg);
+  color: var(--ui-primary-text);
+  border-color: var(--ui-primary-border);
+  box-shadow: var(--ui-primary-shadow);
+  transition: var(--ui-control-transition);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--ui-primary-hover-bg);
+    color: var(--ui-primary-text);
+    transform: var(--ui-lift-subtle);
+    box-shadow: var(--ui-primary-shadow);
+  }
+
+  &:is(:disabled, [aria-disabled="true"]) {
+    background: var(--ui-disabled-bg);
+    color: var(--ui-disabled-text);
+    border-color: var(--ui-border-control);
+    box-shadow: none;
+    opacity: 0.55;
+  }
+}
+
+/* Disabled controls never lift, including class-specific hover rules. */
+:where(#root) button:is(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none !important;
+  scale: none !important;
+}
+
+/* Outline remains visible even on cards that own a box-shadow or glass layer. */
+#root :is(button, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--ui-accent-text);
+  outline-offset: 3px;
+}

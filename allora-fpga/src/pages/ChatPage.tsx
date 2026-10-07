@@ -11,26 +11,31 @@ import {
   FolderOpen,
   LoaderCircle,
   MessageSquare,
+  MoreHorizontal,
+  Pencil,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   Square,
   Trash2,
   X,
 } from "lucide-react";
+import { createChatTitle } from "../lib/chatTitles";
 import { aiChatApi } from "../lib/aiChat";
 import type { AiChatEvent, AiChatSession, AiChatModel } from "../lib/aiChat";
 import { prepareCodexReadiness, readCodexReadiness } from "../lib/codexReadiness";
-import type { AiProviderStatus } from "../lib/aiIntegration";
+import type { AiProvider, AiProviderStatus } from "../lib/aiIntegration";
 import { hasTauriInvoke } from "../lib/tauri";
 import { pickProjectParentDirectory } from "../lib/projectWorkspace";
 import {
   getLastProjectParentDirectory,
   saveLastProjectParentDirectory,
 } from "../data/settings";
+import ChatUsageControls from "../components/ChatUsageControls";
+import type { ContextUsage, RateLimits } from "../lib/aiChat";
+import ChatProviderSelect from "../components/ChatProviderSelect";
 import ChatModelControls from "../components/ChatModelControls";
 import { reasoningFor } from "../lib/chatModels";
 import "./ChatPage.css";
@@ -55,8 +60,10 @@ type Message = {
   pending?: boolean;
 };
 type Conversation = {
+  contextUsage?: ContextUsage;
   id: string;
   title: string;
+  titleManuallyEdited?: boolean;
   workspacePath: string;
   threadId?: string;
   messages: Message[];
@@ -64,6 +71,8 @@ type Conversation = {
 };
 type Approval = Extract<AiChatEvent, { type: "approval_required" }>;
 type ChatPageProps = {
+  resumeLatest?: boolean;
+  initialProjectPath?: string;
   onOpenSettings: () => void;
   onOpenProject: (path: string) => Promise<void>;
 };
@@ -109,6 +118,9 @@ function readHistory(): Conversation[] {
       .slice(0, 40)
       .map((conversation) => ({
         ...conversation,
+        title: !conversation.titleManuallyEdited && conversation.title === conversation.messages.find((message) => message.role === "user")?.text.slice(0, 65)
+          ? createChatTitle(conversation.messages.find((message) => message.role === "user")!.text)
+          : conversation.title,
         messages: conversation.messages.map((message) => ({
           ...message,
           pending: false,
@@ -130,17 +142,29 @@ function readHistory(): Conversation[] {
 }
 
 export default function ChatPage({
+  resumeLatest = false,
+  initialProjectPath,
   onOpenSettings,
   onOpenProject,
 }: ChatPageProps) {
   const desktopAvailable = hasTauriInvoke();
   const [conversations, setConversations] =
     useState<Conversation[]>(readHistory);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [workspacePath, setWorkspacePath] = useState(
-    () => getLastProjectParentDirectory() ?? "",
+  const [activeId, setActiveId] = useState<string | null>(() =>
+    resumeLatest ? [...conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .find((conversation) => !initialProjectPath || conversation.workspacePath === initialProjectPath || conversation.messages.some((message) => message.projectPath === initialProjectPath))?.id ?? null : null,
   );
+  const [workspacePath, setWorkspacePath] = useState(
+    () => initialProjectPath ?? conversations.find((item) => item.id === activeId)?.workspacePath ?? getLastProjectParentDirectory() ?? "",
+  );
+  const [saveDirectory, setSaveDirectory] = useState<string | undefined>();
+  const [contextProjectPath, setContextProjectPath] = useState(initialProjectPath);
+  const [historyMenuId, setHistoryMenuId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const historyMenuRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState("");
+  const [provider, setProvider] = useState<AiProvider>("codex");
   const [models, setModels] = useState<AiChatModel[]>(() => readCodexReadiness()?.models ?? []);
   const [loadingModels, setLoadingModels] = useState(() => desktopAvailable && !readCodexReadiness());
   const [modelError, setModelError] = useState(() => readCodexReadiness()?.modelError ?? "");
@@ -152,16 +176,19 @@ export default function ChatPage({
     try { return localStorage.getItem("allora-codex-reasoning") ?? "medium"; } catch { return "medium"; }
   });
   const [busy, setBusy] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const streamingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [changingConversation, setChangingConversation] = useState(false);
   const [status, setStatus] = useState<AiProviderStatus | null>(() => readCodexReadiness()?.status ?? null);
   const [checking, setChecking] = useState(() => desktopAvailable && !readCodexReadiness());
   const [notice, setNotice] = useState("");
+  const [rateLimits, setRateLimits] = useState<RateLimits | null>(null);
   const [activity, setActivity] = useState("");
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [approving, setApproving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 760);
   const [openingProject, setOpeningProject] = useState(false);
-  const session = useRef<(AiChatSession & { conversationId: string }) | null>(
+  const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string }) | null>(
     null,
   );
   const alive = useRef(true);
@@ -177,7 +204,7 @@ export default function ChatPage({
   );
   const messages = activeConversation?.messages ?? [];
   const approval = approvals[0];
-  const ready = desktopAvailable && status?.state === "ready";
+  const ready = provider === "codex" && desktopAvailable && status?.state === "ready";
   const interactionLocked = busy || changingConversation;
   const effectiveModel = models.find((item) => item.model === selectedModel)
     ?? models.find((item) => item.isDefault) ?? models[0];
@@ -224,6 +251,7 @@ export default function ChatPage({
     window.addEventListener("focus", applyPreparedState);
     return () => {
       alive.current = false;
+      if (streamingTimer.current) clearTimeout(streamingTimer.current);
       window.removeEventListener("focus", applyPreparedState);
       if (session.current)
         void aiChatApi.close(session.current.sessionId).catch(() => {});
@@ -249,9 +277,25 @@ export default function ChatPage({
     const input = inputRef.current;
     if (input) {
       input.style.height = "auto";
-      input.style.height = `${Math.min(input.scrollHeight, 180)}px`;
+      input.style.height = `${Math.max(64, Math.min(input.scrollHeight, 180))}px`;
     }
   }, [draft]);
+
+  useEffect(() => {
+    if (!historyMenuId) return;
+    function dismiss(event: PointerEvent) {
+      if (!historyMenuRef.current?.contains(event.target as Node)) setHistoryMenuId(null);
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key === "Escape") setHistoryMenuId(null);
+    }
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", escape);
+    };
+  }, [historyMenuId]);
 
   function updateConversation(
     id: string,
@@ -274,11 +318,15 @@ export default function ChatPage({
   }
 
   async function chooseWorkspace() {
-    if (interactionLocked || messages.length) return;
+    if (interactionLocked) return;
     setNotice("");
     try {
       const path = await pickProjectParentDirectory();
       if (path) {
+        await closeSession();
+        setContextProjectPath(undefined);
+        setSaveDirectory(path);
+        if (activeId) updateConversation(activeId, (current) => ({ ...current, workspacePath: path, threadId: undefined }));
         setWorkspacePath(path);
         saveLastProjectParentDirectory(path);
       }
@@ -326,6 +374,8 @@ export default function ChatPage({
       if (!alive.current) return;
       setActiveId(conversation.id);
       setWorkspacePath(conversation.workspacePath);
+      setSaveDirectory(undefined);
+      setContextProjectPath([...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath);
       setDraft("");
       setNotice("");
       setActivity("");
@@ -384,7 +434,7 @@ export default function ChatPage({
         [
           {
             id: conversationId,
-            title: prompt.slice(0, 65),
+            title: createChatTitle(prompt),
             workspacePath,
             messages: additions,
             updatedAt: new Date().toISOString(),
@@ -409,7 +459,18 @@ export default function ChatPage({
     const onEvent = (event: AiChatEvent) => {
       if (!alive.current) return;
       switch (event.type) {
+        case "context_usage":
+          updateConversation(conversationId, (current) => ({ ...current, contextUsage: event.usage }));
+          break;
+        case "rate_limits":
+          setRateLimits(event.limits);
+          break;
         case "assistant_delta":
+          setStreaming(true);
+          if (streamingTimer.current) clearTimeout(streamingTimer.current);
+          streamingTimer.current = setTimeout(() => {
+            if (alive.current) setStreaming(false);
+          }, 1400);
           updateMessage((current) => ({
             ...current,
             text: current.text + event.delta,
@@ -417,6 +478,7 @@ export default function ChatPage({
           setActivity("Responding…");
           break;
         case "tool_started":
+          setStreaming(false);
           updateMessage((current) => ({
             ...current,
             tools: [
@@ -432,6 +494,8 @@ export default function ChatPage({
           setActivity(toolLabel(event.name));
           break;
         case "tool_completed":
+          setStreaming(false);
+          setActivity("Thinking…");
           updateMessage((current) => ({
             ...current,
             tools: (current.tools ?? []).map((tool) =>
@@ -459,12 +523,16 @@ export default function ChatPage({
             projectPath: event.projectPath,
             projectName: event.projectName,
           }));
+          setWorkspacePath(event.projectPath);
+          setContextProjectPath(event.projectPath);
+          updateConversation(conversationId, (current) => ({ ...current, workspacePath: event.projectPath }));
           break;
         case "error":
           if (!stopRequested.current)
             updateMessage((current) => ({ ...current, error: event.message }));
           break;
         case "status":
+          setStreaming(false);
           setActivity(event.message);
           break;
         case "turn_completed":
@@ -481,12 +549,12 @@ export default function ChatPage({
       if (!effectiveModel) throw new Error("Load an available Codex model before sending a message.");
       if (
         !session.current ||
-        session.current.conversationId !== conversationId
+        session.current.conversationId !== conversationId || session.current.workspacePath !== workspacePath
       ) {
         await closeSession();
         const started = await aiChatApi.start(
           workspacePath,
-          activeConversation?.threadId,
+          activeConversation?.workspacePath === workspacePath ? activeConversation?.threadId : undefined,
           effectiveModel.model,
           onEvent,
         );
@@ -494,7 +562,7 @@ export default function ChatPage({
           await aiChatApi.close(started.sessionId);
           return;
         }
-        session.current = { ...started, conversationId };
+        session.current = { ...started, conversationId, workspacePath };
         updateConversation(conversationId, (current) => ({
           ...current,
           threadId: started.threadId,
@@ -502,7 +570,7 @@ export default function ChatPage({
       }
       if (stopRequested.current) return;
       setActivity("Thinking…");
-      await aiChatApi.send(session.current.sessionId, prompt, effectiveModel?.model, reasoningEffort, onEvent);
+      await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${saveDirectory ? `The user selected this save parent directory: ${JSON.stringify(saveDirectory)}.\n` : ""}${prompt}`, effectiveModel?.model, reasoningEffort, onEvent);
     } catch (error) {
       if (!stopRequested.current)
         updateMessage((current) => ({ ...current, error: errorText(error) }));
@@ -511,6 +579,8 @@ export default function ChatPage({
       if (failedSession)
         void aiChatApi.close(failedSession.sessionId).catch(() => {});
     } finally {
+      if (streamingTimer.current) clearTimeout(streamingTimer.current);
+      if (alive.current) setStreaming(false);
       updateMessage((current) => ({
         ...current,
         pending: false,
@@ -582,7 +652,7 @@ export default function ChatPage({
     }
   }
 
-  const connectionLabel = !desktopAvailable
+  const connectionLabel = provider === "claude" ? "Claude Code chat coming soon" : !desktopAvailable
     ? "Desktop required"
     : checking && !status
       ? "Checking Codex"
@@ -593,7 +663,7 @@ export default function ChatPage({
           : status?.state === "installed_not_authenticated"
             ? "Connect your account"
             : "Connection unavailable";
-  const connectionDescription = !desktopAvailable
+  const connectionDescription = provider === "claude" ? "You can connect your Claude Code account in AI settings. Chat support will be available in a future integration." : !desktopAvailable
     ? "Chat runs in the Allora desktop app using your local Codex connection."
     : status?.state === "not_installed"
       ? "Install the Codex CLI and connect your account in AI Integration settings."
@@ -635,26 +705,58 @@ export default function ChatPage({
               conversations.map((conversation) => (
                 <div
                   key={conversation.id}
+                  ref={historyMenuId === conversation.id ? historyMenuRef : undefined}
                   className={`chat-history-item${activeId === conversation.id ? " active" : ""}`}
                 >
                   <button
                     type="button"
                     disabled={interactionLocked}
                     title={conversation.title}
-                    onClick={() => void selectConversation(conversation)}
+                    onClick={() => { setHistoryMenuId(null); void selectConversation(conversation); }}
                   >
                     <MessageSquare size={14} />
                     <span>{conversation.title}</span>
                   </button>
                   <button
                     type="button"
-                    className="chat-delete-button"
-                    aria-label={`Delete chat: ${conversation.title}`}
+                    className="chat-history-menu-button"
+                    aria-label={`Chat options: ${conversation.title}`}
+                    aria-expanded={historyMenuId === conversation.id}
+                    aria-controls={`chat-options-${conversation.id}`}
                     disabled={interactionLocked}
-                    onClick={() => void removeConversation(conversation.id)}
+                    onClick={() => setHistoryMenuId((current) => current === conversation.id ? null : conversation.id)}
                   >
-                    <Trash2 size={13} />
+                    <MoreHorizontal size={16} />
                   </button>
+                  {historyMenuId === conversation.id && (
+                    <div className="chat-history-options" id={`chat-options-${conversation.id}`} role="group" aria-label="Chat options">
+                      <button type="button" disabled={interactionLocked} onClick={() => {
+                        setRenameDraft(conversation.title);
+                        setRenamingId(conversation.id);
+                        setHistoryMenuId(null);
+                      }}><Pencil size={13} /> Rename</button>
+                      <button type="button" disabled={interactionLocked} onClick={() => {
+                        setHistoryMenuId(null);
+                        if (renamingId === conversation.id) setRenamingId(null);
+                        void removeConversation(conversation.id);
+                      }}><Trash2 size={13} /> Delete</button>
+                    </div>
+                  )}
+                  {renamingId === conversation.id && (
+                    <form className="chat-history-rename" onSubmit={(event) => {
+                      event.preventDefault();
+                      const title = renameDraft.trim();
+                      if (!title || interactionLocked) return;
+                      updateConversation(conversation.id, (current) => ({ ...current, title, titleManuallyEdited: true }));
+                      setRenamingId(null);
+                    }}>
+                      <input autoFocus aria-label="Chat name" value={renameDraft} maxLength={80}
+                        disabled={interactionLocked} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setRenameDraft(event.target.value)}
+                        onKeyDown={(event) => { if (event.key === "Escape") setRenamingId(null); }} />
+                      <button type="submit" aria-label="Save chat name" disabled={interactionLocked || !renameDraft.trim()}><Check size={14} /></button>
+                      <button type="button" aria-label="Cancel rename" onClick={() => setRenamingId(null)}><X size={14} /></button>
+                    </form>
+                  )}
                 </div>
               ))
             ) : (
@@ -715,7 +817,7 @@ export default function ChatPage({
             type="button"
             title={workspacePath || "Choose a folder for Codex to work in"}
             disabled={
-              !desktopAvailable || interactionLocked || messages.length > 0
+              !desktopAvailable || interactionLocked
             }
             onClick={() => void chooseWorkspace()}
           >
@@ -723,9 +825,7 @@ export default function ChatPage({
             <ChevronRight size={13} />
           </button>
           <small>
-            {messages.length
-              ? "New chat to change folder"
-              : "Projects and files stay in this folder"}
+            Choose a folder to change workspace
           </small>
         </div>
 
@@ -756,23 +856,15 @@ export default function ChatPage({
                     message.role === "user" ? "Your message" : "Codex response"
                   }
                 >
-                  {message.role === "assistant" && (
-                    <div className="chat-assistant-avatar">
-                      <Sparkles size={16} />
-                    </div>
-                  )}
                   <div className="chat-message-content">
-                    {message.role === "assistant" && (
-                      <span className="chat-assistant-name">Allora</span>
-                    )}
-                    {message.text &&
-                      (message.role === "user" ? (
-                        <p className="chat-user-text">{message.text}</p>
-                      ) : (
-                        <ChatMarkdown text={message.text} />
-                      ))}
                     {!!message.tools?.length && (
-                      <div className="chat-tool-list">
+                      <details className="chat-tool-group">
+                        <summary>
+                          <ChevronRight size={14} />
+                          <span>Tool activity</span>
+                          <small>{message.tools.length} {message.tools.length === 1 ? "operation" : "operations"}</small>
+                        </summary>
+                        <div className="chat-tool-list">
                         {message.tools.map((tool) => (
                           <details
                             className={`chat-tool ${tool.status}`}
@@ -812,8 +904,15 @@ export default function ChatPage({
                             </div>
                           </details>
                         ))}
-                      </div>
+                        </div>
+                      </details>
                     )}
+                    {message.text &&
+                      (message.role === "user" ? (
+                        <p className="chat-user-text">{message.text}</p>
+                      ) : (
+                        <ChatMarkdown text={message.text} />
+                      ))}
                     {message.projectPath && (
                       <button
                         className="chat-project-result"
@@ -858,15 +957,12 @@ export default function ChatPage({
                         Response stopped
                       </small>
                     )}
-                    {!message.text &&
-                      !message.tools?.length &&
-                      !message.error &&
-                      !message.interrupted &&
-                      busy && (
-                        <div className="chat-thinking">
-                          <i />
-                          <i />
-                          <i />
+                    {message.role === "assistant" &&
+                      message.pending && busy && !streaming &&
+                      !message.error && !message.interrupted && (
+                        <div className="chat-thinking" role="status" aria-live="polite">
+                          <span>{approval ? "Waiting for your approval" : activity && activity !== "Responding…" ? activity : "Thinking…"}</span>
+                          <i /><i /><i />
                         </div>
                       )}
                   </div>
@@ -981,8 +1077,9 @@ export default function ChatPage({
             />
             <div className="chat-composer-bottom">
               <div className="chat-composer-controls">
-                <span className="chat-provider-label"><Sparkles size={13} /> Codex</span>
-                <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
+                <ChatProviderSelect selected={provider} disabled={interactionLocked} desktopAvailable={desktopAvailable}
+                  codexStatus={status} onChange={setProvider} />
+                {provider === "codex" && <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
                   loading={loadingModels} error={modelError} disabled={interactionLocked || loadingModels || !ready || !models.length}
                   onModelChange={(model) => {
                     setSelectedModel(model);
@@ -993,8 +1090,10 @@ export default function ChatPage({
                   onReasoningChange={(effort) => {
                     setPreferredReasoning(effort);
                     try { localStorage.setItem("allora-codex-reasoning", effort); } catch { /* Selection remains usable. */ }
-                  }} />
+                  }} />}
               </div>
+              {provider === "codex" && <ChatUsageControls usage={activeConversation?.contextUsage} limits={rateLimits}
+                available={ready} hasMessages={messages.length > 0} />}
               {busy ? (
                 <button
                   type="button"

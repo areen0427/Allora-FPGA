@@ -1,9 +1,7 @@
 import { useRef, useState } from "react";
 import type { BoardDefinition } from "../data/boards";
 import type { AppSettings } from "../data/settings";
-import { getLastProjectParentDirectory } from "../data/settings";
-import { hasTauriInvoke } from "../lib/tauri";
-import { pickProjectParentDirectory } from "../lib/projectWorkspace";
+import { useProjectLocation } from "../hooks/useProjectLocation";
 import "../styles/memory-assets.css";
 
 export default function MemoryProjectSetup({
@@ -25,22 +23,27 @@ export default function MemoryProjectSetup({
   const [language, setLanguage] = useState<"Verilog" | "SystemVerilog">(
     "SystemVerilog",
   );
-  const [parent, setParent] = useState<string | null>(
-    settings.projectLocationMode === "last-used"
-      ? getLastProjectParentDirectory()
-      : null,
+  const {
+    parentDirectory: parent,
+    nativeAvailable,
+    requiresLocation,
+    isChoosingLocation: picking,
+    locationError,
+    chooseLocation,
+    clearLocationError,
+  } = useProjectLocation(
+    settings.projectLocationMode,
+    "Default AlloraProjects folder",
   );
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
-  const [picking, setPicking] = useState(false);
   const [error, setError] = useState("");
-  const requiresLocation =
-    hasTauriInvoke() && settings.projectLocationMode !== "documents" && !parent;
   async function create() {
     if (!name.trim() || requiresLocation || lock.current) return;
     lock.current = true;
     setBusy(true);
     setError("");
+    clearLocationError();
     try {
       await onCreate(name.trim(), language, parent);
     } catch (cause) {
@@ -108,34 +111,23 @@ export default function MemoryProjectSetup({
             </span>
             <button
               type="button"
-              disabled={busy || picking}
+              disabled={!nativeAvailable || busy || picking}
               onClick={() => {
                 if (lock.current) return;
                 lock.current = true;
-                setPicking(true);
                 setError("");
-                void pickProjectParentDirectory()
-                  .then((path) => {
-                    if (path) setParent(path);
-                  })
-                  .catch((cause) =>
-                    setError(
-                      cause instanceof Error ? cause.message : String(cause),
-                    ),
-                  )
-                  .finally(() => {
-                    lock.current = false;
-                    setPicking(false);
-                  });
+                void chooseLocation().finally(() => {
+                  lock.current = false;
+                });
               }}
             >
               Choose folder
             </button>
           </div>
         </label>
-        {error && (
+        {(error || locationError) && (
           <p className="mas-project-error" role="alert">
-            {error}
+            {error || locationError}
           </p>
         )}
         <button

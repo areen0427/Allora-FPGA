@@ -2,6 +2,84 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-10-07 — Provider trigger sizing
+
+- Removed the Provider trigger's 102px minimum width. It now sizes to the selected label plus shared control padding, keeping Codex compact and accommodating Claude Code.
+- Validation: targeted CSS inspection and diff whitespace check passed.
+
+## 2026-10-07 — Ice composer tint
+
+- Replaced the Ice composer's white fill with a subtle translucent pale-blue gradient. The transparent text area inherits the tint; the darker options surface remains distinct.
+- Validation: diff whitespace check passed; no visual UI verification performed.
+
+## 2026-10-07 — Composer dropdown arrow cleanup
+
+- Removed the downward chevrons from Provider, Model, and Reasoning triggers. Existing glass hover/focus effects, popup accessibility attributes, and Ultra color ring remain.
+- Validation: targeted lint and diff whitespace checks passed.
+
+## 2026-10-07 — Ultra color ring restored
+
+- Removed the Ultra sparkle icons from the reasoning selector/popup heading. Restored a persistent theme-aware animated color ring around the Ultra selector while retaining the shared composer surface; Reduce Motion keeps the ring static.
+- Validation: frontend production build, targeted lint, and diff whitespace checks passed.
+
+## 2026-10-07 — Ultra reasoning subtitle
+
+- Added the requested subtitle under Ultra in the reasoning popup: “Delegates work across subagents. Will consume usage limits faster.” It follows the selected/previewed effort and is linked to the slider's accessible description. This copy change does not alter agent delegation behavior.
+- Validation: targeted lint and diff whitespace checks passed.
+
+## 2026-10-07 — Composer input spacing correction
+
+- Set a 64px minimum for the padded textarea in both CSS and autosizing. The previous 29px minimum allowed an existing inline height to collapse the text area after the footer redesign, crowding/clipping the placeholder against the divider.
+- Validation: frontend production build and diff whitespace checks passed; the user's screenshot identified the spacing issue.
+
+## 2026-10-07 — Composer options surface and popup motion
+
+- Split message input and options with a subtle divider and a darker theme-aware gradient footer. Provider/model/reasoning triggers share that surface without individual idle borders or fills; hover/focus reveals the existing glass sheen and rotating edge material.
+- Provider, model, and reasoning popups unfold upward with the product/board-info panel's 400ms easing and reveal treatment. Both Allora Reduce Motion and OS reduced-motion preferences disable popup motion; shared glass controls already honor those settings.
+- Validation: frontend production build and diff whitespace checks passed. No visual UI verification performed.
+
+## 2026-10-07 — Provider dropdown copy cleanup
+
+- Renamed the dropdown heading to Provider and removed its coming-soon footer. Account connection subtitles remain.
+- Validation: targeted lint and diff whitespace checks passed.
+
+## 2026-10-07 — Composer AI provider selector
+
+- Replaced the Codex label/sparkle icon with a themed provider dropdown matching the model control. Codex and Claude Code each show live account connection status through the existing native status API; failed checks remain distinct from disconnected accounts.
+- The popup uses native top-layer placement above the composer, selected checks, keyboard navigation, Escape/outside dismissal, and responsive sizing. Claude Code is selectable but displays its upcoming chat-support state and blocks sending; it does not silently route requests to Codex. Existing Codex model/reasoning controls remain available when Codex is selected.
+- Validation: frontend production build, targeted lint, and diff whitespace checks passed. No visual UI verification performed.
+
+## 2026-10-07 — Chat response header cleanup
+
+- Removed the Allora avatar and name above assistant responses, plus their unused styles. Responses and tool activity use the available message width.
+- Validation: targeted lint and diff whitespace checks passed.
+
+## 2026-10-07 — Chat history menus and concise titles
+
+- Replaced hover-only chat deletion with a three-dot options button offering Rename and Delete. Inline renaming supports save/cancel, Enter/Escape, and persisted custom titles; menus dismiss outside the row or on Escape and remain available on touch devices.
+- New chat titles remove request boilerplate, keep a short subject, and capitalize FPGA terms (for example, “create a led blinker desing” → “LED Blinker Design”). Existing first-prompt titles migrate on load; custom titles remain. History labels wrap so their full text is readable.
+- Validation: frontend production build, targeted lint, title examples, and diff whitespace checks passed. No visual UI verification performed.
+
+## 2026-10-07 — Inspectable AI simulation and synthesis
+
+- Added Allora MCP actions for structural port discovery, saved simulator wiring, interactive Verilator compilation, and synthesis diagram generation. Testbench simulation alone no longer represents a wired interactive simulator in the agent instructions; builds/synthesis also request the app's saved graph.
+- `configure_simulator` validates real port directions, widths, bits, duplicate input drivers, clock shape, and frequency, then transactionally saves both `simulation` and `peripheralWorkbench` in `allora-project.json`. Basic clock/reset/button/switch/LED mappings are supported; combinational designs can omit a clock. Pin mapping/build actions now reject incomplete or unknown top-level port assignments.
+- Interactive compilation uses the same native engine as Compile & Start, steps the saved configuration, closes its verification process, and saves `build/interactive-simulation.json`. The simulator views start fresh GUI sessions when opened only if the saved successful report still matches RTL, generated memory contents, top module, and connections. This verifies compilation/stepping, not design correctness; assertion-based testbenches remain separate.
+- Synthesis shares a native service between the GUI and MCP and persists `build/synthesis-diagram.json`. The Synthesis view restores matching graphs/logs on reopen and refuses stale source/device/top/memory results. Project saves exclude generated build artifacts so an older editor snapshot cannot overwrite newer results. Virtual FPGA loading preserves additional mapped peripherals beyond the default set.
+- Validation: frontend production build and targeted lint; 16 native MCP tests; saved-result freshness tests; real MCP integration covering saved wiring, Verilator compilation, frontend configuration reload, synthesis graph, complete pin constraints, testbench assertions, bitstream/timing, declined programming, and stale-artifact rejection. No live model turn, visual UI verification, or physical programming performed. Existing projects need the new setup/compile/diagram actions to acquire saved reports; their earlier results are not retroactively marked verified.
+
+## Future project — Board Migration Assistant
+
+Status: planned; not implemented. Provide a guided **Migrate to another board** action from an existing project's board menu.
+
+- Inspect the project's HDL, top-level ports, constraints, clocks, peripherals, and build configuration; compare its requirements with the destination board's verified catalog metadata and toolchain support.
+- Present a review of proposed pin mappings, oscillator/timing changes, LED/button polarity adjustments, and resource/peripheral differences. Ask users to resolve missing peripherals, narrower interfaces, and ambiguous mappings; never invent physical pins or board capabilities.
+- Distinguish cycle-based behavior from wall-clock behavior. Preserve an explicit “every 50 cycles” requirement; offer parameter changes for “once per second” behavior when clocks differ. Ask when intent is unclear rather than silently rewriting counters.
+- Identify device-specific PLLs, memory, and primitives. Flag unsupported cases and offer replacements only where supported; do not promise arbitrary cross-device HDL conversion.
+- Separate reusable design logic from board-specific wrappers and constraints where practical. Preview source/configuration diffs with explanations before applying; default to a migrated project copy that preserves the original working project.
+- Verify with simulation, synthesis, and timing checks when tools are available. Report build success, timing results, and physical hardware testing separately; retain explicit user confirmation before programming.
+- V1 scope: simple designs migrating between boards Allora already supports for builds, with verified pin remapping, clock comparison, polarity handling, reviewed changes, and project-copy creation. Broader primitive conversion and complex peripheral migration are later extensions.
+
 ## 2026-10-04 — Register Builder V1
 
 - Reused and completed the existing partial register model/store and generated-folder guards. Enabled the existing welcome and project-rail entries in both modes; added themed address-map/bit-layout/field editing, duplicate/reorder/delete, immediate validation, save/generation status, output links, and manual snippet copying.
@@ -1305,3 +1383,11 @@ Next:
 - Add configurable batch size/run speed and active-low reset control in the UI.
 - Add a VHDL-capable interactive engine behind the simulator abstraction.
 - Exercise one supported physical board end to end on connected hardware as a release smoke test.
+
+### 2026-10-07 — Chat context and Codex account usage
+- Added live context percentage/progress bar beside Send, persisted per conversation. Uses the latest model request token footprint, not cumulative conversation billing tokens, and server-reported context capacity. Green through 50%, blends to yellow at 55%, stays yellow through 75%, blends to red at 80%. Unknown historical usage remains unavailable until an event arrives.
+- Added adjacent Usage popup with native account/rateLimits/read refresh and incoming limit updates. Displays actual remaining percentages and local reset timestamps for the 300-minute and weekly quota windows; unknown values remain unavailable. Uses existing upward popup animation and reduced-motion handling.
+- Codex retains its native automatic compaction (which can run before 100% to prevent overflow). Forwarded contextCompaction item events into the existing thinking line as “Compacting context…” then “Thinking…”. No competing manual compaction request or transcript deletion.
+- Validation: production frontend build, targeted ESLint, Rust check, chat bridge unit tests, two context calculation/color tests, and installed authenticated Codex live account usage RPC passed. ADE browser inspected composer positioning and popup disconnected state; no full-context live inference run or desktop quota popup rendering was performed.
+- Context counter refinement: composer now shows only “Context” and its filling bar. Hover or keyboard focus reveals a two-line tooltip with percentage and localized used/capacity token counts; Escape dismisses it. Removed native title tooltip. Frontend build and targeted lint passed.
+- Centered the Context label over its bar. Restyled context hover tooltip with theme-derived glass gradient, rounded border, layered shadow, pointer, larger percentage and separated token-count line. Added subtle entrance animation with reduced-motion opt-out. Production build and diff checks passed.

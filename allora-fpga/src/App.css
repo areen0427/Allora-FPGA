@@ -1,4 +1,6 @@
+@import "./styles/tokens.css";
 @import "./styles/core.css";
+@import "./styles/themes/inline-compat.css";
 @import "./styles/welcome.css";
 @import "./styles/pin-browser.css";
 @import "./styles/board-menu.css";
@@ -14,9 +16,10 @@
 @import "./styles/project-setup.css";
 @import "./styles/github.css";
 @import "./styles/serial.css";
-@import "./styles/accessibility.css";
 @import "./styles/welcome-landing.css";
 @import "./styles/button-glass.css";
+@import "./styles/controls.css";
+@import "./styles/accessibility.css";
 
 html.theme-transitioning,
 html.theme-transitioning *,

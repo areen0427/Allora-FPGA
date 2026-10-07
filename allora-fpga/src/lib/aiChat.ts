@@ -2,7 +2,14 @@ import { REAL_BOARDS } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { createTauriChannel, invokeTauri } from "./tauri";
 
+export type ContextUsage = { last: { totalTokens: number }; modelContextWindow: number | null };
+export type RateWindow = { usedPercent: number; windowDurationMins: number | null; resetsAt: number | null };
+export type RateLimits = { limitId?: string | null; primary: RateWindow | null; secondary: RateWindow | null };
+export type AccountUsage = { rateLimits: RateLimits; rateLimitsByLimitId?: Record<string, RateLimits> | null };
+
 export type AiChatEvent =
+  | { type: "context_usage"; usage: ContextUsage }
+  | { type: "rate_limits"; limits: RateLimits }
   | { type: "assistant_delta"; delta: string }
   | { type: "tool_started"; id: string; name: string; arguments?: unknown }
   | {
@@ -44,6 +51,7 @@ function eventChannel(onEvent: (event: AiChatEvent) => void) {
 }
 
 export const aiChatApi = {
+  usage: () => invokeTauri<AccountUsage>("ai_chat_usage"),
   models: () => invokeTauri<AiChatModel[]>("ai_chat_models"),
   start: (
     workspacePath: string,

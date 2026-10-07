@@ -1,3 +1,4 @@
+import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -273,6 +274,14 @@ export default function VirtualFpgaSection({
       }
     }
   }
+
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    const saved = readSavedResult(files, "build/interactive-simulation.json");
+    if (autoStarted.current || !ports.length || !matchesSavedSimulator(saved, sourceFiles, config.topModule, config, "simulation", getMemorySources(files))) return;
+    autoStarted.current = true;
+    void startSimulation();
+  });
 
   async function stopSimulation() {
     if (sessionId !== null) await virtualFpgaApi.stop(sessionId);

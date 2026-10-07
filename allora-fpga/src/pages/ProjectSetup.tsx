@@ -12,10 +12,7 @@ import {
 } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
-import {
-  getLastProjectParentDirectory,
-  type AppSettings,
-} from "../data/settings";
+import type { AppSettings } from "../data/settings";
 import {
   PROJECT_TEMPLATES,
   getTemplateById,
@@ -23,8 +20,7 @@ import {
   type TemplateLanguage,
 } from "../data/templates";
 import BoardDiagram from "../components/BoardDiagram";
-import { hasTauriInvoke } from "../lib/tauri";
-import { pickProjectParentDirectory } from "../lib/projectWorkspace";
+import { useProjectLocation } from "../hooks/useProjectLocation";
 
 type ProjectSetupProps = {
   board: BoardDefinition;
@@ -48,18 +44,22 @@ export default function ProjectSetup({
   onBack,
   onCreateProject,
 }: ProjectSetupProps) {
-  const lastProjectParentDirectory = getLastProjectParentDirectory();
-  const initialParentDirectory =
-    settings.projectLocationMode === "last-used"
-      ? lastProjectParentDirectory
-      : null;
+  const {
+    parentDirectory,
+    nativeAvailable,
+    requiresLocation,
+    locationLabel,
+    isChoosingLocation,
+    locationError,
+    chooseLocation,
+    clearLocationError,
+  } = useProjectLocation(
+    settings.projectLocationMode,
+    "Documents/Allora FPGA Projects",
+  );
   const [projectName, setProjectName] = useState("");
   const [language, setLanguage] = useState<TemplateLanguage>("Verilog");
   const [isCreating, setIsCreating] = useState(false);
-  const [parentDirectory, setParentDirectory] = useState<string | null>(
-    initialParentDirectory,
-  );
-  const [isChoosingLocation, setIsChoosingLocation] = useState(false);
   const [templateId, setTemplateId] = useState("empty");
   const [topModule, setTopModule] = useState("top");
   const [sourceFileName, setSourceFileName] = useState("top.v");
@@ -117,23 +117,16 @@ export default function ProjectSetup({
     }
   }
 
-  async function chooseLocation() {
-    if (!hasTauriInvoke() || isChoosingLocation) return;
-    setIsChoosingLocation(true);
-    try {
-      const nextDirectory = await pickProjectParentDirectory();
-      if (nextDirectory) {
-        setParentDirectory(nextDirectory);
-      }
-    } finally {
-      setIsChoosingLocation(false);
-    }
-  }
-
   async function createProject() {
-    if (isCreating || !canCreateProject || requiresLocation) return;
+    if (
+      isCreating ||
+      isChoosingLocation ||
+      !canCreateProject ||
+      requiresLocation
+    ) return;
     setIsCreating(true);
     setCreationError("");
+    clearLocationError();
     try {
       await onCreateProject(
         projectName,
@@ -156,11 +149,6 @@ export default function ProjectSetup({
     }
   }
 
-  const requiresLocation =
-    hasTauriInvoke() &&
-    (settings.projectLocationMode === "ask" ||
-      settings.projectLocationMode === "last-used") &&
-    !parentDirectory;
   const expectedExtension = getSourceExtension(language);
   const topModuleIsValid = /^[A-Za-z_][A-Za-z0-9_]*$/.test(topModule);
   const sourceFileIsValid =
@@ -223,13 +211,16 @@ export default function ProjectSetup({
               <FolderOpen size={18} />
               <div>
                 <div>Project location</div>
-                <p title={getLocationLabel()}>{getLocationLabel()}</p>
+                <p title={locationLabel}>{locationLabel}</p>
               </div>
             </div>
             <button
               type="button"
-              disabled={!hasTauriInvoke() || isChoosingLocation}
-              onClick={() => void chooseLocation()}
+              disabled={!nativeAvailable || isChoosingLocation || isCreating}
+              onClick={() => {
+                setCreationError("");
+                void chooseLocation();
+              }}
             >
               {isChoosingLocation ? "Choosing..." : "Change"}
             </button>
@@ -253,16 +244,18 @@ export default function ProjectSetup({
             />
           </div>
 
-          {creationError ? (
+          {creationError || locationError ? (
             <div className="project-creation-error" role="alert">
-              {creationError}
+              {creationError || locationError}
             </div>
           ) : null}
 
           <button
             className="project-create-button"
             type="button"
-            disabled={!canCreateProject || requiresLocation || isCreating}
+            disabled={
+              !canCreateProject || requiresLocation || isCreating || isChoosingLocation
+            }
             onClick={() => void createProject()}
           >
             {isCreating ? "Creating Project..." : "Create Project"}
@@ -474,15 +467,6 @@ export default function ProjectSetup({
       </main>
     </div>
   );
-
-  function getLocationLabel() {
-    if (parentDirectory) return parentDirectory;
-    if (settings.projectLocationMode === "ask") return "Choose a location";
-    if (settings.projectLocationMode === "last-used") {
-      return "Choose a location (no previous location found)";
-    }
-    return "Documents/Allora FPGA Projects";
-  }
 }
 
 function MiniFact({

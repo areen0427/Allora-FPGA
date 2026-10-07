@@ -348,6 +348,33 @@ fn start_simulation(
     })
 }
 
+/// Compile with the same engine as Compile & Start, exercise saved input mappings,
+/// and release the child when verification completes. GUI sessions are independent.
+pub(crate) fn verify_saved_simulation(
+    request: StartSimulationRequest,
+    inputs: Vec<(String, u64)>,
+    cycles: u32,
+) -> Result<Value, ErrorPayload> {
+    let state = VirtualFpgaState::default();
+    let result = start_simulation(request, &state)?;
+    let mut sessions = state
+        .sessions
+        .lock()
+        .map_err(|_| error("Simulator state unavailable."))?;
+    let session = sessions
+        .get_mut(&result.session_id)
+        .ok_or_else(|| error("Simulator session missing."))?;
+    for (signal, value) in inputs {
+        set_input_value(session, &signal, &Value::from(value))?;
+    }
+    let stepped = step_session_with_trace(session, cycles.clamp(1, 1000))?;
+    let report = serde_json::json!({"compiled":true,"ports":result.ports,"logs":result.logs,
+        "state":stepped.state,"cycles":cycles.clamp(1, 1000),
+        "note":"Verified with the interactive Verilator engine. The verification session is closed; Allora starts a fresh session when this saved configuration is opened."});
+    sessions.remove(&result.session_id);
+    Ok(report)
+}
+
 #[tauri::command]
 pub fn set_virtual_simulation_input(
     request: SetInputRequest,
@@ -485,7 +512,7 @@ fn discover_ports(
     discover_ports_with_project(files, top_module, None)
 }
 
-fn discover_ports_with_project(
+pub(crate) fn discover_ports_with_project(
     files: &[SimulationSourceFile],
     top_module: &str,
     project_path: Option<&str>,

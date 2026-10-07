@@ -17,24 +17,6 @@ html[data-theme="ice"] .variant-card {
   -webkit-backdrop-filter: blur(28px) saturate(1.42);
 }
 
-html[data-theme="ice"] .glass-page {
-  background:
-    radial-gradient(
-      circle at 10% 0%,
-      rgba(219, 234, 254, 0.52),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 92% 8%,
-      rgba(186, 230, 253, 0.28),
-      transparent 34%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(248, 250, 252, 0.98),
-      rgba(226, 239, 255, 0.76)
-    ) !important;
-}
 
 html[data-theme="ice"] .home-rail {
   background:
@@ -93,7 +75,8 @@ html[data-theme="ice"] .dashboard-glass-card {
   -webkit-backdrop-filter: blur(24px) saturate(1.28);
 }
 
-html[data-theme="ice"] .dashboard-workspace {
+html[data-theme="ice"] .dashboard-workspace,
+html[data-theme="ice"] .viewer-page {
   --dashboard-surface-border: rgba(191, 219, 254, 0.72);
   --dashboard-surface-bg:
     radial-gradient(
@@ -127,16 +110,7 @@ html[data-theme="ice"] .dashboard-workspace {
     rgba(219, 234, 254, 0.7);
   --dashboard-preview-header-bg: rgba(219, 234, 254, 0.44);
   background:
-    radial-gradient(
-      circle at 8% 0%,
-      rgba(191, 219, 254, 0.62),
-      transparent 30%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(248, 250, 252, 0.94),
-      rgba(219, 234, 254, 0.78)
-    ) !important;
+    var(--ui-page-bg) !important;
 }
 
 html[data-theme="ice"] .dashboard-glass-card::before {

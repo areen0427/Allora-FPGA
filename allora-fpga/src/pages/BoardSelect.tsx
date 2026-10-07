@@ -19,6 +19,8 @@ import type { ExecutionTarget } from "./dashboard/types";
 import ChatPage from "./ChatPage";
 
 type BoardSelectProps = {
+  initialView?: WelcomeView;
+  chatProjectPath?: string;
   onDesignToolChange: (register: boolean) => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
@@ -34,6 +36,8 @@ type BoardSelectProps = {
 };
 
 export default function BoardSelect({
+  initialView = "home",
+  chatProjectPath,
   onDesignToolChange,
   settings,
   onSettingsChange,
@@ -57,7 +61,7 @@ export default function BoardSelect({
   const [isOpeningExistingProject, setIsOpeningExistingProject] =
     useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
-  const [activeView, setActiveView] = useState<WelcomeView>("home");
+  const [activeView, setActiveView] = useState<WelcomeView>(initialView);
   const [homePath, setHomePath] = useState<HomePath | null>(null);
   const [showProductInfo, setShowProductInfo] = useState(false);
   const brandRef = useRef<HTMLButtonElement | null>(null);
@@ -181,7 +185,7 @@ export default function BoardSelect({
           }}
         />
       ) : activeView === "chat" ? (
-        <ChatPage onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }} onOpenProject={onOpenChatProject} />
+        <ChatPage initialProjectPath={chatProjectPath} resumeLatest={initialView === "chat"} onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }} onOpenProject={onOpenChatProject} />
       ) : (
         <PinMappingBrowser
           boards={pinMappingBoards}

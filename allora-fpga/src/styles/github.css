@@ -64,7 +64,7 @@
 .explorer-github-publish:focus-visible {
   color: #2563eb;
   border-color: rgba(37, 99, 235, 0.4);
-  transform: translateY(-1px);
+  transform: var(--ui-lift-subtle);
   outline: none;
 }
 
@@ -440,15 +440,10 @@ html[data-theme="black-ice"] .github-workflow-switch button.active {
 
 .github-primary-button {
   border: 0;
-  color: #fff;
-  background: linear-gradient(135deg, #2563eb, #0ea5e9);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
 }
 
 .github-secondary-button {
   border: 1px solid var(--dashboard-control-border);
-  color: var(--dashboard-text);
-  background: var(--dashboard-control-bg);
 }
 
 .github-primary-button:disabled,

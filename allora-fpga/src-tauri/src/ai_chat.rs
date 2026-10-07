@@ -19,12 +19,24 @@ static SESSION_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 const INSTRUCTIONS: &str = "You are the FPGA engineering assistant embedded in Allora. \
 Use only the Allora MCP tools for project files, board discovery, constraints, simulation, \
-builds and programming. The selected workspace is your entire scope. Board definitions \
+builds and programming. Before creating any new project, ask the user where to save it unless \
+they have explicitly supplied a destination in chat or selected one in the workspace picker. \
+The current workspace alone is not permission to save a new project there. Always pass \
+parentDirectory to create_project. When a current project is supplied, inspect its context \
+and work on that project rather than creating a replacement. When the user requests another \
+location, pass its absolute path as create_project parentDirectory; missing folders are created \
+automatically and the new project is accessible for the rest of this session. Do not ask the user \
+to switch workspaces for this. Only use destinations the user requested. Board definitions \
 returned by Allora are authoritative: never guess FPGA package, physical pins, oscillator \
 frequency, LED polarity or programmer configuration. Check available boards and toolchains \
 before creating a design. Create projects through create_project so they open correctly in \
 Allora. Read files before changing them and use the returned revision for conflict detection. \
-For requested end-to-end designs, write RTL and a testbench, configure top module and validated \
+When simulation is requested, discover_design_ports, configure_simulator to persist visible \
+peripheral connections, and compile_simulator using the interactive engine; also run the \
+assertion-based testbench. Testbench success alone is not a connected or compiled simulator. \
+When synthesis or a build is requested, generate_synthesis_diagram as well as the requested \
+build so the Synthesis view has its saved graph. For requested end-to-end designs, write RTL \
+and a testbench, configure top module and validated \
 pin constraints, simulate, build, inspect timing and program only the exact compatible build \
 artifact and target. Hardware programming prompts must be answered by the user, never by you. \
 Do not use shell, apply_patch, unrelated MCP servers or alternative paths to bypass Allora's \
@@ -36,6 +48,12 @@ Communicate progress briefly and explain errors with useful next steps.";
 #[derive(Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum AiChatEvent {
+    ContextUsage {
+        usage: Value,
+    },
+    RateLimits {
+        limits: Value,
+    },
     AssistantDelta {
         delta: String,
     },
@@ -424,6 +442,16 @@ impl Session {
 
     fn handle_notification(&self, method: &str, params: &Value) {
         match method {
+            "thread/tokenUsage/updated" => {
+                self.emit(AiChatEvent::ContextUsage {
+                    usage: params["tokenUsage"].clone(),
+                });
+            }
+            "account/rateLimits/updated" => {
+                self.emit(AiChatEvent::RateLimits {
+                    limits: params["rateLimits"].clone(),
+                });
+            }
             "item/agentMessage/delta" => {
                 if let Some(delta) = params["delta"].as_str() {
                     if let Some(item_id) = params["itemId"].as_str() {
@@ -452,6 +480,17 @@ impl Session {
             }
             "item/started" | "item/completed" => {
                 let item = &params["item"];
+                if item["type"] == "contextCompaction" {
+                    self.emit(AiChatEvent::Status {
+                        message: if method == "item/started" {
+                            "Compacting context…"
+                        } else {
+                            "Thinking…"
+                        }
+                        .into(),
+                    });
+                    return;
+                }
                 if item["type"] != "mcpToolCall" {
                     return;
                 }
@@ -663,6 +702,24 @@ fn context_windows() -> HashMap<String, u64> {
             ))
         })
         .collect()
+}
+
+#[tauri::command]
+pub async fn ai_chat_usage() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut command = Command::new(crate::ai_integration::authenticated_codex()?);
+        command.args(["app-server", "--listen", "stdio://", "-c", "notify=[]", "-c", "features.hooks=false", "-c", "features.plugins=false"]);
+        command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+        let catalog = tempfile::NamedTempFile::new().map_err(|error| error.to_string())?;
+        let session = spawn_app_server(command, catalog, Channel::new(|_| Ok(())))?;
+        let result = (|| {
+            session.rpc("initialize", json!({"clientInfo":{"name":"allora-fpga","version":env!("CARGO_PKG_VERSION")},"capabilities":{"experimentalApi":true}}))?;
+            session.write(&json!({"method":"initialized"}))?;
+            session.rpc("account/rateLimits/read", json!({}))
+        })();
+        let cleanup = session.shutdown_checked();
+        match result { Ok(limits) => { cleanup?; Ok(limits) }, Err(error) => Err(error) }
+    }).await.map_err(|_| "Could not load Codex usage.".to_string())?
 }
 
 #[tauri::command]
@@ -1053,6 +1110,47 @@ mod tests {
         );
     }
     #[test]
+    fn usage_and_compaction_notifications_reach_frontend() {
+        let (session, _) = test_session();
+        let (tx, rx) = mpsc::channel();
+        *session.channel.lock().unwrap() = Channel::new(move |event| {
+            if let tauri::ipc::InvokeResponseBody::Json(body) = event {
+                tx.send(serde_json::from_str::<Value>(&body).unwrap())
+                    .unwrap();
+            }
+            Ok(())
+        });
+        session.handle_notification(
+            "thread/tokenUsage/updated",
+            &json!({"tokenUsage":{"last":{"totalTokens":500},"modelContextWindow":1000}}),
+        );
+        let event = rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        assert_eq!(event["type"], "context_usage");
+        assert_eq!(event["usage"]["last"]["totalTokens"], 500);
+        session.handle_notification(
+            "account/rateLimits/updated",
+            &json!({"rateLimits":{"primary":{"usedPercent":20}}}),
+        );
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(1)).unwrap()["type"],
+            "rate_limits"
+        );
+        for (method, message) in [
+            ("item/started", "Compacting context…"),
+            ("item/completed", "Thinking…"),
+        ] {
+            session.handle_notification(
+                method,
+                &json!({"item":{"type":"contextCompaction","id":"compact"}}),
+            );
+            assert_eq!(
+                rx.recv_timeout(Duration::from_secs(1)).unwrap()["message"],
+                message
+            );
+        }
+    }
+
+    #[test]
     fn event_contract_uses_frontend_names() {
         let event = serde_json::to_value(AiChatEvent::ApprovalRequired {
             request_id: "12".into(),
@@ -1072,7 +1170,10 @@ mod tests {
             tauri::async_runtime::block_on(ai_chat_models()).expect("live model discovery");
         assert!(!models.is_empty(), "Codex must expose available models");
         if let Ok(expected) = std::env::var("ALLORA_CHAT_SMOKE_MODEL") {
-            assert!(models.iter().any(|model| model.model == expected), "expected model {expected} must be available");
+            assert!(
+                models.iter().any(|model| model.model == expected),
+                "expected model {expected} must be available"
+            );
         }
         assert!(models
             .iter()
@@ -1094,6 +1195,18 @@ mod tests {
                 .filter(|model| model.context_window.is_some())
                 .count()
         );
+    }
+
+    #[test]
+    #[ignore = "requires an installed, logged-in Codex CLI"]
+    fn live_account_usage() {
+        let result = tauri::async_runtime::block_on(ai_chat_usage()).expect("account usage read");
+        assert!(result["rateLimits"].is_object());
+        for key in ["primary", "secondary"] {
+            if !result["rateLimits"][key].is_null() {
+                assert!(result["rateLimits"][key]["usedPercent"].is_number());
+            }
+        }
     }
 
     #[test]
@@ -1166,7 +1279,8 @@ mod tests {
                 workspace_path,
                 boards,
                 thread_id: None,
-                model: std::env::var("ALLORA_CHAT_SMOKE_MODEL").expect("set an available smoke-test model"),
+                model: std::env::var("ALLORA_CHAT_SMOKE_MODEL")
+                    .expect("set an available smoke-test model"),
             },
             channel,
         )

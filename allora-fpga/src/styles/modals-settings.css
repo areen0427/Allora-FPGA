@@ -313,7 +313,7 @@ html .variant-modal.settings-modal {
   background: rgba(255, 255, 255, 0.42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
   cursor: pointer;
-  transition: 0.16s ease;
+  transition: var(--ui-control-transition);
 }
 
 .settings-close-button:hover {
@@ -357,7 +357,7 @@ html .variant-modal.settings-modal {
   font-weight: 760;
   text-align: left;
   cursor: pointer;
-  transition: 0.16s ease;
+  transition: var(--ui-control-transition);
 }
 
 .settings-navigation-item:hover {
@@ -435,12 +435,12 @@ html .variant-modal.settings-modal {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
   text-align: left;
   cursor: pointer;
-  transition: 0.16s ease;
+  transition: var(--ui-control-transition);
 }
 
 .settings-theme-choice:hover {
   border-color: rgba(59, 130, 246, 0.34);
-  transform: translateY(-1px);
+  transform: var(--ui-lift-subtle);
 }
 
 .settings-theme-choice.selected {
@@ -845,7 +845,7 @@ html .variant-modal.settings-modal {
   gap: 22px;
   padding: 13px 15px;
   border-top: 1px solid rgba(148, 163, 184, 0.16);
-  transition: opacity 0.16s ease;
+  transition: opacity var(--ui-motion-fast);
 }
 
 .settings-row:first-child {
@@ -927,7 +927,7 @@ input.settings-control {
   background: #aebdce;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.16);
   cursor: pointer;
-  transition: 0.18s ease;
+  transition: var(--ui-motion-fast);
 }
 
 .settings-switch span {
@@ -939,11 +939,11 @@ input.settings-control {
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
-  transition: transform 0.18s ease;
+  transition: transform var(--ui-motion-fast);
 }
 
 .settings-switch[aria-checked="true"] {
-  background: linear-gradient(180deg, #4388ef, #2563d4);
+  background: var(--ui-primary-bg);
 }
 
 .settings-switch[aria-checked="true"] span {
@@ -997,33 +997,16 @@ input.settings-control {
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: 0.16s ease;
+  transition: var(--ui-control-transition);
 }
 
 .settings-reset-button {
   border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #5d6f86;
-  background: rgba(255, 255, 255, 0.34);
-}
-
-.settings-reset-button:hover {
-  color: #255ba7;
-  background: rgba(255, 255, 255, 0.58);
 }
 
 .settings-done-button {
   min-width: 76px;
   border: 1px solid rgba(29, 78, 216, 0.48);
-  color: #fff;
-  background: linear-gradient(180deg, #4388ef, #2563d4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 5px 14px rgba(37, 99, 212, 0.2);
-}
-
-.settings-done-button:hover {
-  background: linear-gradient(180deg, #4b91f7, #1d5bc8);
-  transform: translateY(-1px);
 }
 
 .settings-modal button:focus-visible,
@@ -1082,12 +1065,6 @@ html[data-theme="black-ice"] .settings-row-copy small,
 html[data-theme="black-ice"] .settings-save-status,
 html[data-theme="black-ice"] .settings-number-control {
   color: #9cadc3 !important;
-}
-
-html[data-theme="black-ice"] .settings-close-button {
-  border-color: rgba(148, 163, 184, 0.2);
-  color: #b8c5d6 !important;
-  background: rgba(22, 37, 57, 0.56) !important;
 }
 
 html[data-theme="black-ice"] .settings-navigation {
@@ -1316,7 +1293,6 @@ html[data-theme="black-ice"] .settings-reset-button {
 .ai-provider-facts svg { color: #4e9b86; }
 .ai-provider-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .ai-provider-actions button, .ai-provider-actions a, .ai-install-title button, .ai-install-command button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; color: #436181; background: rgba(255,255,255,.45); font: inherit; font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; }
-.ai-provider-actions .ai-primary-action { color: #fff; border-color: #2f6bcc; background: #3478d4; }
 .ai-provider-actions button:disabled { opacity: .55; cursor: default; }
 .ai-provider-error { margin: 9px 0 0; color: #b64c54; font-size: 11px; }
 .ai-install-panel { margin-top: 13px; padding: 12px; border: 1px solid rgba(148,163,184,.22); border-radius: 10px; background: rgba(226,239,253,.4); }

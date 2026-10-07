@@ -49,6 +49,8 @@ type ProjectMetadata = {
 };
 
 function App() {
+  const [chatProjectPath, setChatProjectPath] = useState<string | undefined>();
+  const [returnToChat, setReturnToChat] = useState(false);
   const [stage, setStage] = useState<AppStage>("board-select");
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [project, setProject] = useState<SavedProject | null>(null);
@@ -82,6 +84,8 @@ function App() {
   }, []);
 
   function goHome() {
+    setReturnToChat(false);
+    setChatProjectPath(undefined);
     setRegisterLaunch(false);
     setStage("board-select");
     setSelectedBoardId(null);
@@ -258,6 +262,8 @@ function App() {
   if (stage === "board-select") {
     return (
       <BoardSelect
+        initialView={returnToChat ? "chat" : "home"}
+        chatProjectPath={chatProjectPath}
         onDesignToolChange={setRegisterLaunch}
         settings={settings}
         onSettingsChange={setSettings}
@@ -452,6 +458,11 @@ function App() {
           )
         }
         onHome={goHome}
+        onChat={() => {
+          goHome();
+          setChatProjectPath(project?.projectPath);
+          setReturnToChat(true);
+        }}
       />
     );
   }

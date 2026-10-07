@@ -235,24 +235,9 @@ export default function ProgrammingSection({
             style={{
               border: "none",
               borderRadius: "14px",
-              background:
-                capabilities.programming.supported &&
-                bitstreamFiles.length > 0 &&
-                !isProgramming &&
-                selectedBitstream
-                  ? "#2563eb"
-                  : "#cbd5e1",
-              color: "#ffffff",
               padding: "13px 18px",
               fontSize: "15px",
               fontWeight: 800,
-              cursor:
-                capabilities.programming.supported &&
-                bitstreamFiles.length > 0 &&
-                !isProgramming &&
-                selectedBitstream
-                  ? "pointer"
-                  : "not-allowed",
             }}
           >
             {isProgramming ? "Programming..." : "Program FPGA"}

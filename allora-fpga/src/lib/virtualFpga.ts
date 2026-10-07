@@ -286,9 +286,13 @@ function mergePeripherals(value: unknown): VirtualPeripheral[] {
       )
       .map((item) => [item.id, item]),
   );
-  return DEFAULT_PERIPHERALS.map((peripheral) => ({
+  const merged = DEFAULT_PERIPHERALS.map((peripheral) => ({
     ...peripheral,
     ...saved.get(peripheral.id),
     type: peripheral.type,
   }));
+  const defaults = new Set(DEFAULT_PERIPHERALS.map((peripheral) => peripheral.id));
+  return [...merged, ...[...saved.values()].filter((peripheral) =>
+    !defaults.has(peripheral.id) && ["clock", "reset", "button", "switch", "led"].includes(peripheral.type),
+  )];
 }

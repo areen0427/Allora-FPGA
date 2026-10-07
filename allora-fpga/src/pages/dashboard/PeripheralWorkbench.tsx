@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import type { ProjectFile } from "./types";
 import {
   getConfiguredTopModule,
@@ -352,6 +353,13 @@ export default function PeripheralWorkbench({
   }
   const canCompile =
     editable && discovered === identity && !invalid && !metadataError;
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    const saved = readSavedResult(files, "build/interactive-simulation.json");
+    if (!active || autoStarted.current || !canCompile || !matchesSavedSimulator(saved, JSON.parse(sources), top, config, "peripheralWorkbench", getMemorySources(files))) return;
+    autoStarted.current = true;
+    compile();
+  });
   return (
     <section className="pw" aria-label="Peripheral Workbench">
       <header className="pw-header">

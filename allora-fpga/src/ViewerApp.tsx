@@ -33,7 +33,10 @@ export default function ViewerApp() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = getSettings().theme;
+    const settings = getSettings();
+    document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.dataset.background = settings.background;
+    document.documentElement.dataset.reduceMotion = String(settings.reduceMotion);
   }, []);
 
   useEffect(() => {

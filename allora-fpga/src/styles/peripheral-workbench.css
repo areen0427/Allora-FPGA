@@ -2,7 +2,7 @@
   padding: 24px;
   width: 100%;
   min-width: 0;
-  color: var(--text-primary, #24344b);
+  color: var(--ui-text);
   overflow: auto;
 }
 .pw-header,
@@ -35,7 +35,7 @@
 .pw-kicker {
   font-size: 10px;
   letter-spacing: 2px;
-  color: #648dd3;
+  color: var(--ui-accent-text);
 }
 .pw-status {
   padding: 9px 14px;
@@ -48,29 +48,28 @@
 .pw select {
   font: inherit;
   font-size: 12px;
-  border: 1px solid #8294af66;
+  border: 1px solid var(--ui-border-control);
   border-radius: 7px;
   padding: 8px;
-  background: var(--surface-secondary, #ffffff15);
+  background: var(--ui-control-bg);
   color: inherit;
 }
 .pw button {
   cursor: pointer;
+  transition: var(--ui-control-transition);
 }
 .pw button:hover:not(:disabled) {
-  background: #7da4e433;
+  background: var(--ui-control-hover-bg);
+  border-color: var(--ui-border-hover);
+  transform: var(--ui-lift-subtle);
 }
 .pw :disabled {
   opacity: 0.45;
   cursor: default;
 }
 .pw :focus-visible {
-  outline: 2px solid #5b9af5;
+  outline: 2px solid var(--ui-accent-text);
   outline-offset: 3px;
-}
-.pw-toolbar > button:first-child {
-  background: #446fc5;
-  color: white;
 }
 .pw-toolbar label {
   font-size: 12px;

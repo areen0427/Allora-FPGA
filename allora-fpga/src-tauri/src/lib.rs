@@ -925,7 +925,7 @@ fn delete_project_file(request: DeleteProjectFileRequest) -> Result<(), ErrorPay
     Ok(())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SynthesisInputFile {
     name: String,
@@ -1349,6 +1349,14 @@ struct ErrorPayload {
 async fn generate_synthesis_diagram(
     request: GenerateSynthesisDiagramRequest,
 ) -> Result<GenerateSynthesisDiagramResponse, ErrorPayload> {
+    tauri::async_runtime::spawn_blocking(move || generate_synthesis_diagram_service(request))
+        .await
+        .map_err(|err| error(&format!("Synthesis task failed: {err}")))?
+}
+
+fn generate_synthesis_diagram_service(
+    request: GenerateSynthesisDiagramRequest,
+) -> Result<GenerateSynthesisDiagramResponse, ErrorPayload> {
     if request.files.is_empty() {
         return Err(error("No HDL files were provided."));
     }
@@ -1365,6 +1373,7 @@ async fn generate_synthesis_diagram(
     ));
     }
 
+    let memory_files = generated_memory_sources(request.project_path.as_deref())?;
     let output_name = sanitize_name(&request.project_name);
     let temp_dir = create_work_dir(&output_name)?;
     let source_dir = temp_dir.join("src");
@@ -1450,13 +1459,54 @@ async fn generate_synthesis_diagram(
 
     let _ = fs::remove_dir_all(&temp_dir);
 
-    Ok(GenerateSynthesisDiagramResponse {
+    let result = GenerateSynthesisDiagramResponse {
         logs,
         top_module,
         output_name,
         nodes,
         edges,
-    })
+    };
+    if let Some(project) = &request.project_path {
+        let build = Path::new(project).join("build");
+        fs::create_dir_all(&build)
+            .map_err(|e| error(&format!("Unable to save synthesis diagram: {e}")))?;
+        let saved = serde_json::json!({"fpgaId":request.fpga_id,"sourceFiles":request.files,"memoryFiles":memory_files,"diagram":result});
+        fs::write(
+            build.join("synthesis-diagram.json"),
+            serde_json::to_vec_pretty(&saved).map_err(|e| error(&e.to_string()))?,
+        )
+        .map_err(|e| error(&format!("Unable to save synthesis diagram: {e}")))?;
+    }
+    Ok(result)
+}
+
+fn generated_memory_sources(
+    project: Option<&str>,
+) -> Result<Vec<SynthesisInputFile>, ErrorPayload> {
+    let Some(project) = project else {
+        return Ok(Vec::new());
+    };
+    let root = Path::new(project).join("src/generated");
+    if !root.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut files = Vec::new();
+    for entry in fs::read_dir(&root).map_err(|e| error(&e.to_string()))? {
+        let entry = entry.map_err(|e| error(&e.to_string()))?;
+        if entry
+            .file_type()
+            .map_err(|e| error(&e.to_string()))?
+            .is_file()
+            && entry.path().extension().is_some_and(|ext| ext == "hex")
+        {
+            files.push(SynthesisInputFile {
+                name: format!("src/generated/{}", entry.file_name().to_string_lossy()),
+                content: fs::read_to_string(entry.path()).map_err(|e| error(&e.to_string()))?,
+            });
+        }
+    }
+    files.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(files)
 }
 
 pub(crate) fn copy_generated_memories(project: &Path, work: &Path) -> Result<(), ErrorPayload> {
@@ -3784,6 +3834,7 @@ pub fn run() {
             write_serial_monitor,
             close_serial_monitor,
             ai_chat::ai_chat_models,
+            ai_chat::ai_chat_usage,
             ai_chat::ai_chat_start,
             ai_chat::ai_chat_send,
             ai_chat::ai_chat_cancel,

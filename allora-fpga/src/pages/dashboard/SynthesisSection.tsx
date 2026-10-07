@@ -5,6 +5,7 @@ import { hasTauriInvoke, invokeTauri } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
 import type { ProjectFile } from "./types";
 import { findTopModule, isHdlFile, isTestbenchFile } from "../../hooks/utils";
+import { getMemorySources, readSavedResult, sameSources } from "../../lib/savedProjectResults";
 import { openViewerWindow } from "../../lib/viewerWindow";
 
 type SynthesisStatus = "idle" | "ready" | "blocked" | "unsupported";
@@ -81,6 +82,14 @@ export default function SynthesisSection({
       ...designFiles.filter((file) => file.name !== selectedTopLevelFile.name),
     ];
   }, [hdlFiles, topLevelFileName, topModule, selectedTopLevelFile]);
+  const savedResult = readSavedResult(files, "build/synthesis-diagram.json");
+  const savedDiagram = savedResult?.diagram as SynthesisDiagramResponse | undefined;
+  const restoredDiagram = savedResult?.fpgaId === board.fpgaId &&
+    savedDiagram?.topModule === topModule && sameSources(savedResult.sourceFiles, synthesisFiles) && sameSources(savedResult.memoryFiles ?? [], getMemorySources(files)) &&
+    Array.isArray(savedDiagram.nodes) && Array.isArray(savedDiagram.edges) && Array.isArray(savedDiagram.logs)
+      ? savedDiagram : null;
+  const visibleDiagram = diagram ?? restoredDiagram;
+  const visibleLog = log.length ? log : restoredDiagram?.logs ?? [];
   const capabilities = getBoardCapabilities(board);
   const status: SynthesisStatus = !capabilities.synthesisDiagram.supported
     ? "unsupported"
@@ -249,7 +258,7 @@ export default function SynthesisSection({
             {isRunning ? "Synthesizing..." : "Run Synthesis"}
           </button>
 
-          {log.length > 0 ? (
+          {visibleLog.length > 0 ? (
             <button
               className="synthesis-secondary-button"
               type="button"
@@ -261,12 +270,12 @@ export default function SynthesisSection({
         </div>
 
         <div className="synthesis-report-shell">
-          {showAdvancedLog && log.length > 0 ? (
-            <pre className="synthesis-log-panel">{log.join("\n")}</pre>
-          ) : diagram ? (
+          {showAdvancedLog && visibleLog.length > 0 ? (
+            <pre className="synthesis-log-panel">{visibleLog.join("\n")}</pre>
+          ) : visibleDiagram ? (
             <SynthesisReport
-              diagram={diagram}
-              onOpen={() => void openDiagramViewer(diagram)}
+              diagram={visibleDiagram}
+              onOpen={() => void openDiagramViewer(visibleDiagram)}
             />
           ) : (
             <div className="synthesis-report-empty">
@@ -317,12 +326,12 @@ export default function SynthesisSection({
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
           <InfoRow
             label="Top Module"
-            value={diagram?.topModule ?? topModule ?? "Not found"}
+            value={visibleDiagram?.topModule ?? topModule ?? "Not found"}
             compact
           />
           <InfoRow
             label="Output Netlist"
-            value={`${diagram?.outputName ?? outputName}.json`}
+            value={`${visibleDiagram?.outputName ?? outputName}.json`}
             compact
           />
         </InfoCard>

@@ -1,8 +1,8 @@
 .viewer-page {
   min-height: 100%;
   padding: 24px;
-  background: var(--dashboard-page-bg, #eef2f7);
-  color: var(--dashboard-text, #0f172a);
+  background: var(--ui-page-bg);
+  color: var(--ui-text);
 }
 
 .viewer-page-schematic {
@@ -28,7 +28,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #f7f9fc;
+  background: var(--ui-surface);
 }
 
 .schematic-topbar {
@@ -40,7 +40,7 @@
   min-height: 76px;
   padding: 12px 18px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.34);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ui-control-bg);
   box-shadow: 0 5px 22px rgba(15, 23, 42, 0.07);
   backdrop-filter: blur(18px);
 }
@@ -54,7 +54,7 @@
 
 .schematic-eyebrow {
   grid-column: 1 / -1;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: 0.12em;
@@ -62,14 +62,14 @@
 }
 
 .schematic-topbar strong {
-  color: #0f172a;
+  color: var(--ui-text);
   font-size: 18px;
   font-weight: 850;
 }
 
 .schematic-topbar small,
 .schematic-help {
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 12px;
   font-weight: 650;
 }
@@ -91,7 +91,7 @@
   align-items: center;
   gap: 8px;
   margin-right: 5px;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 11px;
   font-weight: 800;
 }
@@ -116,10 +116,10 @@
   min-width: 36px;
   height: 34px;
   place-items: center;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ui-border-control);
   border-radius: 8px;
-  background: #fff;
-  color: #334155;
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
   font: inherit;
   font-size: 13px;
   font-weight: 800;
@@ -130,15 +130,15 @@
 }
 
 .schematic-controls button:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border-color: var(--ui-border-hover);
+  background: var(--ui-control-hover-bg);
+  color: var(--ui-accent-text);
 }
 
 .schematic-zoom-value {
   min-width: 58px;
   border-color: transparent;
-  background: #f1f5f9;
+  background: var(--ui-control-active-bg);
   font-variant-numeric: tabular-nums;
 }
 
@@ -223,7 +223,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 14px;
   font-weight: 750;
 }
@@ -238,20 +238,20 @@
   padding: 16px 42px 16px 16px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--ui-panel);
   box-shadow: 0 16px 38px rgba(15, 23, 42, 0.15);
   backdrop-filter: blur(16px);
 }
 
 .schematic-inspector span,
 .schematic-inspector small {
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 11px;
   font-weight: 750;
 }
 
 .schematic-inspector strong {
-  color: #0f172a;
+  color: var(--ui-text);
   font-size: 15px;
 }
 
@@ -261,7 +261,7 @@
   right: 8px;
   border: 0;
   background: transparent;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 22px;
   cursor: pointer;
 }

@@ -1,21 +1,26 @@
+/* Welcome cards share the control motion and material used by the destination pages. */
+:is(.open-project-card, .board-card, .variant-card) {
+  transition:
+    transform var(--ui-motion-fast),
+    box-shadow var(--ui-motion-fast),
+    border-color var(--ui-motion-fast),
+    background var(--ui-motion-fast);
+}
+
 .open-project-card:not(.is-opening):hover,
-.open-project-card:focus-within,
-.board-card:hover,
-.variant-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.68) !important;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.74),
-      rgba(255, 255, 255, 0.34)
-    ),
-    rgba(248, 250, 252, 0.5) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    inset 0 -22px 42px rgba(255, 255, 255, 0.22),
-    0 18px 38px rgba(15, 23, 42, 0.11),
-    0 7px 18px rgba(37, 99, 235, 0.07) !important;
+.open-project-card:not(.is-opening):focus-within,
+.board-card:hover:not(:disabled),
+.board-card:focus-visible:not(:disabled),
+.variant-card:hover:not(:disabled),
+.variant-card:focus-visible:not(:disabled) {
+  transform: var(--ui-lift-subtle);
+  border-color: var(--ui-border-control-strong) !important;
+  background: var(--ui-control-hover-bg) !important;
+  box-shadow: var(--ui-hover-shadow) !important;
+}
+
+:is(.board-card, .variant-card):focus-visible:not(:disabled) {
+  box-shadow: var(--ui-focus-ring), var(--ui-hover-shadow) !important;
 }
 
 .recent-projects-card {
@@ -33,13 +38,13 @@
   background: transparent !important;
   box-shadow: none !important;
   transition:
-    background 0.16s ease,
-    transform 0.16s ease;
+    background var(--ui-motion-fast),
+    transform var(--ui-motion-fast);
 }
 
 .recent-project-row:hover {
-  background: rgba(255, 255, 255, 0.34) !important;
-  transform: translateY(-1px);
+  background: var(--ui-control-hover-bg) !important;
+  transform: var(--ui-lift-subtle);
   box-shadow: none !important;
 }
 
@@ -52,7 +57,8 @@
   border: 1px solid rgba(100, 116, 139, 0.22);
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.1);
-  color: #64748b;
+  color: var(--ui-text-muted);
+  transition: background var(--ui-motion-fast), color var(--ui-motion-fast);
   font-size: 23px;
   font-weight: 800;
   line-height: 14px;
@@ -62,7 +68,7 @@
 .recent-projects-expand:hover,
 .recent-projects-expand:focus-visible {
   background: rgba(59, 130, 246, 0.13);
-  color: #2563eb;
+  color: var(--ui-accent-text);
 }
 
 html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-projects-expand {
@@ -93,10 +99,10 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-projects-expand:f
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    opacity 0.15s ease,
-    width 0.15s ease,
-    color 0.15s ease,
-    background 0.15s ease;
+    opacity var(--ui-motion-fast),
+    width var(--ui-motion-fast),
+    color var(--ui-motion-fast),
+    background var(--ui-motion-fast);
 }
 
 .recent-project-row:hover .recent-project-remove,
@@ -111,12 +117,12 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-projects-expand:f
 }
 
 .recent-project-title {
-  color: #0f172a;
+  color: var(--ui-text);
   background: transparent !important;
 }
 
 .recent-project-meta {
-  color: #64748b;
+  color: var(--ui-text-muted);
   background: transparent !important;
 }
 
@@ -128,57 +134,14 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .recent-projects-expand:f
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-html:is([data-theme="ice"], [data-theme="black-ice"])
-  :is(.open-project-card, .board-card, .variant-card) {
-  --welcome-card-hover-rotate-y: -0.9deg;
-  transform-style: preserve-3d;
-  will-change: transform;
-  transition:
-    transform 380ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 380ms ease,
-    border-color 260ms ease,
-    background 260ms ease;
+html[data-reduce-motion="true"] :is(.open-project-card, .board-card, .variant-card, .recent-project-row) {
+  transition: none;
+  transform: none !important;
 }
 
-html:is([data-theme="ice"], [data-theme="black-ice"])
-  :is(
-    .supported-board-grid .board-card:nth-child(even),
-    .variant-grid .variant-card:nth-child(even)
-  ) {
-  --welcome-card-hover-rotate-y: 0.9deg;
-}
-
-html:is([data-theme="ice"], [data-theme="black-ice"])
-  :is(
-    .open-project-card:not(.is-opening):hover,
-    .open-project-card:focus-within,
-    .board-card:hover,
-    .board-card:focus-visible,
-    .variant-card:hover,
-    .variant-card:focus-visible
-  ) {
-  transform: perspective(900px) rotateX(0.15deg)
-    rotateY(var(--welcome-card-hover-rotate-y)) translateY(-8px)
-    translateZ(12px);
-}
-
-html:is([data-theme="ice"], [data-theme="black-ice"])
-  :is(.open-project-card, .board-card, .variant-card)::after {
-  transform-origin: center;
-  transition:
-    opacity 280ms ease,
-    transform 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-html:is([data-theme="ice"], [data-theme="black-ice"])
-  :is(
-    .open-project-card:not(.is-opening):hover,
-    .open-project-card:focus-within,
-    .board-card:hover,
-    .board-card:focus-visible,
-    .variant-card:hover,
-    .variant-card:focus-visible
-  )::after {
-  opacity: 1;
-  transform: translateY(-1px) scaleX(1.04);
+@media (prefers-reduced-motion: reduce) {
+  :is(.open-project-card, .board-card, .variant-card, .recent-project-row) {
+    transition: none;
+    transform: none !important;
+  }
 }
