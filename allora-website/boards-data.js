@@ -2,6 +2,18 @@
 // Do not edit by hand — re-run `node generate-boards.mjs` instead.
 window.ALLORA_BOARDS_FULL = [
   {
+    "name": "Alchitry Cu V1",
+    "family": "iCE40",
+    "fpga": "iCE40HX8KCB132",
+    "pins": 9,
+    "clock": "100 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
+  },
+  {
     "name": "ButterStick",
     "family": "ECP5",
     "fpga": "LFE5UM5G-25F",
@@ -19,6 +31,18 @@ window.ALLORA_BOARDS_FULL = [
     "fpga": "LFE5U-25F",
     "pins": 1,
     "clock": "27 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "24,288 LUT4",
+    "mem": "1,008 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Colorlight 5A-75",
+    "family": "ECP5",
+    "fpga": "LFE5U-25F",
+    "pins": 7,
+    "clock": "25 MHz",
     "toolchain": "Yosys + NextPNR",
     "support": "full",
     "luts": "24,288 LUT4",
@@ -72,6 +96,18 @@ window.ALLORA_BOARDS_FULL = [
     "luts": "83,640 LUT4",
     "mem": "3,744 Kb BRAM",
     "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Fpgawars ALHAMBRA2",
+    "family": "iCE40",
+    "fpga": "iCE40HX8KTQ144:4K",
+    "pins": 8,
+    "clock": "12 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
   },
   {
     "name": "Hackaday Hadbadge",
@@ -136,7 +172,7 @@ window.ALLORA_BOARDS_FULL = [
   {
     "name": "iCESugar Pro",
     "family": "ECP5",
-    "fpga": "LFE5UM5G-25F",
+    "fpga": "LFE5U-25F",
     "pins": 15,
     "clock": "25 MHz",
     "toolchain": "Yosys + NextPNR",
@@ -156,6 +192,30 @@ window.ALLORA_BOARDS_FULL = [
     "luts": "5,280 LUT4",
     "mem": "120 Kb BRAM + 1 Mb SPRAM",
     "best": "Compact iCE40 dev with an onboard debugger and PMODs."
+  },
+  {
+    "name": "Kosagi Fomu Evt",
+    "family": "iCE40",
+    "fpga": "iCE40UP5KSG48",
+    "pins": 10,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Kosagi Fomu Hacker",
+    "family": "iCE40",
+    "fpga": "iCE40UP5KUWG30",
+    "pins": 10,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
   },
   {
     "name": "Lattice ECP5 EVN",
@@ -206,16 +266,16 @@ window.ALLORA_BOARDS_FULL = [
     "best": "Lattice ECP5 reference and peripheral evaluation."
   },
   {
-    "name": "LimeSDR Mini V2",
+    "name": "LimeSDR Mini V2 v2.3 default assembly",
     "family": "ECP5",
-    "fpga": "LFE5U",
+    "fpga": "LFE5U-45F-MG285",
     "pins": 14,
     "clock": "40 MHz",
     "toolchain": "Yosys + NextPNR",
     "support": "full",
-    "luts": "",
-    "mem": "",
-    "best": "Software-defined radio front-ends."
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
   },
   {
     "name": "LiteX Acorn Baseboard",
@@ -230,6 +290,138 @@ window.ALLORA_BOARDS_FULL = [
     "best": "LiteX SoCs on Acorn accelerator cards."
   },
   {
+    "name": "Logicbone",
+    "family": "ECP5",
+    "fpga": "LFE5UM5G-45F",
+    "pins": 15,
+    "clock": "25 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Konfekt",
+    "family": "ECP5",
+    "fpga": "LFE5U-12F",
+    "pins": 8,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "12,144 LUT4",
+    "mem": "304 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Kopflos",
+    "family": "ECP5",
+    "fpga": "LFE5U-12F",
+    "pins": 12,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "12,144 LUT4",
+    "mem": "304 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Kröte",
+    "family": "iCE40",
+    "fpga": "iCE40HX4KBG121",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Lakritz",
+    "family": "ECP5",
+    "fpga": "LFE5U-25F",
+    "pins": 1,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "24,288 LUT4",
+    "mem": "1,008 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Minze",
+    "family": "ECP5",
+    "fpga": "LFE5U-12F",
+    "pins": 3,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "12,144 LUT4",
+    "mem": "304 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Mozart",
+    "family": "ECP5",
+    "fpga": "LFE5U-45F",
+    "pins": 2,
+    "clock": "50 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Noir",
+    "family": "ECP5",
+    "fpga": "LFE5U-45F",
+    "pins": 11,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Schoko",
+    "family": "ECP5",
+    "fpga": "LFE5U-45F",
+    "pins": 12,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Vanille",
+    "family": "ECP5",
+    "fpga": "LFE5U-12F",
+    "pins": 1,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "12,144 LUT4",
+    "mem": "304 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Machdyne Vivaldi ML1",
+    "family": "ECP5",
+    "fpga": "LFE5U-45F",
+    "pins": 2,
+    "clock": "48 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "43,848 LUT4",
+    "mem": "1,944 Kb BRAM",
+    "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
     "name": "OrangeCrab r0.2 25F",
     "family": "ECP5",
     "fpga": "LFE5U-25F",
@@ -242,16 +434,52 @@ window.ALLORA_BOARDS_FULL = [
     "best": "Feather-form ECP5 work with DDR3 and native USB."
   },
   {
-    "name": "RCS Arctic Tern BMC Card",
-    "family": "ECP5",
-    "fpga": "LFE5UM5G",
-    "pins": 8,
-    "clock": "125 MHz",
+    "name": "QWERTY Embedded BeagleWire",
+    "family": "iCE40",
+    "fpga": "iCE40HX8KTQ144:4K",
+    "pins": 11,
+    "clock": "100 MHz",
     "toolchain": "Yosys + NextPNR",
     "support": "full",
     "luts": "",
     "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Radiona ULX4M V2",
+    "family": "ECP5",
+    "fpga": "LFE5UM5G-85F",
+    "pins": 20,
+    "clock": "25 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "83,640 LUT4",
+    "mem": "3,744 Kb BRAM",
     "best": "Open-source ECP5 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "Signaloid C0 microSD",
+    "family": "iCE40",
+    "fpga": "iCE40UP5KUWG30",
+    "pins": 8,
+    "clock": "12 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
+  },
+  {
+    "name": "TinyFPGA",
+    "family": "iCE40",
+    "fpga": "iCE40-LP8K",
+    "pins": 41,
+    "clock": "16 MHz",
+    "toolchain": "Yosys + NextPNR",
+    "support": "full",
+    "luts": "",
+    "mem": "",
+    "best": "Open-source iCE40 development on the full Yosys + nextpnr flow."
   },
   {
     "name": "TrellisBoard",
@@ -280,82 +508,28 @@ window.ALLORA_BOARDS_FULL = [
 ];
 window.ALLORA_BOARDS_PINS = [
   {
-    "name": "Arty A7",
+    "name": "AC701",
     "family": "Xilinx",
-    "fpga": "XC7A35T",
-    "pins": 24,
-    "clock": "100 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent BASYS3",
-    "family": "Xilinx",
-    "fpga": "XC7A35T",
-    "pins": 43,
-    "clock": "100 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent Nexys 4 DDR",
-    "family": "Xilinx",
-    "fpga": "XC7A100TCSG324",
-    "pins": 48,
-    "clock": "100 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent GENESYS2",
-    "family": "Xilinx",
-    "fpga": "XC7K325T",
-    "pins": 19,
+    "fpga": "XC7A200T",
+    "pins": 16,
     "clock": "200 MHz",
     "toolchain": "Vivado",
     "support": "pins"
   },
   {
-    "name": "Digilent Zedboard",
+    "name": "ADI ADRV2CRR-FMC",
     "family": "Xilinx",
-    "fpga": "XC7Z020CLG484",
-    "pins": 18,
-    "clock": "100 MHz",
+    "fpga": "XCZU11EG",
+    "pins": 13,
+    "clock": "123 MHz",
     "toolchain": "Vivado",
     "support": "pins"
   },
   {
-    "name": "Digilent PYNQ-Z1",
+    "name": "ADI PlutoSDR",
     "family": "Xilinx",
-    "fpga": "XC7Z020",
-    "pins": 31,
-    "clock": "125 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent Zybo Z7",
-    "family": "Other",
-    "fpga": "UNKNOWN",
-    "pins": 8,
-    "clock": "125 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent Cmod A7",
-    "family": "Other",
-    "fpga": "UNKNOWN",
-    "pins": 11,
-    "clock": "12 MHz",
-    "toolchain": "Vivado",
-    "support": "pins"
-  },
-  {
-    "name": "Digilent Arty S7",
-    "family": "Other",
-    "fpga": "UNKNOWN",
-    "pins": 22,
+    "fpga": "XC7Z010CLG225",
+    "pins": 4,
     "clock": "100 MHz",
     "toolchain": "Vivado",
     "support": "pins"
@@ -370,6 +544,240 @@ window.ALLORA_BOARDS_PINS = [
     "support": "pins"
   },
   {
+    "name": "Alchitry Mojo",
+    "family": "Xilinx",
+    "fpga": "XC6SLX9",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Alchitry Pt V2",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 16,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Alibaba VU13P",
+    "family": "Xilinx",
+    "fpga": "XCVU13P",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Alibaba XCKU3P",
+    "family": "Xilinx",
+    "fpga": "XCKU3P",
+    "pins": 47,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ALIENTEK Davinci Pro",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 7,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "AliExpress XC7K",
+    "family": "Xilinx",
+    "fpga": "XC7K70T",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ALINX AX70xx",
+    "family": "Xilinx",
+    "fpga": "XC7Z010CLG400",
+    "pins": 6,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ALINX AX7203",
+    "family": "Xilinx",
+    "fpga": "XC7A200T",
+    "pins": 18,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ALINX AXAU15",
+    "family": "Other",
+    "fpga": "XCAU15P-FFVB676-2-I",
+    "pins": 17,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ALINX AXU2CGA",
+    "family": "Xilinx",
+    "fpga": "XCZU2CG",
+    "pins": 10,
+    "clock": "25 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Altera Agilex 5E 065B Premium DevKit",
+    "family": "Intel",
+    "fpga": "UNKNOWN",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Analogue Pocket",
+    "family": "Intel",
+    "fpga": "5CEBA4F23C8",
+    "pins": 0,
+    "clock": "74 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Antmicro Artix DC-SCM",
+    "family": "Xilinx",
+    "fpga": "XC7A100TFGG484",
+    "pins": 4,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Antmicro Datacenter DDR4 Test Board",
+    "family": "Xilinx",
+    "fpga": "XC7K160TFFG676",
+    "pins": 20,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Antmicro LPDDR4 Test Board",
+    "family": "Xilinx",
+    "fpga": "XC7K70TFBG484",
+    "pins": 17,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Antmicro Sdi Mipi Video Converter",
+    "family": "Lattice Nexus",
+    "fpga": "LIFCL-40-9BG256C",
+    "pins": 18,
+    "clock": "40 MHz",
+    "toolchain": "radiant",
+    "support": "pins"
+  },
+  {
+    "name": "Arduino MKR Vidor 4000",
+    "family": "Intel",
+    "fpga": "10CL016YU256C8G",
+    "pins": 8,
+    "clock": "48 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Arrow AXE5000",
+    "family": "Intel",
+    "fpga": "A5EC008BM16AE6S",
+    "pins": 8,
+    "clock": "25 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Arty A7",
+    "family": "Xilinx",
+    "fpga": "XC7A35T",
+    "pins": 24,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Avalanche",
+    "family": "Microchip",
+    "fpga": "MPF300TS_ES-1FCG484",
+    "pins": 15,
+    "clock": "50 MHz",
+    "toolchain": "microchip",
+    "support": "pins"
+  },
+  {
+    "name": "Avnet AES-KU040",
+    "family": "Xilinx",
+    "fpga": "XCKU040",
+    "pins": 5,
+    "clock": "250 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Berkeley Lab Marble",
+    "family": "Xilinx",
+    "fpga": "XC7K160T",
+    "pins": 8,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Berkeley Lab Marble Mini",
+    "family": "Xilinx",
+    "fpga": "XC7A100T",
+    "pins": 9,
+    "clock": "20 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Berkeley Lab Obsidian",
+    "family": "Xilinx",
+    "fpga": "XC7A35T",
+    "pins": 16,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Bochenjingxin KINTEX7 Basec",
+    "family": "Xilinx",
+    "fpga": "XC7K325TFFG676",
+    "pins": 8,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Brisbane Silicon BRS-100 GW1NR9",
+    "family": "Gowin",
+    "fpga": "GW1NR-LV9QN88PC7/I6",
+    "pins": 6,
+    "clock": "27 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
     "name": "Cologne Chip GateMate EVB",
     "family": "GateMate",
     "fpga": "CCGM1A1",
@@ -379,12 +787,228 @@ window.ALLORA_BOARDS_PINS = [
     "support": "pins"
   },
   {
-    "name": "Tang Nano",
-    "family": "Gowin",
-    "fpga": "GW1NR-9C",
+    "name": "Colorlight i9+",
+    "family": "Xilinx",
+    "fpga": "XC7A50T",
+    "pins": 11,
+    "clock": "25 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Decklink Intensity Pro 4K",
+    "family": "Xilinx",
+    "fpga": "XC7K70T",
+    "pins": 4,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Decklink Mini 4K",
+    "family": "Xilinx",
+    "fpga": "XC7A100T",
+    "pins": 15,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Decklink Quad Hdmi Recorder",
+    "family": "Xilinx",
+    "fpga": "XCKU040",
+    "pins": 28,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Arty S7",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 22,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Arty Z7",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 13,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Atlys",
+    "family": "Xilinx",
+    "fpga": "XC6SLX45",
+    "pins": 29,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent BASYS3",
+    "family": "Xilinx",
+    "fpga": "XC7A35T",
+    "pins": 43,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Cmod A7",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 11,
+    "clock": "12 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent GENESYS2",
+    "family": "Xilinx",
+    "fpga": "XC7K325T",
     "pins": 19,
-    "clock": "27 MHz",
-    "toolchain": "gowin",
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent NetFPGA-SUME",
+    "family": "Xilinx",
+    "fpga": "XC7VX690TFFG1761",
+    "pins": 48,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Nexys 4 DDR",
+    "family": "Xilinx",
+    "fpga": "XC7A100TCSG324",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Nexys Video",
+    "family": "Xilinx",
+    "fpga": "XC7A200T",
+    "pins": 20,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent NEXYS4",
+    "family": "Xilinx",
+    "fpga": "XC7A100TCSG324",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent PYNQ-Z1",
+    "family": "Xilinx",
+    "fpga": "XC7Z020",
+    "pins": 31,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Zedboard",
+    "family": "Xilinx",
+    "fpga": "XC7Z020CLG484",
+    "pins": 18,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Digilent Zybo Z7",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 8,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "EBAZ4205",
+    "family": "Xilinx",
+    "fpga": "XC7Z010",
+    "pins": 1,
+    "clock": "33 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix T8F81 Dev Kit",
+    "family": "Efinix",
+    "fpga": "T8F81C2",
+    "pins": 5,
+    "clock": "33 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix TI375 C529 Dev Kit",
+    "family": "Efinix",
+    "fpga": "TI375C529C4",
+    "pins": 31,
+    "clock": "100 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix Titanium TI60 F225 Dev Kit",
+    "family": "Efinix",
+    "fpga": "TI60F225C3",
+    "pins": 16,
+    "clock": "25 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix Trion T120 BGA576 Dev Kit",
+    "family": "Efinix",
+    "fpga": "T120F576I4",
+    "pins": 36,
+    "clock": "40 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix Trion T20 BGA256 Dev Kit",
+    "family": "Efinix",
+    "fpga": "T20F256C4",
+    "pins": 23,
+    "clock": "50 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix Trion T20 Mipi Dev Kit",
+    "family": "Efinix",
+    "fpga": "T20F169C4",
+    "pins": 2,
+    "clock": "50 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Efinix TZ170 J484 Dev Kit",
+    "family": "Efinix",
+    "fpga": "TZ170J484I3",
+    "pins": 17,
+    "clock": "50 MHz",
+    "toolchain": "efinity",
     "support": "pins"
   },
   {
@@ -397,6 +1021,177 @@ window.ALLORA_BOARDS_PINS = [
     "support": "pins"
   },
   {
+    "name": "EGO1",
+    "family": "Xilinx",
+    "fpga": "XC7A35TICSG324",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Embedfire Rise Pro",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 48,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Enclustra Mercury KX2",
+    "family": "Xilinx",
+    "fpga": "XC7K160TFFG676",
+    "pins": 4,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Enclustra Mercury XU5",
+    "family": "Xilinx",
+    "fpga": "XCZU2EG",
+    "pins": 3,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Enclustra Mercury XU8 PE3",
+    "family": "Xilinx",
+    "fpga": "XCZU7EV",
+    "pins": 10,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Enclustra ST1",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Fairwaves Xtrx",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 14,
+    "clock": "60 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "GadgetFactory Papilio Pro",
+    "family": "Xilinx",
+    "fpga": "XC6SLX9",
+    "pins": 4,
+    "clock": "32 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Hseda Xc7a35t",
+    "family": "Xilinx",
+    "fpga": "XC7A35TFTG256",
+    "pins": 12,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Hyvision Pcie OPT01 Revf",
+    "family": "Xilinx",
+    "fpga": "XC7K70T",
+    "pins": 48,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Intergalaktik ULX5M GS",
+    "family": "GateMate",
+    "fpga": "CCGM1A1",
+    "pins": 29,
+    "clock": "25 MHz",
+    "toolchain": "gatemate",
+    "support": "pins"
+  },
+  {
+    "name": "Isx IM1283",
+    "family": "Xilinx",
+    "fpga": "XC7A100TFGG676",
+    "pins": 17,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Jungle Electronics FireAnt",
+    "family": "Efinix",
+    "fpga": "T8F81C2",
+    "pins": 4,
+    "clock": "33 MHz",
+    "toolchain": "efinity",
+    "support": "pins"
+  },
+  {
+    "name": "Kosagi NetV2",
+    "family": "Xilinx",
+    "fpga": "XC7A35T",
+    "pins": 3,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Krtkl Snickerdoodle",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "LambdaConcept PCIe Screamer",
+    "family": "Xilinx",
+    "fpga": "XC7A35T",
+    "pins": 18,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Lattice Certuspro Nx Evn",
+    "family": "Lattice Nexus",
+    "fpga": "LFCPNX",
+    "pins": 7,
+    "clock": "125 MHz",
+    "toolchain": "radiant",
+    "support": "pins"
+  },
+  {
+    "name": "Lattice Certuspro Nx Versa",
+    "family": "Lattice Nexus",
+    "fpga": "LFCPNX",
+    "pins": 35,
+    "clock": "125 MHz",
+    "toolchain": "radiant",
+    "support": "pins"
+  },
+  {
+    "name": "Lattice Certuspro Nx Vvml",
+    "family": "Lattice Nexus",
+    "fpga": "LFCPNX",
+    "pins": 23,
+    "clock": "24 MHz",
+    "toolchain": "radiant",
+    "support": "pins"
+  },
+  {
     "name": "Lattice Crosslink Nx Evn",
     "family": "Lattice Nexus",
     "fpga": "LIFCL-40-9BG400C",
@@ -404,6 +1199,960 @@ window.ALLORA_BOARDS_PINS = [
     "clock": "12 MHz",
     "toolchain": "radiant",
     "support": "pins"
+  },
+  {
+    "name": "Lattice Crosslink Nx Vip",
+    "family": "Lattice Nexus",
+    "fpga": "LIFCL",
+    "pins": 48,
+    "clock": "12 MHz",
+    "toolchain": "radiant",
+    "support": "pins"
+  },
+  {
+    "name": "Lattice MACHXO3",
+    "family": "Other",
+    "fpga": "LCMXO3L-6900C-5BG256C",
+    "pins": 11,
+    "clock": "12 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "LCKFB LJPi",
+    "family": "Gowin",
+    "fpga": "GW2A-LV18PG256C8/I7",
+    "pins": 11,
+    "clock": "50 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Limesdr Xtrx",
+    "family": "Xilinx",
+    "fpga": "XC7A50TCPG236",
+    "pins": 15,
+    "clock": "26 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Linsn RV901T",
+    "family": "Xilinx",
+    "fpga": "XC6SLX16",
+    "pins": 30,
+    "clock": "25 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Machdyne Kolsch",
+    "family": "GateMate",
+    "fpga": "CCGM1A1",
+    "pins": 8,
+    "clock": "48 MHz",
+    "toolchain": "gatemate",
+    "support": "pins"
+  },
+  {
+    "name": "Machdyne Mozart",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "48 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "MicroNova Mercury 2",
+    "family": "Xilinx",
+    "fpga": "XC7A35TFTG256",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Microphase A7 Lite",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 15,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Microsoft Catapult V3",
+    "family": "Intel",
+    "fpga": "10AXF40GAE",
+    "pins": 8,
+    "clock": "100 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Milk-V? FS01 DR1V90M",
+    "family": "Other",
+    "fpga": "DR1V90MEG484",
+    "pins": 9,
+    "clock": "25 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Mist",
+    "family": "Intel",
+    "fpga": "EP3C25E144C8",
+    "pins": 12,
+    "clock": "27 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "MNT RKX7",
+    "family": "Xilinx",
+    "fpga": "XC7K325T",
+    "pins": 32,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Modretro Chromatic",
+    "family": "Gowin",
+    "fpga": "GW5A-LV25PG256C1/I0",
+    "pins": 0,
+    "clock": "34 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Myir Myc J7A100T",
+    "family": "Xilinx",
+    "fpga": "XC7A100TFGG484",
+    "pins": 26,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Myminieye Runber",
+    "family": "Gowin",
+    "fpga": "GW1N-UV4LQ144C6/I5",
+    "pins": 41,
+    "clock": "12 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Newae CW305",
+    "family": "Xilinx",
+    "fpga": "XC7A100T",
+    "pins": 6,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Numato Aller",
+    "family": "Xilinx",
+    "fpga": "XC7A200T",
+    "pins": 28,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Numato Mimas A7",
+    "family": "Xilinx",
+    "fpga": "XC7A50TFGG484",
+    "pins": 45,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Numato Nereid",
+    "family": "Xilinx",
+    "fpga": "XC7K160T",
+    "pins": 18,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Numato Tagus",
+    "family": "Xilinx",
+    "fpga": "XC7A200T",
+    "pins": 33,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "OCP TAP Timecard",
+    "family": "Xilinx",
+    "fpga": "XC7A100T",
+    "pins": 30,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Olimex GateMate A1 EVB",
+    "family": "GateMate",
+    "fpga": "CCGM1A1",
+    "pins": 6,
+    "clock": "10 MHz",
+    "toolchain": "gatemate",
+    "support": "pins"
+  },
+  {
+    "name": "Opal Kelly XEM8320",
+    "family": "Other",
+    "fpga": "XCAU25P-FFVB676-2-E",
+    "pins": 39,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Opensourcesdrlab KINTEX7",
+    "family": "Xilinx",
+    "fpga": "XC7K325TFFG676",
+    "pins": 46,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Pano Logic G2",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 25,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Puzhi P7 Starlite",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 10,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Puzhi PZ A7xxT KFB",
+    "family": "Xilinx",
+    "fpga": "XC7A200TFBG484",
+    "pins": 0,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech 10CL006",
+    "family": "Intel",
+    "fpga": "10CL006YU256C8G",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech 5CEFA",
+    "family": "Intel",
+    "fpga": "5CEFA2F23C8",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech Artix-7",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 2,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech Cyclone 10 Starter Kit",
+    "family": "Intel",
+    "fpga": "10CL080YU484C8G",
+    "pins": 19,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Qmtech Daughterboard",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech EP4CE15 Starter Kit",
+    "family": "Intel",
+    "fpga": "EP4CE15F23C8",
+    "pins": 14,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech EP4CEx5",
+    "family": "Intel",
+    "fpga": "UNKNOWN",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech EP4CGX150",
+    "family": "Intel",
+    "fpga": "EP4CGX150DF27I7",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech Kintex-7 Devboard",
+    "family": "Xilinx",
+    "fpga": "XC7K325TFFG676",
+    "pins": 3,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Qmtech RP2040 Daughterboard",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Qmtech Wukong",
+    "family": "Other",
+    "fpga": "UNKNOWN",
+    "pins": 0,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech XC7A35T",
+    "family": "Xilinx",
+    "fpga": "XC7A35TFTG256",
+    "pins": 0,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QMTech XC7K325T",
+    "family": "Xilinx",
+    "fpga": "XC7K325TFFG676",
+    "pins": 1,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "QuickLogic QuickFeather",
+    "family": "QuickLogic",
+    "fpga": "QL-EOS-S3",
+    "pins": 6,
+    "clock": "100 MHz",
+    "toolchain": "quicklogic",
+    "support": "pins"
+  },
+  {
+    "name": "Redpitaya",
+    "family": "Xilinx",
+    "fpga": "XC7Z010CLG400",
+    "pins": 26,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "RZ EasyFPGA",
+    "family": "Intel",
+    "fpga": "EP4CE6E22C8",
+    "pins": 21,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Saanlima Pipistrello",
+    "family": "Xilinx",
+    "fpga": "XC6SLX45",
+    "pins": 25,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Scarabhardware miniSpartan6",
+    "family": "Xilinx",
+    "fpga": "XC6SLX25",
+    "pins": 26,
+    "clock": "32 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Seeed Spartan Edge Accelerator",
+    "family": "Xilinx",
+    "fpga": "XC7S15",
+    "pins": 2,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Siglent SDS1104X-E",
+    "family": "Xilinx",
+    "fpga": "XC7Z020",
+    "pins": 4,
+    "clock": "25 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed SLogic16U3",
+    "family": "Gowin",
+    "fpga": "GW5AT-LV15MG132C1/I0",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed Tang Console",
+    "family": "Gowin",
+    "fpga": "GW5AT-LV60PG484AC1/I0",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed Tang Mega 138K",
+    "family": "Gowin",
+    "fpga": "GW5AST-LV138PG484AC1/I0",
+    "pins": 8,
+    "clock": "50 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed Tang Nano",
+    "family": "Gowin",
+    "fpga": "GW1N-LV1QN48C6/I5",
+    "pins": 13,
+    "clock": "24 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed Tang Nano 4K",
+    "family": "Gowin",
+    "fpga": "GW1NSR-LV4CQN48PC6/I5",
+    "pins": 7,
+    "clock": "27 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Sipeed Tang Primer",
+    "family": "Other",
+    "fpga": "EG4S20BG256",
+    "pins": 7,
+    "clock": "50 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "SITLINV A-E115FB",
+    "family": "Intel",
+    "fpga": "EP4CE115F23I7",
+    "pins": 0,
+    "clock": "25 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "SITLINV STLV7325",
+    "family": "Xilinx",
+    "fpga": "XC7K325T",
+    "pins": 48,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "SITLINV XC7K420T",
+    "family": "Xilinx",
+    "fpga": "XC7K420T",
+    "pins": 43,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "SQRL Acorn",
+    "family": "Xilinx",
+    "fpga": "XC7A100T",
+    "pins": 5,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "SQRL FK33",
+    "family": "Xilinx",
+    "fpga": "XCVU33P",
+    "pins": 0,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "SQRL XCU1525",
+    "family": "Xilinx",
+    "fpga": "XCVU9P",
+    "pins": 48,
+    "clock": "300 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Tang Nano",
+    "family": "Gowin",
+    "fpga": "GW1NR-9C",
+    "pins": 19,
+    "clock": "27 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic Atum A3 Nano",
+    "family": "Intel",
+    "fpga": "A3CZ135BB18AE7S",
+    "pins": 9,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DE0-Nano",
+    "family": "Intel",
+    "fpga": "EP4CE22F17C6",
+    "pins": 43,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DE1-SoC",
+    "family": "Intel",
+    "fpga": "5CSEMA5F31C6",
+    "pins": 48,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DE10-Lite",
+    "family": "Intel",
+    "fpga": "10M50DAF484C7G",
+    "pins": 48,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DE10-Nano",
+    "family": "Intel",
+    "fpga": "5CSEBA6U23I7",
+    "pins": 11,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DE2-115",
+    "family": "Intel",
+    "fpga": "EP4CE115F29C7",
+    "pins": 33,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic DECA",
+    "family": "Intel",
+    "fpga": "10M50DAF484C6GES",
+    "pins": 21,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Terasic SoCKit",
+    "family": "Intel",
+    "fpga": "5CSXFC6D6F31C8ES",
+    "pins": 17,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz C10LP RefKit",
+    "family": "Intel",
+    "fpga": "10CL055YU484A7G",
+    "pins": 25,
+    "clock": "12 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz C10LPEK",
+    "family": "Intel",
+    "fpga": "10CL025YU256I7G",
+    "pins": 16,
+    "clock": "50 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz CR00010",
+    "family": "Intel",
+    "fpga": "10M08SAU169C8G",
+    "pins": 6,
+    "clock": "12 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz CYC1000",
+    "family": "Intel",
+    "fpga": "10CL025YU256C8G",
+    "pins": 15,
+    "clock": "12 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz MAX1000",
+    "family": "Intel",
+    "fpga": "10M08SAU169C8G",
+    "pins": 20,
+    "clock": "12 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz MEGA65",
+    "family": "Xilinx",
+    "fpga": "XC7A200TFBG484",
+    "pins": 13,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz MF C10LP 001",
+    "family": "Intel",
+    "fpga": "10CL025YU256I7G",
+    "pins": 0,
+    "clock": "80 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz MF MAX10 001",
+    "family": "Intel",
+    "fpga": "10M08SAU169C8G",
+    "pins": 0,
+    "clock": "116 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz MF001 Intel",
+    "family": "Intel",
+    "fpga": "10M08SAU169C8G",
+    "pins": 0,
+    "clock": "116 MHz",
+    "toolchain": "quartus",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz S7 Mini",
+    "family": "Xilinx",
+    "fpga": "XC7S25CSGA225",
+    "pins": 9,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz SMF2000",
+    "family": "Microchip",
+    "fpga": "M2GL010-1VF400",
+    "pins": 30,
+    "clock": "12 MHz",
+    "toolchain": "microchip",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TE0710",
+    "family": "Xilinx",
+    "fpga": "XC7A200TSBG484",
+    "pins": 1,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TE0711",
+    "family": "Xilinx",
+    "fpga": "XC7A35TCSG324",
+    "pins": 3,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TE0725",
+    "family": "Xilinx",
+    "fpga": "XC7A35TCSG324",
+    "pins": 7,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TE0741",
+    "family": "Xilinx",
+    "fpga": "XC7A200TFBG484",
+    "pins": 3,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TE0890",
+    "family": "Xilinx",
+    "fpga": "XC7S25FTGB196",
+    "pins": 1,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TEC0117",
+    "family": "Gowin",
+    "fpga": "GW1NR-LV9QN88C6/I5",
+    "pins": 14,
+    "clock": "12 MHz",
+    "toolchain": "gowin",
+    "support": "pins"
+  },
+  {
+    "name": "Trenz TEM0006",
+    "family": "Microchip",
+    "fpga": "MPF100T-1FCVG484",
+    "pins": 4,
+    "clock": "12 MHz",
+    "toolchain": "microchip",
+    "support": "pins"
+  },
+  {
+    "name": "TUL PYNQ-Z2",
+    "family": "Xilinx",
+    "fpga": "XC7Z020CLG400",
+    "pins": 7,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx Alveo U200",
+    "family": "Xilinx",
+    "fpga": "XCU200",
+    "pins": 48,
+    "clock": "300 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx Alveo U250",
+    "family": "Xilinx",
+    "fpga": "XCU250",
+    "pins": 48,
+    "clock": "300 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx Alveo U280",
+    "family": "Xilinx",
+    "fpga": "XCU280",
+    "pins": 17,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx KC705",
+    "family": "Xilinx",
+    "fpga": "XC7K325T",
+    "pins": 48,
+    "clock": "156 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx KCU105",
+    "family": "Xilinx",
+    "fpga": "XCKU040",
+    "pins": 48,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx KCU116",
+    "family": "Xilinx",
+    "fpga": "XCKU5P",
+    "pins": 48,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx KV260",
+    "family": "Xilinx",
+    "fpga": "XCK26",
+    "pins": 0,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx SP605",
+    "family": "Xilinx",
+    "fpga": "XC6SLX45T",
+    "pins": 32,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx VC707",
+    "family": "Xilinx",
+    "fpga": "XC7VX485TFFG1761",
+    "pins": 48,
+    "clock": "156 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx VCU118",
+    "family": "Xilinx",
+    "fpga": "XCVU9P",
+    "pins": 48,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx VCU128",
+    "family": "Xilinx",
+    "fpga": "XCVU37P",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx ZC706",
+    "family": "Xilinx",
+    "fpga": "XC7Z045FFG900",
+    "pins": 35,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx ZCU102",
+    "family": "Xilinx",
+    "fpga": "XCZU9EG",
+    "pins": 48,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx ZCU104",
+    "family": "Xilinx",
+    "fpga": "XCZU7EV",
+    "pins": 22,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx ZCU106",
+    "family": "Xilinx",
+    "fpga": "XCZU7EV",
+    "pins": 48,
+    "clock": "125 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "Xilinx ZCU216",
+    "family": "Xilinx",
+    "fpga": "XCZU49DR",
+    "pins": 48,
+    "clock": "100 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "YPCB 00338 1.1",
+    "family": "Xilinx",
+    "fpga": "XC7K480T",
+    "pins": 19,
+    "clock": "200 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
+  },
+  {
+    "name": "ZTEX 2.13",
+    "family": "Xilinx",
+    "fpga": "XC7A35TCSG324",
+    "pins": 0,
+    "clock": "48 MHz",
+    "toolchain": "Vivado",
+    "support": "pins"
   }
 ];
-window.ALLORA_PINS_TOTAL = 202;
+window.ALLORA_PINS_TOTAL = 183;

@@ -3,19 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Allora FPGA is an open-source FPGA workbench for enthusiasts. Write RTL, run it on a visual Virtual FPGA, then build and program supported open-hardware boards from one app." />
+    <meta name="description" content="Allora FPGA is an open-source FPGA workbench for enthusiasts. Write RTL, run it on a visual Virtual FPGA, then build and program supported open-hardware boards from one app. Now with AI chat and The Allora Link design tools." />
     <title>Allora FPGA - FPGA Design, Simulation, and Programming</title>
     <link rel="icon" type="image/png" href="allora-fpga.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260925b" />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="styles.css?v=20261007c" />
     <script src="boards-data.js"></script>
     <script>
       (() => {
         try {
           const saved = localStorage.getItem("allora-site-theme");
-          const theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "black-ice" : "ice");
+          const theme = ["ice", "black-ice"].includes(saved) ? saved : (matchMedia("(prefers-color-scheme: dark)").matches ? "black-ice" : "ice");
           document.documentElement.dataset.theme = theme;
         } catch (_) {}
       })();
@@ -31,14 +29,15 @@
           <img src="allora-fpga.png" alt="" width="38" height="38" />
           <span><strong>ALLORA</strong><small>FPGA</small></span>
         </a>
-        <div class="nav-links">
-          <a href="#why">Why Allora</a><a href="#workflow">Workflow</a><a href="#build">Build</a><a href="#simulator">Simulator</a><a href="#compare">Boards</a><a href="#integrations">Integrations</a>
+        <div class="nav-links" id="navLinks">
+          <a href="#why">Why Allora</a><a href="#workflow">Workflow</a><a href="#allora-link">Allora Link</a><a href="#build">Build</a><a href="#simulator">Simulator</a><a href="#compare">Boards</a><a href="#integrations">Integrations</a>
         </div>
         <div class="nav-actions">
           <button class="theme-switch" id="themeSwitch" type="button" aria-label="Switch to Black Ice" aria-pressed="false">
             <span class="theme-switch-track" aria-hidden="true"><span></span></span><span id="themeLabel">Ice</span>
           </button>
           <a class="button button-primary button-small" href="#download">Get Allora</a>
+          <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
         </div>
       </nav>
     </header>
@@ -50,13 +49,13 @@
           <div class="hero-copy reveal">
             <p class="eyebrow">FPGA Development Environment</p>
             <h1>RTL.<br /><span>Virtual Simulator.</span><br />Full FPGA Build<br />and Program Pipeline.</h1>
-            <p class="hero-lead">Allora brings the open FPGA workflow into one desktop environment. Design and simulate your hardware virtually, then synthesize, place and route, and program all supported open-hardware FPGA boards without leaving the app.</p>
+            <p class="hero-lead">Allora brings the open FPGA workflow into one desktop environment. Design and simulate your hardware virtually, then synthesize, place and route, and program all supported open-hardware FPGA boards without leaving the app. Now with AI chat and three connected design tools in The Allora Link.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#download">Download Allora FPGA</a>
               <a class="button button-secondary" href="#simulator">Explore Virtual FPGA</a>
             </div>
             <div class="hero-proof" aria-label="Product highlights">
-              <span><b>01</b> Verilator simulation</span><span><b>02</b> Yosys + nextpnr</span><span><b>03</b> Visual pin mapping</span>
+              <span><b>01</b> Verilator simulation</span><span><b>02</b> Yosys + nextpnr</span><span><b>03</b> Visual pin mapping</span><a href="#allora-link"><b>04</b> The Allora Link</a>
             </div>
           </div>
           <div class="mode-stack reveal" aria-label="Allora execution targets">
@@ -100,7 +99,23 @@
               </ol></article>
             </div>
           </div>
-          <div class="support-note surface reveal"><div class="support-icon" aria-hidden="true">⌁</div><div><strong>Built around open hardware.</strong><p>The complete build and program path is available for 41 open source boards. Allora provides visual pin mapping and constraint generation for a much wider set of mainstream boards.</p></div></div>
+          <div class="support-note surface reveal"><div class="support-icon" aria-hidden="true">⌁</div><div><strong>Built around open hardware.</strong><p>The open build flow is available for <span id="workflowCount">42</span> board entries, with programming support depending on the board and programmer. Allora provides visual pin mapping and constraint generation for a much wider set of mainstream boards.</p></div></div>
+        </div>
+      </section>
+
+      <section class="section allora-link" id="allora-link">
+        <div class="shell">
+          <div class="section-heading centered reveal"><p class="eyebrow">Connected design tools</p><h2 class="display-title">The Allora Link.</h2><p class="section-lead">Three design tools that connect your RTL, peripherals, memory assets, and register maps. Open them from Home or inside your project.</p></div>
+          <div class="build-tour-shell surface reveal" data-feature-tabs>
+            <div class="build-tabs" role="tablist" aria-label="The Allora Link design tools">
+              <button type="button" role="tab" id="link-tab-peripherals" aria-controls="link-panel-peripherals" aria-selected="true" tabindex="0">01 <span>Peripheral Workbench</span></button>
+              <button type="button" role="tab" id="link-tab-memory" aria-controls="link-panel-memory" aria-selected="false" tabindex="-1">02 <span>Memory Asset Studio</span></button>
+              <button type="button" role="tab" id="link-tab-registers" aria-controls="link-panel-registers" aria-selected="false" tabindex="-1">03 <span>Register Builder</span></button>
+            </div>
+            <div class="build-panel" role="tabpanel" id="link-panel-peripherals" aria-labelledby="link-tab-peripherals" tabindex="0"><div class="build-copy"><p class="eyebrow">01 / Connect your design</p><h3>A visual workbench for your real RTL.</h3><p>Arrange buttons, switches, LEDs, seven-segment displays, and a UART terminal. Connect each device to your RTL ports, then compile with Verilator to run, pause, and step through live behavior.</p><p class="feature-detail">Devices, connections, and layout are saved with the project.</p></div><figure class="feature-visual"><img src="assets/peripheral-workbench-ice.webp" data-ice-src="assets/peripheral-workbench-ice.webp" data-black-src="assets/peripheral-workbench-black-ice.webp" alt="Allora Peripheral Workbench running mapped RTL devices and a UART terminal" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Peripheral Workbench · real RTL project</figcaption></figure></div>
+            <div class="build-panel" role="tabpanel" id="link-panel-memory" aria-labelledby="link-tab-memory" tabindex="0" hidden><div class="build-copy"><p class="eyebrow">02 / Create memory assets</p><h3>Turn images and data into FPGA memory.</h3><p>Import images, binary files, or numeric tables. Preview monochrome, RGB565, indexed, integer, or fixed-point conversions, inspect the encoded words, and generate .hex files with an optional Verilog ROM.</p><p class="feature-detail">Generated assets work with the editor, simulation, and physical builds.</p></div><figure class="feature-visual"><img src="assets/memory-asset-studio-ice.webp" data-ice-src="assets/memory-asset-studio-ice.webp" data-black-src="assets/memory-asset-studio-black-ice.webp" alt="Allora Memory Asset Studio showing a converted asset and its memory words" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Memory Asset Studio · converted project asset</figcaption></figure></div>
+            <div class="build-panel" role="tabpanel" id="link-panel-registers" aria-labelledby="link-tab-registers" tabindex="0" hidden><div class="build-copy"><p class="eyebrow">03 / Define your interface</p><h3>One register map for hardware and firmware.</h3><p>Define registers, byte offsets, bit fields, resets, and access modes with a live bit layout and validation. Generate a SystemVerilog register bank, matching C header, JSON map, and wiring snippet.</p><p class="feature-detail">Optional reviewed wrappers help connect the generated bank to your RTL.</p></div><figure class="feature-visual"><img src="assets/register-builder-ice.webp" data-ice-src="assets/register-builder-ice.webp" data-black-src="assets/register-builder-black-ice.webp" alt="Allora Register Builder showing a register map with named bit fields" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Register Builder · hardware and firmware map</figcaption></figure></div>
+          </div>
         </div>
       </section>
 
@@ -125,13 +140,13 @@
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
                     <figure class="build-visual" aria-label="Choose a board">
-                      <img class="theme-shot theme-shot-ice" src="build-boards-ice.png" data-full-src="build-boards-ice.png" alt="Allora Ice Build screen showing eight available FPGA boards and an empty Recent Projects panel" loading="lazy">
-                      <img class="theme-shot theme-shot-black-ice" src="build-boards-black-ice.png" data-full-src="build-boards-black-ice.png" alt="Allora Black Ice Build screen showing eight available FPGA boards and an empty Recent Projects panel" loading="lazy">
+                      <img class="theme-shot theme-shot-ice" src="assets/build-boards-ice-framed.svg" data-full-src="assets/build-boards-ice-framed.svg" alt="Allora Ice Build screen showing eight available FPGA boards and an empty Recent Projects panel" loading="lazy" width="1863" height="1069">
+                      <img class="theme-shot theme-shot-black-ice" src="assets/build-boards-black-ice-framed.svg" data-full-src="assets/build-boards-black-ice-framed.svg" alt="Allora Black Ice Build screen showing eight available FPGA boards and an empty Recent Projects panel" loading="lazy" width="1862" height="1069">
                       <figcaption>Choose a board</figcaption>
                     </figure>
                     <figure class="build-visual" aria-label="Configure the project">
-                      <img class="theme-shot theme-shot-ice" src="build-setup-ice.png" data-full-src="build-setup-ice.png" alt="Allora Ice Colorlight i5 project setup showing project details, project structure, and board summary" loading="lazy">
-                      <img class="theme-shot theme-shot-black-ice" src="build-setup-black-ice.png" data-full-src="build-setup-black-ice.png" alt="Allora Black Ice Colorlight i5 project setup showing project details, project structure, and board summary" loading="lazy">
+                      <img class="theme-shot theme-shot-ice" src="assets/build-setup-ice-framed.svg" data-full-src="assets/build-setup-ice-framed.svg" alt="Allora Ice Colorlight i5 project setup showing project details, project structure, and board summary" loading="lazy" width="1862" height="1069">
+                      <img class="theme-shot theme-shot-black-ice" src="assets/build-setup-black-ice-framed.svg" data-full-src="assets/build-setup-black-ice-framed.svg" alt="Allora Black Ice Colorlight i5 project setup showing project details, project structure, and board summary" loading="lazy" width="1862" height="1069">
                       <figcaption>Then configure the project</figcaption>
                     </figure>
                   </div>
@@ -143,9 +158,9 @@
               <div class="build-carousel" aria-label="Editor screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-dff-ice.png" data-full-src="build-dff-ice.png" alt="Allora Ice editor displaying D flip-flop Verilog source" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-dff-black-ice.png" data-full-src="build-dff-black-ice.png" alt="Allora Black Ice editor displaying D flip-flop Verilog source" loading="lazy"><figcaption>D flip-flop</figcaption></figure>
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-mux-ice.png" data-full-src="build-mux-ice.png" alt="Allora Ice editor displaying 4:1 mux Verilog source" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-mux-black-ice.png" data-full-src="build-mux-black-ice.png" alt="Allora Black Ice editor displaying 4:1 mux Verilog source" loading="lazy"><figcaption>4:1 mux</figcaption></figure>
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-pwm-ice.png" data-full-src="build-pwm-ice.png" alt="Allora Ice editor displaying PWM signal Verilog source" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-pwm-black-ice.png" data-full-src="build-pwm-black-ice.png" alt="Allora Black Ice editor displaying PWM signal Verilog source" loading="lazy"><figcaption>PWM Signal</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-dff-ice-framed.svg" data-full-src="assets/build-dff-ice-framed.svg" alt="Allora Ice editor displaying D flip-flop Verilog source" loading="lazy" width="1862" height="1069"><img class="theme-shot theme-shot-black-ice" src="assets/build-dff-black-ice-framed.svg" data-full-src="assets/build-dff-black-ice-framed.svg" alt="Allora Black Ice editor displaying D flip-flop Verilog source" loading="lazy" width="1862" height="1069"><figcaption>D flip-flop</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-mux-ice-framed.svg" data-full-src="assets/build-mux-ice-framed.svg" alt="Allora Ice editor displaying 4:1 mux Verilog source" loading="lazy" width="1862" height="1070"><img class="theme-shot theme-shot-black-ice" src="assets/build-mux-black-ice-framed.svg" data-full-src="assets/build-mux-black-ice-framed.svg" alt="Allora Black Ice editor displaying 4:1 mux Verilog source" loading="lazy" width="1862" height="1070"><figcaption>4:1 mux</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-pwm-ice-framed.svg" data-full-src="assets/build-pwm-ice-framed.svg" alt="Allora Ice editor displaying PWM signal Verilog source" loading="lazy" width="1862" height="1070"><img class="theme-shot theme-shot-black-ice" src="assets/build-pwm-black-ice-framed.svg" data-full-src="assets/build-pwm-black-ice-framed.svg" alt="Allora Black Ice editor displaying PWM signal Verilog source" loading="lazy" width="1862" height="1070"><figcaption>PWM Signal</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -155,8 +170,8 @@
               <div class="build-carousel" aria-label="Testbench screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-testbench-ice.png" data-full-src="build-testbench-ice.png" alt="Allora Ice testbench with generated VCD signals" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-testbench-black-ice.png" data-full-src="build-testbench-black-ice.png" alt="Allora Black Ice testbench with generated VCD signals" loading="lazy"><figcaption>Testbench and VCD viewer · app capture</figcaption></figure>
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-waveform-ice.png" alt="Allora Ice live waveform showing clock, inputs, and LED output" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-waveform-black-ice.png" alt="Allora Black Ice live waveform showing clock, inputs, and LED output" loading="lazy"><figcaption>Live signal waveform · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-testbench-ice-framed.svg" data-full-src="assets/build-testbench-ice-framed.svg" alt="Allora Ice testbench with generated VCD signals" loading="lazy" width="1862" height="1070"><img class="theme-shot theme-shot-black-ice" src="assets/build-testbench-black-ice-framed.svg" data-full-src="assets/build-testbench-black-ice-framed.svg" alt="Allora Black Ice testbench with generated VCD signals" loading="lazy" width="1862" height="1070"><figcaption>Testbench and VCD viewer · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-waveform-ice.webp" alt="Allora Ice live waveform showing clock, inputs, and LED output" loading="lazy" width="2000" height="579"><img class="theme-shot theme-shot-black-ice" src="assets/build-waveform-black-ice.webp" alt="Allora Black Ice live waveform showing clock, inputs, and LED output" loading="lazy" width="2000" height="579"><figcaption>Live signal waveform · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -166,8 +181,8 @@
               <div class="build-carousel" aria-label="Synthesis screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-synthesis-ice.png" alt="Allora Ice D flip-flop synthesis report showing one register" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-synthesis-black-ice.png" alt="Allora Black Ice D flip-flop synthesis report showing one register" loading="lazy"><figcaption>DFF synthesis report · app capture</figcaption></figure>
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-dff-diagram-ice.svg" alt="Illustrated D flip-flop synthesis diagram with D, clock, reset, and Q ports in Ice styling" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-dff-diagram-black-ice.svg" alt="Illustrated D flip-flop synthesis diagram with D, clock, reset, and Q ports in Black Ice styling" loading="lazy"><figcaption>DFF logic sketch · based on the report</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-synthesis-ice.webp" alt="Allora Ice D flip-flop synthesis report showing one register" loading="lazy" width="2000" height="1500"><img class="theme-shot theme-shot-black-ice" src="assets/build-synthesis-black-ice.webp" alt="Allora Black Ice D flip-flop synthesis report showing one register" loading="lazy" width="2000" height="1500"><figcaption>DFF synthesis report · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-dff-diagram-ice.svg" alt="Illustrated D flip-flop synthesis diagram with D, clock, reset, and Q ports in Ice styling" loading="lazy" width="1200" height="900"><img class="theme-shot theme-shot-black-ice" src="build-dff-diagram-black-ice.svg" alt="Illustrated D flip-flop synthesis diagram with D, clock, reset, and Q ports in Black Ice styling" loading="lazy" width="1200" height="900"><figcaption>DFF logic sketch · based on the report</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -177,7 +192,7 @@
               <div class="build-carousel" aria-label="Pins screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-pins-ice.png" alt="Allora Ice pin mapping for a D flip-flop on iCEBreaker" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-pins-black-ice.png" alt="Allora Black Ice pin mapping for a D flip-flop on iCEBreaker" loading="lazy"><figcaption>iCEBreaker assignments · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-pins-ice.webp" alt="Allora Ice pin mapping for a D flip-flop on iCEBreaker" loading="lazy" width="2000" height="1500"><img class="theme-shot theme-shot-black-ice" src="assets/build-pins-black-ice.webp" alt="Allora Black Ice pin mapping for a D flip-flop on iCEBreaker" loading="lazy" width="2000" height="1500"><figcaption>iCEBreaker assignments · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -187,7 +202,7 @@
               <div class="build-carousel" aria-label="Bitstream screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-bitstream-ice.png" alt="Allora Ice bitstream screen showing a generated iCEBreaker BIN file" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-bitstream-black-ice.png" alt="Allora Black Ice bitstream screen showing a generated iCEBreaker BIN file" loading="lazy"><figcaption>Generated iCEBreaker bitstream · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-bitstream-ice.webp" alt="Allora Ice bitstream screen showing a generated iCEBreaker BIN file" loading="lazy" width="2000" height="1500"><img class="theme-shot theme-shot-black-ice" src="assets/build-bitstream-black-ice.webp" alt="Allora Black Ice bitstream screen showing a generated iCEBreaker BIN file" loading="lazy" width="2000" height="1500"><figcaption>Generated iCEBreaker bitstream · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -197,7 +212,7 @@
               <div class="build-carousel" aria-label="Timing screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual timing-visual"><img class="theme-shot theme-shot-ice" src="build-timing-ice.png" alt="Allora Ice post-route timing summary for the D flip-flop" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-timing-black-ice.png" alt="Allora Black Ice post-route timing summary for the D flip-flop" loading="lazy"><figcaption>Post-route timing summary · app capture</figcaption></figure>
+                    <figure class="build-visual timing-visual"><img class="theme-shot theme-shot-ice" src="assets/build-timing-ice.webp" alt="Allora Ice post-route timing summary for the D flip-flop" loading="lazy" width="960" height="445"><img class="theme-shot theme-shot-black-ice" src="assets/build-timing-black-ice.webp" alt="Allora Black Ice post-route timing summary for the D flip-flop" loading="lazy" width="960" height="445"><figcaption>Post-route timing summary · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -207,7 +222,7 @@
               <div class="build-carousel" aria-label="Program screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-program-ice.png" alt="Allora Ice programming screen with DFF bitstream selected" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-program-black-ice.png" alt="Allora Black Ice programming screen with DFF bitstream selected" loading="lazy"><figcaption>Program screen · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-program-ice.webp" alt="Allora Ice programming screen with DFF bitstream selected" loading="lazy" width="2000" height="1500"><img class="theme-shot theme-shot-black-ice" src="assets/build-program-black-ice.webp" alt="Allora Black Ice programming screen with DFF bitstream selected" loading="lazy" width="2000" height="1500"><figcaption>Program screen · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -217,7 +232,7 @@
               <div class="build-carousel" aria-label="Serial screenshots">
                 <div class="build-carousel-viewport">
                   <div class="build-carousel-track">
-                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="build-serial-ice.png" alt="Allora Ice serial monitor with port, baud, and console controls" loading="lazy"><img class="theme-shot theme-shot-black-ice" src="build-serial-black-ice.png" alt="Allora Black Ice serial monitor with port, baud, and console controls" loading="lazy"><figcaption>Serial monitor · app capture</figcaption></figure>
+                    <figure class="build-visual"><img class="theme-shot theme-shot-ice" src="assets/build-serial-ice.webp" alt="Allora Ice serial monitor with port, baud, and console controls" loading="lazy" width="2000" height="1500"><img class="theme-shot theme-shot-black-ice" src="assets/build-serial-black-ice.webp" alt="Allora Black Ice serial monitor with port, baud, and console controls" loading="lazy" width="2000" height="1500"><figcaption>Serial monitor · app capture</figcaption></figure>
                   </div>
                 </div>
               </div>
@@ -233,9 +248,9 @@
             <p class="section-lead">Allora discovers your top level ports and runs the design through a Verilator model. See your RTL running with no hardware required.</p>
           </div>
           <div class="capture-story reveal">
-            <figure class="app-capture editor-capture surface"><div class="capture-label"><span>01</span> Write the design</div><img class="theme-shot theme-shot-ice" src="app-editor-ice.png" alt="Allora editor in Ice mode showing a SystemVerilog LED counter" loading="lazy" /><img class="theme-shot theme-shot-black-ice" src="app-editor-black-ice.png" alt="Allora editor in Black Ice mode showing a SystemVerilog LED counter" loading="lazy" /></figure>
+            <figure class="app-capture editor-capture surface"><div class="capture-label"><span>01</span> Write the design</div><img class="theme-shot theme-shot-ice" src="assets/app-editor-ice.webp" alt="Allora editor in Ice mode showing a SystemVerilog LED counter" loading="lazy" width="1800" height="1224" /><img class="theme-shot theme-shot-black-ice" src="assets/app-editor-black-ice.webp" alt="Allora editor in Black Ice mode showing a SystemVerilog LED counter" loading="lazy" width="1800" height="1224" /></figure>
             <div class="capture-connector" aria-hidden="true"><span></span><b>same RTL</b><span></span></div>
-            <figure class="app-capture simulator-capture surface"><div class="capture-label"><span>02</span> Run it visually</div><img class="theme-shot theme-shot-ice" src="app-simulator-ice.png" alt="Allora Virtual FPGA in Ice mode running the LED counter with mapped controls and illuminated LEDs" loading="lazy" /><img class="theme-shot theme-shot-black-ice" src="app-simulator-black-ice.png" alt="Allora Virtual FPGA in Black Ice mode running the LED counter with mapped controls and illuminated LEDs" loading="lazy" /></figure>
+            <figure class="app-capture simulator-capture surface"><div class="capture-label"><span>02</span> Run it visually</div><img class="theme-shot theme-shot-ice" src="assets/app-simulator-ice.webp" alt="Allora Virtual FPGA in Ice mode running the LED counter with mapped controls and illuminated LEDs" loading="lazy" width="1800" height="1224" /><img class="theme-shot theme-shot-black-ice" src="assets/app-simulator-black-ice.webp" alt="Allora Virtual FPGA in Black Ice mode running the LED counter with mapped controls and illuminated LEDs" loading="lazy" width="1800" height="1224" /></figure>
           </div>
           <div class="simulator-facts reveal">
             <article><b>Real execution</b><p>A compiled native Verilator model drives every value shown in the interface.</p></article>
@@ -247,29 +262,39 @@
 
       <section class="section compare" id="compare">
         <div class="shell">
-          <div class="section-heading centered reveal"><p class="eyebrow">Compare boards</p><h2 class="display-title">Choose the right target.</h2><p class="section-lead">Compare fully supported open-toolchain boards, then browse the wider pin-mapping catalog.</p></div>
-          <div class="support-legend reveal"><span><i class="dot dot-full"></i><b id="fullCount">—</b> full open workflow</span><span><i class="dot dot-pins"></i><b id="pinCount">—</b> pin mapping / constraints</span></div>
+          <div class="section-heading centered reveal"><p class="eyebrow">Compare boards</p><h2 class="display-title">Choose the right target.</h2><p class="section-lead">Compare boards with an open build flow, then browse the wider pin-mapping catalog. Programming support depends on the board and programmer.</p></div>
+          <div class="support-legend reveal"><span><i class="dot dot-full"></i><b id="fullCount">—</b> open build flow</span><span><i class="dot dot-pins"></i><b id="pinCount">—</b> pin mapping / constraints</span></div>
           <div class="compare-controls reveal"><label><span>Board A</span><select id="boardA"></select></label><i>versus</i><label><span>Board B</span><select id="boardB"></select></label></div>
-          <div class="compare-table surface reveal" id="compareTable"></div>
-          <div class="catalog surface reveal"><div class="catalog-head"><div><strong>Board catalog</strong><span>Full builds and visual pin data in one place</span></div><label class="catalog-search"><span class="sr-only">Search boards</span><input id="boardSearch" type="search" placeholder="Search board, family, or FPGA…" /></label></div><div class="catalog-list" id="catalogList"></div><p class="catalog-empty" id="catalogEmpty" hidden>No boards match that search.</p></div>
+          <div class="compare-table surface reveal" id="compareTable" role="table" aria-label="Selected FPGA board specifications"></div>
+          <div class="catalog surface reveal"><div class="catalog-head"><div><strong>Board catalog</strong><span>Open builds and visual pin data in one place</span></div><label class="catalog-search"><span class="sr-only">Search boards</span><input id="boardSearch" type="search" placeholder="Search board, family, or FPGA…" /></label></div><div class="catalog-list" id="catalogList"></div><p class="catalog-empty" id="catalogEmpty" hidden>No boards match that search.</p><div class="catalog-footer"><p id="catalogStatus" role="status"></p><button class="button button-secondary button-small" id="catalogMore" type="button">Show more boards</button></div></div>
         </div>
       </section>
 
       <section class="section inside">
         <div class="shell inside-grid reveal">
           <div class="inside-copy"><p class="eyebrow">Inside Allora</p><h2 class="display-title">One environment for open FPGA Development</h2><p class="section-lead">Project files remain standard. Tool output stays visible. Virtual and physical mappings remain separate, so simulation settings never affect the hardware constraints.</p><ul class="check-list"><li>Multi-file HDL projects</li><li>Testbench simulation and VCD waveforms</li><li>Build health and history</li><li>Serial monitor and programming</li></ul></div>
-          <figure class="welcome-capture surface"><img class="theme-shot theme-shot-ice" src="app-welcome-ice.png" alt="Allora’s Simulate and Build welcome screen in Ice mode" loading="lazy" /><img class="theme-shot theme-shot-black-ice" src="app-welcome-black-ice.png" alt="Allora’s Simulate and Build welcome screen in Black Ice mode" loading="lazy" /></figure>
+          <figure class="welcome-capture surface"><img src="assets/inside-allora.png" alt="Allora home with Simulate, Build, and design tools over the Refraction background" loading="lazy" width="3248" height="1958" /></figure>
         </div>
       </section>
 
-      <section class="section visual-design">
+      <section class="section visual-design" id="backgrounds">
         <div class="shell">
-          <div class="section-heading split-heading reveal"><div><p class="eyebrow">Ice &amp; Black Ice</p><h2 class="display-title">A workspace engineered to look as sharp as it works.</h2></div><p class="section-lead">Choose the bright clarity of Ice or the deep contrast of Black Ice. Both themes carry the same focused workspace through frosted surfaces, glassy depth, crisp highlights, and luminous accents.</p></div>
+          <div class="section-heading split-heading reveal"><div><p class="eyebrow">Ice &amp; Black Ice</p><h2 class="display-title">A workspace engineered to look as sharp as it works.</h2></div><p class="section-lead">Choose the bright clarity of Ice or the deep contrast of Black Ice. Both themes carry the same focused workspace through frosted surfaces, glassy depth, crisp highlights, and luminous accents. Choose Trace, Refraction, or Molecules to set the atmosphere.</p></div>
+          <div class="background-tour surface reveal" data-feature-tabs>
+            <div class="build-tabs" role="tablist" aria-label="Welcome backgrounds">
+              <button type="button" role="tab" id="background-tab-refraction" aria-controls="background-panel-refraction" aria-selected="true" tabindex="0"><span>Refraction</span></button>
+              <button type="button" role="tab" id="background-tab-trace" aria-controls="background-panel-trace" aria-selected="false" tabindex="-1"><span>Trace</span></button>
+              <button type="button" role="tab" id="background-tab-molecules" aria-controls="background-panel-molecules" aria-selected="false" tabindex="-1"><span>Molecules</span></button>
+            </div>
+            <div class="background-preview" role="tabpanel" id="background-panel-refraction" aria-labelledby="background-tab-refraction" tabindex="0"><figure class="feature-visual"><img src="assets/home-ultramatte-ice.webp" data-ice-src="assets/home-ultramatte-ice.webp" data-black-src="assets/home-ultramatte-black-ice.webp" alt="Allora home with the Refraction background" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Refraction · switch Ice / Black Ice above to compare</figcaption></figure></div>
+            <div class="background-preview" role="tabpanel" id="background-panel-trace" aria-labelledby="background-tab-trace" tabindex="0" hidden><figure class="feature-visual"><img src="assets/home-trace-ice.webp" data-ice-src="assets/home-trace-ice.webp" data-black-src="assets/home-trace-black-ice.webp" alt="Allora home with the Trace background" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Trace · switch Ice / Black Ice above to compare</figcaption></figure></div>
+            <div class="background-preview" role="tabpanel" id="background-panel-molecules" aria-labelledby="background-tab-molecules" tabindex="0" hidden><figure class="feature-visual"><img src="assets/home-molecules-ice.webp" data-ice-src="assets/home-molecules-ice.webp" data-black-src="assets/home-molecules-black-ice.webp" alt="Allora home with the Molecules background" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>Molecules · switch Ice / Black Ice above to compare</figcaption></figure></div>
+          </div>
           <div class="theme-gallery reveal">
-            <figure class="theme-preview theme-preview-ice surface"><div class="theme-preview-bar"><span>Ice · Editor</span><small>LED Chaser RTL</small></div><img src="app-editor-ice-led-chaser.png" alt="Allora Ice editor showing Verilog for an LED chaser" loading="lazy" /><figcaption><strong>Code in crystalline clarity</strong><p>Bright frosted panels frame a Verilog LED chaser without competing with the code.</p></figcaption></figure>
-            <figure class="theme-preview theme-preview-black surface"><div class="theme-preview-bar"><span>Black Ice · Editor</span><small>PWM Generator RTL</small></div><img src="app-editor-black-pwm.png" alt="Allora Black Ice editor showing Verilog for a PWM generator" loading="lazy" /><figcaption><strong>Focused, high-contrast editing</strong><p>Deep navy glass and luminous syntax bring a compact PWM generator into focus.</p></figcaption></figure>
-            <figure class="theme-preview theme-preview-ice surface"><div class="theme-preview-bar"><span>Ice · Virtual FPGA</span><small>Interactive I/O</small></div><img src="app-simulator-ice.png" alt="Allora Virtual FPGA simulator running in the Ice theme" loading="lazy" /><figcaption><strong>Hardware you can see respond</strong><p>Interactive controls, mapped peripherals, and live LEDs stay legible across the bright workspace.</p></figcaption></figure>
-            <figure class="theme-preview theme-preview-black surface"><div class="theme-preview-bar"><span>Black Ice · Virtual FPGA</span><small>Live Signals</small></div><img src="app-simulator-black-ice.png" alt="Allora Virtual FPGA simulator running in the Black Ice theme" loading="lazy" /><figcaption><strong>Signals with luminous depth</strong><p>Glowing state, layered controls, and dark glass make the running design easy to follow.</p></figcaption></figure>
+            <figure class="theme-preview theme-preview-ice surface"><div class="theme-preview-bar"><span>Ice · Editor</span><small>LED Chaser RTL</small></div><img src="assets/app-editor-ice-led-chaser.webp" alt="Allora Ice editor showing Verilog for an LED chaser" loading="lazy" width="2000" height="1390" /><figcaption><strong>Code in crystalline clarity</strong><p>Bright frosted panels frame a Verilog LED chaser without competing with the code.</p></figcaption></figure>
+            <figure class="theme-preview theme-preview-black surface"><div class="theme-preview-bar"><span>Black Ice · Editor</span><small>PWM Generator RTL</small></div><img src="assets/app-editor-black-pwm.webp" alt="Allora Black Ice editor showing Verilog for a PWM generator" loading="lazy" width="2000" height="1390" /><figcaption><strong>Focused, high-contrast editing</strong><p>Deep navy glass and luminous syntax bring a compact PWM generator into focus.</p></figcaption></figure>
+            <figure class="theme-preview theme-preview-ice surface"><div class="theme-preview-bar"><span>Ice · Virtual FPGA</span><small>Interactive I/O</small></div><img src="assets/app-simulator-ice.webp" alt="Allora Virtual FPGA simulator running in the Ice theme" loading="lazy" width="1800" height="1224" /><figcaption><strong>Hardware you can see respond</strong><p>Interactive controls, mapped peripherals, and live LEDs stay legible across the bright workspace.</p></figcaption></figure>
+            <figure class="theme-preview theme-preview-black surface"><div class="theme-preview-bar"><span>Black Ice · Virtual FPGA</span><small>Live Signals</small></div><img src="assets/app-simulator-black-ice.webp" alt="Allora Virtual FPGA simulator running in the Black Ice theme" loading="lazy" width="1800" height="1224" /><figcaption><strong>Signals with luminous depth</strong><p>Glowing state, layered controls, and dark glass make the running design easy to follow.</p></figcaption></figure>
           </div>
           <div class="visual-highlights reveal" aria-label="Allora visual design highlights"><article><span>01</span><div><strong>Frosted surfaces</strong><p>Layered transparency separates tools without adding visual weight.</p></div></article><article><span>02</span><div><strong>Icy highlights</strong><p>Cool edge light and crisp borders make controls easy to read at a glance.</p></div></article><article><span>03</span><div><strong>One visual system</strong><p>Matching geometry keeps every workflow familiar across both themes.</p></div></article></div>
         </div>
@@ -281,7 +306,7 @@
           <div class="integration-list">
             <article class="integration-card surface reveal">
               <div class="integration-mark" aria-hidden="true">AI</div>
-              <div class="integration-copy"><div class="integration-title"><h3>Codex &amp; Claude Code</h3><span class="integration-badge">Beta</span></div><p>Connect your Codex or Claude Code account through its installed CLI in Settings → AI Integration. The beta currently checks installation and sign-in status. We’re working toward exposing Allora’s functions to your connected AI so it can help control the app and its FPGA workflow.</p><p class="integration-detail">An installed CLI and a connected provider account are required for AI features.</p></div>
+              <div class="integration-copy"><div class="integration-title"><h3>Codex &amp; Claude Code</h3><span class="integration-badge">Beta</span></div><p>Connect your Codex or Claude Code account through its installed CLI in Settings → AI Integration. Embedded Codex chat now helps create projects, edit RTL, look up boards, map verified pins, run simulations, and build bitstreams. Choose your model and reasoning effort, follow streamed responses and tool results, and open the project in Allora to inspect the work.</p><p class="integration-detail">Embedded chat uses Codex; Claude Code currently supports installation and sign-in. Conversations stay on this device. Programming requires approval for the selected target and artifact. A connected account and the relevant FPGA tools are required.</p><figure class="feature-visual ai-capture"><img src="assets/ai-chat-ice.webp" data-ice-src="assets/ai-chat-ice.webp" data-black-src="assets/ai-chat-black-ice.webp" alt="Allora embedded Codex chat with model and project controls" loading="lazy" decoding="async" width="1800" height="1160" /><figcaption>AI chat · native app workspace</figcaption></figure></div>
             </article>
             <article class="integration-card surface reveal">
               <div class="integration-mark integration-mark-git" aria-hidden="true">git</div>
@@ -300,6 +325,7 @@
 
     <dialog class="image-preview" id="imagePreview" aria-label="Image preview" tabindex="-1">
       <div class="image-preview-frame">
+        <button class="preview-close" type="button" aria-label="Close image preview">×</button>
         <img class="image-preview-image" alt="" />
         <p class="image-preview-caption sr-only"></p>
       </div>
@@ -310,9 +336,11 @@
         const root = document.documentElement;
         const themeSwitch = document.getElementById("themeSwitch");
         const themeLabel = document.getElementById("themeLabel");
+        const themeImages = [...document.querySelectorAll("img[data-ice-src][data-black-src]")];
         const syncTheme = () => {
           const black = root.dataset.theme === "black-ice";
           themeLabel.textContent = black ? "Black Ice" : "Ice";
+          themeImages.forEach((img) => { img.src = black ? img.dataset.blackSrc : img.dataset.iceSrc; });
           themeSwitch.setAttribute("aria-pressed", String(black));
           themeSwitch.setAttribute("aria-label", `Switch to ${black ? "Ice" : "Black Ice"}`);
         };
@@ -323,7 +351,7 @@
           syncTheme();
         });
 
-        const buildTabs = [...document.querySelectorAll(".build-tabs [role='tab']")];
+        const buildTabs = [...document.querySelectorAll(".build-tour .build-tabs [role='tab']")];
         const selectBuildTab = (nextTab, focus = false) => {
           for (const tab of buildTabs) {
             const selected = tab === nextTab;
@@ -366,7 +394,7 @@
           }
           previewTrigger?.focus();
         });
-        for (const shot of document.querySelectorAll(".build-visual img")) {
+        for (const shot of document.querySelectorAll(".build-visual img, .feature-visual img")) {
           const trigger = document.createElement("button");
           trigger.type = "button";
           trigger.className = "image-preview-trigger";
@@ -389,6 +417,7 @@
           shot.parentNode.insertBefore(trigger, shot);
           trigger.appendChild(shot);
         }
+        imagePreview.querySelector(".preview-close").addEventListener("click", closeImagePreview);
         imagePreview.addEventListener("click", (event) => {
           if (event.target === imagePreview) closeImagePreview();
         });
@@ -451,6 +480,7 @@
         const pins = window.ALLORA_BOARDS_PINS || [];
         const boards = [...full, ...pins];
         document.getElementById("fullCount").textContent = full.length;
+        document.getElementById("workflowCount").textContent = full.length;
         document.getElementById("pinCount").textContent = window.ALLORA_PINS_TOTAL || pins.length;
         const boardA = document.getElementById("boardA"); const boardB = document.getElementById("boardB");
         const options = full.map((board) => `<option value="${escapeHtml(board.name)}">${escapeHtml(board.name)}</option>`).join("");
@@ -460,18 +490,26 @@
         const fields = [["FPGA", "fpga"], ["Family", "family"], ["Logic", "luts"], ["Memory", "mem"], ["Clock", "clock"], ["Mapped pins", "pins"], ["Best for", "best"]];
         function renderComparison() {
           const a = full.find((board) => board.name === boardA.value) || full[0]; const b = full.find((board) => board.name === boardB.value) || full[1] || full[0]; if (!a || !b) return;
-          document.getElementById("compareTable").innerHTML = `<div class="compare-row compare-row-head"><span>Specification</span><strong>${escapeHtml(a.name)}</strong><strong>${escapeHtml(b.name)}</strong></div>${fields.map(([label, key]) => `<div class="compare-row"><span>${label}</span><b>${escapeHtml(String(a[key] ?? "—"))}</b><b>${escapeHtml(String(b[key] ?? "—"))}</b></div>`).join("")}`;
+          document.getElementById("compareTable").innerHTML = `<div class="compare-row compare-row-head" role="row"><span role="columnheader">Specification</span><strong role="columnheader">${escapeHtml(a.name)}</strong><strong role="columnheader">${escapeHtml(b.name)}</strong></div>${fields.map(([label, key]) => `<div class="compare-row" role="row"><span role="rowheader">${label}</span><b role="cell">${escapeHtml(String(a[key] || "—"))}</b><b role="cell">${escapeHtml(String(b[key] || "—"))}</b></div>`).join("")}`;
         }
         boardA.addEventListener("change", renderComparison); boardB.addEventListener("change", renderComparison); renderComparison();
         const search = document.getElementById("boardSearch"); const catalog = document.getElementById("catalogList");
+        let catalogLimit = 24;
+        const more = document.getElementById("catalogMore");
         function renderCatalog() {
-          const query = search.value.trim().toLowerCase(); const results = boards.filter((board) => [board.name, board.family, board.fpga].join(" ").toLowerCase().includes(query)).slice(0, 24);
-          catalog.innerHTML = results.map((board) => `<article><i class="dot ${board.support === "full" ? "dot-full" : "dot-pins"}"></i><div><strong>${escapeHtml(board.name)}</strong><span>${escapeHtml(board.family || "FPGA")} · ${escapeHtml(board.fpga || "device")}</span></div><em>${board.support === "full" ? "Full workflow" : "Pin mapping"}</em></article>`).join("");
+          const query = search.value.trim().toLowerCase(); const results = boards.filter((board) => [board.name, board.family, board.fpga].join(" ").toLowerCase().includes(query));
+          const visible = results.slice(0, catalogLimit);
+          catalog.innerHTML = visible.map((board) => `<article><i class="dot ${board.support === "full" ? "dot-full" : "dot-pins"}"></i><div><strong>${escapeHtml(board.name)}</strong><span>${escapeHtml(board.family || "FPGA")} · ${escapeHtml(board.fpga || "device")}</span></div><em>${board.support === "full" ? "Open build" : "Pin mapping"}</em></article>`).join("");
           document.getElementById("catalogEmpty").hidden = results.length > 0;
+          document.getElementById("catalogStatus").textContent = `Showing ${visible.length} of ${results.length} catalog entries`;
+          more.hidden = visible.length >= results.length;
         }
-        search.addEventListener("input", renderCatalog); renderCatalog();
+        search.addEventListener("input", () => { catalogLimit = 24; renderCatalog(); });
+        more.addEventListener("click", () => { catalogLimit += 24; renderCatalog(); });
+        renderCatalog();
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
       })();
     </script>
+    <script src="site.js?v=20261007c"></script>
   </body>
 </html>

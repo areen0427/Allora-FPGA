@@ -7,8 +7,8 @@
 // Re-run whenever the app's board catalog changes.
 
 import { register } from "node:module";
-import { existsSync, statSync, writeFileSync } from "node:fs";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const APP_SRC = "../allora-fpga/src/data";
 
@@ -28,9 +28,7 @@ export async function resolve(spec, ctx, next) {
   }
   return next(spec, ctx);
 }`;
-const hookPath = fileURLToPath(new URL("./_boardgen_hooks.mjs", import.meta.url));
-writeFileSync(hookPath, hookSrc);
-register("./_boardgen_hooks.mjs", import.meta.url);
+register(`data:text/javascript,${encodeURIComponent(hookSrc)}`, import.meta.url);
 
 const sup = await import(`${APP_SRC}/boardSupport.ts`);
 const cap = await import(`${APP_SRC}/boardCapabilities.ts`);
@@ -50,14 +48,16 @@ function familyBucket(fam = "") {
   return "Other";
 }
 
-// LUT / memory derived from the FPGA silicon part (not stored in the app).
+// LUT / memory inferred only for recognized silicon parts, not board families.
+// Unknown devices deliberately leave these fields empty.
 function partSpecs(device = "") {
   const d = device.toUpperCase();
-  if (/UP5K/.test(d)) return { luts: "5,280 LUT4", mem: "120 Kb BRAM + 1 Mb SPRAM" };
-  if (/-12F/.test(d)) return { luts: "12,144 LUT4", mem: "304 Kb BRAM" };
-  if (/-25F/.test(d)) return { luts: "24,288 LUT4", mem: "1,008 Kb BRAM" };
-  if (/-45F/.test(d)) return { luts: "43,848 LUT4", mem: "1,944 Kb BRAM" };
-  if (/-85F/.test(d)) return { luts: "83,640 LUT4", mem: "3,744 Kb BRAM" };
+  if (/^ICE40-?UP5K(?:-|$)/.test(d)) return { luts: "5,280 LUT4", mem: "120 Kb BRAM + 1 Mb SPRAM" };
+  const ecp5 = /^LFE5U(?:M5G|M)?-(12F|25F|45F|85F)(?:-|$)/.exec(d)?.[1];
+  if (ecp5 === "12F") return { luts: "12,144 LUT4", mem: "304 Kb BRAM" };
+  if (ecp5 === "25F") return { luts: "24,288 LUT4", mem: "1,008 Kb BRAM" };
+  if (ecp5 === "45F") return { luts: "43,848 LUT4", mem: "1,944 Kb BRAM" };
+  if (ecp5 === "85F") return { luts: "83,640 LUT4", mem: "3,744 Kb BRAM" };
   return { luts: "", mem: "" };
 }
 
@@ -81,24 +81,6 @@ const BEST_USE = {
   "LiteX Acorn Baseboard": "LiteX SoCs on Acorn accelerator cards.",
   "Hackaday Hadbadge": "Conference-badge demos and learning projects.",
 };
-
-// Well-known pin-mapping-only boards to surface (exact app names).
-const CURATED_PINS = [
-  "Arty A7",
-  "Digilent BASYS3",
-  "Digilent Nexys 4 DDR",
-  "Digilent GENESYS2",
-  "Digilent Zedboard",
-  "Digilent PYNQ-Z1",
-  "Digilent Zybo Z7",
-  "Digilent Cmod A7",
-  "Digilent Arty S7",
-  "Alchitry Au",
-  "Cologne Chip GateMate EVB",
-  "Tang Nano",
-  "Efinix Xyloni Dev Kit",
-  "Lattice Crosslink Nx Evn",
-];
 
 // --- Build the records ---------------------------------------------------
 function clockStr(hz) {
@@ -130,15 +112,8 @@ function record(item, support) {
 }
 
 const full = sup.getBuildSupportedBoards().map((b) => record(b, "full"));
-
 const pinOnly = sup.getPinMappingOnlyBoards();
-const pinByName = new Map(pinOnly.map((b) => [b.name, b]));
-const pins = [];
-for (const name of CURATED_PINS) {
-  const b = pinByName.get(name);
-  if (b) pins.push(record(b, "pins"));
-  else console.warn(`!! curated pin-only board not found in catalog: ${name}`);
-}
+const pins = pinOnly.map((b) => record(b, "pins"));
 
 // --- Emit boards-data.js ------------------------------------------------
 const banner =
@@ -153,5 +128,5 @@ const out =
 const outPath = fileURLToPath(new URL("./boards-data.js", import.meta.url));
 writeFileSync(outPath, out);
 console.log(
-  `Wrote boards-data.js — ${full.length} full-flow, ${pins.length} curated pin-only (of ${pinOnly.length} total).`,
+  `Wrote boards-data.js — ${full.length} build-supported, ${pins.length} pin-mapping-only board entries.`,
 );
