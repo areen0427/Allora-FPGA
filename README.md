@@ -297,3 +297,9 @@ npm run lint
 ```
 
 Tests exercise map validation, exact resets, C compilation, persistence/conflict handling, deterministic regeneration, actual Icarus access-mode simulation, Yosys synthesis, Verilator lint, and production native synthesis/testbench/interactive simulation services. Native UI checks covered Ice/Black Ice, conflict diagnostics, reviewed wrapper generation, generated-file editor access, waveform simulation, and project close/reopen. Physical programming and board-level timing for a register design have not been verified.
+
+## Synthesis Explorer
+
+**Run Synthesis** keeps opening a dedicated window, now with pin-aware schematic layout, hardware-specific symbols, hierarchy breadcrumbs, search, category expansion, source-aware inspection, bus/bit tracing and path isolation. Functional, optimized logic and optional iCE40/ECP5 mapped views come from separate real Yosys artifacts. Source highlighting and editor navigation use preserved Yosys locations and reject changed source text.
+
+Run a captured Testbench simulation, choose **Attach recorded simulation**, and enter its exact DUT scope to scrub supported recorded RTL values. Matching requires source/memory provenance, full scoped names, widths and connection bit order; unsupported mappings stay empty. See [Synthesis Explorer](docs/SYNTHESIS_EXPLORER.md) for usage, architecture, nonvisual tests and the boundaries of tracing, simulation and synthesis analysis.

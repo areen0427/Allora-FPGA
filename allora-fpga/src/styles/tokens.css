@@ -115,3 +115,14 @@ html[data-theme="black-ice"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
+
+/* A dim, theme-aware halo for floating surfaces. */
+:root {
+  --ui-popup-shadow: var(--ui-control-shadow),
+    0 12px 32px color-mix(in srgb, var(--ui-text) 7%, transparent);
+}
+html[data-theme="black-ice"] {
+  --ui-popup-shadow: var(--ui-control-shadow),
+    0 12px 32px color-mix(in srgb, var(--ui-text) 7%, transparent),
+    0 8px 20px rgba(0, 0, 0, 0.22);
+}

@@ -36,28 +36,28 @@ export function formatWaveTick(value: number, unit: string) {
   return `${value} ${unit}`;
 }
 
-export function parseVcd(content: string): Waveform | null {
+export function parseVcd(
+  content: string,
+  options: { preserveAliases?: boolean; initialUnknown?: boolean } = {},
+): Waveform | null {
   if (!content.trim()) return null;
 
+  const aliases: { id: string; name: string; width: number }[] = [];
   const variables = new Map<string, { name: string; width: number }>();
   const values = new Map<string, { time: number; value: string }[]>();
   const scopes: string[] = [];
   let currentTime = 0;
   let endTime = 0;
-  let timescale = "ns";
+  const timescale =
+    /\$timescale\s+([^$]+)\$end/
+      .exec(content)?.[1]
+      .trim()
+      .replace(/\s+/g, "") || "ticks";
+  const body = content.replace(/\$timescale[\s\S]*?\$end/g, "");
 
-  for (const rawLine of content.split(/\r?\n/)) {
+  for (const rawLine of body.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
-
-    if (line.startsWith("$timescale")) {
-      timescale = line
-        .replace("$timescale", "")
-        .replace("$end", "")
-        .trim()
-        .replace(/\s+/g, "");
-      continue;
-    }
 
     if (line.startsWith("$scope")) {
       const parts = line.split(/\s+/);
@@ -77,9 +77,19 @@ export function parseVcd(content: string): Waveform | null {
       const shortName = parts.slice(4, -1).join(" ");
       const scopedName = [...scopes, shortName].filter(Boolean).join(".");
       variables.set(id, { name: scopedName || shortName, width });
-      values.set(id, [
-        { time: 0, value: width > 1 ? "x".repeat(Math.min(width, 8)) : "x" },
-      ]);
+      aliases.push({ id, name: scopedName || shortName, width });
+      if (!values.has(id))
+        values.set(
+          id,
+          options.initialUnknown === false
+            ? []
+            : [
+                {
+                  time: 0,
+                  value: width > 1 ? "x".repeat(Math.min(width, 8)) : "x",
+                },
+              ],
+        );
       continue;
     }
 
@@ -100,15 +110,22 @@ export function parseVcd(content: string): Waveform | null {
     }
   }
 
-  const signals = [...variables.entries()].map(([id, variable]) => ({
-    id,
+  const declarations = options.preserveAliases
+    ? aliases
+    : [...variables].map(([id, variable]) => ({ id, ...variable }));
+  const signals = declarations.map((variable, index) => ({
+    id: options.preserveAliases ? `${variable.id}:${index}` : variable.id,
     name: variable.name,
     shortName: variable.name.split(".").pop() ?? variable.name,
     width: variable.width,
-    values: compactValues(mergeSameTimeValues(values.get(id) ?? [])),
+    values: compactValues(mergeSameTimeValues(values.get(variable.id) ?? [])),
   }));
 
-  return { timescale, endTime, signals: dedupeSignalAliases(signals) };
+  return {
+    timescale,
+    endTime,
+    signals: options.preserveAliases ? signals : dedupeSignalAliases(signals),
+  };
 }
 
 function dedupeSignalAliases(signals: WaveSignal[]) {

@@ -1,3 +1,4 @@
+import { publishExplorer } from "./lib/explorerBridge";
 import { useEffect, useMemo, useState } from "react";
 import SignalWaveformPanel from "./components/SignalWaveformPanel";
 import HardwareSchematicCanvas from "./components/HardwareSchematicCanvas";
@@ -17,12 +18,17 @@ import "./App.css";
 type WaveformViewerPayload = {
   vcd: string;
   waveformName: string;
+  projectKey?: string;
+  recordingId?: string;
+  selectedSignalName?: string;
+  initialTime?: number;
 };
 
 export default function ViewerApp() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const kind = params.get("viewer") as ViewerKind | null;
   const storageKey = params.get("key") ?? "";
+  const [waveTime, setWaveTime] = useState(0);
   const [selectedSignals, setSelectedSignals] = useState<string[]>([]);
   const [synthesisEnvelope, setSynthesisEnvelope] =
     useState<ViewerEnvelope<SynthesisDiagramResponse> | null>(null);
@@ -36,7 +42,9 @@ export default function ViewerApp() {
     const settings = getSettings();
     document.documentElement.dataset.theme = settings.theme;
     document.documentElement.dataset.background = settings.background;
-    document.documentElement.dataset.reduceMotion = String(settings.reduceMotion);
+    document.documentElement.dataset.reduceMotion = String(
+      settings.reduceMotion,
+    );
   }, []);
 
   useEffect(() => {
@@ -68,15 +76,26 @@ export default function ViewerApp() {
   }, [kind, storageKey]);
 
   const waveform = useMemo(
-    () => parseVcd(waveformEnvelope?.payload.vcd ?? ""),
-    [waveformEnvelope?.payload.vcd],
+    () =>
+      parseVcd(
+        waveformEnvelope?.payload.vcd ?? "",
+        waveformEnvelope?.payload.recordingId
+          ? { preserveAliases: true, initialUnknown: false }
+          : {},
+      ),
+    [waveformEnvelope?.payload.vcd, waveformEnvelope?.payload.recordingId],
   );
   const traces = useMemo(() => buildTestbenchWaveTraces(waveform), [waveform]);
 
   useEffect(() => {
     if (kind !== "waveform") return;
-    setSelectedSignals(traces.slice(0, 12).map((trace) => trace.id));
-  }, [kind, traces]);
+    const wanted = waveformEnvelope?.payload.selectedSignalName;
+    const match = traces.find((trace) => trace.fullName === wanted);
+    setSelectedSignals(
+      match ? [match.id] : traces.slice(0, 12).map((trace) => trace.id),
+    );
+    setWaveTime(waveformEnvelope?.payload.initialTime ?? 0);
+  }, [kind, traces, waveformEnvelope]);
 
   if (kind === "synthesis" && synthesisEnvelope) {
     return (
@@ -114,18 +133,58 @@ export default function ViewerApp() {
           </div>
         </header>
         <section className="viewer-surface viewer-waveform">
+          {waveformEnvelope.payload.recordingId ? (
+            <div className="explorer-waveform">
+              <label>
+                Explorer time{" "}
+                <input
+                  aria-label="Synthesis Explorer waveform time"
+                  type="range"
+                  min={0}
+                  max={waveform.endTime}
+                  step={1}
+                  value={waveTime}
+                  onChange={(event) => {
+                    const time = Number(event.target.value);
+                    setWaveTime(time);
+                    void publishExplorer({
+                      type: "waveform-time",
+                      projectKey: waveformEnvelope.payload.projectKey ?? "",
+                      recordingId: waveformEnvelope.payload.recordingId!,
+                      time,
+                    }).catch(() => {});
+                  }}
+                />
+              </label>
+              <output>{formatWaveTick(waveTime, waveform.timescale)}</output>
+              <span>
+                Signal selection highlights exact aliases in the open Synthesis
+                Explorer.
+              </span>
+            </div>
+          ) : null}
           <SignalWaveformPanel
             title={waveformEnvelope.payload.waveformName}
             subtitle="Select signals to add or remove them from the large waveform view"
             traces={traces}
             selectedSignalIds={selectedSignals}
-            onToggleSignal={(signalId) =>
+            onToggleSignal={(signalId) => {
               setSelectedSignals((current) =>
                 current.includes(signalId)
                   ? current.filter((item) => item !== signalId)
                   : [...current, signalId],
-              )
-            }
+              );
+              const signal = waveform.signals.find(
+                (signal) => signal.id === signalId,
+              );
+              if (signal && waveformEnvelope.payload.recordingId)
+                void publishExplorer({
+                  type: "waveform-select",
+                  projectKey: waveformEnvelope.payload.projectKey ?? "",
+                  recordingId: waveformEnvelope.payload.recordingId,
+                  signalName: signal.name,
+                }).catch(() => {});
+            }}
             emptyMessage="No signal data was found in this waveform."
             formatTime={(time) =>
               formatWaveTick(Math.round(time), waveform.timescale)

@@ -1,0 +1,139 @@
+{
+  "fixture": "async-reset-dff-icebreaker",
+  "prepare": [
+    {
+      "action": "home"
+    }
+  ],
+  "steps": [
+    {
+      "shot": "welcome",
+      "wait": 1800
+    },
+    {
+      "shot": "build-click",
+      "action": "welcome-build",
+      "wait": 800
+    },
+    {
+      "shot": "boards",
+      "wait": 1800
+    },
+    {
+      "action": "select-board",
+      "wait": 600
+    },
+    {
+      "action": "open-project",
+      "target": "build"
+    },
+    {
+      "shot": "editor",
+      "action": "write-code",
+      "ms": 150,
+      "wait": 1800,
+      "name": "async_reset_dff.sv"
+    },
+    {
+      "action": "section",
+      "name": "Editor"
+    },
+    {
+      "action": "open-file",
+      "name": "async_reset_dff_tb.sv"
+    },
+    {
+      "shot": "testbench-code",
+      "action": "write-code",
+      "ms": 110,
+      "wait": 1500,
+      "name": "async_reset_dff_tb.sv"
+    },
+    {
+      "action": "section",
+      "name": "Synthesis"
+    },
+    {
+      "shot": "synthesis-start",
+      "action": "synthesize",
+      "wait": 900
+    },
+    {
+      "shot": "synthesis-report",
+      "wait": 3100
+    },
+    {
+      "action": "section",
+      "name": "Testbench"
+    },
+    {
+      "shot": "simulation-start",
+      "action": "run-testbench",
+      "wait": 1200
+    },
+    {
+      "shot": "waveform",
+      "wait": 4000
+    },
+    {
+      "action": "section",
+      "name": "Pins"
+    },
+    {
+      "action": "pin-mode",
+      "name": "Simple"
+    },
+    {
+      "shot": "pins-before",
+      "wait": 1000
+    },
+    {
+      "action": "map-pin",
+      "name": "clk",
+      "value": "clock:clk12"
+    },
+    {
+      "action": "map-pin",
+      "name": "rst_n",
+      "value": "pin:usr_rst_btn:10"
+    },
+    {
+      "action": "map-pin",
+      "name": "d",
+      "value": "pin:iCEBreaker_GPIO_I[0]:18"
+    },
+    {
+      "action": "map-pin",
+      "name": "q",
+      "value": "pin:iCEBreaker_GPIO_O[0]:25"
+    },
+    {
+      "action": "save-map"
+    },
+    {
+      "shot": "pins-after",
+      "wait": 2700
+    },
+    {
+      "action": "section",
+      "name": "Bitstream"
+    },
+    {
+      "shot": "bitstream-start",
+      "action": "generate-bitstream",
+      "wait": 700
+    },
+    {
+      "shot": "bitstream-result",
+      "wait": 2700
+    },
+    {
+      "shot": "timing-click",
+      "action": "timing-report"
+    },
+    {
+      "shot": "timing",
+      "wait": 4000
+    }
+  ]
+}

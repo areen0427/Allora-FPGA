@@ -94,6 +94,48 @@ function status() {
 async function execute(command: Command) {
   if (!actions) throw new Error("Application is not ready");
   switch (command.action) {
+    case "write-code": {
+      await until(() => Boolean(document.querySelector(".monaco-editor .view-lines")), "visible code editor");
+      const { loader } = await import("@monaco-editor/react");
+      const monaco = await loader.init();
+      await until(() => monaco.editor.getModels().some((m: import("monaco-editor").editor.ITextModel) => m.getValue().includes("module ")), "HDL editor mount");
+      const model = monaco.editor.getModels().find((m: import("monaco-editor").editor.ITextModel) => !m.isDisposed() && m.getValue().includes("module ") && (!command.name || m.uri.path.endsWith(command.name)));
+      if (!model) throw new Error("No active HDL editor model");
+      const source = model.getValue();
+      model.setValue("");
+      let written = "";
+      for (const line of source.split("\n")) {
+        written += line + "\n";
+        model.setValue(written);
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+        await sleep(command.ms ?? 110);
+      }
+      model.setValue(source);
+      await sleep(1000);
+      break;
+    }
+    case "welcome-build":
+      document.querySelector<HTMLButtonElement>(".execution-path-card.build")?.click();
+      await sleep(500);
+      break;
+    case "select-board": {
+      const showAll = [...document.querySelectorAll<HTMLButtonElement>("button")].find(el => normalized(el.textContent).startsWith("Show all"));
+      showAll?.click();
+      await sleep(350);
+      const cards = [...document.querySelectorAll<HTMLElement>("button, [role=button]")].filter(el => el.getClientRects().length && normalized(el.textContent).includes("iCEBreaker"));
+      if (!cards.length) throw new Error("iCEBreaker selection unavailable");
+      cards[0].scrollIntoView({ block: "center" });
+      await sleep(500);
+      cards[0].click();
+      await sleep(1400);
+      button("Select iCEBreaker").click();
+      await sleep(300);
+      break;
+    }
+    case "timing-report":
+      button("Open Timing Report").click();
+      await sleep(1000);
+      break;
     case "status":
       return status();
     case "home":
@@ -144,7 +186,7 @@ async function execute(command: Command) {
       ];
       if (!allowed.includes(command.name ?? ""))
         throw new Error("Unsupported demo section");
-      button(command.name!).click();
+      button(command.name === "Pins" ? "Pin Mapping" : command.name!).click();
       break;
     }
     case "compile":
@@ -234,7 +276,7 @@ async function execute(command: Command) {
     case "generate-bitstream":
       button("Generate Bitstream").click();
       await until(
-        () => document.body.innerText.includes("Bitstream generated"),
+        () => Boolean(document.querySelector<HTMLButtonElement>(".bitstream-open-timing") && !document.querySelector<HTMLButtonElement>(".bitstream-open-timing")!.disabled),
         "real bitstream artifact",
         120000,
       );

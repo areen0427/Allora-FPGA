@@ -895,13 +895,13 @@ html .allora-chat .chat-composer textarea {
   border: 1px solid var(--chat-border);
   border-radius: 16px;
   background: #f4f8ff;
-  box-shadow: var(--chat-shadow), 0 16px 48px rgba(15, 23, 42, .2);
+  box-shadow: var(--ui-popup-shadow);
   color: var(--chat-text);
 }
 .chat-model-popup::backdrop { background: transparent; }
 html[data-theme="black-ice"] .chat-model-popup {
   background: #101d30;
-  box-shadow: var(--chat-shadow), 0 16px 48px rgba(0, 0, 0, .45);
+  box-shadow: var(--ui-popup-shadow);
 }
 .chat-model-popup header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
 .chat-model-popup header strong { font-size: 14px; }
@@ -1117,7 +1117,6 @@ html[data-reduce-motion="true"] .chat-composer-bottom .chat-model-trigger.chat-r
 .chat-usage-track > span { display: block; height: 100%; border-radius: inherit; transition: width 300ms ease, background 300ms ease; }
 .chat-usage-popup { padding: 16px; }
 .chat-usage-popup header { display: flex; justify-content: space-between; align-items: center; }
-.chat-usage-popup header button { border: 0; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
 .chat-usage-popup p { color: var(--chat-muted); font-size: 12px; line-height: 1.5; }
 .chat-quota-window { padding-top: 16px; display: grid; gap: 8px; }
 .chat-quota-window > div:first-child { display: flex; justify-content: space-between; font-size: 13px; }
@@ -1135,7 +1134,7 @@ html[data-reduce-motion="true"] .chat-usage-track > span { transition: none; }
   padding: 16px 18px; border: 1px solid var(--chat-border); border-radius: 14px;
   background: linear-gradient(145deg, color-mix(in srgb, var(--chat-accent-soft) 22%, var(--chat-surface)), var(--chat-surface));
   color: var(--chat-text); text-align: center;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--chat-text) 6%, transparent), var(--chat-shadow), 0 12px 32px color-mix(in srgb, var(--chat-text) 12%, transparent);
+  box-shadow: var(--ui-popup-shadow);
   backdrop-filter: blur(20px); pointer-events: none;
   transform-origin: calc(100% - 38px) bottom;
   animation: chat-context-tooltip-in 180ms cubic-bezier(.22, 1, .36, 1) both;

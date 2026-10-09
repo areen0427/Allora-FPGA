@@ -1,3 +1,4 @@
+import { publishExplorer } from "../../lib/explorerBridge";
 import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
 import type { editor as MonacoEditor } from "monaco-editor";
@@ -42,7 +43,8 @@ type EditorSectionProps = {
   closeOpenFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => Promise<void> | void;
   settings: AppSettings;
-  navigation?: { fileName: string; line: number; id: number } | null;
+  explorerProjectKey?: string;
+  navigation?: { fileName: string; line: number; endLine?: number; column?: number; endColumn?: number; id: number } | null;
 };
 
 const LINT_FILE_DELIMITER = String.fromCharCode(0);
@@ -63,12 +65,15 @@ export default function EditorSection({
   renameFile,
   settings,
   navigation,
+  explorerProjectKey,
 }: EditorSectionProps) {
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [diagnostics, setDiagnostics] = useState<LintDiagnostic[]>([]);
   const monacoRef = useRef<Monaco | null>(null);
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const explorerContext = useRef({ projectKey: explorerProjectKey, fileName: activeFileName });
+  useEffect(() => { explorerContext.current = { projectKey: explorerProjectKey, fileName: activeFileName }; }, [explorerProjectKey, activeFileName]);
   // Once iverilog reports itself unavailable, stop pinging it every keystroke.
   const lintAvailableRef = useRef(true);
   const isDarkEditor = settings.theme === "black-ice";
@@ -78,9 +83,7 @@ export default function EditorSection({
     if (!navigation || activeFileName !== navigation.fileName) return;
     const editor = editorRef.current;
     if (!editor) return;
-    editor.revealLineInCenter(navigation.line);
-    editor.setPosition({ lineNumber: navigation.line, column: 1 });
-    editor.focus();
+    revealNavigation(editor, navigation);
   }, [activeFileName, navigation]);
 
   const lintableFiles = projectFiles.filter(
@@ -335,10 +338,20 @@ export default function EditorSection({
           onMount={(editor, monaco) => {
             editorRef.current = editor;
             if (navigation && activeFileName === navigation.fileName) {
-              editor.revealLineInCenter(navigation.line);
-              editor.setPosition({ lineNumber: navigation.line, column: 1 });
-              editor.focus();
+              revealNavigation(editor, navigation);
             }
+            let selectionTimer: ReturnType<typeof setTimeout> | undefined;
+            const selectionListener = editor.onDidChangeCursorSelection(event => {
+              clearTimeout(selectionTimer);
+              const originalModel = editor.getModel();
+              selectionTimer = setTimeout(() => {
+                const model = editor.getModel();
+                const context = explorerContext.current;
+                if (!model || model !== originalModel || !context.projectKey || !context.fileName) return;
+                void publishExplorer({ type: "rtl-selection", projectKey: context.projectKey, fileName: context.fileName, content: model.getValue(), start: event.selection.startLineNumber, end: event.selection.endLineNumber, startColumn: event.selection.startColumn, endColumn: event.selection.endColumn }).catch(() => {});
+              }, 120);
+            });
+            editor.onDidDispose(() => { clearTimeout(selectionTimer); selectionListener.dispose(); });
             monacoRef.current = monaco;
             registerHdlLanguages(monaco);
 
@@ -405,8 +418,10 @@ export default function EditorSection({
             cursorBlinking: "smooth",
             smoothScrolling: true,
             scrollbar: {
-              verticalScrollbarSize: 8,
-              horizontalScrollbarSize: 8,
+              vertical: "hidden",
+              horizontal: "hidden",
+              verticalScrollbarSize: 0,
+              horizontalScrollbarSize: 0,
               useShadows: false,
             },
             padding: {
@@ -533,4 +548,19 @@ function registerHdlLanguages(monaco: Monaco) {
       ],
     },
   });
+}
+
+function revealNavigation(editor: MonacoEditor.IStandaloneCodeEditor, navigation: NonNullable<EditorSectionProps['navigation']>) {
+  editor.revealLineInCenter(navigation.line);
+  if (navigation.endLine !== undefined) {
+    editor.setSelection({
+      startLineNumber: navigation.line,
+      startColumn: Math.max(1, navigation.column ?? 1),
+      endLineNumber: navigation.endLine,
+      endColumn: Math.max(1, navigation.endColumn ?? editor.getModel()?.getLineMaxColumn(navigation.endLine) ?? 1),
+    });
+  } else {
+    editor.setPosition({ lineNumber: navigation.line, column: 1 });
+  }
+  editor.focus();
 }

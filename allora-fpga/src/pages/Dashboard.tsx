@@ -1,3 +1,4 @@
+import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
 import PeripheralWorkbenchIcon from "../components/PeripheralWorkbenchIcon";
 import MemoryAssetStudioIcon from "../components/MemoryAssetStudioIcon";
@@ -140,6 +141,9 @@ export default function Dashboard({
   const [editorNavigation, setEditorNavigation] = useState<{
     fileName: string;
     line: number;
+    endLine?: number;
+    column?: number;
+    endColumn?: number;
     id: number;
   } | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -225,6 +229,19 @@ export default function Dashboard({
     }));
     handleOpenFile(fileName);
   }
+
+  useEffect(() => listenExplorer(message => {
+    if (message.type !== "rtl-navigate" || message.projectKey !== (projectPath ?? projectName)) return;
+    const file = fileMgmt.files.find(file => file.name === message.fileName);
+    if (!file || file.content !== message.content) {
+      void publishExplorer({ type: "navigation-result", projectKey: message.projectKey, message: "Source changed since synthesis. Re-run synthesis before editor navigation." });
+      return;
+    }
+    setEditorNavigation(current => ({ fileName: file.name, line: message.start, endLine: message.end, column: message.startColumn, endColumn: message.endColumn, id: (current?.id ?? 0) + 1 }));
+    activeTabs.openFile(file.name);
+    setActiveSection("editor");
+    void publishExplorer({ type: "navigation-result", projectKey: message.projectKey, message: `Opened ${file.name}:${message.start} in the editor.` });
+  }), [projectPath, projectName, fileMgmt.files, activeTabs]);
 
   function handleCloseOpenFile(fileName: string) {
     activeTabs.closeOpenFile(fileName);
@@ -809,6 +826,7 @@ export default function Dashboard({
             renameFile={handleRenameFile}
             settings={settings}
             navigation={editorNavigation}
+            explorerProjectKey={projectPath ?? projectName}
           />
         )}
 

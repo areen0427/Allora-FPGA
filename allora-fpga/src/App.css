@@ -29,3 +29,14 @@ html.theme-transitioning *::after {
   transition-duration: 1s !important;
   transition-timing-function: ease-in-out !important;
 }
+
+/* Floating panels use the same quiet halo as the context tooltip. */
+html:is([data-theme="ice"], [data-theme="black-ice"]) :is(
+  [popover], [role="tooltip"], .chat-reasoning-popup,
+  .dashboard-context-menu, .explorer-group-menu, .explorer-search-results,
+  .explorer-inspector, .settings-modal,
+  .variant-modal, .usage-dialog, .github-dialog, .board-diagram-popup,
+  .mas-dialog, .board-info-popup, .floating-dock-tooltip
+) {
+  box-shadow: var(--ui-popup-shadow);
+}

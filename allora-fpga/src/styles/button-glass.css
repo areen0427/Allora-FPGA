@@ -51,7 +51,8 @@ html[data-theme="black-ice"] {
         .timing-path-list button
       )
     ),
-    .sidebarNavButton > .dock-icon
+    .sidebarNavButton > .dock-icon,
+    .explorer-tools summary
   ) {
   /* A zero-specificity positioning default lets existing absolute/fixed
      controls keep their positioning. No background/color/border reset. */
@@ -145,19 +146,19 @@ html[data-theme="black-ice"] {
 }
 
 /* Existing transition lists take precedence over this fallback. */
-:where(#root button) {
+:where(#root button, #root .explorer-tools summary) {
   transition: var(--ui-control-transition);
 }
 
 /* Keep this default weaker than every existing class/inline positioning rule. */
-:where(#root button, #root .dock-icon) {
+:where(#root button, #root .dock-icon, #root .explorer-tools summary) {
   position: relative;
 }
 
 /* Shared subtle lift for actions. Tabs, switches, rows and tiny dismiss
    buttons stay still; the dock retains its own magnification. */
 :where(#root)
-  button:not(
+  :is(:where(.explorer-tools summary), button:not(
     :where(
       [data-glass="off"],
       [role="switch"],
@@ -187,7 +188,7 @@ html[data-theme="black-ice"] {
       .vfpga-wave-picker button,
       .timing-path-list button
     )
-  ) {
+  )) {
   &:active:not(:disabled, [aria-disabled="true"]) {
     scale: 0.99;
   }
@@ -216,7 +217,7 @@ html[data-theme="black-ice"] {
 
 /* Preserve all existing focus rings; glass layers never own box-shadow on
    the actual button. Motion opt-outs cover the OS and Allora preference. */
-html[data-reduce-motion="true"] :where(#root button, #root .dock-icon) {
+html[data-reduce-motion="true"] :where(#root button, #root .dock-icon, #root .explorer-tools summary) {
   scale: none !important;
 }
 html[data-reduce-motion="true"] :where(#root button, #root .dock-icon)::before,
@@ -226,7 +227,7 @@ html[data-reduce-motion="true"] :where(#root button, #root .dock-icon)::after {
   --allora-glass-angle: -75deg !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  :where(#root button, #root .dock-icon) {
+  :where(#root button, #root .dock-icon, #root .explorer-tools summary) {
     scale: none !important;
   }
   :where(#root button, #root .dock-icon)::before,

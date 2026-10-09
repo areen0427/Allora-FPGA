@@ -1,3 +1,5 @@
+import type { SynthesisDiagramResponse } from "../../lib/synthesisGraph";
+export type { SynthesisDiagramResponse } from "../../lib/synthesisGraph";
 import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
@@ -28,14 +30,6 @@ type AggregatedDiagramEdge = {
   to: string;
   labels: string[];
   count: number;
-};
-
-export type SynthesisDiagramResponse = {
-  logs: string[];
-  topModule: string;
-  outputName: string;
-  nodes: SynthesisDiagramNode[];
-  edges: SynthesisDiagramEdge[];
 };
 
 type SynthesisSectionProps = {
@@ -116,8 +110,8 @@ export default function SynthesisSection({
     try {
       await openViewerWindow(
         "synthesis",
-        `${projectName || nextDiagram.topModule} — Hardware Diagram`,
-        nextDiagram,
+        `${projectName || nextDiagram.topModule} — Synthesis Explorer`,
+        { ...nextDiagram, projectKey: projectPath ?? projectName, sourceFiles: nextDiagram.sourceFiles ?? synthesisFiles },
       );
     } catch (viewerError) {
       setLog((current) => [

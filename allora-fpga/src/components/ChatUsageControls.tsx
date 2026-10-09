@@ -85,7 +85,7 @@ export default function ChatUsageControls({ usage, limits, available, hasMessage
       </div>
     </div>
     {open && <div ref={popup} id={id} popover="manual" tabIndex={-1} role="dialog" aria-label="Codex account usage" className="chat-model-popup chat-usage-popup">
-      <header><strong>Codex usage</strong><button type="button" aria-label="Close usage" onClick={() => { setOpen(false); trigger.current?.focus(); }}>×</button></header>
+      <header><strong>Codex usage</strong></header>
       {!available ? <p>Connect your Codex account to see usage.</p> : loading ? <p role="status">Refreshing usage…</p> : <>
         {error && <p role="status">{error}{snapshot && " Showing the last received values."}</p>}
         <WindowUsage label="5-hour limit" window={fiveHour} />

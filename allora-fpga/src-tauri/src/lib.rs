@@ -190,6 +190,7 @@ fn open_viewer_window(
     let build_result = WebviewWindowBuilder::new(&app, request.label, WebviewUrl::App(url.into()))
         .title(request.title)
         .inner_size(1280.0, 850.0)
+        .fullscreen(cfg!(debug_assertions) && std::env::var("VITE_ALLORA_DEMO_TOKEN").is_ok())
         .min_inner_size(720.0, 500.0)
         .resizable(true)
         .maximized(true)
@@ -925,7 +926,7 @@ fn delete_project_file(request: DeleteProjectFileRequest) -> Result<(), ErrorPay
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SynthesisInputFile {
     name: String,
@@ -969,6 +970,11 @@ struct GenerateSynthesisDiagramResponse {
     output_name: String,
     nodes: Vec<SynthesisDiagramNode>,
     edges: Vec<SynthesisDiagramEdge>,
+    artifacts: BTreeMap<String, Value>,
+    previous_build: Option<Value>,
+    optimization_history: Vec<Value>,
+    source_files: Vec<SynthesisInputFile>,
+    memory_files: Vec<SynthesisInputFile>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1337,6 +1343,8 @@ struct SimulateTestbenchResponse {
     waveform_name: String,
     waveform_path: Option<String>,
     vcd: String,
+    source_files: Vec<SynthesisInputFile>,
+    memory_files: Vec<SynthesisInputFile>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1380,9 +1388,7 @@ fn generate_synthesis_diagram_service(
     fs::create_dir_all(&source_dir)
         .map_err(|err| error(&format!("Unable to create synthesis workspace: {err}")))?;
 
-    if let Some(project_path) = &request.project_path {
-        copy_generated_memories(Path::new(project_path), &temp_dir)?;
-    }
+    stage_memory_snapshot(&temp_dir, &memory_files)?;
     for file in &request.files {
         let path = source_dir.join(&file.name);
         if let Some(parent) = path.parent() {
@@ -1457,14 +1463,106 @@ fn generate_synthesis_diagram_service(
         edges.len()
     ));
 
+    // Retain authoritative stage JSON, including pins, net aliases and src attributes.
+    let mut artifacts = BTreeMap::new();
+    for stage in ["functional", "logic"] {
+        let path = temp_dir.join(format!("{stage}.json"));
+        let text = fs::read_to_string(path)
+            .map_err(|err| error(&format!("Unable to read {stage} artifact: {err}")))?;
+        artifacts.insert(
+            stage.to_string(),
+            serde_json::from_str(&text)
+                .map_err(|err| error(&format!("Invalid {stage} artifact: {err}")))?,
+        );
+    }
+    // Mapping is optional and isolated: a device-library failure must not discard
+    // a successful portable schematic. The physical build flow remains unchanged.
+    let mapping = if request.fpga_id.to_lowercase().contains("ice40") {
+        Some("synth_ice40")
+    } else if request.fpga_id.to_lowercase().contains("ecp5")
+        || request.fpga_id.to_lowercase().contains("lfe5")
+    {
+        Some("synth_ecp5")
+    } else {
+        None
+    };
+    if let Some(mapping) = mapping {
+        let mapped_path = temp_dir.join("technology.json");
+        let prefix = script.split("\nproc\n").next().unwrap_or("");
+        let mapped_script = format!("{prefix}\n{mapping} -json {}\n", mapped_path.display());
+        let mapped_script_path = temp_dir.join("mapped.ys");
+        fs::write(&mapped_script_path, mapped_script)
+            .map_err(|err| error(&format!("Unable to write mapping script: {err}")))?;
+        match Command::new(tool_command("yosys"))
+            .arg("-q")
+            .arg("-s")
+            .arg(&mapped_script_path)
+            .current_dir(&temp_dir)
+            .output()
+        {
+            Ok(output) if output.status.success() => {
+                if let Ok(text) = fs::read_to_string(mapped_path) {
+                    if let Ok(json) = serde_json::from_str(&text) {
+                        artifacts.insert("technology".to_string(), json);
+                    }
+                }
+            }
+            Ok(output) => logs.push(format!(
+                "[explorer] Technology view unavailable: {}",
+                format_command_error("Yosys mapping", &output.stdout, &output.stderr)
+            )),
+            Err(err) => logs.push(format!("[explorer] Technology view unavailable: {err}")),
+        }
+    }
+    let mut optimization_history = Vec::new();
+    for (file, label) in [
+        ("history-processes.json", "Process lowering"),
+        ("history-collected-memory.json", "Memory collection"),
+        ("history-initial-optimization.json", "Initial optimization"),
+        ("functional.json", "FSM extraction / functional"),
+        ("history-fsm-mapping.json", "FSM mapping"),
+        (
+            "history-memory-mapping.json",
+            "Memory mapping (after optimization)",
+        ),
+        ("logic.json", "Final optimization / logic"),
+    ] {
+        if let Ok(text) = fs::read_to_string(temp_dir.join(file)) {
+            if let Ok(artifact) = serde_json::from_str::<Value>(&text) {
+                if let Some(summary) =
+                    synthesis_build_summary(&serde_json::json!({"snapshot": artifact}), &top_module)
+                {
+                    optimization_history.push(
+                        serde_json::json!({"name": label, "stats": summary["stages"]["snapshot"]}),
+                    );
+                }
+            }
+        }
+    }
     let _ = fs::remove_dir_all(&temp_dir);
 
+    let previous_build = request.project_path.as_ref().and_then(|project| {
+        let text =
+            fs::read_to_string(Path::new(project).join("build/synthesis-diagram.json")).ok()?;
+        let saved: Value = serde_json::from_str(&text).ok()?;
+        if saved["fpgaId"].as_str() != Some(request.fpga_id.as_str())
+            || saved["diagram"]["topModule"].as_str() != Some(top_module.as_str())
+        {
+            return None;
+        }
+        synthesis_build_summary(&saved["diagram"]["artifacts"], &top_module)
+    });
     let result = GenerateSynthesisDiagramResponse {
         logs,
         top_module,
         output_name,
         nodes,
         edges,
+        artifacts,
+        previous_build,
+        optimization_history,
+        source_files: request.files.clone(),
+        memory_files: memory_files.clone(),
     };
     if let Some(project) = &request.project_path {
         let build = Path::new(project).join("build");
@@ -1478,6 +1576,61 @@ fn generate_synthesis_diagram_service(
         .map_err(|e| error(&format!("Unable to save synthesis diagram: {e}")))?;
     }
     Ok(result)
+}
+
+// Preserve compact measured counts, rather than recursively retaining old netlists.
+fn synthesis_build_summary(artifacts: &Value, top: &str) -> Option<Value> {
+    fn visit(
+        modules: &Value,
+        name: &str,
+        stack: &mut Vec<String>,
+        types: &mut BTreeMap<String, usize>,
+        instances: &mut usize,
+    ) {
+        if stack.iter().any(|item| item == name) {
+            return;
+        }
+        stack.push(name.to_string());
+        if let Some(cells) = modules[name]["cells"].as_object() {
+            for cell in cells.values() {
+                let Some(kind) = cell["type"].as_str() else {
+                    continue;
+                };
+                if modules[kind].is_object() && modules[kind]["attributes"]["blackbox"].is_null() {
+                    *instances += 1;
+                    visit(modules, kind, stack, types, instances);
+                } else {
+                    *types.entry(kind.to_string()).or_default() += 1;
+                }
+            }
+        }
+        stack.pop();
+    }
+    let mut stages = serde_json::Map::new();
+    for (stage, artifact) in artifacts.as_object()? {
+        if !artifact["modules"][top].is_object() {
+            continue;
+        }
+        let mut types = BTreeMap::new();
+        let mut instances = 0;
+        visit(
+            &artifact["modules"],
+            top,
+            &mut Vec::new(),
+            &mut types,
+            &mut instances,
+        );
+        let total: usize = types.values().sum();
+        stages.insert(
+            stage.clone(),
+            serde_json::json!({"types": types, "total": total, "instances": instances}),
+        );
+    }
+    if stages.is_empty() {
+        None
+    } else {
+        Some(serde_json::json!({"stages": stages}))
+    }
 }
 
 fn generated_memory_sources(
@@ -1507,6 +1660,21 @@ fn generated_memory_sources(
     }
     files.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(files)
+}
+
+// Stage the exact bytes returned as provenance; do not reread a mutable project
+// after capturing the snapshot. Other build/simulator copy flows remain unchanged.
+fn stage_memory_snapshot(work: &Path, files: &[SynthesisInputFile]) -> Result<(), ErrorPayload> {
+    for file in files {
+        let path = work.join(&file.name);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|err| error(&format!("Unable to prepare memory snapshot: {err}")))?;
+        }
+        fs::write(path, &file.content)
+            .map_err(|err| error(&format!("Unable to stage memory snapshot: {err}")))?;
+    }
+    Ok(())
 }
 
 pub(crate) fn copy_generated_memories(project: &Path, work: &Path) -> Result<(), ErrorPayload> {
@@ -1849,15 +2017,14 @@ fn simulate_testbench_service(
     ));
     }
 
+    let memory_files = generated_memory_sources(request.project_path.as_deref())?;
     let output_name = sanitize_name(&request.project_name);
     let temp_dir = create_work_dir(&format!("{output_name}_sim"))?;
     let source_dir = temp_dir.join("src");
     fs::create_dir_all(&source_dir)
         .map_err(|err| error(&format!("Unable to create simulation workspace: {err}")))?;
 
-    if let Some(project_path) = &request.project_path {
-        copy_generated_memories(Path::new(project_path), &temp_dir)?;
-    }
+    stage_memory_snapshot(&temp_dir, &memory_files)?;
     let mut written_files = Vec::new();
     for file in request
         .source_files
@@ -2012,6 +2179,8 @@ fn simulate_testbench_service(
         waveform_name,
         waveform_path: project_waveform_path,
         vcd,
+        source_files: request.source_files,
+        memory_files,
     })
 }
 
@@ -2351,16 +2520,56 @@ fn build_yosys_script(request: &GenerateSynthesisDiagramRequest, json_path: &Pat
     }
 
     lines.push("proc".to_string());
-    lines.push("opt".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path.with_file_name("history-processes.json").display()
+    ));
+    lines.push("memory_collect".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path
+            .with_file_name("history-collected-memory.json")
+            .display()
+    ));
+    // Keep state registers extractable until the functional FSM snapshot.
+    lines.push("opt -nodffe -nosdff".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path
+            .with_file_name("history-initial-optimization.json")
+            .display()
+    ));
+    // Preserve extracted state machines before the normal FSM mapping pass.
+    lines.push("fsm -nomap".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path.with_file_name("functional.json").display()
+    ));
     lines.push("fsm".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path
+            .with_file_name("history-fsm-mapping.json")
+            .display()
+    ));
     lines.push("opt".to_string());
     lines.push("memory".to_string());
+    lines.push(format!(
+        "write_json {}",
+        json_path
+            .with_file_name("history-memory-mapping.json")
+            .display()
+    ));
     lines.push("opt".to_string());
     // Keep the diagram technology-independent. Device-specific synthesis turns
     // useful RTL operators into hundreds of opaque FPGA primitives (CCU2C,
     // LUT4, SB_LUT4, etc.), which is correct for place-and-route but poor for a
     // human-readable schematic. The bitstream flow still performs the full
     // family-specific synth pass separately.
+    lines.push(format!(
+        "write_json {}",
+        json_path.with_file_name("logic.json").display()
+    ));
     lines.push("flatten".to_string());
     lines.push("opt_clean".to_string());
     lines.push("check".to_string());
@@ -3955,6 +4164,147 @@ mod memory_asset_tests {
         .unwrap();
         assert_eq!(response.top_module, "demo_registers_top");
         assert!(!response.nodes.is_empty());
+        for stage in ["functional", "logic", "technology"] {
+            assert!(
+                response.artifacts[stage]["modules"]
+                    .get("demo_registers_top")
+                    .is_some(),
+                "missing {stage}"
+            );
+        }
+        assert!(!response.source_files.is_empty());
+        assert!(
+            response.artifacts["functional"]["modules"]
+                .as_object()
+                .unwrap()
+                .len()
+                > 1
+        );
+    }
+
+    #[test]
+    fn synthesis_explorer_summary_counts_hierarchy_and_primitive_leaves() {
+        let artifacts = serde_json::json!({"logic": {"modules": {
+            "top": {"cells": {"a": {"type": "child"}, "b": {"type": "child"}, "lut": {"type": "SB_LUT4"}}},
+            "child": {"cells": {"ff": {"type": "$dff"}}},
+            "SB_LUT4": {"attributes": {"blackbox": "1"}}
+        }}});
+        let summary = synthesis_build_summary(&artifacts, "top").unwrap();
+        assert_eq!(summary["stages"]["logic"]["total"], 3);
+        assert_eq!(summary["stages"]["logic"]["instances"], 2);
+        assert_eq!(summary["stages"]["logic"]["types"]["$dff"], 2);
+        assert!(synthesis_build_summary(&artifacts, "absent").is_none());
+    }
+
+    #[test]
+    fn synthesis_explorer_keeps_previous_counts_and_checkpoints() {
+        let project = Path::new(env!("CARGO_MANIFEST_DIR")).join(".explorer-comparison-test");
+        fs::create_dir_all(&project).unwrap();
+        let run = |fpga: &str| {
+            generate_synthesis_diagram_service(GenerateSynthesisDiagramRequest {
+            project_name: "comparison".into(), project_path: Some(project.to_string_lossy().into()),
+            board_name: "iCEBreaker".into(), fpga_id: fpga.into(),
+            synthesis_flow: "yosys-nextpnr".into(), top_module: Some("top".into()),
+            files: vec![SynthesisInputFile { name: "top.sv".into(), content:
+                "module top(input clk, input a, output reg q); always @(posedge clk) q <= ~a; endmodule".into() }],
+        }).unwrap()
+        };
+        let first = run("ice40up5k");
+        assert_eq!(first.optimization_history.len(), 7);
+        let second = run("ice40up5k");
+        assert!(second.previous_build.is_some());
+        let summary =
+            synthesis_build_summary(&serde_json::to_value(first.artifacts).unwrap(), "top")
+                .unwrap();
+        assert_eq!(second.previous_build.unwrap(), summary);
+        let incompatible = run("ice40hx8k");
+        assert!(incompatible.previous_build.is_none());
+        fs::remove_dir_all(project).unwrap();
+    }
+
+    #[test]
+    fn synthesis_explorer_memory_provenance_matches_staged_bytes_after_external_edit() {
+        let project = create_work_dir("explorer_memory_project").unwrap();
+        let work = create_work_dir("explorer_memory_snapshot").unwrap();
+        fs::create_dir_all(project.join("src/generated")).unwrap();
+        let memory = project.join("src/generated/rom.hex");
+        fs::write(&memory, "00\n").unwrap();
+        let snapshot = generated_memory_sources(project.to_str()).unwrap();
+        fs::write(&memory, "ff\n").unwrap();
+        stage_memory_snapshot(&work, &snapshot).unwrap();
+        assert_eq!(
+            fs::read_to_string(work.join("src/generated/rom.hex")).unwrap(),
+            "00\n"
+        );
+        assert_eq!(snapshot[0].content, "00\n");
+        fs::remove_dir_all(project).unwrap();
+        fs::remove_dir_all(work).unwrap();
+    }
+
+    #[test]
+    fn synthesis_explorer_ecp5_artifacts_preserve_sources_and_pins() {
+        let result = generate_synthesis_diagram_service(GenerateSynthesisDiagramRequest {
+            project_name: "explorer_ecp5".into(), project_path: None,
+            board_name: "ECP5".into(), fpga_id: "lfe5u-25f-cabga381".into(),
+            synthesis_flow: "yosys-nextpnr".into(), top_module: Some("top".into()),
+            files: vec![SynthesisInputFile { name: "top.sv".into(), content:
+                "module top(input clk, input [3:0] a, output reg [3:0] q); always @(posedge clk) q <= a + 1; endmodule".into() }],
+        }).unwrap();
+        for stage in ["functional", "logic", "technology"] {
+            let cells = result.artifacts[stage]["modules"]["top"]["cells"]
+                .as_object()
+                .unwrap();
+            assert!(!cells.is_empty());
+            assert!(cells
+                .values()
+                .all(|cell| cell["port_directions"].is_object()));
+        }
+        assert!(result.artifacts["functional"]["modules"]["top"]["cells"]
+            .as_object()
+            .unwrap()
+            .values()
+            .any(|cell| cell["attributes"]["src"]
+                .as_str()
+                .is_some_and(|src| src.contains("src/top.sv:"))));
+        assert!(result.artifacts["technology"]["modules"]["top"]["cells"]
+            .as_object()
+            .unwrap()
+            .values()
+            .any(|cell| cell["type"]
+                .as_str()
+                .is_some_and(|kind| kind == "LUT4" || kind == "TRELLIS_FF")));
+    }
+
+    #[test]
+    fn synthesis_explorer_retains_extracted_fsm_before_logic_mapping() {
+        let result = generate_synthesis_diagram_service(GenerateSynthesisDiagramRequest {
+            project_name: "explorer_fsm".into(),
+            project_path: None,
+            board_name: "iCEBreaker".into(),
+            fpga_id: "ice40up5k-sg48".into(),
+            synthesis_flow: "yosys-nextpnr".into(),
+            top_module: Some("traffic_fsm".into()),
+            files: vec![SynthesisInputFile {
+                name: "traffic_fsm.sv".into(),
+                content: include_str!("../../../examples/site-build-capture/src/traffic_fsm.sv")
+                    .into(),
+            }],
+        })
+        .unwrap();
+        let cells = result.artifacts["functional"]["modules"]["traffic_fsm"]["cells"]
+            .as_object()
+            .unwrap();
+        let fsm = cells
+            .values()
+            .find(|cell| cell["type"] == "$fsm")
+            .expect("real extracted FSM");
+        assert!(fsm["parameters"]["STATE_NUM"].is_string());
+        assert_eq!(fsm["port_directions"]["CLK"], "input");
+        assert!(result.artifacts["logic"]["modules"]["traffic_fsm"]["cells"]
+            .as_object()
+            .unwrap()
+            .values()
+            .all(|cell| cell["type"] != "$fsm"));
     }
 
     #[test]

@@ -159,6 +159,14 @@ Persistent interactive Virtual FPGA sessions are implemented in `src-tauri/src/v
 
 External tools are resolved from the environment and common install locations. A successful frontend build does not prove that a particular FPGA toolchain or programmer is installed on the user's machine.
 
+## Synthesis Explorer architecture
+
+The existing synthesis viewer remains a secondary window opened by `openViewerWindow` and rendered in `ViewerApp`/`HardwareSchematicCanvas`. `generate_synthesis_diagram_service` retains the flattened compatibility graph and adds raw functional, optimized hierarchical logic, and optional iCE40/ECP5 mapped Yosys artifacts plus source/memory snapshots. The functional snapshot preserves collected memories and extracted FSMs before normal memory/FSM mapping. Physical bitstream generation is unchanged.
+
+`src/lib/synthesisGraph.ts` owns pin/bit normalization, aliases, source provenance, structural traversal, category projections, stage statistics and conservative waveform matching. `src/lib/synthesisLayout.ts` owns pin-aware ELK routing; layout runs in a worker. The existing canvas adds search, hierarchy navigation, semantic labels, category collapse, selection, tracing/isolation, bounded expansion and viewport culling. `SynthesisInspector` exposes actual connections and metadata. Module interiors are opaque trace boundaries until entered.
+
+`src/lib/explorerBridge.ts` uses project-scoped Tauri events (BroadcastChannel in browser fallback) to connect Monaco selections and Dashboard source navigation. Source text must match the synthesis snapshot. Captured Testbench runs include native source/memory provenance; recorded values require exact scoped aliases and widths, with connection overlays additionally checking bit order. Linked waveform windows use recording IDs. Unmapped/constant-folded aliases, missing provenance and unsupported times remain without values. Analysis compares measured stage counts, not inferred optimization history or timing. See `docs/SYNTHESIS_EXPLORER.md` for limitations and nonvisual verification.
+
 ## AI Integration and embedded chat
 
 Settings has an **AI Integration** destination for OpenAI Codex and Claude Code. `src/components/AiIntegrationSettings.tsx` renders both providers from shared configuration, and `src/lib/aiIntegration.ts` exposes typed Tauri calls. Provider-specific CLI discovery, version checks, authentication status, and login initiation are isolated in `src-tauri/src/ai_integration.rs`; React does not run a shell or parse CLI output.

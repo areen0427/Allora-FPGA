@@ -33,8 +33,8 @@ export async function record(name = "main-overview") {
           title: "Allora FPGA — Marketing",
           width: 1200,
           height: 900,
-          resizable: false,
-          fullscreen: false,
+          resizable: true,
+          fullscreen: true,
         },
       ],
     },
@@ -147,12 +147,24 @@ export async function record(name = "main-overview") {
         journal.shots.push({ name: step.shot, time });
         console.log(`Shot: ${step.shot} (${time.toFixed(2)}s)`);
       }
+      if (step.action === "timing-report") {
+        await writeFile(stopFile, "stop");
+        await recorderDone;
+      }
       if (step.action)
         for (let count = 0; count < (step.repeat ?? 1); count++) {
           await send(step);
           if (step.between) await sleep(step.between);
         }
-      if (step.wait) await sleep(step.wait);
+      if (step.shot === "timing") {
+        const timingStop = path.join(cache, "stop-timing");
+        await rm(timingStop, { force: true });
+        const timingCapture = spawn(binary, ["Async Reset DFF — Timing Report", path.join(root, "raw/cinematic-timing.mp4"), timingStop], { stdio: ["ignore", "pipe", "inherit"] });
+        const timingDone = new Promise((resolve, reject) => timingCapture.on("exit", code => code === 0 ? resolve() : reject(new Error("Timing capture failed"))));
+        await sleep(5500);
+        await writeFile(timingStop, "stop");
+        await timingDone;
+      } else if (step.wait) await sleep(step.wait);
     }
     await writeFile(stopFile, "stop");
     await recorderDone;

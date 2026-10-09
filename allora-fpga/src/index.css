@@ -67,15 +67,16 @@ body,
   -ms-overflow-style: none;
 }
 
+/* App-wide policy: retain scrolling without visible scrollbar chrome. */
 * {
-  scrollbar-width: none;
+  scrollbar-width: none !important;
   -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 body {

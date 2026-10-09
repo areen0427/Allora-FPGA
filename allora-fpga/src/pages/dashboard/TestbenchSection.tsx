@@ -1,3 +1,4 @@
+import { listenExplorer, publishExplorer, type ExplorerMessage } from "../../lib/explorerBridge";
 import {
   useEffect,
   useMemo,
@@ -28,6 +29,8 @@ type SimulateTestbenchResponse = {
   waveformName: string;
   waveformPath?: string | null;
   vcd: string;
+  sourceFiles: {name: string; content: string}[];
+  memoryFiles: {name: string; content: string}[];
 };
 
 type TestbenchSectionProps = {
@@ -57,6 +60,10 @@ export default function TestbenchSection({
   onOpenFile,
   onAddArtifact,
 }: TestbenchSectionProps) {
+  const [explorerRecording, setExplorerRecording] = useState<Extract<ExplorerMessage, {type: 'waveform'}> | null>(null);
+  useEffect(() => listenExplorer(message => {
+    if (message.type === 'waveform-request' && message.projectKey === (projectPath ?? projectName) && explorerRecording) void publishExplorer(explorerRecording).catch(() => {});
+  }), [explorerRecording, projectPath, projectName]);
   const [selectedTestbenchName, setSelectedTestbenchName] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -252,6 +259,9 @@ export default function TestbenchSection({
 
       setLogs(filterTestbenchLogs(result.logs, settings.simulatorLogLevel));
       if (settings.simulatorCaptureWaveform) {
+        const recording: Extract<ExplorerMessage, {type: 'waveform'}> = { type: 'waveform', recordingId: crypto.randomUUID(), projectKey: projectPath ?? projectName, files: result.sourceFiles, memories: result.memoryFiles, vcd: result.vcd, waveformName: result.waveformName };
+        setExplorerRecording(recording);
+        void publishExplorer(recording).catch(() => {});
         if (settings.simulatorAutoOpenWaveform) {
           setWaveformText(result.vcd);
           await openWaveformViewer(result.vcd, result.waveformName);

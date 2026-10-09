@@ -369,3 +369,456 @@
     width: 80px;
   }
 }
+
+/* Explorer chrome shares the application Ice / Black Ice tokens. */
+.schematic-workspace {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+}
+.explorer-tools,
+.explorer-waveform {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ui-border-control);
+  background: var(--ui-panel);
+  backdrop-filter: blur(18px);
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.explorer-tools button,
+.explorer-tools select,
+.explorer-tools input:not([type="checkbox"]),
+.explorer-waveform button,
+.explorer-waveform input:not([type="range"]),
+.explorer-inspector button,
+.explorer-inspector select,
+.explorer-status button,
+.explorer-enter-module {
+  border: 1px solid var(--ui-border-control);
+  border-radius: 7px;
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+  padding: 6px 9px;
+  font: inherit;
+}
+.explorer-tools button,
+.explorer-inspector button,
+.explorer-waveform button {
+  cursor: pointer;
+}
+.explorer-tools button:hover,
+.explorer-inspector button:hover {
+  background: var(--ui-control-hover-bg);
+}
+.explorer-tools label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.explorer-tools details,
+.explorer-search {
+  position: relative;
+}
+.explorer-search-results,
+.explorer-group-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 5;
+  width: 300px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 10px;
+  background: var(--ui-panel);
+  box-shadow: 0 12px 32px #0003;
+}
+.explorer-search-results button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  text-align: left;
+}
+.explorer-group-menu button {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+}
+.explorer-status {
+  padding: 5px 16px;
+  background: var(--ui-surface);
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.explorer-status span {
+  display: block;
+}
+.explorer-wire-hit {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+.schematic-net {
+  stroke: var(--ui-text-muted);
+}
+.schematic-net.bus {
+  stroke: var(--ui-text);
+}
+.schematic-net.clock {
+  stroke: #d97706;
+  stroke-dasharray: 6 3;
+}
+.schematic-net.reset {
+  stroke: #dc2626;
+  stroke-dasharray: 3 3;
+}
+.schematic-net.enable {
+  stroke: #7c3aed;
+}
+.schematic-net.highlighted {
+  stroke: #3b82f6;
+  stroke-width: 3.5;
+}
+.schematic-net.transition {
+  stroke: #16a34a;
+}
+.explorer-net-label {
+  fill: var(--ui-text);
+  font: 10px var(--font-ui);
+  paint-order: stroke;
+  stroke: var(--ui-surface);
+  stroke-width: 3;
+  pointer-events: none;
+}
+.schematic-symbol-mark,
+.schematic-operator-mark,
+.schematic-port-label {
+  fill: var(--ui-text);
+}
+.schematic-pin-hint {
+  fill: var(--ui-text-muted);
+}
+.schematic-element > rect,
+.schematic-element > path,
+.schematic-element > circle {
+  fill: var(--ui-control-bg);
+  stroke: var(--ui-text-muted);
+}
+.schematic-element.category-register > rect {
+  stroke: #3b82f6;
+}
+.schematic-element.category-mux > path {
+  stroke: #8b5cf6;
+}
+.schematic-element.category-memory > rect {
+  stroke: #0891b2;
+}
+.schematic-element.category-lut > rect {
+  stroke: #16a34a;
+}
+.schematic-element.category-arithmetic > circle,
+.schematic-element.category-compare > circle {
+  stroke: #d97706;
+}
+.explorer-inspector {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  bottom: 14px;
+  width: min(350px, 40%);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 14px;
+  background: var(--ui-panel);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 36px #0002;
+  font-size: 12px;
+  color: var(--ui-text);
+  user-select: text;
+  cursor: auto;
+}
+.explorer-inspector header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.explorer-inspector header strong,
+.explorer-inspector code {
+  overflow-wrap: anywhere;
+}
+.explorer-inspector pre {
+  max-height: 210px;
+  overflow: auto;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--ui-control-bg);
+  white-space: pre;
+  font-size: 11px;
+}
+.explorer-inspector p,
+.explorer-inspector small {
+  color: var(--ui-text-muted);
+}
+.explorer-inspector h3 {
+  margin: 16px 0 8px;
+  font-size: 12px;
+}
+.explorer-property {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+.explorer-property code {
+  grid-column: 1 / -1;
+}
+.explorer-connection {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.explorer-connection small {
+  display: block;
+}
+.explorer-stat {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 5px;
+}
+.explorer-inspector table {
+  width: 100%;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.explorer-enter-module {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+}
+.explorer-waveform {
+  border-top: 1px solid var(--ui-border-control);
+  border-bottom: 0;
+}
+.explorer-waveform label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.explorer-waveform input[type="range"] {
+  flex: 1;
+  min-width: 150px;
+}
+@media (max-width: 760px) {
+  .explorer-inspector {
+    width: 45%;
+  }
+  .schematic-topbar {
+    padding: 8px;
+    gap: 8px;
+  }
+  .explorer-tools {
+    padding: 6px;
+  }
+  .schematic-sensitivity {
+    display: none;
+  }
+}
+
+/* Explorer toolbar: quiet controls, explicit sections, and resilient wrapping. */
+.schematic-workspace {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.schematic-topbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 12px 16px;
+}
+.schematic-topbar > div:first-child {
+  flex: 0 1 220px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.schematic-topbar strong {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.explorer-tools {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 8px 0;
+  align-items: center;
+}
+.explorer-tool-section,
+.schematic-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 12px;
+  border-left: 1px solid var(--ui-border-control);
+}
+.explorer-section-label {
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 3px;
+}
+.explorer-tools button,
+.explorer-tools summary,
+.schematic-controls button {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: var(--ui-control-transition);
+  cursor: pointer;
+}
+.explorer-tools button:hover:not(:disabled),
+.schematic-controls button:hover {
+  border-color: var(--ui-border-hover);
+  background: var(--ui-control-hover-bg);
+  color: var(--ui-accent-text);
+}
+.explorer-tools button[aria-pressed="true"],
+.explorer-tools button[aria-expanded="true"] {
+  background: var(--ui-control-active-bg);
+  color: var(--ui-accent-text);
+}
+.explorer-tools button:disabled,
+.explorer-tools input:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.explorer-tools button:focus-visible,
+.explorer-tools summary:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.explorer-tools nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.explorer-search input {
+  width: 210px;
+}
+.schematic-controls {
+  justify-content: flex-start;
+  gap: 3px;
+}
+.schematic-controls button,
+.schematic-zoom-value {
+  min-width: 30px;
+  height: 30px;
+  font-size: 12px;
+}
+.schematic-zoom-value {
+  background: transparent;
+  border: 0;
+}
+.schematic-sensitivity {
+  grid-template-columns: auto 60px 32px;
+  gap: 4px;
+}
+.schematic-sensitivity input {
+  width: 60px;
+}
+.schematic-net {
+  stroke-width: 1.2;
+}
+.schematic-net.bus {
+  stroke-width: 1.8;
+}
+.schematic-net.highlighted {
+  stroke-width: 2.2;
+}
+.explorer-inspector {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.explorer-inspector header {
+  position: sticky;
+  top: -16px;
+  padding: 8px 0;
+  background: var(--ui-panel);
+  z-index: 1;
+}
+.explorer-net-label {
+  font-size: 10px;
+}
+@media (max-width: 900px) {
+  .schematic-topbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .schematic-topbar > div:first-child {
+    flex: none;
+    max-width: 100%;
+  }
+  .explorer-tool-section {
+    padding: 0 8px;
+  }
+  .explorer-tools {
+    width: 100%;
+  }
+  .explorer-inspector {
+    width: min(350px, 65%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .explorer-tools button,
+  .schematic-controls button {
+    transition: none;
+  }
+}
+.explorer-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 0;
+}
+.explorer-tool-section[aria-label="View and search"] {
+  grid-column: 1;
+  grid-row: 1;
+}
+.explorer-tool-section[aria-label="Trace connections"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+.explorer-tool-section[aria-label="Panels and display"] {
+  grid-column: 2;
+  grid-row: 2;
+}
+.schematic-controls {
+  grid-column: 2;
+  grid-row: 1;
+}
+@media (max-width: 1100px) {
+  .schematic-sensitivity {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .explorer-tools {
+    display: flex;
+  }
+  .explorer-search input {
+    width: 175px;
+  }
+}
+
+/* Shared glass material stays quiet on precision zoom controls until hover. */
+#root .schematic-controls button:not(:hover):not(:focus-visible)::before,
+#root .schematic-controls button:not(:hover):not(:focus-visible)::after {
+  opacity: 0;
+}
