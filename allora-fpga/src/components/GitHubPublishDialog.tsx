@@ -11,7 +11,6 @@ import {
   RefreshCw,
   TerminalSquare,
   UploadCloud,
-  X,
 } from "lucide-react";
 import {
   beginGitHubDeviceSignIn,
@@ -305,14 +304,7 @@ export function GitHubPublishDialog({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="github-icon-button"
-            aria-label="Close GitHub publishing"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
+
         </header>
 
         <div className="github-dialog-statusbar">

@@ -109,8 +109,7 @@ export function UsageDialog({
         <header className="usage-dialog-header">
           <div className="usage-dialog-title">
             <div>
-              <span className="usage-dialog-eyebrow">Allora FPGA</span>
-              <h2 id="usage-title">Resource usage</h2>
+              <h2 id="usage-title">Resource Usage</h2>
             </div>
           </div>
         </header>

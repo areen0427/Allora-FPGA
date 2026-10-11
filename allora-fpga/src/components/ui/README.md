@@ -24,14 +24,21 @@ Shared styling is imported by `src/App.css`:
 - Add `ui-selection-group` to a paired group when the selected control should
   retain its theme-aware liquid-glass edge at rest. Use `aria-pressed` or
   `aria-selected` for state. `ui-glass-control` opts an otherwise flat element
-  into that same material; `ui-icon-button` supplies a shared 32px target.
+  into that same material; `ui-icon-button` supplies a shared 34px target. Add
+  `ui-icon-button-hover` for hover-only liquid-glass edges (Collapse, Add, Import).
 - `ui-compact-button-group` is the shared control variant for tightly spaced
   actions, tabs, and toolbars: transparent backgrounds and borders at rest,
   separated by short vertical dividers. Enabled controls reveal their material,
   border, and animation on hover. Shared sizing lives in controls.css; only
   explorer groups retain custom density. Selected text, keyboard focus, and
   reduced-motion preferences remain intact.
-  Use this variant explicitly rather than guessing proximity from CSS geometry.
+  `useAutomaticCompactGroups` also applies this shared variant to three or more
+  consecutive visible sibling controls in flex/grid rows, with gaps of at most
+  `--ui-compact-auto-distance` (12px). `--ui-compact-auto-min-count` defaults to 3.
+  It reevaluates after DOM/layout changes, splits wrapped rows, preserves
+  explicit groups and primary actions, and excludes dock, file-tree, card, and
+  physical switch controls. `data-ui-compact="off"` opts a container out.
+  Two-button groups can still use the explicit variant.
   Read-only compact counters use
   `ui-metric`: no control surface or border, with a short separator between
   adjacent metrics. Do not apply it to clickable items.
@@ -77,3 +84,15 @@ Run `npm test`, `npm run lint`, and `npm run build` from `allora-fpga`.
 
 The [consistency audit](../../../../docs/DESIGN_SYSTEM_AUDIT.md) records migrated
 controls and behaviors, intentional hardcoded values, and regression coverage.
+
+Popup dismissal is shared behavior: do not render an X close button in popovers
+or dialogs. Clicking outside dismisses the popup; Escape remains available for
+keyboard users. Blocking overlays use `useModalFocus`, which handles outside
+pointer dismissal, topmost-only Escape, focus trapping, and restoration. Native
+dialogs must dismiss on backdrop clicks as well. Keep explicit Cancel/Done
+choices where they are part of a workflow. Search-clear, file-tab close, and
+inline message dismissal controls are separate from popup dismissal.
+
+Floating surfaces use `--ui-popup-bg` for the shared theme-aware glass fill,
+`--ui-border-control` for the edge, and `--ui-popup-shadow` for the halo. Avoid
+popup-specific theme palettes; compact layouts belong to the popup component.

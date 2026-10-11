@@ -38,7 +38,7 @@
   --chat-warning: var(--ui-warning-text);
   --chat-shadow: var(--ui-control-shadow);
   display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
   min-width: 0;
   color: var(--chat-text);
@@ -48,9 +48,6 @@
 }
 html[data-theme="black-ice"] .allora-chat {
   --chat-sidebar: linear-gradient(145deg, rgba(30, 41, 59, .72), rgba(15, 23, 42, .58));
-}
-.allora-chat.sidebar-collapsed {
-  grid-template-columns: minmax(0, 1fr);
 }
 .allora-chat button {
   font: inherit;
@@ -100,9 +97,6 @@ html[data-theme="black-ice"] .allora-chat {
 }
 .chat-icon-button:hover:not(:disabled, [aria-disabled="true"]) {
   background: var(--chat-soft);
-}
-.chat-sidebar-toggle.is-open {
-  display: none;
 }
 .chat-new-button {
   display: flex;
@@ -750,7 +744,7 @@ html[data-theme="black-ice"] .chat-composer-bottom {
 }
 @media (max-width: 1100px) {
   .allora-chat {
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .chat-header {
     padding-inline: 22px;
@@ -781,9 +775,6 @@ html[data-theme="black-ice"] .chat-composer-bottom {
     width: min(240px, calc(100% - 50px));
     z-index: 3;
     box-shadow: 15px 0 40px #00000018;
-  }
-  .chat-sidebar-toggle.is-open {
-    display: inline-flex;
   }
   .chat-header {
     padding-inline: 15px;
@@ -1165,3 +1156,40 @@ html[data-reduce-motion="true"] .chat-usage-track > span { transition: none; }
 @media (prefers-reduced-motion: reduce) { .chat-context-tooltip { animation: none; } }
 html[data-reduce-motion="true"] .chat-context-tooltip { animation: none; }
 .chat-context-counter:focus-visible { outline: 2px solid var(--chat-accent); outline-offset: 4px; border-radius: 3px; }
+
+/* Recent chats is a compact header popover, leaving the shared explorer intact. */
+.allora-chat .chat-sidebar {
+  position: absolute;
+  inset: 64px 16px auto auto;
+  width: min(280px, calc(100% - 32px));
+  max-height: min(420px, calc(100% - 88px));
+  z-index: 10;
+  padding: 12px;
+  gap: 8px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-popup-bg);
+  box-shadow: var(--ui-popup-shadow);
+  font-size: 12px;
+}
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.chat-history-toggle {
+  gap: 5px;
+  font-size: 12px !important;
+  white-space: nowrap;
+}
+.allora-chat .chat-history-item > button:first-child {
+  padding: 8px;
+}
+
+.chat-conversation-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}

@@ -1,3 +1,4 @@
+import { sectionAfterTargetChange } from "./dashboard/navigation";
 import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
@@ -147,13 +148,13 @@ export default function Dashboard({
 
   useEffect(() => {
     setExecutionTarget(launchTarget);
-    setActiveSection(initialSection ?? (launchTarget === "simulate" ? "peripheral-workbench" : "editor"));
+    setActiveSection((current) => sectionAfterTargetChange(launchTarget, current, initialSection));
   }, [launchTarget, initialSection]);
 
   function changeExecutionTarget(target: ExecutionTarget) {
     if (board.id === "allora-virtual" && target === "build") return;
     setExecutionTarget(target);
-    setActiveSection(target === "simulate" ? "peripheral-workbench" : "editor");
+    setActiveSection((current) => sectionAfterTargetChange(target, current));
     onExecutionTargetChange(target);
   }
 
@@ -434,12 +435,12 @@ export default function Dashboard({
       <div
         className={`dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
-          width: (explorerCollapsed || activeSection === "chat") ? "72px" : `${sidebarWidth}px`,
+          width: explorerCollapsed ? "72px" : `${sidebarWidth}px`,
           height: "calc(100vh - 24px)",
           overflow: "visible",
           gap: explorerCollapsed ? 0 : "14px",
-          minWidth: (explorerCollapsed || activeSection === "chat") ? "72px" : "300px",
-          maxWidth: (explorerCollapsed || activeSection === "chat") ? "72px" : "480px",
+          minWidth: explorerCollapsed ? "72px" : "300px",
+          maxWidth: explorerCollapsed ? "72px" : "480px",
           padding: 0,
           position: "sticky",
           top: "12px",
@@ -450,7 +451,7 @@ export default function Dashboard({
         <WorkspaceDock
           activeSection={activeSection}
           executionTarget={executionTarget}
-          explorerCollapsed={explorerCollapsed && activeSection !== "chat"}
+          explorerCollapsed={explorerCollapsed}
           saving={saveProject.saveStatus === "saving"}
           onSectionChange={setActiveSection}
           onExpandExplorer={() => setExplorerCollapsed(false)}
@@ -470,7 +471,7 @@ export default function Dashboard({
           onUsage={(event) => setUsageAnchor(event.currentTarget)}
         />
 
-        {!explorerCollapsed && activeSection !== "chat" ? (
+        {!explorerCollapsed ? (
           <aside className="dashboard-glass-card dashboard-explorer" aria-label="Project explorer">
             <header className="explorer-project-header">
               <div className="explorer-project-copy">
@@ -485,7 +486,7 @@ export default function Dashboard({
               </div>
               <button
                 type="button"
-                className="explorer-collapse-button"
+                className="explorer-collapse-button ui-icon-button ui-icon-button-hover ui-glass-control"
                 aria-label="Collapse explorer"
                 title="Collapse explorer"
                 onClick={() => setExplorerCollapsed(true)}
@@ -547,7 +548,7 @@ export default function Dashboard({
                 <div className="project-explorer-actions ui-compact-button-group">
                   <button
                     type="button"
-                    className="ui-icon-button ui-glass-control"
+                    className="ui-icon-button ui-icon-button-hover ui-glass-control"
                     title="New file"
                     aria-label="New file"
                     onClick={() => handleCreateNewFile()}
@@ -556,7 +557,7 @@ export default function Dashboard({
                   </button>
 
                   <label
-                    className="project-file-import ui-button ui-icon-button ui-glass-control"
+                    className="project-file-import ui-button ui-icon-button ui-icon-button-hover ui-glass-control"
                     title="Import files"
                     aria-label="Import files"
                   >
@@ -640,7 +641,7 @@ export default function Dashboard({
           </aside>
         ) : null}
 
-        {!explorerCollapsed && activeSection !== "chat" ? (
+        {!explorerCollapsed ? (
           <div
             onMouseDown={startSidebarResize}
             onDoubleClick={() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH)}
@@ -971,7 +972,6 @@ export default function Dashboard({
           >
             <div className="variant-modal-header">
               <h2>Delete File</h2>
-              <button onClick={() => setDeletingFileName(null)}>×</button>
             </div>
 
             <div

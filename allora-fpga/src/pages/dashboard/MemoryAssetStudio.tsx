@@ -208,6 +208,12 @@ function AssetDialog({
       className="mas-dialog"
       aria-labelledby="mas-dialog-title"
       onCancel={() => onResolve(null)}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (event.clientX < bounds.left || event.clientX > bounds.right ||
+            event.clientY < bounds.top || event.clientY > bounds.bottom) onResolve(null);
+      }}
     >
       <form
         onSubmit={(event) => {

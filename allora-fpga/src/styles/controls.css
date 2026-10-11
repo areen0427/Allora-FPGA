@@ -241,7 +241,7 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 
 /* Compact groups share text-only resting material. Transparent physical borders
    reserve hover geometry; short separators distinguish adjacent actions. */
-#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button) {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]) {
   position: relative;
   overflow: visible;
   border: 1px solid transparent !important;
@@ -261,10 +261,10 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   font-weight: 750;
   line-height: 1.25;
 }
-#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
   color: var(--ui-accent-text) !important;
 }
-#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button)::before {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"])::before {
   content: none;
 }
 #root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button) + :is(button, .ui-button)::before {
@@ -287,18 +287,18 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   z-index: 1;
   pointer-events: none;
 }
-#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button)::after {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"])::after {
   opacity: 0;
 }
 @media (hover: hover) and (pointer: fine) {
-  #root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]) {
+  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"]) {
     /* The liquid-glass pseudo layer owns the visible edge. */
     border-color: transparent !important;
     background: var(--ui-control-hover-bg) !important;
     box-shadow: var(--ui-control-shadow) !important;
     transform: var(--ui-lift-subtle);
   }
-  #root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"])::after {
+  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"])::after {
     opacity: 1;
   }
 }
@@ -361,4 +361,56 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   #root :is(button.ui-action-button, .ui-compact-button-group > button.ui-action-button, .ui-button-group > button.ui-action-button):hover:not(:disabled, [aria-disabled="true"]) {
     transform: var(--ui-lift-subtle) !important;
   }
+}
+
+/* Hover-only icon controls share material whether standalone or in a group. */
+#root .ui-icon-button.ui-icon-button-hover {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: var(--ui-control-transition);
+}
+#root .ui-icon-button.ui-icon-button-hover::before,
+#root .ui-icon-button.ui-icon-button-hover::after {
+  opacity: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  #root .ui-icon-button.ui-icon-button-hover:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--ui-control-hover-bg) !important;
+    transform: var(--ui-lift-subtle);
+  }
+  #root .ui-icon-button.ui-icon-button-hover:hover:not(:disabled, [aria-disabled="true"])::after {
+    opacity: 1;
+  }
+}
+
+/* Geometry-detected rows use the same variant without changing container layout. */
+#root [data-ui-compact="true"] {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: var(--ui-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+#root [data-ui-compact="true"][data-ui-divider="true"]::before {
+  content: "";
+  position: absolute;
+  inset: auto;
+  left: calc(-1 * var(--ui-auto-divider-offset));
+  top: 50%;
+  width: 1px;
+  height: var(--ui-compact-divider-height);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--ui-border-control);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: translateY(-50%);
+  opacity: 1;
+  z-index: 1;
+  pointer-events: none;
 }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
 import {
   getPinTypeColor,
@@ -188,9 +187,7 @@ function CompactResourceDialog({
               {group.detail} · {group.pins.length} pins
             </div>
           </div>
-          <button type="button" className="board-diagram-popup-close" onClick={onClose} aria-label="Close">
-            <X size={16} />
-          </button>
+
         </div>
         <PinList group={group} />
       </div>

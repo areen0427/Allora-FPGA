@@ -11,13 +11,14 @@ let moduleId = 0;
 
 async function createHarness() {
   let effects = [];
-  const listeners = new Set();
+  const listeners = new Map([["keydown", new Set()], ["pointerdown", new Set()]]);
   const document = {
     activeElement: null,
     nativeDialog: null,
-    querySelector: () => document.nativeDialog,
-    addEventListener: (_type, listener) => listeners.add(listener),
-    removeEventListener: (_type, listener) => listeners.delete(listener),
+    nativePopover: null,
+    querySelector: (selector) => selector === "dialog:modal" ? document.nativeDialog : document.nativePopover,
+    addEventListener: (type, listener) => listeners.get(type).add(listener),
+    removeEventListener: (type, listener) => listeners.get(type).delete(listener),
   };
   globalThis.modalFocusHarness = {
     useRef: (current) => ({ current }),
@@ -55,6 +56,10 @@ async function createHarness() {
       const cleanups = effects.map(effect => effect()).filter(Boolean);
       return () => cleanups.forEach(cleanup => cleanup());
     },
+    pointer(target, options = {}) {
+      const event = { target, defaultPrevented: false, ...options };
+      for (const listener of listeners.get("pointerdown")) listener(event);
+    },
     key(key, options = {}) {
       const event = {
         key,
@@ -64,7 +69,7 @@ async function createHarness() {
         stopPropagation() {},
         ...options,
       };
-      for (const listener of [...listeners]) listener(event);
+      for (const listener of listeners.get("keydown")) listener(event);
       return event;
     },
   };
@@ -144,4 +149,28 @@ test("a modal with no usable controls keeps focus without restoring a removed op
   opener.isConnected = false;
   unmount();
   assert.equal(h.document.activeElement, dialog);
+});
+
+
+test("outside clicks dismiss only the top popup; inside controls and portaled popovers stay open", async () => {
+  const h = await createHarness();
+  const inside = h.element(), outside = h.element();
+  let outerClosed = 0, innerClosed = 0;
+  const unmountOuter = h.mount(h.element(), () => outerClosed++);
+  const unmountInner = h.mount(h.element([inside]), () => innerClosed++);
+  h.pointer(inside);
+  assert.equal(innerClosed, 0);
+  h.document.nativePopover = h.element([outside]);
+  h.pointer(outside);
+  assert.equal(innerClosed, 0);
+  h.document.nativePopover = null;
+  h.pointer(outside);
+  assert.equal(innerClosed, 1);
+  assert.equal(outerClosed, 0);
+  unmountInner();
+  h.pointer(outside);
+  assert.equal(outerClosed, 1);
+  unmountOuter();
+  h.pointer(outside);
+  assert.equal(outerClosed, 1);
 });

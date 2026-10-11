@@ -16,104 +16,17 @@ html:not([data-reduce-motion="true"])
   animation: modal-arrive 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 html:not([data-reduce-motion="true"]) .usage-dialog {
-  animation: usage-arrive 200ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-}
-@keyframes modal-arrive {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes usage-arrive {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes glass-unfold {
-  0% {
-    opacity: 0;
-    clip-path: inset(0 0 88% 0 round var(--glass-unfold-radius));
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    clip-path: inset(-80px -80px -80px -80px round var(--glass-unfold-radius));
-    transform: translateY(0);
-  }
-}
-html[data-reduce-motion="true"] :is(.board-diagram-popup-backdrop, .board-diagram-popup) {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  html :is(.variant-modal, .usage-dialog, .github-dialog, .board-diagram-popup) {
-    animation: none !important;
-  }
-  html .board-diagram-popup-backdrop {
-    animation: none !important;
-  }
-}
-
-.variant-modal {
-  width: 560px;
-  max-width: calc(100vw - 32px);
-  padding: 28px;
-  overflow: hidden;
-  border: 1px solid #dbe4f0;
-  border-radius: 28px;
-  background: white;
-  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
-}
-
-.variant-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.variant-modal-header h2 {
-  margin: 0;
-  color: var(--ui-text);
-  font-size: 28px;
-}
-
-.variant-modal-header button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 999px;
-  background: var(--ui-control-bg);
-  font-size: 24px;
-  cursor: pointer;
-  transition:
-    background var(--ui-motion-fast),
-    color var(--ui-motion-fast),
-    transform var(--ui-motion-fast);
-}
-
-.variant-modal-header button:hover:not(:disabled, [aria-disabled="true"]) {
-  color: var(--ui-accent-text);
-  transform: var(--ui-lift-subtle);
-}
-
-.settings-backdrop {
-  background: rgba(15, 29, 50, 0.16);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
-.usage-dialog {
   position: fixed;
   z-index: 60;
-  width: min(430px, calc(100vw - 32px));
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.84);
-  border-radius: var(--ui-radius-lg);
+  width: min(300px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
   color: var(--ui-text);
-  background: linear-gradient(145deg, rgba(239, 250, 255, 0.84), rgba(192, 226, 240, 0.72));
-  box-shadow: 0 24px 60px -24px rgba(26, 75, 100, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.42);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  background: var(--ui-popup-bg);
+  box-shadow: var(--ui-popup-shadow);
+  backdrop-filter: blur(24px) saturate(1.28);
+  -webkit-backdrop-filter: blur(24px) saturate(1.28);
 }
 
 .usage-dialog-header,
@@ -124,8 +37,8 @@ html[data-reduce-motion="true"] :is(.board-diagram-popup-backdrop, .board-diagra
 
 .usage-dialog-header {
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .usage-dialog-title {
@@ -135,17 +48,7 @@ html[data-reduce-motion="true"] :is(.board-diagram-popup-backdrop, .board-diagra
 .usage-dialog-title h2 {
   margin: 0;
   color: var(--ui-text);
-  font-size: 18px;
-}
-
-.usage-dialog-eyebrow {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--ui-accent-text);
-  font-size: 9px;
-  font-weight: 850;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 16px;
 }
 
 .usage-metrics {
@@ -156,13 +59,10 @@ html[data-reduce-motion="true"] :is(.board-diagram-popup-backdrop, .board-diagra
 
 .usage-metric {
   min-width: 0;
-  padding: 16px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  border: 1px solid rgba(44, 107, 130, 0.22);
-  border-radius: var(--ui-radius-xs);
-  background: rgba(245, 252, 255, 0.5);
+  gap: 4px;
 }
 
 .usage-metric span {
@@ -174,7 +74,7 @@ html[data-reduce-motion="true"] :is(.board-diagram-popup-backdrop, .board-diagra
 }
 
 .usage-metric strong {
-  font-size: 20px;
+  font-size: 18px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -203,36 +103,6 @@ html:not([data-reduce-motion="true"]) .usage-metric strong.is-ready {
 }
 
 .usage-error {
-  color: var(--ui-error-text);
-}
-
-html[data-theme="black-ice"] .usage-dialog {
-  border-color: rgba(174, 224, 242, 0.24);
-  background: linear-gradient(145deg, rgba(7, 18, 29, 0.94), rgba(3, 10, 18, 0.92));
-  color: var(--ui-text);
-  box-shadow: 0 24px 60px -24px rgba(0, 4, 10, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-html[data-theme="black-ice"] .usage-dialog-title h2 {
-  color: var(--ui-text);
-}
-
-html[data-theme="black-ice"] .usage-dialog-eyebrow {
-  color: var(--ui-accent-text);
-}
-
-html[data-theme="black-ice"] .usage-metric {
-  border-color: rgba(145, 207, 230, 0.18);
-  background: rgba(6, 17, 27, 0.55);
-  color: var(--ui-text);
-}
-
-html[data-theme="black-ice"] .usage-metric span,
-html[data-theme="black-ice"] .usage-metric small {
-  color: var(--ui-text-muted);
-}
-
-html[data-theme="black-ice"] .usage-error {
   color: var(--ui-error-text);
 }
 

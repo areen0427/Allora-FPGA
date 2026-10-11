@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   AlertCircle,
@@ -6,15 +6,13 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
-  CircuitBoard,
   Copy,
   FolderOpen,
+  History,
   LoaderCircle,
   MessageSquare,
   MoreHorizontal,
   Pencil,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   RefreshCw,
   ShieldCheck,
@@ -186,7 +184,31 @@ export default function ChatPage({
   const [activity, setActivity] = useState("");
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [approving, setApproving] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 760);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const historyPanelId = useId();
+  const historyPanelRef = useRef<HTMLElement>(null);
+  const historyToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    function dismissOutside(event: PointerEvent) {
+      const target = event.target as Node;
+      if (!historyPanelRef.current?.contains(target) && !historyToggleRef.current?.contains(target)) {
+        setSidebarOpen(false);
+      }
+    }
+    function dismissOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      setSidebarOpen(false);
+      historyToggleRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [sidebarOpen]);
   const [openingProject, setOpeningProject] = useState(false);
   const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string }) | null>(
     null,
@@ -673,33 +695,17 @@ export default function ChatPage({
 
   return (
     <section
-      className={`allora-chat${sidebarOpen ? "" : " sidebar-collapsed"}`}
+      className="allora-chat"
       aria-label="AI Integration"
     >
       {sidebarOpen && (
-        <aside className="chat-sidebar" aria-label="Conversations">
+        <aside id={historyPanelId} ref={historyPanelRef} className="chat-sidebar" aria-label="Recent chats">
           <div className="chat-sidebar-top">
             <strong>
-              <MessageSquare size={17} /> Your chats
+              <History size={16} /> Recent chats
             </strong>
-            <button
-              className="chat-icon-button"
-              type="button"
-              title="Hide conversations"
-              aria-label="Hide conversations"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <PanelLeftClose size={18} />
-            </button>
+
           </div>
-          <button
-            className="chat-new-button"
-            type="button"
-            onClick={() => void newChat()}
-            disabled={interactionLocked}
-          >
-            <Plus size={17} /> New chat
-          </button>
           <div className="chat-history-list">
             {conversations.length ? (
               conversations.map((conversation) => (
@@ -712,7 +718,7 @@ export default function ChatPage({
                     type="button"
                     disabled={interactionLocked}
                     title={conversation.title}
-                    onClick={() => { setHistoryMenuId(null); void selectConversation(conversation); }}
+                    onClick={() => { setHistoryMenuId(null); setSidebarOpen(false); void selectConversation(conversation); }}
                   >
                     <MessageSquare size={14} />
                     <span>{conversation.title}</span>
@@ -752,9 +758,9 @@ export default function ChatPage({
                     }}>
                       <input autoFocus aria-label="Chat name" value={renameDraft} maxLength={80}
                         disabled={interactionLocked} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setRenameDraft(event.target.value)}
-                        onKeyDown={(event) => { if (event.key === "Escape") setRenamingId(null); }} />
+                        onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setRenamingId(null); } }} />
                       <button type="submit" aria-label="Save chat name" disabled={interactionLocked || !renameDraft.trim()}><Check size={14} /></button>
-                      <button type="button" aria-label="Cancel rename" onClick={() => setRenamingId(null)}><X size={14} /></button>
+                      <button type="button" aria-label="Cancel rename" onClick={() => setRenamingId(null)}>Cancel</button>
                     </form>
                   )}
                 </div>
@@ -765,49 +771,50 @@ export default function ChatPage({
               </p>
             )}
           </div>
-          <div className="chat-sidebar-footer">
-            <CircuitBoard size={17} />
-            <span>
-              <strong>From idea to hardware</strong>
-              <small>Powered by your Codex account</small>
-            </span>
-          </div>
         </aside>
       )}
 
       <div className="chat-main">
         <header className="chat-header">
           <div className="chat-header-title">
-            <button
-              type="button"
-              className={`chat-icon-button chat-sidebar-toggle${sidebarOpen ? " is-open" : ""}`}
-              aria-label={
-                sidebarOpen ? "Hide conversations" : "Show conversations"
-              }
-              onClick={() => setSidebarOpen((current) => !current)}
-            >
-              {sidebarOpen ? (
-                <PanelLeftClose size={18} />
-              ) : (
-                <PanelLeftOpen size={18} />
-              )}
-            </button>
             <strong>
               AI Integration
             </strong>
           </div>
-          <div className={`chat-connection${ready ? " ready" : ""}`}>
-            <i />
-            <span>{connectionLabel}</span>
-            <button
-              type="button"
-              className="chat-icon-button"
-              disabled={checking}
-              aria-label="Check Codex connection"
-              onClick={() => void checkStatus()}
-            >
-              <RefreshCw size={13} className={checking ? "spinning" : ""} />
-            </button>
+          <div className="chat-header-actions">
+            <div className={`chat-connection${ready ? " ready" : ""}`}>
+              <i />
+              <span>{connectionLabel}</span>
+              <button
+                type="button"
+                className="chat-icon-button"
+                disabled={checking}
+                aria-label="Check Codex connection"
+                onClick={() => void checkStatus()}
+              >
+                <RefreshCw size={13} className={checking ? "spinning" : ""} />
+              </button>
+            </div>
+            <div className="chat-conversation-actions ui-compact-button-group">
+              <button
+                className="ui-button ui-button-secondary"
+                type="button"
+                onClick={() => { setSidebarOpen(false); void newChat(); }}
+                disabled={interactionLocked}
+              >
+                <Plus size={15} /> New chat
+              </button>
+              <button
+                ref={historyToggleRef}
+                type="button"
+                className="ui-button ui-button-secondary"
+                aria-expanded={sidebarOpen}
+                aria-controls={historyPanelId}
+                onClick={() => setSidebarOpen((current) => !current)}
+              >
+                <History size={15} /> Recent chats
+              </button>
+            </div>
           </div>
         </header>
         <div className="chat-workspace-row">

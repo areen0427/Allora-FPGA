@@ -38,8 +38,10 @@
   --ui-radius-2xl: 20px;
   --ui-dock-icon-size: 22px;
   --ui-compact-group-gap: 8px;
+  --ui-compact-auto-distance: 12px;
+  --ui-compact-auto-min-count: 3;
   --ui-compact-divider-height: 16px;
-  --ui-icon-button-size: 32px;
+  --ui-icon-button-size: 34px;
   --ui-border-subtle: rgba(226, 232, 240, 0.72);
   --ui-border-control: rgba(203, 213, 225, 0.72);
   --ui-border-control-strong: rgba(203, 213, 225, 0.8);
@@ -146,8 +148,9 @@ html[data-theme="black-ice"] {
   --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
-/* A dim, theme-aware halo for floating surfaces. */
+/* Shared theme-aware material for floating surfaces. */
 :root {
+  --ui-popup-bg: var(--ui-control-bg);
   --ui-popup-shadow: var(--ui-control-shadow),
     0 12px 32px color-mix(in srgb, var(--ui-text) 7%, transparent);
 }

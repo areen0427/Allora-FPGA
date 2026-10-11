@@ -27,6 +27,7 @@ import {
   readProjectWorkspace,
 } from "./lib/projectWorkspace";
 import "./App.css";
+import { useAutomaticCompactGroups } from "./hooks/useAutomaticCompactGroups";
 import type { DashboardSection, ExecutionTarget } from "./pages/dashboard/types";
 import { prepareCodexReadiness } from "./lib/codexReadiness";
 import { hasTauriInvoke } from "./lib/tauri";
@@ -49,6 +50,7 @@ type ProjectMetadata = {
 };
 
 function App() {
+  useAutomaticCompactGroups();
   const [chatProjectPath, setChatProjectPath] = useState<string | undefined>();
   const [workspaceSection, setWorkspaceSection] = useState<DashboardSection | undefined>();
   const [returnToChat, setReturnToChat] = useState(false);

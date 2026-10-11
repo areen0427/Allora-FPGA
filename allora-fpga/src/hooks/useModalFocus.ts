@@ -13,7 +13,8 @@ function focusableElements(dialog: HTMLElement) {
   );
 }
 
-/** Shared keyboard behavior for blocking overlays. Native dialogs keep their own trap. */
+/** Shared dismissal and keyboard behavior. Popups have no close X; outside clicks
+ * dismiss the top overlay. Native dialogs keep their own focus trap. */
 export function useModalFocus(
   dialogRef: RefObject<HTMLElement | null>,
   onClose: () => void,
@@ -68,9 +69,23 @@ export function useModalFocus(
       }
     }
 
+    function handleOutsidePointer(event: PointerEvent) {
+      if (event.defaultPrevented || !event.target || activeDialogs.at(-1) !== dialog) return;
+      const nativeDialog = ownerDocument.querySelector("dialog:modal");
+      if (nativeDialog && !nativeDialog.contains(dialog)) return;
+      const target = event.target as Node;
+      if (dialog.contains(target)) return;
+      // Portaled native popovers can sit above a modal without belonging to its DOM.
+      const popover = ownerDocument.querySelector("[popover]:popover-open");
+      if (popover?.contains(target)) return;
+      onCloseRef.current();
+    }
+
+    ownerDocument.addEventListener("pointerdown", handleOutsidePointer);
     ownerDocument.addEventListener("keydown", handleKeyDown);
     return () => {
       ownerDocument.removeEventListener("keydown", handleKeyDown);
+      ownerDocument.removeEventListener("pointerdown", handleOutsidePointer);
       const wasTopmost = activeDialogs.at(-1) === dialog;
       activeDialogs.splice(activeDialogs.lastIndexOf(dialog), 1);
       if (wasTopmost && previouslyFocused?.isConnected) {

@@ -1,5 +1,4 @@
 import { useId, useRef } from "react";
-import { X } from "lucide-react";
 import type { VariantBoardCatalogItem } from "../../data/boardSupport";
 import { useModalFocus } from "../../hooks/useModalFocus";
 
@@ -30,9 +29,7 @@ export function VariantSelectorModal({
       >
         <div className="variant-modal-header">
           <h2 id={titleId}>Select {board.name} Variant</h2>
-          <button type="button" className="ui-button-secondary" aria-label="Close board variants" onClick={onClose}>
-            <X size={18} />
-          </button>
+
         </div>
 
         <div className="variant-grid">
