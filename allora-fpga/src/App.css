@@ -1,6 +1,5 @@
 @import "./styles/tokens.css";
 @import "./styles/core.css";
-@import "./styles/themes/inline-compat.css";
 @import "./styles/welcome.css";
 @import "./styles/pin-browser.css";
 @import "./styles/board-menu.css";

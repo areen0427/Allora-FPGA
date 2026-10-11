@@ -5,7 +5,7 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 html:is([data-theme="dark"], [data-theme="black-ice"])
   .recent-projects-header
   h2 {
-  color: #f8fafc !important;
+  color: var(--ui-text) !important;
 }
 
 html:is([data-theme="dark"], [data-theme="black-ice"]) .welcome-eyebrow,
@@ -16,7 +16,7 @@ html:is([data-theme="dark"], [data-theme="black-ice"])
 html:is([data-theme="dark"], [data-theme="black-ice"])
   .recent-projects-header
   p {
-  color: #cbd5e1 !important;
+  color: var(--ui-text-muted) !important;
 }
 
 /* One motion policy covers every screen and detached viewer. Token-based

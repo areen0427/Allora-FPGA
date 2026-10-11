@@ -1,4 +1,5 @@
 export type DashboardSection =
+  | "chat"
   | "editor"
   | "peripheral-workbench"
   | "register-builder"

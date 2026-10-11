@@ -270,6 +270,8 @@ export default function SynthesisInspector({
                           .join("\n")}
                       </pre>
                       <button
+                        type="button"
+                        className="ui-button ui-button-secondary"
                         onClick={() => {
                           void publishExplorer({
                             type: "rtl-navigate",

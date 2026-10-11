@@ -4,6 +4,7 @@ type InfoCardProps = {
   title: string;
   children: ReactNode;
   style?: CSSProperties;
+  className?: string;
   compact?: boolean;
 };
 
@@ -12,16 +13,15 @@ export default function InfoCard({
   children,
   style,
   compact = false,
+  className,
 }: InfoCardProps) {
   return (
     <div
-      className="dashboard-glass-card"
+      className={`dashboard-glass-card${className ? ` ${className}` : ""}`}
       style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: "24px",
+        border: "1px solid var(--ui-border-subtle)",
+        borderRadius: "var(--ui-radius-2xl)",
         padding: "28px",
-        boxShadow: "0 14px 34px rgba(15,23,42,0.06)",
         ...style,
       }}
     >
@@ -56,7 +56,7 @@ export function InfoRow({
         style={{
           fontSize: compact ? "11px" : "13px",
           fontWeight: 800,
-          color: "#64748b",
+          color: "var(--ui-text-muted)",
           textTransform: "uppercase",
           letterSpacing: "0.06em",
         }}
@@ -69,7 +69,7 @@ export function InfoRow({
           marginTop: compact ? "4px" : "5px",
           fontSize: compact ? "14px" : "19px",
           fontWeight: 750,
-          color: "#0f172a",
+          color: "var(--ui-text)",
           overflowWrap: "anywhere",
         }}
       >

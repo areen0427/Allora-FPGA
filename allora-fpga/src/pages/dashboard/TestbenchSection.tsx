@@ -306,7 +306,7 @@ export default function TestbenchSection({
           overflow: "hidden",
         }}
       >
-        <div className="testbench-toolbar">
+        <div className="testbench-toolbar ui-compact-button-group">
           <label className="synthesis-top-level-field">
             <span>Testbench</span>
             <select
@@ -350,7 +350,7 @@ export default function TestbenchSection({
 
           <button
             type="button"
-            className="primary-action synthesis-generate-button"
+            className="primary-action synthesis-generate-button ui-action-button"
             disabled={!canRun || isRunning}
             onClick={() => void runSimulation()}
           >
@@ -401,7 +401,7 @@ export default function TestbenchSection({
       <div className="testbench-side">
         <InfoCard
           title="Setup"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow
@@ -433,7 +433,7 @@ export default function TestbenchSection({
 
         <InfoCard
           title="Files"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <div className="testbench-file-list">
@@ -464,7 +464,7 @@ export default function TestbenchSection({
           title="Simulator Log"
           style={{
             padding: "14px",
-            borderRadius: "16px",
+            borderRadius: "var(--ui-radius-lg)",
             minHeight: 0,
             overflow: "hidden",
           }}

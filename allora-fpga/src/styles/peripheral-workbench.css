@@ -39,8 +39,8 @@
 }
 .pw-status {
   padding: 9px 14px;
-  border: 1px solid #7c95bd55;
-  border-radius: 20px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-2xl);
   font-size: 12px;
 }
 .pw button,
@@ -49,7 +49,7 @@
   font: inherit;
   font-size: 12px;
   border: 1px solid var(--ui-border-control);
-  border-radius: 7px;
+  border-radius: var(--ui-radius-sm);
   padding: 8px;
   background: var(--ui-control-bg);
   color: inherit;
@@ -64,8 +64,8 @@
   transform: var(--ui-lift-subtle);
 }
 .pw :disabled {
-  opacity: 0.45;
-  cursor: default;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .pw :focus-visible {
   outline: 2px solid var(--ui-accent-text);
@@ -80,15 +80,15 @@
 .pw-layout {
   display: grid;
   grid-template-columns: 175px minmax(280px, 1fr) 225px;
-  border: 1px solid #7c95bd44;
-  border-radius: 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
   min-height: 550px;
   overflow: hidden;
 }
 .pw-library,
 .pw-inspector {
   padding: 16px;
-  background: #8197b80c;
+  background: var(--ui-surface);
 }
 .pw-library button {
   display: block;
@@ -116,7 +116,7 @@
 .pw-canvas {
   overflow: auto;
   position: relative;
-  background-image: radial-gradient(#8094b344 1px, transparent 1px);
+  background-image: radial-gradient(var(--ui-border-subtle) 1px, transparent 1px);
   background-size: 18px 18px;
 }
 .pw-canvas-inner {
@@ -127,15 +127,15 @@
   position: absolute;
   width: 245px;
   box-sizing: border-box;
-  border: 1px solid #879ab666;
+  border: 1px solid var(--ui-border-control);
   border-radius: 12px;
   padding: 12px;
-  background: var(--bg-primary, #e8eef6);
-  box-shadow: 0 6px 18px #18253b10;
+  background: var(--ui-panel);
+  box-shadow: var(--ui-control-shadow);
 }
 .pw-device.selected {
-  border-color: #5a8fe8;
-  box-shadow: 0 0 0 2px #5a8fe822;
+  border-color: var(--ui-border-hover);
+  box-shadow: var(--ui-focus-ring);
 }
 .pw-device-heading {
   display: block;
@@ -203,7 +203,7 @@
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font: 11px monospace;
+  font: 11px var(--font-code);
   padding: 7px;
   border-radius: 5px;
 }
@@ -225,11 +225,11 @@
 }
 .pw-error,
 .pw-error-text {
-  color: #d55858;
+  color: var(--ui-error-text);
 }
 .pw-error {
   padding: 10px;
-  background: #e34f4f12;
+  background: var(--ui-error-bg);
   white-space: pre-wrap;
   margin: 8px 0;
 }
@@ -250,8 +250,8 @@
 .pw-coming {
   margin: 60px auto;
   padding: 40px;
-  border: 1px solid #879ab644;
-  border-radius: 20px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-2xl);
   max-width: 550px;
 }
 @media (max-width: 1100px) {
@@ -262,19 +262,10 @@
     grid-column: 1/-1;
   }
 }
-html:is([data-theme="dark"], [data-theme="black-ice"]) .pw {
-  color: #dbe5f4;
-}
-html:is([data-theme="dark"], [data-theme="black-ice"]) .pw-device {
-  background: #172334;
-}
-html:is([data-theme="dark"], [data-theme="black-ice"]) .pw select {
-  background: #172334;
-}
 .sidebar-coming-soon {
   font-size: 6px;
   line-height: 1;
-  color: #7d91ad;
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.25px;
 }

@@ -128,11 +128,11 @@ function getPinTypeLabel(type: string) {
 }
 
 export function getPinTypeColor(type: string) {
-  if (type === "clock") return { background: "#eff6ff", color: "#2563eb" };
+  if (type === "clock") return { background: "var(--ui-control-active-bg)", color: "var(--ui-accent-text)" };
   if (type === "led") return { background: "#fef3c7", color: "#b45309" };
   if (type === "button") return { background: "#fee2e2", color: "#b91c1c" };
   if (type === "uart" || type === "spi" || type === "flash" || type === "i2c")
     return { background: "#f0fdf4", color: "#15803d" };
   if (type === "unknown") return { background: "#f5f3ff", color: "#6d28d9" };
-  return { background: "#f8fafc", color: "#475569" };
+  return { background: "var(--ui-control-bg)", color: "var(--ui-text-muted)" };
 }

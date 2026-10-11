@@ -330,7 +330,7 @@ export default function RegisterBuilder({
           <h1>Register map workspace</h1>
           <p>Define the software interface. Connect it to your hardware.</p>
         </div>
-        <div className="rb-actions">
+        <div className="rb-actions ui-compact-button-group">
           <button
             disabled={!ready || busy}
             onClick={() =>
@@ -347,7 +347,7 @@ export default function RegisterBuilder({
             Save map
           </button>
           <button
-            className="mas-primary"
+            className="mas-primary ui-action-button"
             disabled={!ready || busy || !!issues.length}
             onClick={() => void generate(savedIntegration)}
           >
@@ -456,7 +456,7 @@ export default function RegisterBuilder({
             <>
               <div className="rb-panel-title">
                 <h2>{register.name || "Register"}</h2>
-                <div className="rb-actions">
+                <div className="rb-actions ui-compact-button-group">
                   <button
                     title="Move register up"
                     aria-label="Move register up"
@@ -725,7 +725,7 @@ export default function RegisterBuilder({
                 share one simple native interface.
               </p>
               <button
-                className="mas-primary"
+                className="mas-primary ui-action-button"
                 disabled={!ready || busy}
                 onClick={add}
               >
@@ -911,7 +911,7 @@ export default function RegisterBuilder({
             </p>
             <pre>{wrapper}</pre>
             <button
-              className="mas-primary"
+              className="mas-primary ui-action-button"
               disabled={busy || discoveryKey !== currentSources}
               onClick={() => void generate(integration, true)}
             >

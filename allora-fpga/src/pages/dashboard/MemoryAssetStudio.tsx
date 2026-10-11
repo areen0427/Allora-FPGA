@@ -230,7 +230,7 @@ function AssetDialog({
             />
           </label>
         )}
-        <div className="mas-actions">
+        <div className="mas-actions ui-compact-button-group">
           <button type="button" onClick={() => onResolve(null)}>
             Cancel
           </button>
@@ -728,7 +728,7 @@ export default function MemoryAssetStudio({
           <p>Convert source data into deterministic FPGA memories.</p>
         </div>
         <button
-          className="mas-primary"
+          className="mas-primary ui-action-button"
           disabled={busy || dirty || !loaded || manifestError}
           onClick={() => input.current?.click()}
         >
@@ -771,7 +771,7 @@ export default function MemoryAssetStudio({
             ready for your FPGA project.
           </p>
           <button
-            className="mas-primary"
+            className="mas-primary ui-action-button"
             disabled={busy}
             onClick={() => input.current?.click()}
           >
@@ -986,9 +986,9 @@ export default function MemoryAssetStudio({
                     </pre>
                   </>
                 )}
-                <div className="mas-actions">
+                <div className="mas-actions ui-compact-button-group">
                   <button
-                    className="mas-primary"
+                    className="mas-primary ui-action-button"
                     disabled={busy || dirty}
                     onClick={() => void generate()}
                   >
@@ -1016,7 +1016,7 @@ export default function MemoryAssetStudio({
                   The source is unavailable or the conversion settings are
                   invalid. Review the status above.
                 </p>
-                <div className="mas-actions">
+                <div className="mas-actions ui-compact-button-group">
                   <button disabled={busy || dirty} onClick={rename}>
                     Rename
                   </button>
@@ -1275,9 +1275,9 @@ export default function MemoryAssetStudio({
                     ? "Apply your changes to refresh the preview."
                     : "Settings are saved with this project."}
                 </p>
-                <div className="mas-actions">
+                <div className="mas-actions ui-compact-button-group">
                   <button
-                    className="mas-primary"
+                    className="mas-primary ui-action-button"
                     disabled={busy || !dirty}
                     onClick={applySettings}
                   >

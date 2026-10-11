@@ -10,9 +10,9 @@
 .vfpga-control-card,
 .vfpga-board-card,
 .vfpga-panel {
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--ui-border-control);
+  background: var(--dashboard-surface-bg, var(--ui-control-bg));
+  box-shadow: var(--ui-inset-highlight);
   backdrop-filter: blur(18px);
   border-radius: 22px;
 }
@@ -22,14 +22,8 @@
   justify-content: space-between;
   align-items: center;
   border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
-  background:
-    radial-gradient(
-      circle at 85% 10%,
-      rgba(56, 189, 248, 0.12),
-      transparent 32%
-    ),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(237, 249, 255, 0.78));
+  box-shadow: var(--ui-inset-highlight);
+  background: var(--dashboard-surface-bg, var(--ui-control-bg));
 }
 .vfpga-eyebrow {
   display: flex;
@@ -47,7 +41,7 @@
 }
 .vfpga-hero p {
   margin: 0;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 13px;
 }
 .vfpga-status {
@@ -57,36 +51,36 @@
   padding: 8px 12px;
   text-transform: capitalize;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--ui-control-bg);
   font-size: 12px;
   font-weight: 800;
-  color: #475569;
+  color: var(--ui-text-muted);
 }
 .vfpga-status span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: var(--ui-text-soft);
 }
 .vfpga-status.running span {
-  background: #22c55e;
-  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14);
+  background: var(--ui-success-text);
+  box-shadow: 0 0 0 6px var(--ui-success-bg);
   animation: vfpga-pulse 1.2s infinite;
 }
 .vfpga-status.compiling span {
-  background: #f59e0b;
+  background: var(--ui-warning-text);
 }
 .vfpga-status.error span {
-  background: #ef4444;
+  background: var(--ui-error-text);
 }
 .vfpga-error {
   display: grid;
   gap: 4px;
   padding: 13px 16px;
   border-radius: 15px;
-  color: #991b1b;
-  background: #fff1f2;
-  border: 1px solid #fecdd3;
+  color: var(--ui-error-text);
+  background: var(--ui-error-bg);
+  border: 1px solid var(--ui-error-border);
   white-space: pre-wrap;
   font-size: 12px;
   line-height: 1.5;
@@ -97,17 +91,17 @@
   align-items: center;
   gap: 20px;
   padding: 13px 16px;
-  border: 1px solid rgba(14, 165, 233, 0.2);
+  border: 1px solid var(--ui-border-control);
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), rgba(238, 242, 255, 0.78));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  background: var(--ui-control-bg);
+  box-shadow: var(--ui-inset-highlight);
 }
 .vfpga-guide > div { display: grid; gap: 3px; }
-.vfpga-guide > div span { color: #0284c7; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.vfpga-guide > div span { color: var(--ui-accent-text); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .vfpga-guide > div strong { font-size: 12px; }
 .vfpga-guide ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.vfpga-guide li { min-width: 0; display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-radius: 9px; background: rgba(255,255,255,.56); color: #94a3b8; font-size: 9px; font-weight: 800; }
-.vfpga-guide li.done { color: #047857; background: rgba(209,250,229,.7); }
+.vfpga-guide li { min-width: 0; display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-radius: 9px; background: var(--ui-control-bg); color: var(--ui-text-soft); font-size: 9px; font-weight: 800; }
+.vfpga-guide li.done { color: var(--ui-success-text); background: var(--ui-success-bg); }
 .vfpga-control-card {
   padding: 12px 14px;
 }
@@ -127,7 +121,7 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
   font-weight: 800;
 }
 .vfpga-stat strong {
@@ -171,7 +165,7 @@
 }
 .vfpga-actions button:hover:not(:disabled) {
   transform: var(--ui-lift-subtle);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--ui-hover-shadow);
 }
 .vfpga-actions button.primary {
   min-width: 124px;
@@ -217,10 +211,10 @@
 }
 .vfpga-board-heading strong {
   font-size: 11px;
-  color: #64748b;
+  color: var(--ui-text-muted);
 }
 .vfpga-board-heading small {
-  color: #64748b;
+  color: var(--ui-text-muted);
 }
 .vfpga-board-silk {
   min-height: 0;
@@ -336,14 +330,14 @@
 .vfpga-chip span {
   font-size: 9px;
   letter-spacing: 0.22em;
-  color: #7dd3fc;
+  color: var(--ui-accent-text);
 }
 .vfpga-chip strong {
   font-size: 23px;
   letter-spacing: 0.08em;
 }
 .vfpga-chip small {
-  color: #94a3b8;
+  color: var(--ui-text-soft);
 }
 .vfpga-input-bank {
   display: flex;
@@ -426,7 +420,7 @@
 }
 .vfpga-section-title span {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
 }
 .vfpga-mapping-list {
   display: grid;
@@ -455,7 +449,7 @@
 }
 .vfpga-mapping-list label small {
   grid-column: 2;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
   font-size: 8px;
   text-transform: uppercase;
 }
@@ -495,20 +489,20 @@
 }
 .vfpga-waveform { overflow: hidden; }
 .vfpga-waveform .vfpga-section-title { justify-content: flex-start; }
-.vfpga-waveform .vfpga-section-title > svg { color: #0284c7; flex: 0 0 auto; }
+.vfpga-waveform .vfpga-section-title > svg { color: var(--ui-accent-text); flex: 0 0 auto; }
 .vfpga-wave-picker { margin-left: auto; display: flex !important; grid-auto-flow: column; gap: 4px !important; max-width: 52%; overflow-x: auto; padding-bottom: 2px; }
-.vfpga-wave-picker button { border: 1px solid var(--ui-border-control); border-radius: 7px; background: var(--ui-control-bg); color: #64748b; padding: 5px 7px; font-size: 9px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-.vfpga-wave-picker button.active { border-color: #38bdf8; background: #e0f2fe; color: #0369a1; }
-.vfpga-wave-grid { display: grid; grid-template-columns: 150px minmax(0, 1fr); border: 1px solid #e2e8f0; border-radius: 11px; overflow: hidden; }
-.vfpga-wave-labels { display: grid; background: var(--ui-control-bg); border-right: 1px solid #e2e8f0; }
-.vfpga-wave-labels button { min-height: 42px; display: grid; grid-template-columns: 7px minmax(0,1fr); column-gap: 7px; align-content: center; border: 0; border-bottom: 1px solid #edf2f7; background: transparent; color: var(--ui-text); padding: 5px 9px; text-align: left; cursor: pointer; }
+.vfpga-wave-picker button { border: 1px solid var(--ui-border-control); border-radius: 7px; background: var(--ui-control-bg); color: var(--ui-text-muted); padding: 5px 7px; font-size: 9px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.vfpga-wave-picker button.active { border-color: var(--ui-border-hover); background: var(--ui-control-active-bg); color: var(--ui-accent-text); }
+.vfpga-wave-grid { display: grid; grid-template-columns: 150px minmax(0, 1fr); border: 1px solid var(--ui-border-control); border-radius: 11px; overflow: hidden; }
+.vfpga-wave-labels { display: grid; background: var(--ui-control-bg); border-right: 1px solid var(--ui-border-control); }
+.vfpga-wave-labels button { min-height: 42px; display: grid; grid-template-columns: 7px minmax(0,1fr); column-gap: 7px; align-content: center; border: 0; border-bottom: 1px solid var(--ui-border-subtle); background: transparent; color: var(--ui-text); padding: 5px 9px; text-align: left; cursor: pointer; }
 .vfpga-wave-labels .direction { width: 6px; height: 6px; border-radius: 50%; background: #38bdf8; grid-row: 1 / span 2; align-self: center; }
 .vfpga-wave-labels .direction.output { background: #4ade80; }
 .vfpga-wave-labels strong { font-family: var(--font-engineering); overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
-.vfpga-wave-labels small { color: #94a3b8; font-size: 8px; text-transform: uppercase; }
+.vfpga-wave-labels small { color: var(--ui-text-soft); font-size: 8px; text-transform: uppercase; }
 .vfpga-wave-canvas { width: 100%; display: block; background: repeating-linear-gradient(90deg, transparent 0 79px, rgba(148,163,184,.13) 80px); }
 .vfpga-wave-stage { position: relative; min-width: 0; }
-.vfpga-wave-time { position: absolute; right: 21px; bottom: 4px; padding: 2px 5px; border-radius: 5px; background: rgba(248,250,252,.88); color: #64748b; font-size: 8px; font-weight: 800; pointer-events: none; }
+.vfpga-wave-time { position: absolute; right: 21px; bottom: 4px; padding: 2px 5px; border-radius: 5px; background: var(--ui-control-bg); color: var(--ui-text-muted); font-size: 8px; font-weight: 800; pointer-events: none; }
 .vfpga-wave-canvas .wave-row-line { stroke: rgba(148,163,184,.22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .vfpga-wave-canvas .wave-trace { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .vfpga-wave-canvas .trace-0 { stroke: #0284c7; }
@@ -518,14 +512,14 @@
 .vfpga-wave-canvas .trace-4 { stroke: #db2777; }
 .vfpga-wave-canvas .trace-5 { stroke: #4f46e5; }
 .vfpga-wave-canvas .wave-cursor { stroke: #f59e0b; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
-.vfpga-wave-empty { padding: 24px; border: 1px dashed #cbd5e1; border-radius: 11px; color: #94a3b8; text-align: center; font-size: 11px; }
+.vfpga-wave-empty { padding: 24px; border: 1px dashed var(--ui-border-control); border-radius: 11px; color: var(--ui-text-soft); text-align: center; font-size: 11px; }
 .vfpga-signals .vfpga-section-title {
   justify-content: space-between;
 }
 .vfpga-radix {
   display: flex !important;
   grid-auto-flow: column;
-  background: #f1f5f9;
+  background: var(--ui-control-bg);
   padding: 3px;
   border-radius: 9px;
 }
@@ -533,7 +527,7 @@
   border: 0;
   background: transparent;
   border-radius: 7px;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
   padding: 5px 8px;
   text-transform: uppercase;
   font-size: 9px;
@@ -541,16 +535,16 @@
   cursor: pointer;
 }
 .vfpga-radix button.active {
-  background: white;
+  background: var(--ui-control-active-bg);
   color: var(--ui-accent-text);
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--ui-control-shadow);
 }
 .vfpga-signal-table > div {
   display: grid;
   grid-template-columns: 1.4fr 0.7fr 0.4fr 1fr;
   gap: 12px;
   padding: 9px 11px;
-  border-top: 1px solid #edf2f7;
+  border-top: 1px solid var(--ui-border-subtle);
   align-items: center;
   font-size: 12px;
 }
@@ -558,7 +552,7 @@
   border: 0;
   background: var(--ui-control-bg);
   border-radius: 9px;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
   font-size: 9px;
   text-transform: uppercase;
   font-weight: 900;
@@ -569,10 +563,10 @@
 }
 .vfpga-signal-table button.signal-name { border: 0; background: transparent; color: inherit; padding: 0; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; text-align: left; }
 .vfpga-signal-table button.signal-name span { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #94a3b8; }
-.vfpga-signal-table > div.selected button.signal-name { color: #0284c7; }
+.vfpga-signal-table > div.selected button.signal-name { color: var(--ui-accent-text); }
 .vfpga-signal-table > div.selected button.signal-name span { border-color: #0284c7; background: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
 .vfpga-signal-table code {
-  color: #0369a1;
+  color: var(--ui-accent-text);
   font-weight: 800;
 }
 .vfpga-signal-table .direction {
@@ -582,18 +576,18 @@
   text-transform: uppercase;
   font-size: 8px;
   font-weight: 950;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--ui-control-active-bg);
+  color: var(--ui-accent-text);
 }
 .vfpga-signal-table .direction.output {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--ui-success-bg);
+  color: var(--ui-success-text);
 }
 .vfpga-signals footer {
   display: flex;
   gap: 15px;
   padding: 12px 11px 0;
-  color: #64748b;
+  color: var(--ui-text-muted);
   font-size: 10px;
 }
 .vfpga-signals footer span:before {

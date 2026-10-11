@@ -15,7 +15,8 @@ import { SettingsModal } from "./welcome/SettingsModal";
 import { VariantSelectorModal } from "./welcome/VariantSelectorModal";
 import { WelcomeShell } from "./welcome/WelcomeShell";
 import type { WelcomeView } from "./welcome/WelcomeShell";
-import type { ExecutionTarget } from "./dashboard/types";
+import { UsageDialog } from "../components/UsageDialog";
+import type { DashboardSection, ExecutionTarget } from "./dashboard/types";
 import ChatPage from "./ChatPage";
 
 type BoardSelectProps = {
@@ -33,6 +34,7 @@ type BoardSelectProps = {
   onCreateMemoryProject: () => void;
   onCreateMemoryBoardProject: (boardId: string) => void;
   onOpenChatProject: (projectPath: string) => Promise<void>;
+  onOpenWorkspaceSection: (projectId: string, section: DashboardSection) => void;
 };
 
 export default function BoardSelect({
@@ -50,10 +52,12 @@ export default function BoardSelect({
   onCreateMemoryProject,
   onCreateMemoryBoardProject,
   onOpenChatProject,
+  onOpenWorkspaceSection,
 }: BoardSelectProps) {
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
   const [memoryBoardChoice, setMemoryBoardChoice] = useState(false);
+  const [usageAnchor, setUsageAnchor] = useState<HTMLButtonElement | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsCategory, setSettingsCategory] = useState<"general" | "ai">("general");
   const [savedProjects, setSavedProjects] = useState(() => getSavedProjects());
@@ -122,9 +126,12 @@ export default function BoardSelect({
   return (
     <WelcomeShell
       activeView={activeView}
-      onBack={activeView === "chat"
-        ? () => { handleViewChange("home"); setHomePath("build"); }
-        : activeView === "pin-mapping"
+      onWorkspaceSection={(section) => {
+        if (recentProjects[0]) onOpenWorkspaceSection(recentProjects[0].id, section);
+        else { handleViewChange("home"); setHomePath("build"); }
+      }}
+      onOpenUsage={setUsageAnchor}
+      onBack={activeView === "pin-mapping"
         ? () => handleViewChange("home")
         : activeView === "home" && homePath !== null
           ? () => setHomePath(null)
@@ -205,6 +212,8 @@ export default function BoardSelect({
           }}
         />
       ) : null}
+
+      {usageAnchor && <UsageDialog anchor={usageAnchor} onClose={() => setUsageAnchor(null)} />}
 
       {showSettings ? (
         <SettingsModal

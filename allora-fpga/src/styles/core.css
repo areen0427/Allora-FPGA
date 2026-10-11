@@ -18,7 +18,7 @@
   height: 18px;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: var(--ui-text-soft);
   opacity: 0;
   overflow: hidden;
   padding: 0;
@@ -40,24 +40,24 @@
 }
 
 .project-tree-file .project-tree-close:hover {
-  color: #2563eb;
+  color: var(--ui-accent-text);
 }
 
 html[data-theme="black-ice"] .project-tree-file .project-tree-close {
-  color: #94a3b8 !important;
+  color: var(--ui-text-soft) !important;
 }
 
 html[data-theme="black-ice"] .project-tree-file .project-tree-close:hover {
-  color: #bfdbfe !important;
+  color: var(--ui-accent-text) !important;
 }
 
 .sidebarNavButton {
   min-width: 0;
   height: 48px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-sm);
   padding: 6px 4px;
-  color: #475569;
+  color: var(--ui-text-muted);
   background: transparent;
   cursor: pointer;
   display: flex;
@@ -83,7 +83,7 @@ html[data-theme="black-ice"] .project-tree-file .project-tree-close:hover {
 }
 
 .sidebarNavButton.active {
-  color: #2563eb;
+  color: var(--ui-accent-text);
   background: linear-gradient(
     90deg,
     rgba(219, 234, 254, 0.98) 0%,
@@ -93,16 +93,16 @@ html[data-theme="black-ice"] .project-tree-file .project-tree-close:hover {
 }
 
 .sidebarNavButton:hover {
-  color: #2563eb;
+  color: var(--ui-accent-text);
   background: rgba(219, 234, 254, 0.45);
 }
 
 html[data-theme="black-ice"] .sidebarNavButton {
-  color: #cbd5e1 !important;
+  color: var(--ui-text-muted) !important;
 }
 
 html[data-theme="black-ice"] .sidebarNavButton.active {
-  color: #93c5fd !important;
+  color: var(--ui-accent-text) !important;
   background: linear-gradient(
     90deg,
     rgba(37, 99, 235, 0.38) 0%,
@@ -112,7 +112,7 @@ html[data-theme="black-ice"] .sidebarNavButton.active {
 }
 
 html[data-theme="black-ice"] .sidebarNavButton:hover {
-  color: #bfdbfe !important;
+  color: var(--ui-accent-text) !important;
   background: rgba(37, 99, 235, 0.18) !important;
 }
 

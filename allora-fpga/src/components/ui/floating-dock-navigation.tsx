@@ -48,11 +48,11 @@ export function FloatingDockNav({ children, ...props }: ComponentProps<"nav">) {
       hover.labels.indexOf(label) - hover.labels.indexOf(hover.label),
     );
     return distance === 0
-      ? 1.4
+      ? 1.15
       : distance === 1
-        ? 1.2
+        ? 1.08
         : distance === 2
-          ? 1.1
+          ? 1.04
           : 1;
   }
 

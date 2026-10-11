@@ -1,4 +1,4 @@
-import type { MouseEventHandler, ReactNode } from "react";
+import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import { useDockScale } from "../../components/ui/floating-dock-context";
 
 type SidebarButtonProps = {
@@ -26,11 +26,11 @@ export default function SidebarButton({
       aria-label={comingSoon ? `${label} (Coming soon)` : label}
       aria-current={active ? "page" : undefined}
       data-dock-label={label}
-      className={`sidebarNavButton${active ? " active" : ""}`}
+      className={`sidebarNavButton ui-dock-button${active ? " active" : ""}`}
       disabled={disabled}
       onClick={onClick}
     >
-      <span className="dock-icon" style={{ transform: `scale(${scale})` }}>
+      <span className="dock-icon ui-dock-icon" style={{ "--ui-dock-scale": scale } as CSSProperties}>
         {icon}
       </span>
       <span>{label}</span>

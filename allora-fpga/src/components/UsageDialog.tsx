@@ -115,13 +115,13 @@ export function UsageDialog({
           </div>
         </header>
         <div className="usage-metrics">
-          <div className="usage-metric">
+          <div className="usage-metric ui-metric">
             <span>CPU</span>
             <strong className={showNumbers && usage ? "is-ready" : undefined}>
               {showNumbers && usage ? `${usage.cpuPercent.toFixed(1)}%` : "—"}
             </strong>
           </div>
-          <div className="usage-metric">
+          <div className="usage-metric ui-metric">
             <span>Memory</span>
             <strong className={showNumbers && usage ? "is-ready" : undefined}>
               {showNumbers && usage ? formatMemory(usage.memoryBytes) : "—"}

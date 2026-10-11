@@ -52,6 +52,7 @@ html[data-theme="black-ice"] {
       )
     ),
     .sidebarNavButton > .dock-icon,
+    .ui-glass-control,
     .explorer-tools summary
   ) {
   /* A zero-specificity positioning default lets existing absolute/fixed
@@ -254,13 +255,6 @@ html[data-reduce-motion="true"] :where(#root button, #root .dock-icon)::after {
   border: none !important;
 }
 
-/* Preserve wide synthesis/memory glyphs inside the existing dock tile. */
-.sidebarNavButton:is([aria-label="Synthesis"], [aria-label^="Memory Asset Studio"]) .dock-icon svg {
-  width: calc(100% - 6px);
-  height: auto;
-  max-height: calc(100% - 6px);
-}
-
 /* Settings/back use the same translucent material in both supported themes. */
 html[data-theme="ice"] {
   --button-glass-navigation-fill: rgba(255, 255, 255, 0.16);
@@ -277,11 +271,5 @@ html:is([data-theme="ice"], [data-theme="black-ice"])
 }
 
 #root .welcome-rail-button:not(:hover)::before {
-  box-shadow: none;
-}
-
-/* Switch groups keep individual control edges without an enclosing frame. */
-#root :is(.dashboard-target-switch, .project-explorer-view-switch) {
-  border-color: transparent !important;
   box-shadow: none;
 }

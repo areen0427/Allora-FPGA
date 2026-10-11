@@ -729,7 +729,7 @@ export default function ChatPage({
                     <MoreHorizontal size={16} />
                   </button>
                   {historyMenuId === conversation.id && (
-                    <div className="chat-history-options" id={`chat-options-${conversation.id}`} role="group" aria-label="Chat options">
+                    <div className="chat-history-options ui-compact-button-group" id={`chat-options-${conversation.id}`} role="group" aria-label="Chat options">
                       <button type="button" disabled={interactionLocked} onClick={() => {
                         setRenameDraft(conversation.title);
                         setRenamingId(conversation.id);
@@ -743,7 +743,7 @@ export default function ChatPage({
                     </div>
                   )}
                   {renamingId === conversation.id && (
-                    <form className="chat-history-rename" onSubmit={(event) => {
+                    <form className="chat-history-rename ui-compact-button-group" onSubmit={(event) => {
                       event.preventDefault();
                       const title = renameDraft.trim();
                       if (!title || interactionLocked) return;

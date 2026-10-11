@@ -8,7 +8,7 @@
 .testbench-status {
   margin: 12px 0 14px;
   border: 1px solid var(--dashboard-control-border, #dbe4f0);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-sm);
   background: var(--dashboard-control-bg, #f8fafc);
   color: var(--dashboard-muted-text, #64748b);
   padding: 10px 12px;
@@ -18,9 +18,9 @@
 }
 
 .testbench-status.error {
-  border-color: rgba(248, 113, 113, 0.42);
-  background: rgba(254, 226, 226, 0.72);
-  color: #b91c1c;
+  border-color: var(--ui-error-border);
+  background: var(--ui-error-bg);
+  color: var(--ui-error-text);
 }
 
 .testbench-waveform-panel {
@@ -57,7 +57,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid var(--dashboard-control-border, #dbe4f0);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   background: var(--dashboard-control-bg, #f8fafc);
   color: var(--dashboard-muted-text, #64748b);
   padding: 0 10px;
@@ -75,7 +75,7 @@
 .waveform-controls button {
   min-height: 32px;
   border: 1px solid var(--dashboard-control-border, #dbe4f0);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   background: var(--dashboard-control-bg, #f8fafc);
   color: var(--dashboard-text, #0f172a);
   padding: 0 10px;
@@ -84,7 +84,7 @@
   cursor: pointer;
 }
 
-.waveform-controls button:hover {
+.waveform-controls button:hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--dashboard-control-active-border, rgba(37, 99, 235, 0.78));
   background: var(--dashboard-control-active-bg, rgba(219, 234, 254, 0.76));
 }
@@ -97,15 +97,10 @@
   overflow: auto;
   scrollbar-gutter: stable;
   border: 1px solid var(--dashboard-surface-border, #e2e8f0);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-md);
   background:
-    linear-gradient(
-      180deg,
-      rgba(248, 250, 252, 0.86),
-      rgba(241, 245, 249, 0.52)
-    ),
-    var(--dashboard-surface-bg, #ffffff);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+    var(--dashboard-surface-bg, var(--ui-panel));
+  box-shadow: var(--ui-control-shadow);
 }
 
 .waveform-empty {
@@ -139,12 +134,7 @@
   z-index: 2;
   border-bottom: 1px solid var(--dashboard-surface-border, #e2e8f0);
   background:
-    linear-gradient(
-      180deg,
-      rgba(241, 245, 249, 0.96),
-      rgba(226, 232, 240, 0.72)
-    ),
-    var(--dashboard-preview-header-bg, rgba(248, 250, 252, 0.92));
+    var(--dashboard-preview-header-bg, var(--ui-surface));
   color: var(--dashboard-muted-text, #64748b);
   font-size: 10px;
   font-weight: 900;
@@ -163,12 +153,7 @@
   left: 0;
   z-index: 1;
   background:
-    linear-gradient(
-      180deg,
-      rgba(248, 250, 252, 0.88),
-      rgba(241, 245, 249, 0.58)
-    ),
-    var(--dashboard-surface-bg, #ffffff);
+    var(--dashboard-surface-bg, var(--ui-panel));
 }
 
 .waveform-header > div:first-child {
@@ -340,13 +325,13 @@
   border-top: 2px solid rgba(37, 99, 235, 0.7);
   border-bottom: 2px solid rgba(37, 99, 235, 0.7);
   background: transparent;
-  color: #1e40af;
+  color: var(--ui-accent-text);
   font-family: var(--font-code);
   font-size: 10px;
   font-weight: 900;
   line-height: 1;
   padding: 0 5px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+  text-shadow: none;
   white-space: nowrap;
   box-shadow: none;
 }
@@ -355,7 +340,7 @@
   border-top-color: rgba(100, 116, 139, 0.68);
   border-bottom-color: rgba(100, 116, 139, 0.68);
   background: transparent;
-  color: #64748b;
+  color: var(--ui-text-muted);
   box-shadow: none;
 }
 
@@ -377,7 +362,7 @@
 .testbench-file-list button {
   min-width: 0;
   border: 1px solid var(--dashboard-control-border, #dbe4f0);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   background: var(--dashboard-control-bg, #f8fafc);
   color: var(--dashboard-text, #0f172a);
   padding: 8px 9px;

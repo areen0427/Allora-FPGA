@@ -33,7 +33,7 @@
 .build-history-bar-track {
   height: 8px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.22);
+  background: var(--ui-border-subtle);
   overflow: hidden;
 }
 
@@ -52,7 +52,7 @@
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   border: 1px solid var(--dashboard-surface-border, #e2e8f0);
 }
 
@@ -70,16 +70,16 @@
 }
 
 .build-history-dot.success {
-  background: #22c55e;
+  background: var(--ui-success-text);
 }
 
 .build-history-dot.failure {
-  background: #ef4444;
+  background: var(--ui-error-text);
 }
 
 .build-history-failure-note {
   margin-top: 10px;
-  color: #b91c1c;
+  color: var(--ui-error-text);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
@@ -88,7 +88,7 @@
 
 html[data-theme="dark"] .build-history-failure-note,
 html[data-theme="black-ice"] .build-history-failure-note {
-  color: #fca5a5;
+  color: var(--ui-error-text);
 }
 
 .build-history-sparkline {
@@ -108,8 +108,8 @@ html[data-theme="black-ice"] .build-history-failure-note {
   flex-shrink: 0;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.16);
-  color: #b45309;
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning-text);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.02em;
@@ -117,17 +117,17 @@ html[data-theme="black-ice"] .build-history-failure-note {
 }
 
 .editor-lint-chip.has-errors {
-  background: rgba(220, 38, 38, 0.14);
-  color: #b91c1c;
+  background: var(--ui-error-bg);
+  color: var(--ui-error-text);
 }
 
 html[data-theme="dark"] .editor-lint-chip,
 html[data-theme="black-ice"] .editor-lint-chip {
-  color: #fbbf24;
+  color: var(--ui-warning-text);
 }
 
 html[data-theme="dark"] .editor-lint-chip.has-errors,
 html[data-theme="black-ice"] .editor-lint-chip.has-errors {
-  color: #fca5a5;
+  color: var(--ui-error-text);
 }
 

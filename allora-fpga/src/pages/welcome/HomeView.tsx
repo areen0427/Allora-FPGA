@@ -257,7 +257,7 @@ export function HomeView({
                 <span className="mas-kicker">FPGA MEMORY WORKSPACE</span>
                 <h2>Bring data into your design.</h2>
                 <p>Turn images, binary data, and numeric tables into project-ready memories. Preview every conversion before generating files.</p>
-                <button className="mas-primary" disabled={isOpeningExistingProject} onClick={onOpenExistingMemoryProject}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>
+                <button className="mas-primary ui-action-button" disabled={isOpeningExistingProject} onClick={onOpenExistingMemoryProject}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>
                 <div className="mas-home-formats"><span>PNG / JPEG</span><span>Binary</span><span>CSV / TXT</span><span>HEX + Verilog</span></div>
                 {openExistingProjectError && <div className="open-project-error" role="alert">{openExistingProjectError}</div>}
               </section>
@@ -266,10 +266,10 @@ export function HomeView({
                 <section className="mas-launch-card"><span className="mas-kicker">BUILD</span><h3>Target a physical board</h3><p>Create a project configured for your FPGA hardware.</p><label htmlFor="memory-board">Target board</label><select id="memory-board" value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onCreateMemoryBoardProject(board); }}>Create board project</button></section>
               </div>
             </div>
-            <aside className="mas-home-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={onOpenMemoryProject} onRemoveProject={onRemoveRecentProject} emptyMessage="Your memory projects will appear here." /></aside>
+            <aside className="mas-home-sidebar welcome-project-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={onOpenMemoryProject} onRemoveProject={onRemoveRecentProject} emptyMessage="Your memory projects will appear here." /></aside>
           </div>
         ) : path === "register-builder" ? (
-          <div className="mas-home-layout"><div className="mas-home-main"><section className="mas-home-intro"><span className="mas-kicker">REGISTER BUILDER</span><h2>Give your hardware a software interface.</h2><p>Define registers and bit fields, validate their layout, and generate RTL, C definitions, and an integration wrapper in your Allora project.</p><button className="mas-primary" disabled={isOpeningExistingProject} onClick={() => onOpenExistingProject("simulate")}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>{openExistingProjectError && <div role="alert">{openExistingProjectError}</div>}</section><div className="mas-launch-grid"><section className="mas-launch-card"><h3>Start a simulation project</h3><p>Design and test your register bank without a board.</p><button onClick={onCreateSimulationProject}>Create simulation project</button></section><section className="mas-launch-card"><h3>Target a physical board</h3><label>Target board<select value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select></label><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onSelectBoard(board); }}>Create board project</button></section></div></div><aside className="mas-home-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={projectId => onOpenProject(projectId, "simulate")} onRemoveProject={onRemoveRecentProject} emptyMessage="Open a project to start your register map." /></aside></div>
+          <div className="mas-home-layout"><div className="mas-home-main"><section className="mas-home-intro"><span className="mas-kicker">REGISTER BUILDER</span><h2>Give your hardware a software interface.</h2><p>Define registers and bit fields, validate their layout, and generate RTL, C definitions, and an integration wrapper in your Allora project.</p><button className="mas-primary ui-action-button" disabled={isOpeningExistingProject} onClick={() => onOpenExistingProject("simulate")}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>{openExistingProjectError && <div role="alert">{openExistingProjectError}</div>}</section><div className="mas-launch-grid"><section className="mas-launch-card"><h3>Start a simulation project</h3><p>Design and test your register bank without a board.</p><button onClick={onCreateSimulationProject}>Create simulation project</button></section><section className="mas-launch-card"><h3>Target a physical board</h3><label>Target board<select value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select></label><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onSelectBoard(board); }}>Create board project</button></section></div></div><aside className="mas-home-sidebar welcome-project-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={projectId => onOpenProject(projectId, "simulate")} onRemoveProject={onRemoveRecentProject} emptyMessage="Open a project to start your register map." /></aside></div>
         ) : path === "simulate" ? (
           <SimulationHome
             recentProjects={recentProjects}
@@ -304,7 +304,7 @@ export function HomeView({
               onSelectBoard={onSelectBoard}
             />
 
-            <div className="welcome-home-sidebar">
+            <div className="welcome-home-sidebar welcome-project-sidebar">
               <section className="liquid-home-card open-project-card">
                 <button type="button" className="open-project-button" onClick={onOpenChat} disabled={isOpeningExistingProject}>
                   <span className="open-project-icon"><MessageSquare size={19} /></span>
@@ -323,7 +323,6 @@ export function HomeView({
                 projects={recentProjects}
                 onOpenProject={(projectId) => onOpenProject(projectId, "build")}
                 onRemoveProject={onRemoveRecentProject}
-                expandableToFive
               />
             </div>
           </div>
@@ -520,7 +519,7 @@ function SimulationHome({
               one focused simulation workspace.
             </p>
           </div>
-          <div className="simulation-welcome-actions">
+          <div className="simulation-welcome-actions ui-compact-button-group">
             <button type="button" onClick={onCreateProject}>
               <Play size={17} fill="currentColor" /> New simulation
             </button>
@@ -548,7 +547,7 @@ function SimulationHome({
         </div>
       </section>
 
-      <div className="simulation-sidebar-stack">
+      <div className="simulation-sidebar-stack welcome-project-sidebar">
         <SimulationLaunchDefaults
           settings={settings}
           onChange={onSettingsChange}
@@ -594,7 +593,7 @@ function WorkbenchHome({
           buttons, switches, LEDs, direct seven-segment displays, and a UART
           terminal, then connect them to your RTL ports.
         </p>
-        <div className="workbench-home-actions">
+        <div className="workbench-home-actions ui-compact-button-group">
           <button type="button" onClick={onOpenExisting} disabled={isOpening}>
             <FolderOpen size={17} />
             {isOpening ? "Opening…" : "Open existing project"}
@@ -610,14 +609,13 @@ function WorkbenchHome({
           <li><strong>3</strong><span>Compile and run</span></li>
         </ol>
       </section>
-      <div className="workbench-home-sidebar">
+      <div className="workbench-home-sidebar welcome-project-sidebar">
         <RecentProjectsCard
           projects={recentProjects}
           onOpenProject={onOpenProject}
           onRemoveProject={onRemoveProject}
           emptyMessage="Create a simulation project or open an existing project folder."
           description="Choose any project to open its Peripheral Workbench."
-          expandableToFive
         />
         <p>
           Physical projects keep their selected board and pin constraints.
@@ -954,7 +952,6 @@ function RecentProjectsCard({
   emptyMessage,
   description,
   showSimulationSummary = false,
-  expandableToFive = false,
 }: {
   projects: SavedProject[];
   onOpenProject: (projectId: string) => void;
@@ -962,12 +959,10 @@ function RecentProjectsCard({
   emptyMessage?: string;
   description?: string;
   showSimulationSummary?: boolean;
-  expandableToFive?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const visibleProjects = expandableToFive && !expanded
-    ? projects.slice(0, 3)
-    : projects;
+  const recentProjects = projects.slice(0, 5);
+  const visibleProjects = recentProjects.slice(0, expanded ? 5 : 3);
 
   return (
     <aside className="liquid-home-card recent-projects-card">
@@ -1024,11 +1019,11 @@ function RecentProjectsCard({
               </button>
             </div>
           ))}
-          {expandableToFive && projects.length > 3 ? (
+          {recentProjects.length > 3 ? (
             <button
               type="button"
               className="recent-projects-expand"
-              aria-label={expanded ? "Show three recent projects" : `Show ${projects.length - 3} more recent projects`}
+              aria-label={expanded ? "Show three recent projects" : `Show ${recentProjects.length - 3} more recent projects`}
               aria-expanded={expanded}
               onClick={() => setExpanded((current) => !current)}
             >

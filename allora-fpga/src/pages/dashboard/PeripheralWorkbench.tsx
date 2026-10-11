@@ -372,8 +372,8 @@ export default function PeripheralWorkbench({
           {status} · {((snapshot?.simTimePs ?? 0) / 1e6).toFixed(3)} µs
         </span>
       </header>
-      <div className="pw-toolbar" aria-label="Simulation controls">
-        <button disabled={!canCompile} onClick={compile}>
+      <div className="pw-toolbar ui-compact-button-group" aria-label="Simulation controls">
+        <button className="ui-action-button" disabled={!canCompile} onClick={compile}>
           {status === "compiling" ? "Compiling…" : "Compile & Start"}
         </button>
         <button

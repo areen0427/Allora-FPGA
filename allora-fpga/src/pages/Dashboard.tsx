@@ -1,12 +1,5 @@
 import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
-import PeripheralWorkbenchIcon from "../components/PeripheralWorkbenchIcon";
-import MemoryAssetStudioIcon from "../components/MemoryAssetStudioIcon";
-import RegisterBuilderIcon from "../components/RegisterBuilderIcon";
-import EditorIcon from "../components/EditorIcon";
-import TestbenchIcon from "../components/TestbenchIcon";
-import SynthesisIcon from "../components/SynthesisIcon";
-import ProgramIcon from "../components/ProgramIcon";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
 import RegisterBuilder from "./dashboard/RegisterBuilder";
 import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
@@ -22,30 +15,19 @@ import ProgrammingSection from "./dashboard/ProgrammingSection";
 import SerialMonitorSection from "./dashboard/SerialMonitorSection";
 import HealthSection from "./dashboard/HealthSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
-import SidebarButton from "./dashboard/SidebarButton";
-import { FloatingDockNav } from "../components/ui/floating-dock-navigation";
+import { WorkspaceDock } from "./dashboard/WorkspaceDock";
+import ChatPage from "./ChatPage";
 import type {
   DashboardSection,
   ExecutionTarget,
   ProjectFile,
 } from "./dashboard/types";
 import {
-  ArrowLeft,
-  Home,
-  Binary,
-  Activity,
-  MapPinned,
   Plus,
-  Settings,
-  MessageSquare,
-  Gauge,
   Upload,
-  Usb,
-  Zap,
   Hammer,
   Play,
   PanelLeftClose,
-  PanelLeftOpen,
   FileCode2,
   FileJson,
   FileOutput,
@@ -100,7 +82,7 @@ type DashboardProps = {
   onExecutionTargetChange: (target: ExecutionTarget) => void;
   onBack: () => void;
   onHome: () => void;
-  onChat: () => void;
+  onOpenChatProject: (path: string) => Promise<void>;
 };
 
 const DEFAULT_SIDEBAR_WIDTH = 368;
@@ -116,7 +98,7 @@ export default function Dashboard({
   onExecutionTargetChange,
   onBack,
   onHome,
-  onChat,
+  onOpenChatProject,
 }: DashboardProps) {
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>(launchTarget);
@@ -438,10 +420,10 @@ export default function Dashboard({
           "--dashboard-sidebar-width": `${explorerCollapsed ? 72 : sidebarWidth}px`,
           height: "100vh",
           overflow: "hidden",
-          background: "#f1f5f9",
+          background: "var(--ui-page-bg)",
           padding: "12px 24px",
           gap: "14px",
-          color: "#0f172a",
+          color: "var(--ui-text)",
           fontFamily:
             "var(--font-ui)",
           display: "flex",
@@ -452,12 +434,12 @@ export default function Dashboard({
       <div
         className={`dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
-          width: explorerCollapsed ? "72px" : `${sidebarWidth}px`,
+          width: (explorerCollapsed || activeSection === "chat") ? "72px" : `${sidebarWidth}px`,
           height: "calc(100vh - 24px)",
           overflow: "visible",
           gap: explorerCollapsed ? 0 : "14px",
-          minWidth: explorerCollapsed ? "72px" : "300px",
-          maxWidth: explorerCollapsed ? "72px" : "480px",
+          minWidth: (explorerCollapsed || activeSection === "chat") ? "72px" : "300px",
+          maxWidth: (explorerCollapsed || activeSection === "chat") ? "72px" : "480px",
           padding: 0,
           position: "sticky",
           top: "12px",
@@ -465,141 +447,30 @@ export default function Dashboard({
           flexDirection: "row",
         }}
       >
-        <div className="dashboard-activity-rail-slot">
-          <div className="dashboard-activity-rail">
-            <div className="activity-rail-top">
-              <button
-                type="button"
-                aria-label="Go to home page"
-                title="Home"
-                disabled={saveProject.saveStatus === "saving"}
-                onClick={async () => {
-                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
-                  onHome();
-                }}
-                className="activity-home-button"
-              >
-                <Home size={18} color="white" strokeWidth={2.2} />
-              </button>
-              {explorerCollapsed ? (
-                <button
-                  type="button"
-                  className="explorer-expand-button"
-                  aria-label="Open explorer"
-                  title="Open explorer"
-                  onClick={() => setExplorerCollapsed(false)}
-                >
-                  <PanelLeftOpen size={18} />
-                </button>
-              ) : null}
-            </div>
-            <FloatingDockNav className="activity-rail-nav" aria-label="Dashboard sections">
-              <SidebarButton
-                label="Editor"
-                icon={<EditorIcon size={19} />}
-                active={activeSection === "editor"}
-                onClick={() => setActiveSection("editor")}
-              />
-              <SidebarButton
-                label="Testbench"
-                icon={<TestbenchIcon size={19} />}
-                active={activeSection === "testbench"}
-                onClick={() => setActiveSection("testbench")}
-              />
-              {executionTarget === "build" ? (
-                <>
-                  <SidebarButton
-                    label="Synthesis"
-                    icon={<SynthesisIcon size={19} />}
-                    active={activeSection === "synthesis"}
-                    onClick={() => setActiveSection("synthesis")}
-                  />
-                  <SidebarButton
-                    label="Pin Mapping"
-                    icon={<MapPinned size={19} />}
-                    active={activeSection === "pin-mapping"}
-                    onClick={() => setActiveSection("pin-mapping")}
-                  />
-                  <SidebarButton
-                    label="Bitstream"
-                    icon={<Binary size={19} />}
-                    active={activeSection === "bitstream"}
-                    onClick={() => setActiveSection("bitstream")}
-                  />
-                  <SidebarButton
-                    label="Program"
-                    icon={<ProgramIcon size={19} />}
-                    active={activeSection === "programming"}
-                    onClick={() => setActiveSection("programming")}
-                  />
-                </>
-              ) : null}
-              {executionTarget === "simulate" ? (
-                <SidebarButton
-                  label="Virtual"
-                  icon={<Zap size={19} />}
-                  active={activeSection === "virtual-fpga"}
-                  onClick={() => setActiveSection("virtual-fpga")}
-                />
-              ) : null}
-              <div className="activity-rail-divider" role="separator" aria-label="Health and serial" />
-              <SidebarButton
-                label="Health"
-                icon={<Activity size={19} />}
-                active={activeSection === "health"}
-                onClick={() => setActiveSection("health")}
-              />
-              {executionTarget === "build" ? (
-                <SidebarButton
-                  label="Serial"
-                  icon={<Usb size={19} />}
-                  active={activeSection === "serial"}
-                  onClick={() => setActiveSection("serial")}
-                />
-              ) : null}
-              <div className="activity-rail-divider" role="separator" aria-label="Design tools" />
-              <SidebarButton label="Peripheral Workbench" icon={<PeripheralWorkbenchIcon size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => setActiveSection("peripheral-workbench")} />
-              <SidebarButton label="Memory Asset Studio" icon={<MemoryAssetStudioIcon size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => setActiveSection("memory-asset-studio")} />
-              <SidebarButton label="Register Builder" icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => setActiveSection("register-builder")} />
-            </FloatingDockNav>
-            <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
-              <SidebarButton
-                label="Chat"
-                icon={<MessageSquare size={18} />}
-                active={false}
-                disabled={saveProject.saveStatus === "saving"}
-                onClick={async () => {
-                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
-                  onChat();
-                }}
-              />
-              <SidebarButton
-                label="Resource usage"
-                icon={<Gauge size={18} />}
-                active={false}
-                onClick={(event) => setUsageAnchor(event.currentTarget)}
-              />
-              <SidebarButton
-                label="Settings"
-                icon={<Settings size={18} />}
-                active={false}
-                onClick={() => setShowSettings(true)}
-              />
-              <SidebarButton
-                label="Back to project setup"
-                icon={<ArrowLeft size={18} />}
-                active={false}
-                disabled={saveProject.saveStatus === "saving"}
-                onClick={async () => {
-                  if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
-                  onBack();
-                }}
-              />
-            </FloatingDockNav>
-          </div>
-        </div>
+        <WorkspaceDock
+          activeSection={activeSection}
+          executionTarget={executionTarget}
+          explorerCollapsed={explorerCollapsed && activeSection !== "chat"}
+          saving={saveProject.saveStatus === "saving"}
+          onSectionChange={setActiveSection}
+          onExpandExplorer={() => setExplorerCollapsed(false)}
+          onHome={async () => {
+            if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+            onHome();
+          }}
+          onChat={async () => {
+            if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+            setActiveSection("chat");
+          }}
+          onBack={async () => {
+            if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+            onBack();
+          }}
+          onSettings={() => setShowSettings(true)}
+          onUsage={(event) => setUsageAnchor(event.currentTarget)}
+        />
 
-        {!explorerCollapsed ? (
+        {!explorerCollapsed && activeSection !== "chat" ? (
           <aside className="dashboard-glass-card dashboard-explorer" aria-label="Project explorer">
             <header className="explorer-project-header">
               <div className="explorer-project-copy">
@@ -624,7 +495,7 @@ export default function Dashboard({
             </header>
 
             <div
-              className="dashboard-target-switch"
+              className="dashboard-target-switch ui-button-group ui-selection-group"
               aria-label="Execution target"
             >
               <button
@@ -632,6 +503,7 @@ export default function Dashboard({
                 className={
                   executionTarget === "simulate" ? "active simulate" : ""
                 }
+                aria-pressed={executionTarget === "simulate"}
                 onClick={() => changeExecutionTarget("simulate")}
               >
                 <Play size={13} fill="currentColor" /> Simulate
@@ -639,6 +511,7 @@ export default function Dashboard({
               <button
                 type="button"
                 className={executionTarget === "build" ? "active build" : ""}
+                aria-pressed={executionTarget === "build"}
                 onClick={() => changeExecutionTarget("build")}
                 disabled={board.id === "allora-virtual"}
                 title={
@@ -671,9 +544,10 @@ export default function Dashboard({
                   <span className="project-explorer-eyebrow">Explorer</span>
                   <strong>Project files</strong>
                 </div>
-                <div className="project-explorer-actions">
+                <div className="project-explorer-actions ui-compact-button-group">
                   <button
                     type="button"
+                    className="ui-icon-button ui-glass-control"
                     title="New file"
                     aria-label="New file"
                     onClick={() => handleCreateNewFile()}
@@ -682,7 +556,7 @@ export default function Dashboard({
                   </button>
 
                   <label
-                    className="project-file-import"
+                    className="project-file-import ui-button ui-icon-button ui-glass-control"
                     title="Import files"
                     aria-label="Import files"
                   >
@@ -698,7 +572,7 @@ export default function Dashboard({
                 </div>
               </div>
               <div
-                className="project-explorer-view-switch"
+                className="project-explorer-view-switch ui-button-group ui-selection-group"
                 role="group"
                 aria-label="Explorer view"
               >
@@ -766,7 +640,7 @@ export default function Dashboard({
           </aside>
         ) : null}
 
-        {!explorerCollapsed ? (
+        {!explorerCollapsed && activeSection !== "chat" ? (
           <div
             onMouseDown={startSidebarResize}
             onDoubleClick={() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH)}
@@ -796,9 +670,9 @@ export default function Dashboard({
             className="dashboard-glass-card"
             style={{
               marginBottom: "14px",
-              borderRadius: "16px",
+              borderRadius: "var(--ui-radius-lg)",
               padding: "12px 14px",
-              color: "#92400e",
+              color: "var(--ui-warning-text)",
               fontSize: "13px",
               fontWeight: 750,
               lineHeight: 1.45,
@@ -808,6 +682,9 @@ export default function Dashboard({
           </div>
         ) : null}
 
+        <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
+          <ChatPage initialProjectPath={projectPath ?? undefined} resumeLatest onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
+        </KeepAliveSection>
         {activeSection === "editor" && (
           <EditorSection
             openFiles={fileMgmt.files.filter((file) =>
@@ -1026,16 +903,17 @@ export default function Dashboard({
             left: contextMenu.x,
             zIndex: 50,
             minWidth: "180px",
-            borderRadius: "12px",
-            border: "1px solid #dbe4f0",
-            background: "#ffffff",
-            boxShadow: "0 18px 40px rgba(15,23,42,0.14)",
+            borderRadius: "var(--ui-radius-sm)",
+            border: "1px solid var(--ui-border-control)",
+            background: "var(--ui-panel)",
+            boxShadow: "var(--ui-popup-shadow)",
             padding: "6px",
           }}
           onClick={(event) => event.stopPropagation()}
         >
           <button
             type="button"
+            className="ui-button ui-button-secondary"
             disabled={!isHdlFile(contextMenu.fileName)}
             onClick={() => {
               if (!isHdlFile(contextMenu.fileName)) return;
@@ -1044,23 +922,18 @@ export default function Dashboard({
             }}
             style={{
               width: "100%",
-              border: "none",
-              borderRadius: "8px",
-              background: "transparent",
-              color: isHdlFile(contextMenu.fileName) ? "#0f172a" : "#94a3b8",
               textAlign: "left",
+              justifyContent: "flex-start",
               padding: "10px 12px",
               fontSize: "14px",
               fontWeight: 700,
-              cursor: isHdlFile(contextMenu.fileName)
-                ? "pointer"
-                : "not-allowed",
             }}
           >
             Set as Top Level
           </button>
           <button
             type="button"
+            className="ui-button ui-button-secondary"
             onClick={() => {
               const fileName = contextMenu.fileName;
               setContextMenu(null);
@@ -1072,11 +945,9 @@ export default function Dashboard({
             }}
             style={{
               width: "100%",
-              border: "none",
-              borderRadius: "8px",
-              background: "transparent",
-              color: "#dc2626",
+              color: "var(--ui-error-text)",
               textAlign: "left",
+              justifyContent: "flex-start",
               padding: "10px 12px",
               fontSize: "14px",
               fontWeight: 700,
@@ -1104,12 +975,13 @@ export default function Dashboard({
             </div>
 
             <div
-              style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}
+              style={{ color: "var(--ui-text-muted)", fontSize: "14px", lineHeight: 1.6 }}
             >
               Delete <strong>{deletingFileName}</strong> from the project?
             </div>
 
             <div
+              className="ui-compact-button-group"
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
@@ -1119,37 +991,21 @@ export default function Dashboard({
             >
               <button
                 type="button"
+                className="ui-button ui-button-secondary"
                 onClick={() => setDeletingFileName(null)}
-                style={{
-                  border: "1px solid #dbe4f0",
-                  background: "#ffffff",
-                  color: "#475569",
-                  borderRadius: "12px",
-                  padding: "10px 14px",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
+
               >
                 Cancel
               </button>
               <button
                 type="button"
+                className="ui-button"
                 onClick={async () => {
                   const fileName = deletingFileName;
                   setDeletingFileName(null);
                   await handleDeleteFileFromProject(fileName);
                 }}
-                style={{
-                  border: "1px solid #fecaca",
-                  background: "#fee2e2",
-                  color: "#b91c1c",
-                  borderRadius: "12px",
-                  padding: "10px 14px",
-                  fontSize: "14px",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
+
               >
                 Delete from Project
               </button>

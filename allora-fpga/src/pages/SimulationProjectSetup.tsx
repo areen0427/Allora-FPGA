@@ -110,7 +110,7 @@ export default function SimulationProjectSetup({
   return (
     <div className="glass-page simulation-setup-page">
       <header className="simulation-setup-topbar">
-        <button className="project-setup-back" type="button" onClick={onBack}>
+        <button className="ui-button ui-button-secondary project-setup-back" type="button" onClick={onBack}>
           <ArrowLeft size={16} /> Back
         </button>
         <div className="project-setup-heading">
@@ -161,6 +161,7 @@ export default function SimulationProjectSetup({
             </div>
             <button
               type="button"
+              className="ui-button ui-button-secondary"
               disabled={!nativeAvailable || isChoosingLocation || isCreating}
               onClick={() => {
                 setCreationError("");
@@ -219,7 +220,7 @@ export default function SimulationProjectSetup({
               <span> opens directly in the Virtual FPGA workspace</span>
             </div>
             <button
-              className="project-create-button"
+              className="ui-button ui-button-primary project-create-button ui-action-button"
               type="button"
               disabled={
                 !projectName.trim() || requiresLocation || isCreating || isChoosingLocation

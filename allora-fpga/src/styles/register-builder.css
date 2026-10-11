@@ -28,7 +28,7 @@
   background: var(--mas-input);
   color: var(--mas-text);
   border: 1px solid var(--mas-border);
-  border-radius: 7px;
+  border-radius: var(--ui-radius-sm);
   padding: 8px;
   min-width: 0;
 }
@@ -70,7 +70,7 @@
 .rb-panel {
   border: 1px solid var(--mas-border);
   background: var(--mas-panel);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-md);
   padding: 18px;
   min-width: 0;
   margin-bottom: 16px;
@@ -134,8 +134,8 @@
   border-bottom: 3px solid var(--mas-accent);
 }
 .rb-bit.overlap {
-  background: #a8262633;
-  border-color: #b43c3c;
+  background: var(--ui-error-bg);
+  border-color: var(--ui-error-border);
 }
 .rb-fields {
   display: grid;
@@ -150,11 +150,11 @@
 }
 .rb-error,
 .rb-invalid {
-  color: #c43c3c;
+  color: var(--ui-error-text);
 }
 .rb-error {
   padding: 12px;
-  border: 1px solid #c43c3c;
+  border: 1px solid var(--ui-error-border);
   border-radius: 8px;
   margin-bottom: 14px;
 }
@@ -173,7 +173,7 @@
   border: 0;
   text-align: left;
   padding: 2px 0;
-  color: #c43c3c;
+  color: var(--ui-error-text);
   background: none;
 }
 .rb pre {

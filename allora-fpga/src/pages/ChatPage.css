@@ -1,3 +1,16 @@
+.welcome-chat-workspace-dock {
+  display: flex;
+  flex: 0 0 72px;
+  width: 72px;
+  margin: 12px;
+  height: calc(100dvh - 24px);
+  padding: 0;
+}
+.dashboard-main .allora-chat {
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--ui-radius-lg);
+}
 .welcome-page:has(.allora-chat) {
   height: 100dvh;
   overflow: hidden;
@@ -22,7 +35,7 @@
   --chat-muted: var(--ui-text-muted);
   --chat-accent: var(--ui-accent-text);
   --chat-accent-soft: var(--ui-control-active-bg);
-  --chat-warning: #a85123;
+  --chat-warning: var(--ui-warning-text);
   --chat-shadow: var(--ui-control-shadow);
   display: grid;
   grid-template-columns: 238px minmax(0, 1fr);
@@ -35,7 +48,6 @@
 }
 html[data-theme="black-ice"] .allora-chat {
   --chat-sidebar: linear-gradient(145deg, rgba(30, 41, 59, .72), rgba(15, 23, 42, .58));
-  --chat-warning: #fdba74;
 }
 .allora-chat.sidebar-collapsed {
   grid-template-columns: minmax(0, 1fr);
@@ -46,8 +58,8 @@ html[data-theme="black-ice"] .allora-chat {
   cursor: pointer;
 }
 .allora-chat button:disabled {
-  cursor: default;
-  opacity: 0.45;
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 .allora-chat button:focus-visible,
 .allora-chat textarea:focus-visible {
@@ -82,11 +94,11 @@ html[data-theme="black-ice"] .allora-chat {
   justify-content: center;
   padding: 6px;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--chat-muted) !important;
 }
-.chat-icon-button:hover {
+.chat-icon-button:hover:not(:disabled, [aria-disabled="true"]) {
   background: var(--chat-soft);
 }
 .chat-sidebar-toggle.is-open {
@@ -98,7 +110,7 @@ html[data-theme="black-ice"] .allora-chat {
   gap: 10px;
   padding: 11px 13px;
   border: 1px solid var(--chat-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   background: var(--chat-surface);
   font-weight: 550 !important;
   box-shadow: var(--chat-shadow);
@@ -150,7 +162,7 @@ html[data-theme="black-ice"] .allora-chat {
 .chat-history-menu-button {
   flex-shrink: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   padding: 8px;
   opacity: 0;
@@ -231,8 +243,8 @@ html[data-theme="black-ice"] .allora-chat {
   background: var(--chat-muted);
 }
 .chat-connection.ready i {
-  background: #34aa84;
-  box-shadow: 0 0 0 3px #34aa8410;
+  background: var(--ui-success-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-success-text) 12%, transparent);
 }
 .chat-workspace-row {
   display: flex;
@@ -250,7 +262,7 @@ html[data-theme="black-ice"] .allora-chat {
   max-width: 250px;
   border: 0;
   background: var(--chat-soft);
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   padding: 4px 7px;
   font-size: 11px;
   overflow: hidden;
@@ -339,7 +351,7 @@ html[data-theme="black-ice"] .allora-chat {
 }
 .chat-code-block {
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   border: 1px solid var(--chat-border);
   background: var(--chat-sidebar);
   margin: 15px 0;
@@ -397,7 +409,7 @@ html[data-theme="black-ice"] .allora-chat {
   flex-shrink: 0;
 }
 .chat-tool.error summary > svg:first-child {
-  color: var(--chat-warning);
+  color: var(--ui-error-text);
 }
 .chat-tool summary span {
   flex: 1;
@@ -434,7 +446,7 @@ html[data-theme="black-ice"] .allora-chat {
   margin: 12px 0;
   padding: 15px;
   border: 1px solid var(--chat-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   background: var(--chat-accent-soft);
   min-width: 260px;
   max-width: 100%;
@@ -465,6 +477,9 @@ html[data-theme="black-ice"] .allora-chat {
   font-size: 11px;
   line-height: 1.65;
   margin-top: 10px;
+}
+.chat-message-error {
+  color: var(--ui-error-text);
 }
 .chat-message-error svg,
 .chat-notice svg {
@@ -553,13 +568,13 @@ html[data-theme="black-ice"] .allora-chat {
   border: 1px solid var(--chat-border);
   background: var(--chat-soft);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   font-size: 11px;
 }
 .chat-approval > div .chat-approve-button {
   background: var(--ui-primary-bg);
-  border-color: rgba(29, 78, 216, .48);
-  color: #fff;
+  border-color: var(--ui-primary-border);
+  color: var(--ui-primary-text);
   font-weight: 600;
 }
 .chat-composer-area {
@@ -571,7 +586,7 @@ html[data-theme="black-ice"] .allora-chat {
 .chat-composer {
   background: var(--chat-surface);
   border: 1px solid var(--chat-border);
-  border-radius: 18px;
+  border-radius: var(--ui-radius-xl);
   padding: 0;
   box-shadow: var(--chat-shadow);
 }
@@ -639,10 +654,10 @@ html[data-theme="black-ice"] .chat-composer-bottom {
   width: 33px;
   height: 33px;
   background: var(--ui-primary-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+  box-shadow: var(--ui-primary-shadow);
   color: var(--ui-primary-text);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
 }
 .chat-send-button:disabled {
   opacity: 0.55;
@@ -667,7 +682,7 @@ html[data-theme="black-ice"] .chat-composer-bottom {
   padding: 12px 14px;
   background: var(--chat-soft);
   border: 1px solid var(--chat-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
 }
 .chat-setup-notice > svg {
   color: var(--chat-accent);
@@ -873,7 +888,7 @@ html .allora-chat .chat-composer textarea {
   max-width: 220px;
   padding: 8px 11px;
   border: 1px solid var(--chat-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   background: var(--chat-soft);
   font-size: 12px !important;
   box-shadow: var(--chat-shadow);
@@ -893,7 +908,7 @@ html .allora-chat .chat-composer textarea {
   z-index: 40;
   padding: 14px;
   border: 1px solid var(--chat-border);
-  border-radius: 16px;
+  border-radius: var(--ui-radius-lg);
   background: #f4f8ff;
   box-shadow: var(--ui-popup-shadow);
   color: var(--chat-text);
@@ -906,7 +921,7 @@ html[data-theme="black-ice"] .chat-model-popup {
 .chat-model-popup header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
 .chat-model-popup header strong { font-size: 14px; }
 .chat-model-options { overflow-y: auto; min-height: 0; display: grid; gap: 6px; overscroll-behavior: contain; }
-.chat-model-option { width: 100%; padding: 12px; text-align: left; border: 1px solid transparent; border-radius: 10px; background: transparent; display: grid; gap: 7px; }
+.chat-model-option { width: 100%; padding: 12px; text-align: left; border: 1px solid transparent; border-radius: var(--ui-radius-xs); background: transparent; display: grid; gap: 7px; }
 .chat-model-option:hover, .chat-model-option.selected { background: var(--chat-soft); border-color: var(--chat-border); }
 .chat-model-option.selected { border-color: var(--chat-accent); }
 .chat-model-option-title { display: flex; align-items: center; gap: 8px; }
@@ -918,7 +933,7 @@ html[data-theme="black-ice"] .chat-model-popup {
 .chat-model-specs b { font-weight: 550; color: var(--chat-text); margin-left: 5px; }
 .chat-model-popup footer, .chat-model-empty { font-size: 10px; line-height: 1.6; color: var(--chat-muted); }
 .chat-model-popup footer { border-top: 1px solid var(--chat-border); padding-top: 10px; margin-top: 10px; }
-.chat-reasoning-control { width: 160px; padding: 6px 9px; border-radius: 10px; background: var(--chat-soft); border: 1px solid var(--chat-border); }
+.chat-reasoning-control { width: 160px; padding: 6px 9px; border-radius: var(--ui-radius-xs); background: var(--chat-soft); border: 1px solid var(--chat-border); }
 .chat-reasoning-control label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 9px; color: var(--chat-muted); }
 .chat-reasoning-control label span { display: inline-flex; gap: 3px; align-items: center; }
 .chat-reasoning-control label strong { color: var(--chat-accent); font-size: 10px; font-weight: 650; }
@@ -1009,17 +1024,17 @@ html[data-theme="black-ice"] .chat-vibecode { --chat-grid: rgba(148, 197, 255, .
   align-items: center;
   gap: 6px;
   border: 1px solid var(--chat-border);
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   padding: 6px 8px;
   background: var(--chat-soft);
   font-size: 12px;
 }
-.chat-history-options button:hover, .chat-history-rename button:hover { background: var(--ui-control-hover-bg); }
+.chat-history-options button:hover:not(:disabled, [aria-disabled="true"]), .chat-history-rename button:hover:not(:disabled, [aria-disabled="true"]) { background: var(--ui-control-hover-bg); }
 .chat-history-rename input {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--chat-border);
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   padding: 6px 8px;
   background: var(--chat-bg);
   color: var(--chat-text);
@@ -1040,7 +1055,7 @@ html[data-theme="black-ice"] .chat-vibecode { --chat-grid: rgba(148, 197, 255, .
   width: 100%;
   padding: 12px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   background: transparent;
   text-align: left;
 }
@@ -1131,8 +1146,8 @@ html[data-reduce-motion="true"] .chat-usage-track > span { transition: none; }
 .chat-context-tooltip {
   position: absolute; bottom: calc(100% + 14px); right: 0; z-index: 10;
   display: grid; gap: 8px; width: max-content; min-width: 150px; max-width: 240px;
-  padding: 16px 18px; border: 1px solid var(--chat-border); border-radius: 14px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--chat-accent-soft) 22%, var(--chat-surface)), var(--chat-surface));
+  padding: 16px 18px; border: 1px solid var(--chat-border); border-radius: var(--ui-radius-md);
+  background: var(--ui-control-bg);
   color: var(--chat-text); text-align: center;
   box-shadow: var(--ui-popup-shadow);
   backdrop-filter: blur(20px); pointer-events: none;

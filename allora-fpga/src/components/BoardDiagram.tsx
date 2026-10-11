@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
 import {
@@ -7,6 +7,7 @@ import {
   type PinBrowserResourceGroup,
 } from "../data/pinResourceGroups";
 import VirtualBoard from "./VirtualBoard";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 type BoardDiagramProps = {
   board: BoardDefinition;
@@ -43,15 +44,6 @@ export default function BoardDiagram({ board, compact = false }: BoardDiagramPro
         : (resourceGroups[0]?.title ?? null),
     );
   }, [board.id, compact, resourceGroups]);
-
-  useEffect(() => {
-    if (!compact || !activeGroup) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setActiveTitle(null);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeGroup, compact]);
 
   const highlightedPinKeys = activeGroup?.pins.map((pin) => pin.key) ?? [];
 
@@ -169,13 +161,17 @@ function CompactResourceDialog({
   group: PinBrowserResourceGroup;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef, onClose);
   const appearance = getCategoryAppearance(group);
   return (
     <div className="board-diagram-popup-backdrop" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="board-diagram-popup"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={`${group.title} pins`}
         onClick={(event) => event.stopPropagation()}
       >
@@ -227,7 +223,7 @@ function PinList({ group }: { group: PinBrowserResourceGroup }) {
 }
 
 const CATEGORY_PALETTE = [
-  { background: "#eff6ff", color: "#2563eb" },
+  { background: "var(--ui-control-active-bg)", color: "var(--ui-accent-text)" },
   { background: "#fef3c7", color: "#b45309" },
   { background: "#fee2e2", color: "#b91c1c" },
   { background: "#f0fdf4", color: "#15803d" },

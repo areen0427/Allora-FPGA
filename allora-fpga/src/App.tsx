@@ -27,7 +27,7 @@ import {
   readProjectWorkspace,
 } from "./lib/projectWorkspace";
 import "./App.css";
-import type { ExecutionTarget } from "./pages/dashboard/types";
+import type { DashboardSection, ExecutionTarget } from "./pages/dashboard/types";
 import { prepareCodexReadiness } from "./lib/codexReadiness";
 import { hasTauriInvoke } from "./lib/tauri";
 import { findTopModuleFile } from "./hooks/utils";
@@ -50,6 +50,7 @@ type ProjectMetadata = {
 
 function App() {
   const [chatProjectPath, setChatProjectPath] = useState<string | undefined>();
+  const [workspaceSection, setWorkspaceSection] = useState<DashboardSection | undefined>();
   const [returnToChat, setReturnToChat] = useState(false);
   const [stage, setStage] = useState<AppStage>("board-select");
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
@@ -85,6 +86,7 @@ function App() {
 
   function goHome() {
     setReturnToChat(false);
+    setWorkspaceSection(undefined);
     setChatProjectPath(undefined);
     setRegisterLaunch(false);
     setStage("board-select");
@@ -270,6 +272,7 @@ function App() {
         onOpenProject={openProject}
         onOpenExistingProject={openExistingProject}
         onOpenChatProject={(path) => openProjectPath(path, "build")}
+        onOpenWorkspaceSection={(id, section) => { setWorkspaceSection(section); void openProject(id); }}
         onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
         onOpenExistingMemoryProject={() => openExistingProject("build", true)}
         onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
@@ -435,8 +438,9 @@ function App() {
         settings={settings}
         projectWarning={projectWarning}
         launchTarget={executionTarget}
-        initialSection={registerLaunch ? "register-builder" : studioLaunch ? "memory-asset-studio" : undefined}
+        initialSection={registerLaunch ? "register-builder" : studioLaunch ? "memory-asset-studio" : workspaceSection}
         onExecutionTargetChange={(target) => {
+          setWorkspaceSection(undefined);
           setRegisterLaunch(false);
           setStudioLaunch(false);
           setExecutionTarget(target);
@@ -458,11 +462,7 @@ function App() {
           )
         }
         onHome={goHome}
-        onChat={() => {
-          goHome();
-          setChatProjectPath(project?.projectPath);
-          setReturnToChat(true);
-        }}
+        onOpenChatProject={(path) => openProjectPath(path, executionTarget)}
       />
     );
   }
@@ -475,6 +475,7 @@ function App() {
       onOpenProject={openProject}
       onOpenExistingProject={openExistingProject}
       onOpenChatProject={(path) => openProjectPath(path, "build")}
+      onOpenWorkspaceSection={(id, section) => { setWorkspaceSection(section); void openProject(id); }}
       onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
       onOpenExistingMemoryProject={() => openExistingProject("build", true)}
       onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}

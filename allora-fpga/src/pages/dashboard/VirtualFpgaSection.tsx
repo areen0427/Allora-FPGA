@@ -446,7 +446,7 @@ export default function VirtualFpgaSection({
 
       <section className="vfpga-control-card">
         <div className="vfpga-toolbar">
-          <div className="vfpga-stat">
+          <div className="vfpga-stat ui-metric">
             <span>Engine</span>
             <strong>Verilator</strong>
           </div>
@@ -463,7 +463,7 @@ export default function VirtualFpgaSection({
               }
             />
           </label>
-          <div className="vfpga-stat">
+          <div className="vfpga-stat ui-metric">
             <span>Sim time</span>
             <strong>{simTime}</strong>
           </div>
@@ -486,10 +486,10 @@ export default function VirtualFpgaSection({
               ))}
             </select>
           </label>
-          <div className="vfpga-actions">
+          <div className="vfpga-actions ui-compact-button-group">
             {sessionId === null ? (
               <button
-                className="primary"
+                className="primary ui-action-button"
                 onClick={() => void startSimulation()}
                 disabled={status === "compiling"}
               >
@@ -507,7 +507,7 @@ export default function VirtualFpgaSection({
             ) : (
               <>
                 <button
-                  className="primary"
+                  className="primary ui-action-button"
                   onClick={() => setStatus("running")}
                   disabled={status === "running"}
                 >

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  ArrowLeft,
   Cpu,
   FileCode2,
   FolderOpen,
@@ -160,8 +161,8 @@ export default function ProjectSetup({
   return (
     <div className="glass-page project-setup-page">
       <header className="project-setup-topbar">
-        <button className="project-setup-back" type="button" onClick={onBack}>
-          ← Back
+        <button className="ui-button ui-button-secondary project-setup-back" type="button" onClick={onBack}>
+          <ArrowLeft size={16} /> Back
         </button>
 
         <div className="project-setup-heading">
@@ -216,6 +217,7 @@ export default function ProjectSetup({
             </div>
             <button
               type="button"
+              className="ui-button ui-button-secondary"
               disabled={!nativeAvailable || isChoosingLocation || isCreating}
               onClick={() => {
                 setCreationError("");
@@ -251,7 +253,7 @@ export default function ProjectSetup({
           ) : null}
 
           <button
-            className="project-create-button"
+            className="ui-button ui-button-primary project-create-button ui-action-button"
             type="button"
             disabled={
               !canCreateProject || requiresLocation || isCreating || isChoosingLocation
@@ -479,7 +481,7 @@ function MiniFact({
   value: string;
 }) {
   return (
-    <div className="project-mini-fact">
+    <div className="project-mini-fact ui-metric">
       {icon}
       <span>{label}</span>
       <strong title={value}>{value}</strong>
@@ -496,7 +498,7 @@ function CapabilityPill({
 }) {
   return (
     <span
-      className={supported ? "capability-pill supported" : "capability-pill"}
+      className={supported ? "capability-pill ui-metric supported" : "capability-pill ui-metric"}
     >
       {label}
     </span>
@@ -505,7 +507,7 @@ function CapabilityPill({
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="project-summary-item">
+    <div className="project-summary-item ui-metric">
       <span>{label}</span>
       <strong title={value}>{value}</strong>
     </div>

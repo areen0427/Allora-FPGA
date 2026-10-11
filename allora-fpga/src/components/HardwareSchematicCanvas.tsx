@@ -557,7 +557,7 @@ export default function HardwareSchematicCanvas({
           aria-label="Synthesis exploration"
         >
           <div
-            className="explorer-tool-section"
+            className="explorer-tool-section ui-compact-button-group"
             role="group"
             aria-label="View and search"
           >
@@ -642,7 +642,7 @@ export default function HardwareSchematicCanvas({
             </div>
           </div>
           <div
-            className="explorer-tool-section"
+            className="explorer-tool-section ui-compact-button-group"
             role="group"
             aria-label="Trace connections"
           >
@@ -691,7 +691,7 @@ export default function HardwareSchematicCanvas({
             </label>
           </div>
           <div
-            className="explorer-tool-section"
+            className="explorer-tool-section ui-compact-button-group"
             role="group"
             aria-label="Panels and display"
           >
@@ -727,7 +727,7 @@ export default function HardwareSchematicCanvas({
             </details>
           </div>
           <div
-            className="schematic-controls"
+            className="schematic-controls ui-compact-button-group"
             aria-label="Schematic zoom controls"
           >
             <label className="schematic-sensitivity">
@@ -1018,8 +1018,8 @@ export default function HardwareSchematicCanvas({
                             width={node.width}
                             height={node.height}
                             rx={8}
-                            fill="var(--ui-control-bg)"
-                            stroke="#64748b"
+                            fill="var(--ui-panel)"
+                            stroke="var(--ui-text-muted)"
                           />
                           <text
                             x={node.width / 2}

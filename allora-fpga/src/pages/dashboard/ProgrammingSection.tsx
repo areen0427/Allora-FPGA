@@ -206,7 +206,7 @@ export default function ProgrammingSection({
         <p
           style={{
             margin: 0,
-            color: "#64748b",
+            color: "var(--ui-text-muted)",
             fontSize: "16px",
             lineHeight: 1.55,
           }}
@@ -215,6 +215,7 @@ export default function ProgrammingSection({
         </p>
 
         <div
+          className="ui-compact-button-group"
           style={{
             display: "flex",
             gap: "10px",
@@ -223,7 +224,7 @@ export default function ProgrammingSection({
           }}
         >
           <button
-            className="primary-action"
+            className="ui-button ui-button-primary ui-action-button"
             type="button"
             onClick={handleProgramFpga}
             disabled={
@@ -232,53 +233,24 @@ export default function ProgrammingSection({
               isProgramming ||
               !selectedBitstream
             }
-            style={{
-              border: "none",
-              borderRadius: "14px",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-            }}
           >
             {isProgramming ? "Programming..." : "Program FPGA"}
           </button>
 
           <button
             type="button"
+            className="ui-button ui-button-secondary"
             onClick={detectProgrammer}
             disabled={!programmer || isDetectingProgrammer}
-            style={{
-              border: "1px solid #dbe4f0",
-              borderRadius: "14px",
-              background: "#ffffff",
-              color: "#334155",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-              cursor:
-                programmer && !isDetectingProgrammer
-                  ? "pointer"
-                  : "not-allowed",
-            }}
           >
             {isDetectingProgrammer ? "Checking..." : "Check Tool"}
           </button>
 
           <button
             type="button"
+            className="ui-button ui-button-secondary"
             onClick={detectBoard}
             disabled={!programmer || isDetectingBoard}
-            style={{
-              border: "1px solid #dbe4f0",
-              borderRadius: "14px",
-              background: "#ffffff",
-              color: "#334155",
-              padding: "13px 18px",
-              fontSize: "15px",
-              fontWeight: 800,
-              cursor:
-                programmer && !isDetectingBoard ? "pointer" : "not-allowed",
-            }}
           >
             {isDetectingBoard ? "Scanning..." : "Detect Board"}
           </button>
@@ -290,7 +262,7 @@ export default function ProgrammingSection({
               style={{
                 fontSize: "13px",
                 fontWeight: 800,
-                color: "#64748b",
+                color: "var(--ui-text-muted)",
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
               }}
@@ -305,10 +277,10 @@ export default function ProgrammingSection({
                 marginTop: "6px",
                 width: "100%",
                 padding: "10px 12px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-                background: "#f8fafc",
-                color: "#0f172a",
+                borderRadius: "var(--ui-radius-sm)",
+                border: "1px solid var(--ui-border-subtle)",
+                background: "var(--ui-control-bg)",
+                color: "var(--ui-text)",
                 fontSize: "14px",
                 fontWeight: 700,
               }}
@@ -326,22 +298,22 @@ export default function ProgrammingSection({
           style={{
             marginTop: "14px",
             padding: "12px 14px",
-            borderRadius: "12px",
+            borderRadius: "var(--ui-radius-sm)",
             background: programResult
               ? programResult.success
-                ? "#f0fdf4"
-                : "#fef2f2"
-              : "#f8fafc",
+                ? "var(--ui-success-bg)"
+                : "var(--ui-error-bg)"
+              : "var(--ui-surface)",
             border: programResult
               ? programResult.success
-                ? "1px solid #bbf7d0"
-                : "1px solid #fecaca"
-              : "1px solid #e2e8f0",
+                ? "1px solid var(--ui-success-border)"
+                : "1px solid var(--ui-error-border)"
+              : "1px solid var(--ui-border-subtle)",
             color: programResult
               ? programResult.success
-                ? "#166534"
-                : "#b91c1c"
-              : "#64748b",
+                ? "var(--ui-success-text)"
+                : "var(--ui-error-text)"
+              : "var(--ui-text-muted)",
             fontSize: "13px",
             lineHeight: 1.45,
           }}
@@ -367,10 +339,10 @@ export default function ProgrammingSection({
             ref={consoleRef}
             className="dashboard-glass-card"
             style={{
-              border: "1px solid #e2e8f0",
-              borderRadius: "16px",
-              background: "#f8fafc",
-              color: "#334155",
+              border: "1px solid var(--ui-border-subtle)",
+              borderRadius: "var(--ui-radius-lg)",
+              background: "var(--ui-surface)",
+              color: "var(--ui-text)",
               minHeight: "150px",
               flex: consoleLogs.length ? "1 1 0" : "1 1 auto",
               padding: "18px",
@@ -400,7 +372,7 @@ export default function ProgrammingSection({
       >
         <InfoCard
           title="Board"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow label="Name" value={board.name} compact />
@@ -440,7 +412,7 @@ export default function ProgrammingSection({
 
         <InfoCard
           title="Programmer"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow label="Tool" value={programmer?.command ?? "None"} compact />
@@ -471,7 +443,7 @@ export default function ProgrammingSection({
 
         <InfoCard
           title="Bitstream"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow

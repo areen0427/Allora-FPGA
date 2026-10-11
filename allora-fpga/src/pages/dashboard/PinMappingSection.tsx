@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../../data/boards";
+import { getPinTypeColor } from "../../data/pinResourceGroups";
 import DashboardSurfaceCard from "./DashboardSurfaceCard";
 import InfoCard from "./InfoCard";
 import VirtualBoard from "../../components/VirtualBoard";
@@ -153,35 +154,15 @@ export default function PinMappingSection({
               flexWrap: "wrap",
             }}
           >
-            <div
-              style={{
-                display: "inline-flex",
-                gap: "4px",
-                padding: "4px",
-                borderRadius: "14px",
-                background: "#f1f5f9",
-              }}
-            >
+            <div className="ui-button-group" style={{ display: "inline-flex", gap: "4px" }}>
               {(["simple", "advanced"] as const).map((option) => (
                 <button
                   key={option}
                   type="button"
+                  className="ui-button ui-button-secondary"
+                  aria-pressed={mode === option}
                   onClick={() => setMode(option)}
-                  style={{
-                    border: "none",
-                    borderRadius: "10px",
-                    background: mode === option ? "#ffffff" : "transparent",
-                    color: mode === option ? "#2563eb" : "#64748b",
-                    padding: "8px 12px",
-                    fontSize: "13px",
-                    fontWeight: 850,
-                    cursor: "pointer",
-                    textTransform: "capitalize",
-                    boxShadow:
-                      mode === option
-                        ? "0 1px 3px rgba(15,23,42,0.08)"
-                        : "none",
-                  }}
+                  style={{ textTransform: "capitalize" }}
                 >
                   {option}
                 </button>
@@ -208,54 +189,38 @@ export default function PinMappingSection({
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div className="ui-compact-button-group" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {saveState === "error" ? (
               <span
-                style={{ color: "#b91c1c", fontSize: "12px", fontWeight: 800 }}
+                style={{ color: "var(--ui-error-text)", fontSize: "12px", fontWeight: 800 }}
               >
                 Save failed
               </span>
             ) : saveState === "saved" && !hasUnsavedChanges ? (
               <span
-                style={{ color: "#15803d", fontSize: "12px", fontWeight: 800 }}
+                style={{ color: "var(--ui-success-text)", fontSize: "12px", fontWeight: 800 }}
               >
                 Saved
               </span>
             ) : null}
             <button
               type="button"
+              className="ui-button ui-button-secondary"
               onClick={() => {
                 setOverrides(savedMappings ?? {});
                 setSaveState("idle");
               }}
               disabled={!canRevert}
-              style={{
-                border: "1px solid #dbe4f0",
-                borderRadius: "11px",
-                background: "#ffffff",
-                color: canRevert ? "#475569" : "#94a3b8",
-                padding: "8px 11px",
-                fontSize: "13px",
-                fontWeight: 850,
-                cursor: canRevert ? "pointer" : "not-allowed",
-              }}
+
             >
               Revert
             </button>
             <button
               type="button"
+              className="ui-button ui-button-primary ui-action-button"
               onClick={() => void saveMappings()}
               disabled={!hasUnsavedChanges || saveState === "saving"}
-              style={{
-                border: "1px solid #2563eb",
-                borderRadius: "11px",
-                background: hasUnsavedChanges ? "#2563eb" : "#bfdbfe",
-                color: "#ffffff",
-                padding: "8px 13px",
-                fontSize: "13px",
-                fontWeight: 900,
-                cursor: hasUnsavedChanges ? "pointer" : "not-allowed",
-              }}
+
             >
               {saveState === "saving" ? "Saving…" : "Save Mapping"}
             </button>
@@ -265,7 +230,7 @@ export default function PinMappingSection({
         <p
           style={{
             margin: 0,
-            color: "#64748b",
+            color: "var(--ui-text-muted)",
             fontSize: "14px",
             lineHeight: 1.4,
           }}
@@ -298,20 +263,10 @@ export default function PinMappingSection({
 
 function SummaryPill({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        minWidth: "72px",
-        borderRadius: "12px",
-        border:
-          "1px solid var(--dashboard-control-border, rgba(203, 213, 225, 0.78))",
-        background: "var(--dashboard-control-bg, rgba(255,255,255,0.68))",
-        padding: "7px 10px",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
-      }}
-    >
+    <div className="ui-metric" style={{ minWidth: "72px", padding: "7px 10px" }}>
       <div
         style={{
-          color: "var(--dashboard-muted-text, #64748b)",
+          color: "var(--ui-text-muted)",
           fontSize: "10px",
           fontWeight: 900,
           letterSpacing: "0.04em",
@@ -322,7 +277,7 @@ function SummaryPill({ label, value }: { label: string; value: string }) {
       </div>
       <div
         style={{
-          color: "var(--dashboard-strong-text, #0f172a)",
+          color: "var(--ui-text)",
           fontSize: "13px",
           fontWeight: 900,
           marginTop: "2px",
@@ -361,8 +316,8 @@ function SimplePinMapper({
       style={{
         marginTop: "24px",
         minHeight: 0,
-        border: "1px solid #cbd5e1",
-        borderRadius: "16px",
+        border: "1px solid var(--ui-border-control)",
+        borderRadius: "var(--ui-radius-lg)",
         overflow: "auto",
       }}
     >
@@ -372,9 +327,9 @@ function SimplePinMapper({
           gridTemplateColumns: "1fr 110px minmax(220px, 1.4fr)",
           gap: "12px",
           padding: "12px 16px",
-          background: "#eef2f7",
-          borderBottom: "1px solid #cbd5e1",
-          color: "#64748b",
+          background: "var(--ui-surface)",
+          borderBottom: "1px solid var(--ui-border-subtle)",
+          color: "var(--ui-text-muted)",
           fontSize: "12px",
           fontWeight: 900,
           textTransform: "uppercase",
@@ -402,14 +357,14 @@ function SimplePinMapper({
                 gap: "12px",
                 alignItems: "center",
                 padding: "14px 16px",
-                borderTop: "1px solid #cbd5e1",
+                borderTop: "1px solid var(--ui-border-subtle)",
               }}
             >
               <div>
                 <div
                   style={{
                     fontSize: "15px",
-                    color: "#0f172a",
+                    color: "var(--ui-text)",
                     fontWeight: 850,
                     overflowWrap: "anywhere",
                   }}
@@ -420,7 +375,7 @@ function SimplePinMapper({
                   <div
                     style={{
                       marginTop: "4px",
-                      color: "#64748b",
+                      color: "var(--ui-text-muted)",
                       fontSize: "12px",
                       fontWeight: 700,
                     }}
@@ -432,7 +387,7 @@ function SimplePinMapper({
 
               <div
                 style={{
-                  color: "#475569",
+                  color: "var(--ui-text-muted)",
                   fontSize: "14px",
                   fontWeight: 800,
                   textTransform: "capitalize",
@@ -450,10 +405,10 @@ function SimplePinMapper({
                 style={{
                   width: "100%",
                   minWidth: 0,
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "12px",
-                  background: "#ffffff",
-                  color: "#0f172a",
+                  border: "1px solid var(--ui-border-control)",
+                  borderRadius: "var(--ui-radius-sm)",
+                  background: "var(--ui-control-bg)",
+                  color: "var(--ui-text)",
                   padding: "11px 12px",
                   fontSize: "14px",
                   fontWeight: 750,
@@ -587,9 +542,9 @@ function ResourcePinMapper({
               gap: "12px",
               alignItems: "center",
               padding: "12px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "16px",
-              background: "#f8fafc",
+              border: "1px solid var(--ui-border-subtle)",
+              borderRadius: "var(--ui-radius-lg)",
+              background: "var(--ui-surface)",
             }}
           >
             <select
@@ -599,10 +554,10 @@ function ResourcePinMapper({
               style={{
                 width: "100%",
                 minWidth: 0,
-                border: "1px solid #cbd5e1",
-                borderRadius: "12px",
-                background: "#ffffff",
-                color: "#0f172a",
+                border: "1px solid var(--ui-border-control)",
+                borderRadius: "var(--ui-radius-sm)",
+                background: "var(--ui-control-bg)",
+                color: "var(--ui-text)",
                 padding: "10px 12px",
                 fontSize: "14px",
                 fontWeight: 800,
@@ -632,10 +587,10 @@ function ResourcePinMapper({
                 style={{
                   width: "100%",
                   minWidth: 0,
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "12px",
-                  background: "#ffffff",
-                  color: "#0f172a",
+                  border: "1px solid var(--ui-border-control)",
+                  borderRadius: "var(--ui-radius-sm)",
+                  background: "var(--ui-control-bg)",
+                  color: "var(--ui-text)",
                   padding: "10px 12px",
                   fontSize: "14px",
                   fontWeight: 750,
@@ -646,7 +601,7 @@ function ResourcePinMapper({
 
             <div
               style={{
-                color: "#64748b",
+                color: "var(--ui-text-muted)",
                 fontSize: "12px",
                 fontWeight: 850,
                 whiteSpace: "nowrap",
@@ -658,6 +613,7 @@ function ResourcePinMapper({
           </div>
 
           <div
+            className="ui-compact-button-group"
             style={{
               flexShrink: 0,
               display: "flex",
@@ -676,18 +632,10 @@ function ResourcePinMapper({
               <button
                 key={key}
                 type="button"
+                className="ui-button ui-button-secondary"
+                aria-pressed={view === key}
                 onClick={() => setView(key)}
-                style={{
-                  border:
-                    view === key ? "1px solid #2563eb" : "1px solid #dbe4f0",
-                  borderRadius: "11px",
-                  background: view === key ? "#eff6ff" : "#ffffff",
-                  color: view === key ? "#2563eb" : "#475569",
-                  padding: "8px 11px",
-                  fontSize: "12px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                }}
+
               >
                 {label}
               </button>
@@ -777,13 +725,13 @@ function ResourcePinMapper({
                 className="pin-map-assignment-card pin-map-current-assignment-card"
                 style={{
                   flexShrink: 0,
-                  borderRadius: "16px",
+                  borderRadius: "var(--ui-radius-lg)",
                   padding: "14px",
                 }}
               >
                 <div
                   style={{
-                    color: "var(--dashboard-muted-text, #64748b)",
+                    color: "var(--ui-text-muted)",
                     fontSize: "11px",
                     fontWeight: 900,
                     textTransform: "uppercase",
@@ -795,7 +743,7 @@ function ResourcePinMapper({
                 <div
                   style={{
                     marginTop: "8px",
-                    color: "var(--dashboard-strong-text, #0f172a)",
+                    color: "var(--ui-text)",
                     fontSize: "15px",
                     fontWeight: 900,
                     overflowWrap: "anywhere",
@@ -807,8 +755,8 @@ function ResourcePinMapper({
                   style={{
                     marginTop: "6px",
                     color: selectedPinOption
-                      ? "var(--dashboard-control-active-border, #2563eb)"
-                      : "var(--dashboard-muted-text, #94a3b8)",
+                      ? "var(--ui-accent-text)"
+                      : "var(--ui-text-muted)",
                     fontSize: "13px",
                     fontWeight: 800,
                     lineHeight: 1.35,
@@ -849,7 +797,7 @@ function ResourcePinMapper({
                 style={{
                   flex: "1 1 auto",
                   minHeight: 0,
-                  borderRadius: "16px",
+                  borderRadius: "var(--ui-radius-lg)",
                   padding: "14px",
                   overflow: "hidden",
                   display: "flex",
@@ -867,7 +815,7 @@ function ResourcePinMapper({
                   <span>
                     <span
                       style={{
-                        color: "#0f172a",
+                        color: "var(--ui-text)",
                         fontSize: "13px",
                         fontWeight: 900,
                       }}
@@ -878,7 +826,7 @@ function ResourcePinMapper({
                   <span
                     style={{
                       color:
-                        validationItems.length === 0 ? "#15803d" : "#b45309",
+                        validationItems.length === 0 ? "var(--ui-success-text)" : "var(--ui-warning-text)",
                       fontSize: "12px",
                       fontWeight: 900,
                     }}
@@ -904,7 +852,7 @@ function ResourcePinMapper({
                     <div
                       className="pin-map-detail-box pin-map-validation-message success"
                       style={{
-                        borderRadius: "12px",
+                        borderRadius: "var(--ui-radius-sm)",
                         padding: "10px",
                         fontSize: "12px",
                         fontWeight: 800,
@@ -919,7 +867,7 @@ function ResourcePinMapper({
                         className="pin-map-detail-box pin-map-validation-message warning"
                         key={`${item.kind}:${item.message}`}
                         style={{
-                          borderRadius: "12px",
+                          borderRadius: "var(--ui-radius-sm)",
                           padding: "10px",
                           fontSize: "12px",
                           fontWeight: 800,
@@ -965,10 +913,10 @@ function AdvancedAssignmentTable({
     return (
       <div
         style={{
-          border: "1px solid #e2e8f0",
-          borderRadius: "16px",
-          background: "#f8fafc",
-          color: "#64748b",
+          border: "1px solid var(--ui-border-subtle)",
+          borderRadius: "var(--ui-radius-lg)",
+          background: "var(--ui-surface)",
+          color: "var(--ui-text-muted)",
           padding: "18px",
           fontSize: "13px",
           fontWeight: 800,
@@ -983,10 +931,10 @@ function AdvancedAssignmentTable({
     <div
       style={{
         minWidth: "720px",
-        border: "1px solid #dbe4f0",
-        borderRadius: "16px",
+        border: "1px solid var(--ui-border-control)",
+        borderRadius: "var(--ui-radius-lg)",
         overflow: "hidden",
-        background: "#ffffff",
+        background: "var(--ui-panel)",
       }}
     >
       <div
@@ -996,9 +944,9 @@ function AdvancedAssignmentTable({
             "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
           gap: "12px",
           padding: "11px 14px",
-          background: "#eef2f7",
-          borderBottom: "1px solid #dbe4f0",
-          color: "#64748b",
+          background: "var(--ui-surface)",
+          borderBottom: "1px solid var(--ui-border-subtle)",
+          color: "var(--ui-text-muted)",
           fontSize: "11px",
           fontWeight: 900,
           textTransform: "uppercase",
@@ -1031,8 +979,8 @@ function AdvancedAssignmentTable({
             style={{
               width: "100%",
               border: "none",
-              borderTop: "1px solid #e2e8f0",
-              background: active ? "#eff6ff" : "#ffffff",
+              borderTop: "1px solid var(--ui-border-subtle)",
+              background: active ? "var(--ui-control-active-bg)" : "var(--ui-panel)",
               display: "grid",
               gridTemplateColumns:
                 "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
@@ -1046,7 +994,7 @@ function AdvancedAssignmentTable({
             <div
               style={{
                 minWidth: 0,
-                color: active ? "#2563eb" : "#0f172a",
+                color: active ? "var(--ui-accent-text)" : "var(--ui-text)",
                 fontSize: "14px",
                 fontWeight: 900,
                 overflowWrap: "anywhere",
@@ -1056,7 +1004,7 @@ function AdvancedAssignmentTable({
             </div>
             <div
               style={{
-                color: "#475569",
+                color: "var(--ui-text-muted)",
                 fontSize: "13px",
                 fontWeight: 850,
                 textTransform: "capitalize",
@@ -1073,10 +1021,10 @@ function AdvancedAssignmentTable({
               style={{
                 width: "100%",
                 minWidth: 0,
-                border: "1px solid #cbd5e1",
-                borderRadius: "11px",
-                background: "#ffffff",
-                color: "#0f172a",
+                border: "1px solid var(--ui-border-control)",
+                borderRadius: "var(--ui-radius-sm)",
+                background: "var(--ui-control-bg)",
+                color: "var(--ui-text)",
                 padding: "9px 10px",
                 fontSize: "13px",
                 fontWeight: 750,
@@ -1099,9 +1047,9 @@ function AdvancedAssignmentTable({
               style={{
                 justifySelf: "start",
                 borderRadius: "999px",
-                background: pin ? "#f0fdf4" : "#f8fafc",
-                color: pin ? "#15803d" : "#64748b",
-                border: pin ? "1px solid #bbf7d0" : "1px solid #dbe4f0",
+                background: pin ? "var(--ui-success-bg)" : "var(--ui-surface)",
+                color: pin ? "var(--ui-success-text)" : "var(--ui-text-muted)",
+                border: pin ? "1px solid var(--ui-success-border)" : "1px solid var(--ui-border-subtle)",
                 padding: "4px 8px",
                 fontSize: "11px",
                 fontWeight: 900,
@@ -1123,15 +1071,15 @@ function PinInspectorFact({ label, value }: { label: string; value: string }) {
       className="pin-map-detail-box"
       style={{
         minWidth: 0,
-        border: "1px solid #e2e8f0",
-        borderRadius: "11px",
-        background: "#f8fafc",
+        border: "1px solid var(--ui-border-subtle)",
+        borderRadius: "var(--ui-radius-sm)",
+        background: "var(--ui-surface)",
         padding: "8px",
       }}
     >
       <div
         style={{
-          color: "#64748b",
+          color: "var(--ui-text-muted)",
           fontSize: "10px",
           fontWeight: 900,
           textTransform: "uppercase",
@@ -1143,7 +1091,7 @@ function PinInspectorFact({ label, value }: { label: string; value: string }) {
       <div
         style={{
           marginTop: "3px",
-          color: "#0f172a",
+          color: "var(--ui-text)",
           fontSize: "12px",
           fontWeight: 900,
           overflowWrap: "anywhere",
@@ -1172,7 +1120,7 @@ function ConstraintPreview({
       style={{
         flex: compact ? "1 1 0" : undefined,
         minHeight: compact ? 0 : "100%",
-        borderRadius: "16px",
+        borderRadius: "var(--ui-radius-lg)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -1183,7 +1131,7 @@ function ConstraintPreview({
         style={{
           flexShrink: 0,
           padding: "12px 14px",
-          borderBottom: "1px solid rgba(148,163,184,0.22)",
+          borderBottom: "1px solid var(--ui-border-subtle)",
           display: "flex",
           justifyContent: "space-between",
           gap: "10px",
@@ -1289,7 +1237,7 @@ function ResourceGroupCard({
     <DashboardSurfaceCard
       className="pin-map-resource-card"
       style={{
-        borderRadius: "16px",
+        borderRadius: "var(--ui-radius-lg)",
         padding: "14px",
         minWidth: 0,
       }}
@@ -1302,13 +1250,13 @@ function ResourceGroupCard({
         }}
       >
         <div>
-          <div style={{ color: "#0f172a", fontSize: "15px", fontWeight: 900 }}>
+          <div style={{ color: "var(--ui-text)", fontSize: "15px", fontWeight: 900 }}>
             {group.title}
           </div>
           <div
             style={{
               marginTop: "4px",
-              color: "#64748b",
+              color: "var(--ui-text-muted)",
               fontSize: "12px",
               fontWeight: 750,
             }}
@@ -1316,7 +1264,7 @@ function ResourceGroupCard({
             {group.detail}
           </div>
         </div>
-        <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 900 }}>
+        <span style={{ color: "var(--ui-text-soft)", fontSize: "12px", fontWeight: 900 }}>
           {visiblePins.length}
         </span>
       </div>
@@ -1344,13 +1292,13 @@ function ResourceGroupCard({
               style={{
                 minWidth: 0,
                 minHeight: "58px",
-                border: active ? "2px solid #2563eb" : "1px solid #dbe4f0",
-                borderRadius: "13px",
+                border: active ? "2px solid var(--ui-border-hover)" : "1px solid var(--ui-border-control)",
+                borderRadius: "var(--ui-radius-md)",
                 cursor: selectedPort ? "pointer" : "not-allowed",
                 padding: "9px",
                 display: "grid",
                 gap: "3px",
-                boxShadow: active ? "0 0 0 4px rgba(37,99,235,0.12)" : "none",
+                boxShadow: active ? "var(--ui-focus-ring)" : "none",
               }}
             >
               <span
@@ -1379,7 +1327,7 @@ function ResourceGroupCard({
               </span>
               <span
                 style={{
-                  color: "#64748b",
+                  color: "var(--ui-text-muted)",
                   fontSize: "10px",
                   fontWeight: 750,
                   overflow: "hidden",
@@ -1526,7 +1474,7 @@ function EmptyPortState() {
     <div
       style={{
         padding: "28px 16px",
-        color: "#64748b",
+        color: "var(--ui-text-muted)",
         fontSize: "15px",
         lineHeight: 1.5,
       }}
@@ -1535,15 +1483,4 @@ function EmptyPortState() {
       module/entity ports in the selected top-level file to start mapping pins.
     </div>
   );
-}
-
-function getPinTypeColor(type: string) {
-  if (type === "clock") return { background: "#eff6ff", color: "#2563eb" };
-  if (type === "led") return { background: "#fef3c7", color: "#b45309" };
-  if (type === "button") return { background: "#fee2e2", color: "#b91c1c" };
-  if (type === "uart" || type === "spi" || type === "flash" || type === "i2c") {
-    return { background: "#f0fdf4", color: "#15803d" };
-  }
-  if (type === "unknown") return { background: "#f5f3ff", color: "#6d28d9" };
-  return { background: "#f8fafc", color: "#475569" };
 }

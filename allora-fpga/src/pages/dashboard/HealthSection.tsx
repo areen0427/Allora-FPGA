@@ -395,7 +395,7 @@ function HealthMetricCard({ metric }: { metric: HealthMetric }) {
       className={`health-metric-card ${metric.state}`}
       style={{
         border: `1px solid ${color.border}`,
-        borderRadius: "16px",
+        borderRadius: "var(--ui-radius-lg)",
         background: color.background,
         padding: "15px",
         minWidth: 0,
@@ -403,7 +403,7 @@ function HealthMetricCard({ metric }: { metric: HealthMetric }) {
     >
       <div
         style={{
-          color: "#64748b",
+          color: "var(--ui-text-muted)",
           fontSize: "11px",
           fontWeight: 900,
           letterSpacing: "0.06em",
@@ -415,7 +415,7 @@ function HealthMetricCard({ metric }: { metric: HealthMetric }) {
       <div
         style={{
           marginTop: "8px",
-          color: "#0f172a",
+          color: "var(--ui-text)",
           fontSize: "20px",
           fontWeight: 950,
           overflowWrap: "anywhere",
@@ -451,9 +451,9 @@ function ReadinessItem({
     <div
       className="health-readiness-item"
       style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: "14px",
-        background: "#ffffff",
+        border: "1px solid var(--ui-border-subtle)",
+        borderRadius: "var(--ui-radius-md)",
+        background: "var(--ui-panel)",
         padding: "13px",
         display: "flex",
         justifyContent: "space-between",
@@ -461,13 +461,13 @@ function ReadinessItem({
       }}
     >
       <div>
-        <div style={{ color: "#0f172a", fontSize: "14px", fontWeight: 900 }}>
+        <div style={{ color: "var(--ui-text)", fontSize: "14px", fontWeight: 900 }}>
           {label}
         </div>
         <div
           style={{
             marginTop: "4px",
-            color: "#64748b",
+            color: "var(--ui-text-muted)",
             fontSize: "12px",
             fontWeight: 750,
           }}
@@ -480,8 +480,8 @@ function ReadinessItem({
           flexShrink: 0,
           alignSelf: "center",
           borderRadius: "999px",
-          background: ready ? "#dcfce7" : "#f1f5f9",
-          color: ready ? "#15803d" : "#64748b",
+          background: ready ? "var(--ui-success-bg)" : "var(--ui-surface)",
+          color: ready ? "var(--ui-success-text)" : "var(--ui-text-muted)",
           padding: "5px 8px",
           fontSize: "11px",
           fontWeight: 900,
@@ -495,14 +495,14 @@ function ReadinessItem({
 
 function getStateColor(state: HealthMetric["state"]) {
   if (state === "good") {
-    return { background: "#f0fdf4", border: "#bbf7d0", text: "#15803d" };
+    return { background: "var(--ui-success-bg)", border: "var(--ui-success-border)", text: "var(--ui-success-text)" };
   }
 
   if (state === "warn") {
-    return { background: "#fff7ed", border: "#fed7aa", text: "#c2410c" };
+    return { background: "var(--ui-warning-bg)", border: "var(--ui-warning-border)", text: "var(--ui-warning-text)" };
   }
 
-  return { background: "#f8fafc", border: "#e2e8f0", text: "#64748b" };
+  return { background: "var(--ui-surface)", border: "var(--ui-border-subtle)", text: "var(--ui-text-muted)" };
 }
 
 function isHdlFile(fileName: string) {

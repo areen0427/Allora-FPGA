@@ -1,5 +1,7 @@
 import type { ReactNode, RefObject } from "react";
 import { ArrowLeft, Settings } from "lucide-react";
+import { WorkspaceDock } from "../dashboard/WorkspaceDock";
+import type { DashboardSection } from "../dashboard/types";
 import alloraIcon from "../../../src-tauri/icons/128x128.png";
 
 export type WelcomeView = "home" | "pin-mapping" | "chat";
@@ -14,6 +16,8 @@ type WelcomeShellProps = {
   onViewChange: (view: WelcomeView) => void;
   onOpenSettings: () => void;
   onBack?: () => void;
+  onWorkspaceSection: (section: DashboardSection) => void;
+  onOpenUsage: (anchor: HTMLButtonElement) => void;
   children: ReactNode;
 };
 
@@ -27,10 +31,24 @@ export function WelcomeShell({
   onViewChange,
   onOpenSettings,
   onBack,
+  onWorkspaceSection,
+  onOpenUsage,
   children,
 }: WelcomeShellProps) {
   return (
     <div className="glass-page welcome-page">
+      {activeView === "chat" ? (
+        <aside className="dashboard-sidebar welcome-chat-workspace-dock">
+          <WorkspaceDock activeSection="chat" executionTarget="build"
+            onSectionChange={onWorkspaceSection}
+            onHome={() => onViewChange("home")}
+            onChat={() => onViewChange("chat")}
+            onBack={() => onViewChange("home")}
+            onSettings={onOpenSettings}
+            onUsage={(event) => onOpenUsage(event.currentTarget)}
+          />
+        </aside>
+      ) : (
       <aside className="home-rail welcome-rail">
         <button
           ref={brandRef}
@@ -54,7 +72,7 @@ export function WelcomeShell({
         </button>
 
         {onBack && (
-          <RailButton filled label={activeView === "chat" ? "Back to Build" : "Back to welcome"} onClick={onBack}>
+          <RailButton filled label="Back to welcome" onClick={onBack}>
             <ArrowLeft size={20} />
           </RailButton>
         )}
@@ -65,6 +83,7 @@ export function WelcomeShell({
           <Settings size={20} />
         </RailButton>
       </aside>
+      )}
 
       <main className="welcome-main">
         <div className="welcome-content" style={{ maxWidth }}>

@@ -426,9 +426,9 @@ export default function BitstreamSection({
           <p>Generate a programming artifact for {board.name}.</p>
         </header>
 
-        <div className="bitstream-actions">
+        <div className="bitstream-actions ui-compact-button-group">
           <button
-            className="primary-action"
+            className="ui-button ui-button-primary ui-action-button"
             type="button"
             onClick={handleGenerateBitstream}
             title={
@@ -446,6 +446,7 @@ export default function BitstreamSection({
             {isGenerating ? "Generating..." : "Generate Bitstream"}
           </button>
           <button
+            className="ui-button ui-button-secondary"
             type="button"
             onClick={handleDownloadBitstream}
             disabled={!artifact}
@@ -453,7 +454,7 @@ export default function BitstreamSection({
             Download
           </button>
           <button
-            className="bitstream-open-timing"
+            className="ui-button ui-button-secondary"
             type="button"
             onClick={() => void handleOpenTimingReport()}
             disabled={!artifact}
@@ -482,7 +483,7 @@ export default function BitstreamSection({
 
         <div className="bitstream-results">
           <div
-            className="bitstream-output-tabs"
+            className="bitstream-output-tabs ui-compact-button-group"
             role="tablist"
             aria-label="Build output"
           >
@@ -550,7 +551,7 @@ export default function BitstreamSection({
           <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
         </InfoCard>
 
-        <InfoCard title="Pin mapping" compact>
+        <InfoCard title="Pin mapping" compact className="bitstream-mapping-card">
           <p className="bitstream-mapping-summary">
             {autoMappings.length - unmappedPorts.length}/{autoMappings.length}{" "}
             ports mapped

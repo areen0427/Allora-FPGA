@@ -1,10 +1,12 @@
 /* Shared interaction and action variants. Screen CSS owns size and layout.
    Existing action classes remain aliases so their event handlers stay intact. */
-:where(#root) button {
+:where(#root button) {
   transition: var(--ui-control-transition);
+  border-radius: var(--ui-radius-sm);
 }
 
-.ui-button {
+/* A weak base lets compact/icon/card controls retain their authored sizing. */
+:where(.ui-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -25,6 +27,12 @@
   transform: var(--ui-lift-subtle);
 }
 
+.ui-button.ui-button-secondary[aria-pressed="true"] {
+  background: var(--ui-control-active-bg);
+  border-color: var(--ui-border-hover);
+  color: var(--ui-accent-text);
+}
+
 /* Tool landing actions share feedback; keyboard outlines belong to focus only. */
 :is(.mas-home-layout, .workbench-home-actions) button {
   background: var(--ui-control-bg);
@@ -43,7 +51,6 @@
 :is(
   .ui-button-secondary,
   button.settings-reset-button,
-  button.settings-close-button,
   button.welcome-back-button,
   button.project-setup-back,
   button.synthesis-secondary-button,
@@ -51,6 +58,11 @@
   button.github-refresh-button,
   button.board-show-more,
   button.mas-back,
+  .mas-actions > button:not(.mas-primary),
+  .rb-actions > button:not(.mas-primary),
+  .pw-toolbar > button:not(:first-child),
+  .pw-inspector > button,
+  .pw-terminal button,
   .vfpga-map-control > button,
   .simulation-welcome-actions > button.secondary
 ) {
@@ -108,8 +120,69 @@
   }
 }
 
+/* Dock variant: borderless icons acquire material only under the pointer.
+   Screen CSS owns the rail layout and stable hit-target dimensions. */
+#root .ui-dock-button {
+  border: none;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.ui-dock-icon {
+  border: none;
+  border-radius: var(--ui-radius-xs);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition: var(--ui-control-transition);
+}
+
+.ui-dock-icon > svg {
+  width: var(--ui-dock-icon-size);
+  height: var(--ui-dock-icon-size);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ui-dock-button:is([aria-label="Synthesis"], [aria-label^="Memory Asset Studio"]) .ui-dock-icon > svg {
+  width: calc(var(--ui-dock-icon-size) * 1.5);
+}
+
+.ui-dock-button > .ui-dock-icon::before,
+.ui-dock-button > .ui-dock-icon::after {
+  opacity: 0;
+}
+
+/* The glass edge is a separate layer from the control's CSS border. */
+.ui-dock-button > .ui-dock-icon::after {
+  content: none;
+}
+
+.ui-dock-button:hover:not(:disabled, [aria-disabled="true"]) > .ui-dock-icon {
+  background: var(--ui-control-bg);
+  box-shadow: none;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  transform: scale(var(--ui-dock-scale, 1));
+}
+
+.ui-dock-button:hover:not(:disabled, [aria-disabled="true"]) > .ui-dock-icon::before {
+  opacity: 1;
+  box-shadow: none;
+}
+
+html[data-reduce-motion="true"] .ui-dock-icon {
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-dock-icon {
+    transform: none !important;
+  }
+}
+
 /* Disabled controls never lift, including class-specific hover rules. */
-:where(#root) button:is(:disabled, [aria-disabled="true"]) {
+#root button:is(:disabled, [aria-disabled="true"]) {
   cursor: not-allowed;
   opacity: 0.55;
   transform: none !important;
@@ -117,7 +190,175 @@
 }
 
 /* Outline remains visible even on cards that own a box-shadow or glass layer. */
-#root :is(button, [role="button"], input, select, textarea):focus-visible {
+#root :is(button, [role="button"], input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--ui-accent-text);
   outline-offset: 3px;
+}
+
+/* Group layout belongs to screens; only the individual actions have material. */
+#root .ui-button-group {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+#root .ui-button-group::before,
+#root .ui-button-group::after {
+  content: none;
+}
+
+/* Read-only metrics are text, not controls. A short separator replaces boxes. */
+#root .ui-metric {
+  position: relative;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+#root .ui-metric::before {
+  content: none;
+}
+#root .ui-metric + .ui-metric::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 1px;
+  height: 16px;
+  transform: translateY(-50%);
+  background: var(--ui-border-control);
+  pointer-events: none;
+}
+#root .ui-metric::after {
+  content: none;
+}
+
+#root :is(.ui-button-group, .ui-compact-button-group) {
+  gap: var(--ui-compact-group-gap) !important;
+}
+
+/* Compact groups share text-only resting material. Transparent physical borders
+   reserve hover geometry; short separators distinguish adjacent actions. */
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button) {
+  position: relative;
+  overflow: visible;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+  transform: none;
+  transition: var(--ui-control-transition);
+}
+/* Explorer controls keep their authored density; ordinary actions share size. */
+#root :is(.ui-button-group, .ui-compact-button-group):not(.project-explorer-view-switch, .project-explorer-actions, .dashboard-target-switch) > :is(button, .ui-button) {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: var(--ui-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
+  color: var(--ui-accent-text) !important;
+}
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button)::before {
+  content: none;
+}
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button) + :is(button, .ui-button)::before {
+  content: "";
+  position: absolute;
+  inset: auto;
+  left: calc(-1 * var(--ui-compact-group-gap) / 2 - 1px);
+  top: 50%;
+  width: 1px;
+  height: var(--ui-compact-divider-height);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--ui-border-control);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: translateY(-50%);
+  opacity: 1;
+  z-index: 1;
+  pointer-events: none;
+}
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button)::after {
+  opacity: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  #root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]) {
+    /* The liquid-glass pseudo layer owns the visible edge. */
+    border-color: transparent !important;
+    background: var(--ui-control-hover-bg) !important;
+    box-shadow: var(--ui-control-shadow) !important;
+    transform: var(--ui-lift-subtle);
+  }
+  #root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"])::after {
+    opacity: 1;
+  }
+}
+
+/* Selection groups retain the theme-aware liquid-glass edge at rest. */
+#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]),
+#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ui-border-hover) !important;
+}
+#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"])::after {
+  opacity: 1;
+}
+
+/* Icon actions reserve enough room for the glyph and its glass hover edge. */
+#root .ui-icon-button {
+  width: var(--ui-icon-button-size);
+  height: var(--ui-icon-button-size);
+  min-width: var(--ui-icon-button-size);
+  min-height: var(--ui-icon-button-size);
+  flex: 0 0 var(--ui-icon-button-size);
+  padding: 0;
+  border-radius: var(--ui-radius-sm);
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+/* Committing actions retain a blue edge and share the subtle glass hover lift. */
+#root button.ui-action-button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: var(--ui-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+#root :is(button.ui-action-button, .ui-compact-button-group > button.ui-action-button, .ui-button-group > button.ui-action-button),
+#root :is(button.ui-action-button, .ui-compact-button-group > button.ui-action-button, .ui-button-group > button.ui-action-button):hover:not(:disabled, [aria-disabled="true"]) {
+  border: 1px solid var(--ui-accent) !important;
+  background: transparent !important;
+  color: var(--ui-accent-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  scale: none;
+  transition: var(--ui-control-transition);
+}
+/* Standalone actions use the same flat surface as grouped actions. The
+   more-specific group rule still supplies dividers between adjacent buttons. */
+#root button.ui-action-button::before {
+  content: none;
+}
+#root :is(button.ui-action-button, .ui-compact-button-group > button.ui-action-button, .ui-button-group > button.ui-action-button)::after {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #root :is(button.ui-action-button, .ui-compact-button-group > button.ui-action-button, .ui-button-group > button.ui-action-button):hover:not(:disabled, [aria-disabled="true"]) {
+    transform: var(--ui-lift-subtle) !important;
+  }
 }

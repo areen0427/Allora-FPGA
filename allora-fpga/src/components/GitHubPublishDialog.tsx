@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -37,6 +37,7 @@ import {
   type GitToolAvailability,
 } from "../lib/github";
 import { hasTauriInvoke } from "../lib/tauri";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 type Props = {
   projectName: string;
@@ -58,6 +59,8 @@ export function GitHubPublishDialog({
   workspaceDirty,
   onClose,
 }: Props) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalFocus(dialogRef, onClose);
   const [tools, setTools] = useState<GitToolAvailability | null>(null);
   const [auth, setAuth] = useState<GitHubAuthStatus>(EMPTY_AUTH);
   const [git, setGit] = useState<GitRepositoryStatus | null>(null);
@@ -148,14 +151,6 @@ export function GitHubPublishDialog({
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  useEffect(() => {
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose]);
 
   useEffect(() => {
     if (!deviceAuthorization) return;
@@ -289,9 +284,11 @@ export function GitHubPublishDialog({
   return (
     <div className="github-dialog-backdrop" role="presentation">
       <section
+        ref={dialogRef}
         className="github-dialog dashboard-glass-card"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-labelledby="github-dialog-title"
       >
         <header className="github-dialog-header">
@@ -312,7 +309,6 @@ export function GitHubPublishDialog({
             type="button"
             className="github-icon-button"
             aria-label="Close GitHub publishing"
-            autoFocus
             onClick={onClose}
           >
             <X size={18} />
@@ -341,7 +337,7 @@ export function GitHubPublishDialog({
         </div>
 
         <div className="github-dialog-body">
-          <div className="github-workflow-switch" aria-label="Git workflow">
+          <div className="github-workflow-switch ui-button-group" aria-label="Git workflow">
             <button
               type="button"
               className={workflowMode === "guided" ? "active" : ""}
@@ -465,7 +461,7 @@ export function GitHubPublishDialog({
                 ) : (
                   <button
                     type="button"
-                    className="github-primary-button"
+                    className="github-primary-button ui-action-button"
                     disabled={!readyForGit || Boolean(busy)}
                     onClick={() =>
                       void runAction("signin", async () => {
@@ -594,7 +590,7 @@ export function GitHubPublishDialog({
                     </p>
                     <button
                       type="button"
-                      className="github-primary-button"
+                      className="github-primary-button ui-action-button"
                       disabled={!readyForGit || Boolean(busy)}
                       onClick={() =>
                         void runAction("init", async () => {
@@ -676,7 +672,7 @@ export function GitHubPublishDialog({
                         </p>
                         <button
                           type="button"
-                          className="github-primary-button"
+                          className="github-primary-button ui-action-button"
                           disabled={
                             workspaceDirty ||
                             !commitMessage.trim() ||
@@ -721,7 +717,7 @@ export function GitHubPublishDialog({
                 ) : (
                   <>
                     <div
-                      className="github-mode-switch"
+                      className="github-mode-switch ui-button-group"
                       aria-label="Repository choice"
                     >
                       <button
@@ -786,7 +782,7 @@ export function GitHubPublishDialog({
                         </p>
                         <button
                           type="button"
-                          className="github-primary-button"
+                          className="github-primary-button ui-action-button"
                           disabled={!repositoryName.trim() || Boolean(busy)}
                           onClick={() =>
                             void runAction("create-repository", async () => {
@@ -874,7 +870,7 @@ export function GitHubPublishDialog({
                             </p>
                             <button
                               type="button"
-                              className="github-primary-button"
+                              className="github-primary-button ui-action-button"
                               disabled={!git?.hasCommits || Boolean(busy)}
                               onClick={() =>
                                 void runAction("connect", async () => {
@@ -932,7 +928,7 @@ export function GitHubPublishDialog({
                     ) : null}
                     <button
                       type="button"
-                      className="github-primary-button"
+                      className="github-primary-button ui-action-button"
                       disabled={
                         !git.hasCommits || git.detached || Boolean(busy)
                       }

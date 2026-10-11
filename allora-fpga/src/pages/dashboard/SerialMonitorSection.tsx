@@ -159,7 +159,7 @@ export default function SerialMonitorSection({
           flexDirection: "column",
         }}
       >
-        <div className="serial-toolbar">
+        <div className="serial-toolbar ui-compact-button-group">
           <select
             className="serial-control"
             value={selectedPort}
@@ -203,7 +203,7 @@ export default function SerialMonitorSection({
 
           <button
             type="button"
-            className="primary-action synthesis-generate-button"
+            className="primary-action synthesis-generate-button ui-action-button"
             disabled={
               isBusy || (!isConnected && !selectedPort) || !hasTauriInvoke()
             }
@@ -228,7 +228,7 @@ export default function SerialMonitorSection({
           {output || "No serial data yet."}
         </pre>
 
-        <div className="serial-input-row">
+        <div className="serial-input-row ui-compact-button-group">
           <input
             className="serial-control serial-input"
             value={draft}
@@ -292,7 +292,7 @@ export default function SerialMonitorSection({
       >
         <InfoCard
           title="Connection"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow
@@ -307,7 +307,7 @@ export default function SerialMonitorSection({
 
         <InfoCard
           title="Board"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <InfoRow label="Name" value={board.name} compact />
@@ -329,7 +329,7 @@ export default function SerialMonitorSection({
 
         <InfoCard
           title="Tip"
-          style={{ padding: "14px", borderRadius: "16px" }}
+          style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}
           compact
         >
           <div className="serial-tip">

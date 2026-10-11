@@ -39,9 +39,9 @@
   gap: 22px;
   min-height: 76px;
   padding: 12px 18px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.34);
+  border-bottom: 1px solid var(--ui-border-subtle);
   background: var(--ui-control-bg);
-  box-shadow: 0 5px 22px rgba(15, 23, 42, 0.07);
+  box-shadow: var(--ui-control-shadow);
   backdrop-filter: blur(18px);
 }
 
@@ -98,7 +98,7 @@
 
 .schematic-sensitivity input {
   width: 104px;
-  accent-color: #2563eb;
+  accent-color: var(--ui-accent);
   cursor: pointer;
 }
 
@@ -117,7 +117,7 @@
   height: 34px;
   place-items: center;
   border: 1px solid var(--ui-border-control);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-control-bg);
   color: var(--ui-text);
   font: inherit;
@@ -129,7 +129,7 @@
   cursor: pointer;
 }
 
-.schematic-controls button:hover {
+.schematic-controls button:hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--ui-border-hover);
   background: var(--ui-control-hover-bg);
   color: var(--ui-accent-text);
@@ -163,7 +163,7 @@
 
 .schematic-net {
   fill: none;
-  stroke: #64748b;
+  stroke: var(--ui-text-muted);
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -171,22 +171,22 @@
 }
 
 .schematic-net.bus {
-  stroke: #475569;
+  stroke: var(--ui-text);
   stroke-width: 3.2;
 }
 
 .schematic-element {
   cursor: pointer;
-  transition: filter 140ms ease;
+  transition: filter var(--ui-motion-fast);
 }
 
 .schematic-element:hover,
 .schematic-element.selected {
-  filter: drop-shadow(0 0 5px rgba(37, 99, 235, 0.55));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ui-accent-text) 55%, transparent));
 }
 
 .schematic-element.selected > :first-child {
-  stroke: #2563eb;
+  stroke: var(--ui-accent-text);
   stroke-width: 3;
 }
 
@@ -194,7 +194,7 @@
 .schematic-symbol-mark,
 .schematic-operator-mark,
 .schematic-pin-hint {
-  fill: #0f172a;
+  fill: var(--ui-text);
   font-family: var(--font-ui);
   font-weight: 800;
   pointer-events: none;
@@ -214,7 +214,7 @@
 }
 
 .schematic-pin-hint {
-  fill: #64748b;
+  fill: var(--ui-text-muted);
   font-size: 9px;
 }
 
@@ -236,10 +236,10 @@
   min-width: 230px;
   gap: 5px;
   padding: 16px 42px 16px 16px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-panel);
-  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.15);
+  box-shadow: var(--ui-popup-shadow);
   backdrop-filter: blur(16px);
 }
 
@@ -301,9 +301,9 @@
   padding: 20px;
   overflow: auto;
   border: 1px solid var(--dashboard-surface-border, #dbe4f0);
-  border-radius: 20px;
+  border-radius: var(--ui-radius-2xl);
   background: var(--dashboard-surface-bg, rgba(255, 255, 255, 0.94));
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+  box-shadow: var(--ui-control-shadow);
 }
 
 .viewer-schematic > div,
@@ -397,7 +397,7 @@
 .explorer-status button,
 .explorer-enter-module {
   border: 1px solid var(--ui-border-control);
-  border-radius: 7px;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-control-bg);
   color: var(--ui-text);
   padding: 6px 9px;
@@ -408,8 +408,8 @@
 .explorer-waveform button {
   cursor: pointer;
 }
-.explorer-tools button:hover,
-.explorer-inspector button:hover {
+.explorer-tools button:hover:not(:disabled, [aria-disabled="true"]),
+.explorer-inspector button:hover:not(:disabled, [aria-disabled="true"]) {
   background: var(--ui-control-hover-bg);
 }
 .explorer-tools label {
@@ -432,9 +432,9 @@
   overflow: auto;
   padding: 10px;
   border: 1px solid var(--ui-border-control);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   background: var(--ui-panel);
-  box-shadow: 0 12px 32px #0003;
+  box-shadow: var(--ui-popup-shadow);
 }
 .explorer-search-results button {
   display: flex;
@@ -504,7 +504,7 @@
 .schematic-element > rect,
 .schematic-element > path,
 .schematic-element > circle {
-  fill: var(--ui-control-bg);
+  fill: var(--ui-panel);
   stroke: var(--ui-text-muted);
 }
 .schematic-element.category-register > rect {
@@ -532,10 +532,10 @@
   overflow: auto;
   padding: 16px;
   border: 1px solid var(--ui-border-control);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-md);
   background: var(--ui-panel);
   backdrop-filter: blur(18px);
-  box-shadow: 0 12px 36px #0002;
+  box-shadow: var(--ui-popup-shadow);
   font-size: 12px;
   color: var(--ui-text);
   user-select: text;
@@ -554,7 +554,7 @@
   max-height: 210px;
   overflow: auto;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-xs);
   background: var(--ui-control-bg);
   white-space: pre;
   font-size: 11px;
@@ -680,12 +680,12 @@
   border: 1px solid transparent;
   background: transparent;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   transition: var(--ui-control-transition);
   cursor: pointer;
 }
 .explorer-tools button:hover:not(:disabled),
-.schematic-controls button:hover {
+.schematic-controls button:hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--ui-border-hover);
   background: var(--ui-control-hover-bg);
   color: var(--ui-accent-text);
@@ -697,12 +697,12 @@
 }
 .explorer-tools button:disabled,
 .explorer-tools input:disabled {
-  opacity: 0.4;
-  cursor: default;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .explorer-tools button:focus-visible,
 .explorer-tools summary:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--ui-accent-text);
   outline-offset: 2px;
 }
 .explorer-tools nav {

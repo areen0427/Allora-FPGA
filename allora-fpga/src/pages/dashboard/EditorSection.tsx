@@ -139,13 +139,11 @@ export default function EditorSection({
       className="dashboard-glass-card editor-shell"
       style={{
         height: "calc(100vh - 24px)",
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: "22px",
+        border: "1px solid var(--ui-border-subtle)",
+        borderRadius: "var(--ui-radius-2xl)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        boxShadow: "0 18px 40px rgba(15,23,42,0.16)",
       }}
     >
       <div
@@ -154,8 +152,8 @@ export default function EditorSection({
           height: "44px",
           display: "flex",
           alignItems: "end",
-          background: "#f8fafc",
-          borderBottom: "1px solid #e2e8f0",
+          background: "var(--ui-surface)",
+          borderBottom: "1px solid var(--ui-border-subtle)",
           overflowX: "auto",
           flexShrink: 0,
         }}
@@ -181,9 +179,9 @@ export default function EditorSection({
               height: "36px",
               padding: "0 10px 0 16px",
               border: "none",
-              borderRight: "1px solid #e2e8f0",
-              background: file.name === activeFileName ? "#ffffff" : "#f8fafc",
-              color: file.name === activeFileName ? "#0f172a" : "#64748b",
+              borderRight: "1px solid var(--ui-border-subtle)",
+              background: file.name === activeFileName ? "var(--ui-panel)" : "var(--ui-surface)",
+              color: file.name === activeFileName ? "var(--ui-text)" : "var(--ui-text-muted)",
               fontSize: "13px",
               fontWeight: 800,
               cursor: "pointer",
@@ -216,10 +214,9 @@ export default function EditorSection({
                 style={{
                   border: "none",
                   background: "transparent",
-                  outline: "none",
                   fontSize: "13px",
                   fontWeight: 800,
-                  color: "#0f172a",
+                  color: "var(--ui-text)",
                   width: "140px",
                 }}
               />
@@ -235,7 +232,7 @@ export default function EditorSection({
                   width: "7px",
                   height: "7px",
                   borderRadius: "999px",
-                  background: "#2563eb",
+                  background: "var(--ui-accent-text)",
                   flexShrink: 0,
                 }}
               />
@@ -252,7 +249,7 @@ export default function EditorSection({
               style={{
                 border: "none",
                 background: "transparent",
-                color: "#94a3b8",
+                color: "var(--ui-text-soft)",
                 fontWeight: 900,
                 fontSize: "15px",
                 lineHeight: 1,
@@ -275,9 +272,9 @@ export default function EditorSection({
             height: "36px",
             width: "42px",
             border: "none",
-            borderRight: "1px solid #e2e8f0",
-            background: "#f8fafc",
-            color: "#64748b",
+            borderRight: "1px solid var(--ui-border-subtle)",
+            background: "var(--ui-surface)",
+            color: "var(--ui-text-muted)",
             fontSize: "18px",
             fontWeight: 800,
             cursor: "pointer",

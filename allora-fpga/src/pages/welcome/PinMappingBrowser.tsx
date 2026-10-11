@@ -146,7 +146,7 @@ function PinMappingDetail({
         </div>
 
         <div
-          className="pin-browser-view-toggle"
+          className="pin-browser-view-toggle ui-compact-button-group"
           role="group"
           aria-label="Board pinout view"
         >
@@ -263,7 +263,7 @@ function matchesBoardSearch(board: BoardCatalogItem, normalizedSearch: string) {
 
 function PinSummaryPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="pin-summary-pill">
+    <div className="pin-summary-pill ui-metric">
       <div className="pin-summary-pill-label">{label}</div>
       <div className="pin-summary-pill-value">{value}</div>
     </div>

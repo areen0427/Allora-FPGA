@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
 import type { AppSettings } from "../data/settings";
 import { useProjectLocation } from "../hooks/useProjectLocation";
@@ -64,11 +65,11 @@ export default function MemoryProjectSetup({
       >
         <button
           type="button"
-          className="mas-back"
+          className="ui-button ui-button-secondary mas-back"
           disabled={busy || picking}
           onClick={onBack}
         >
-          ← Back to projects
+          <ArrowLeft size={16} /> Back to projects
         </button>
         <span className="mas-kicker">MEMORY ASSET STUDIO</span>
         <h1>Create a project for your assets</h1>
@@ -111,6 +112,7 @@ export default function MemoryProjectSetup({
             </span>
             <button
               type="button"
+              className="ui-button ui-button-secondary"
               disabled={!nativeAvailable || busy || picking}
               onClick={() => {
                 if (lock.current) return;
@@ -132,7 +134,7 @@ export default function MemoryProjectSetup({
         )}
         <button
           type="submit"
-          className="mas-create"
+          className="ui-button ui-button-primary mas-create ui-action-button"
           disabled={!name.trim() || requiresLocation || busy || picking}
         >
           {busy ? "Creating…" : "Create and open Studio"}

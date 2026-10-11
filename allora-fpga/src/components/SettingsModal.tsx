@@ -13,13 +13,13 @@ import {
   Settings,
   SlidersHorizontal,
   Sparkles,
-  X,
 } from "lucide-react";
 import { AiIntegrationSettings } from "./AiIntegrationSettings";
 import { DEFAULT_SETTINGS } from "../data/settings";
 import type { AppSettings } from "../data/settings";
 import { hasTauriInvoke } from "../lib/tauri";
 import { virtualFpgaApi, type SimulationTools } from "../lib/virtualFpga";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 type SettingsModalProps = {
   settings: AppSettings;
@@ -54,14 +54,11 @@ export function SettingsModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const firstTabRef = useRef<HTMLButtonElement>(null);
-  const onCloseRef = useRef(onClose);
   const themeTransitionTimeoutRef = useRef<number | null>(null);
   const titleId = useId();
   const descriptionId = useId();
 
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
+  useModalFocus(dialogRef, onClose, firstTabRef);
 
   useEffect(() => () => {
     if (themeTransitionTimeoutRef.current !== null) {
@@ -73,45 +70,6 @@ export function SettingsModal({
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
   }, [activeCategory]);
-
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    firstTabRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) return;
-
-      const focusable = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((element) => element.offsetParent !== null);
-
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, []);
 
   function updateSetting<Key extends keyof AppSettings>(
     key: Key,
@@ -154,6 +112,7 @@ export function SettingsModal({
         className="variant-modal settings-modal"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
       >
@@ -167,14 +126,6 @@ export function SettingsModal({
               <p id={descriptionId}>Customize your Allora workspace</p>
             </span>
           </div>
-          <button
-            className="settings-close-button"
-            type="button"
-            aria-label="Close settings"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
         </header>
 
         <nav className="settings-navigation" aria-label="Settings categories">
@@ -520,9 +471,9 @@ export function SettingsModal({
             <Check size={14} aria-hidden="true" />
             Auto Save: 30 seconds
           </span>
-          <div className="settings-footer-actions">
+          <div className="settings-footer-actions ui-compact-button-group">
             <button
-              className="settings-reset-button"
+              className="ui-button ui-button-secondary settings-reset-button"
               type="button"
               onClick={() => onChange({ ...DEFAULT_SETTINGS })}
             >
@@ -530,7 +481,7 @@ export function SettingsModal({
               Restore defaults
             </button>
             <button
-              className="settings-done-button"
+              className="ui-button ui-button-primary settings-done-button ui-action-button"
               type="button"
               onClick={onClose}
             >
@@ -577,6 +528,7 @@ function SimulatorToolStatus() {
         </span>
         <button
           type="button"
+          className="ui-button ui-button-secondary"
           disabled={!desktopAvailable || isScanning}
           onClick={() => void scanTools()}
         >

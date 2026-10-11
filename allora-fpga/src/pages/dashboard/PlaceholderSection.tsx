@@ -14,7 +14,7 @@ export default function PlaceholderSection({
       <p
         style={{
           margin: 0,
-          color: "#64748b",
+          color: "var(--ui-text-muted)",
           fontSize: "17px",
           lineHeight: 1.6,
         }}

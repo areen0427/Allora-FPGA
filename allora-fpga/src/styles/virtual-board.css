@@ -180,7 +180,7 @@
 
 .board-playback-speed {
   border: 1px solid var(--dashboard-control-border, #cbd5e1);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-xs);
   background: var(--dashboard-control-bg, #ffffff);
   color: var(--dashboard-text, #0f172a);
   padding: 6px 8px;

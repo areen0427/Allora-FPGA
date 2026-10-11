@@ -42,10 +42,10 @@
   align-items: center;
   gap: 7px;
   padding: 9px 12px;
-  border: 1px solid rgba(14, 165, 233, 0.24);
+  border: 1px solid var(--ui-border-control);
   border-radius: 999px;
   color: var(--ui-accent-text);
-  background: rgba(224, 242, 254, 0.68);
+  background: var(--ui-control-active-bg);
   font-size: 12px;
   font-weight: 850;
 }
@@ -61,7 +61,7 @@
 .simulation-starter-panel {
   min-height: 0;
   padding: 20px;
-  border-radius: 20px;
+  border-radius: var(--ui-radius-2xl);
 }
 
 .simulation-setup-details {
@@ -85,7 +85,7 @@
 }
 
 .simulation-setup-facts svg {
-  color: #10b981;
+  color: var(--ui-success-text);
 }
 
 .simulation-starter-panel {
@@ -122,7 +122,7 @@
 }
 
 .simulation-starter-card.selected {
-  border-color: var(--ui-blue);
+  border-color: var(--ui-border-hover);
   background: var(--ui-control-active-bg);
   box-shadow: 0 0 0 4px var(--ui-blue-soft);
 }
@@ -134,7 +134,7 @@
   place-items: center;
   border-radius: 13px;
   color: var(--ui-accent-text);
-  background: rgba(14, 165, 233, 0.1);
+  background: var(--ui-blue-soft);
 }
 
 .simulation-starter-copy {
@@ -158,7 +158,7 @@
   line-height: 1.45;
 }
 .simulation-starter-check {
-  color: #10b981;
+  color: var(--ui-accent-text);
 }
 
 .simulation-create-row {
@@ -205,7 +205,7 @@
 }
 
 .project-setup-back {
-  border: 1px solid rgba(147, 197, 253, 0.58);
+  border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-md);
   font-size: 15px;
   font-weight: 800;
@@ -242,7 +242,7 @@
 
 .project-setup-card {
   min-width: 0;
-  border-radius: 18px;
+  border-radius: var(--ui-radius-xl);
   padding: 18px;
   overflow: hidden;
 }
@@ -282,7 +282,7 @@
   display: grid;
   gap: 8px;
   margin-bottom: 14px;
-  color: #334155;
+  color: var(--ui-text);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -326,10 +326,10 @@
 .project-setup-field input:focus,
 .project-setup-field select:focus {
   outline: none;
-  border-color: rgba(37, 99, 235, 0.62);
+  border-color: var(--ui-border-hover);
   box-shadow:
     var(--ui-focus-ring),
-    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+    var(--ui-inset-highlight);
 }
 
 .project-location-card {
@@ -377,7 +377,7 @@
   border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-sm);
   background: var(--ui-control-bg);
-  color: #475569;
+  color: var(--ui-text-muted);
   padding: 0 12px;
   font-size: 13px;
   font-weight: 850;
@@ -390,8 +390,8 @@
 
 .project-location-card button:hover:not(:disabled) {
   transform: var(--ui-lift-subtle);
-  border-color: rgba(37, 99, 235, 0.32);
-  color: var(--ui-blue);
+  border-color: var(--ui-border-hover);
+  color: var(--ui-accent-text);
 }
 
 .project-location-card button:disabled {
@@ -463,10 +463,10 @@
 
 .project-creation-error {
   margin: 12px 0;
-  border: 1px solid rgba(239, 68, 68, 0.26);
+  border: 1px solid var(--ui-error-border);
   border-radius: var(--ui-radius-md);
-  background: rgba(254, 242, 242, 0.82);
-  color: #b91c1c;
+  background: var(--ui-error-bg);
+  color: var(--ui-error-text);
   padding: 10px 12px;
   font-size: 11px;
   font-weight: 750;
@@ -481,9 +481,9 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
-  border: 1px solid rgba(147, 197, 253, 0.48);
+  border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-md);
-  background: rgba(239, 246, 255, 0.66);
+  background: var(--ui-control-bg);
   padding: 11px 12px;
 }
 
@@ -500,7 +500,7 @@
 
 .project-template-summary p {
   margin: 3px 0 0;
-  color: #475569;
+  color: var(--ui-text-muted);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.35;
@@ -526,7 +526,7 @@
 }
 
 .project-setup-field small {
-  color: #dc2626;
+  color: var(--ui-error-text);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0;
@@ -579,7 +579,7 @@
   width: 17px;
   height: 17px;
   flex: 0 0 auto;
-  accent-color: #2563eb;
+  accent-color: var(--ui-accent);
 }
 
 .project-file-preview {
@@ -611,7 +611,7 @@
 }
 
 .project-file-preview li {
-  color: #475569;
+  color: var(--ui-text-muted);
   font-family: var(--font-code);
   font-size: 11px;
   font-weight: 700;
@@ -622,7 +622,7 @@
 
 .project-file-preview li::before {
   content: "└ ";
-  color: #94a3b8;
+  color: var(--ui-text-soft);
 }
 
 .template-grid {
@@ -651,13 +651,13 @@
 }
 
 .template-card:hover:not(.disabled) {
-  border-color: #93c5fd;
+  border-color: var(--ui-border-hover);
   transform: var(--ui-lift-subtle);
   box-shadow: var(--ui-hover-shadow);
 }
 
 .template-card.selected {
-  border-color: var(--ui-blue);
+  border-color: var(--ui-border-hover);
   background: var(--ui-control-active-bg);
   box-shadow: 0 0 0 4px var(--ui-blue-soft);
 }
@@ -696,15 +696,9 @@
 
 .template-inspector {
   margin-top: auto;
-  border: 1px solid rgba(191, 219, 254, 0.72);
+  border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-lg);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(239, 246, 255, 0.72),
-      rgba(255, 255, 255, 0.58)
-    ),
-    rgba(239, 246, 255, 0.6);
+  background: var(--ui-control-bg);
   padding: 12px;
 }
 
@@ -719,7 +713,7 @@
 
 .template-inspector p {
   margin: 8px 0 0;
-  color: #475569;
+  color: var(--ui-text-muted);
   font-size: 12px;
   font-weight: 750;
   line-height: 1.4;
@@ -733,9 +727,9 @@
 }
 
 .template-meta-row span {
-  border: 1px solid rgba(147, 197, 253, 0.52);
+  border: 1px solid var(--ui-border-control);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.64);
+  background: var(--ui-control-bg);
   color: var(--ui-accent-text);
   padding: 4px 7px;
   font-size: 10px;
@@ -757,7 +751,7 @@
   flex: 0 0 260px;
   min-height: 0;
   margin: -2px 0 12px;
-  border-radius: 14px;
+  border-radius: var(--ui-radius-md);
   overflow: hidden;
 }
 
@@ -769,9 +763,9 @@
 }
 
 .capability-pill {
-  border: 1px solid rgba(203, 213, 225, 0.82);
+  border: 1px solid var(--ui-border-control);
   border-radius: 999px;
-  background: rgba(248, 250, 252, 0.78);
+  background: var(--ui-control-bg);
   color: var(--ui-text-muted);
   padding: 5px 8px;
   font-size: 10px;
@@ -780,9 +774,9 @@
 }
 
 .capability-pill.supported {
-  border-color: rgba(34, 197, 94, 0.28);
-  background: rgba(240, 253, 244, 0.85);
-  color: #15803d;
+  border-color: var(--ui-success-border);
+  background: var(--ui-success-bg);
+  color: var(--ui-success-text);
 }
 
 .project-summary-grid {
@@ -818,165 +812,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-html[data-theme="dark"] .template-card,
-html[data-theme="black-ice"] .template-card {
-  border-color: rgba(148, 163, 184, 0.28);
-  background: rgba(15, 23, 42, 0.55);
-}
-
-html[data-theme="dark"] .template-card.selected,
-html[data-theme="black-ice"] .template-card.selected {
-  border-color: rgba(96, 165, 250, 0.85);
-  background: rgba(37, 99, 235, 0.18);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16);
-}
-
-html[data-theme="dark"] .template-card-name,
-html[data-theme="black-ice"] .template-card-name {
-  color: #e2e8f0;
-}
-
-html[data-theme="dark"] .template-card-desc,
-html[data-theme="black-ice"] .template-card-desc {
-  color: #94a3b8;
-}
-
-html[data-theme="dark"] .project-setup-heading h1,
-html[data-theme="black-ice"] .project-setup-heading h1,
-html[data-theme="dark"] .project-panel-title,
-html[data-theme="black-ice"] .project-panel-title,
-html[data-theme="dark"] .project-location-copy div div,
-html[data-theme="black-ice"] .project-location-copy div div,
-html[data-theme="dark"] .project-summary-item strong,
-html[data-theme="black-ice"] .project-summary-item strong,
-html[data-theme="dark"] .project-mini-fact strong,
-html[data-theme="black-ice"] .project-mini-fact strong,
-html[data-theme="dark"] .template-inspector > div:first-child,
-html[data-theme="black-ice"] .template-inspector > div:first-child {
-  color: #e2e8f0;
-}
-
-html[data-theme="dark"] .project-setup-heading p,
-html[data-theme="black-ice"] .project-setup-heading p,
-html[data-theme="dark"] .project-setup-field,
-html[data-theme="black-ice"] .project-setup-field,
-html[data-theme="dark"] .project-location-copy p,
-html[data-theme="black-ice"] .project-location-copy p,
-html[data-theme="dark"] .project-summary-item span,
-html[data-theme="black-ice"] .project-summary-item span,
-html[data-theme="dark"] .project-mini-fact span,
-html[data-theme="black-ice"] .project-mini-fact span,
-html[data-theme="dark"] .template-inspector p,
-html[data-theme="black-ice"] .template-inspector p {
-  color: #94a3b8;
-}
-
-html[data-theme="dark"] .project-setup-field input,
-html[data-theme="black-ice"] .project-setup-field input,
-html[data-theme="dark"] .project-location-card,
-html[data-theme="black-ice"] .project-location-card,
-html[data-theme="dark"] .project-summary-item,
-html[data-theme="black-ice"] .project-summary-item,
-html[data-theme="dark"] .project-mini-fact,
-html[data-theme="black-ice"] .project-mini-fact,
-html[data-theme="dark"] .template-inspector,
-html[data-theme="black-ice"] .template-inspector {
-  border-color: rgba(148, 163, 184, 0.24);
-  background:
-    linear-gradient(180deg, rgba(30, 41, 59, 0.64), rgba(15, 23, 42, 0.42)),
-    rgba(15, 23, 42, 0.5);
-  color: #e2e8f0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-html[data-theme="dark"] .project-location-card button,
-html[data-theme="black-ice"] .project-location-card button,
-html[data-theme="dark"] .project-setup-back,
-html[data-theme="black-ice"] .project-setup-back {
-  border-color: rgba(96, 165, 250, 0.32);
-  background: rgba(15, 23, 42, 0.58);
-  color: #93c5fd;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 22px rgba(0, 0, 0, 0.18);
-}
-
-html[data-theme="dark"] .capability-pill,
-html[data-theme="black-ice"] .capability-pill {
-  border-color: rgba(148, 163, 184, 0.24);
-  background: rgba(30, 41, 59, 0.62);
-  color: #cbd5e1;
-}
-
-html[data-theme="dark"] .capability-pill.supported,
-html[data-theme="black-ice"] .capability-pill.supported {
-  border-color: rgba(34, 197, 94, 0.34);
-  background: rgba(22, 101, 52, 0.28);
-  color: #86efac;
-}
-
-html[data-theme="dark"] .project-template-note,
-html[data-theme="black-ice"] .project-template-note,
-html[data-theme="dark"] .project-panel-title svg,
-html[data-theme="black-ice"] .project-panel-title svg,
-html[data-theme="dark"] .project-location-copy svg,
-html[data-theme="black-ice"] .project-location-copy svg,
-html[data-theme="dark"] .project-mini-fact svg,
-html[data-theme="black-ice"] .project-mini-fact svg {
-  color: #93c5fd;
-}
-
-html[data-theme="dark"] .project-template-summary,
-html[data-theme="black-ice"] .project-template-summary,
-html[data-theme="dark"] .project-file-preview,
-html[data-theme="black-ice"] .project-file-preview {
-  border-color: rgba(148, 163, 184, 0.24);
-  background: rgba(15, 23, 42, 0.48);
-}
-
-html[data-theme="dark"] .project-template-summary strong,
-html[data-theme="black-ice"] .project-template-summary strong,
-html[data-theme="dark"] .project-option-row,
-html[data-theme="black-ice"] .project-option-row {
-  color: #e2e8f0;
-}
-
-html[data-theme="dark"] .project-template-summary p,
-html[data-theme="black-ice"] .project-template-summary p,
-html[data-theme="dark"] .project-option-row small,
-html[data-theme="black-ice"] .project-option-row small,
-html[data-theme="dark"] .project-file-preview li,
-html[data-theme="black-ice"] .project-file-preview li {
-  color: #94a3b8;
-}
-
-html[data-theme="dark"] .project-creation-error,
-html[data-theme="black-ice"] .project-creation-error {
-  border-color: rgba(248, 113, 113, 0.32);
-  background: rgba(127, 29, 29, 0.24);
-  color: #fca5a5;
-}
-
-html[data-theme="dark"] .template-meta-row span,
-html[data-theme="black-ice"] .template-meta-row span {
-  border-color: rgba(96, 165, 250, 0.28);
-  background: rgba(37, 99, 235, 0.16);
-  color: #bfdbfe;
-}
-
-html[data-theme="ice"] .template-card,
-html[data-theme="solar"] .template-card {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-html[data-theme="ice"] .template-card.selected {
-  background: rgba(239, 246, 255, 0.92);
-}
-
-html[data-theme="solar"] .template-card.selected {
-  border-color: #d97706;
-  background: rgba(255, 251, 235, 0.92);
-  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
 }

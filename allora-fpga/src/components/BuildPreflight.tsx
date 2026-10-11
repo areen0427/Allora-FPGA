@@ -25,7 +25,7 @@ export function BuildPreflight({
     <div className={`build-preflight${collapsible ? " compact" : ""}`}>
       <div className="build-preflight-summary">
         <strong>Build preflight</strong>
-        <span className={blockers ? "blocked" : "ready"}>
+        <span className={blockers ? "blocked" : warnings ? "warning" : "ready"}>
           {blockers
             ? `${blockers} blocker${blockers === 1 ? "" : "s"}`
             : warnings
@@ -35,7 +35,7 @@ export function BuildPreflight({
         {collapsible && blockers === 0 ? (
           <button
             type="button"
-            className="build-preflight-toggle"
+            className="ui-button ui-button-secondary build-preflight-toggle"
             aria-expanded={expanded}
             onClick={() => setShowDetails((current) => !current)}
           >

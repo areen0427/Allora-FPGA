@@ -211,7 +211,7 @@ export default function SynthesisSection({
         <p
           style={{
             margin: 0,
-            color: "#64748b",
+            color: "var(--ui-text-muted)",
             fontSize: "14px",
             lineHeight: 1.45,
           }}
@@ -244,7 +244,7 @@ export default function SynthesisSection({
           </label>
 
           <button
-            className="primary-action synthesis-generate-button"
+            className="ui-button ui-action-button"
             type="button"
             onClick={runSynthesis}
             disabled={status !== "ready" || isRunning}
@@ -299,7 +299,7 @@ export default function SynthesisSection({
       >
         <InfoCard
           title="Target"
-          style={{ padding: "20px", borderRadius: "20px" }}
+          style={{ padding: "20px", borderRadius: "var(--ui-radius-2xl)" }}
           compact
         >
           <InfoRow label="Board" value={board.name} compact />
@@ -314,7 +314,7 @@ export default function SynthesisSection({
 
         <InfoCard
           title="Inputs"
-          style={{ padding: "20px", borderRadius: "20px" }}
+          style={{ padding: "20px", borderRadius: "var(--ui-radius-2xl)" }}
           compact
         >
           <InfoRow label="HDL Files" value={String(hdlFiles.length)} compact />
@@ -417,7 +417,7 @@ function SynthesisMetric({
   tone: "violet" | "blue" | "cyan" | "amber";
 }) {
   return (
-    <div className={`synthesis-metric ${tone}`}>
+    <div className={`synthesis-metric ui-metric ${tone}`}>
       <span>{label}</span>
       <strong>{value.toLocaleString()}</strong>
       <small>{detail}</small>
@@ -492,7 +492,7 @@ export function HardwareDiagram({
             style={{
               fontSize: "18px",
               fontWeight: 800,
-              color: "#0f172a",
+              color: "var(--ui-text)",
             }}
           >
             {diagram.topModule}
@@ -500,7 +500,7 @@ export function HardwareDiagram({
           <div
             style={{
               marginTop: "4px",
-              color: "#64748b",
+              color: "var(--ui-text-muted)",
               fontSize: "14px",
             }}
           >
@@ -513,7 +513,7 @@ export function HardwareDiagram({
             display: "flex",
             gap: "10px",
             flexWrap: "wrap",
-            color: "#64748b",
+            color: "var(--ui-text-muted)",
             fontSize: "12px",
             fontWeight: 700,
             textTransform: "uppercase",
@@ -530,10 +530,8 @@ export function HardwareDiagram({
       <div
         className="dashboard-glass-card"
         style={{
-          borderRadius: "16px",
-          border: "1px solid #dbe4f0",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.98) 100%)",
+          borderRadius: "var(--ui-radius-lg)",
+          border: "1px solid var(--ui-border-control)",
           overflow: "auto",
           maxHeight: expanded ? "none" : "420px",
         }}
@@ -554,7 +552,7 @@ export function HardwareDiagram({
               key={`${edge.from}-${edge.to}-${index}`}
               d={edge.path}
               fill="none"
-              stroke="rgba(100,116,139,0.48)"
+              stroke="var(--ui-text-soft)"
               strokeWidth={2.2}
               strokeLinecap="round"
             />
