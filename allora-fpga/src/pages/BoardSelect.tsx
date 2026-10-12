@@ -180,6 +180,8 @@ export default function BoardSelect({
           }}
           showProductInfo={showProductInfo}
           onCloseProductInfo={closeProductInfo}
+          onOpenProductInfo={() => setShowProductInfo((visible) => !visible)}
+          onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}
           brandRef={brandRef}
           reduceMotion={settings.reduceMotion}
           boards={supportedBoards}

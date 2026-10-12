@@ -53,7 +53,7 @@ export function WelcomeShell({
             onUsage={(event) => onOpenUsage(event.currentTarget)}
           />
         </aside>
-      ) : (
+      ) : onOpenProductInfo ? null : (
       <aside className="home-rail welcome-rail">
         <button
           ref={brandRef}
@@ -65,10 +65,6 @@ export function WelcomeShell({
           aria-controls={onOpenProductInfo ? "welcome-product-info" : undefined}
           aria-current={activeView === "home" ? "page" : undefined}
           onClick={() => {
-            if (onOpenProductInfo) {
-              onOpenProductInfo();
-              return;
-            }
             onViewChange("home");
             newProjectRef.current?.scrollIntoView({ behavior: "smooth" });
           }}
