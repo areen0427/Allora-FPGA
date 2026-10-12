@@ -1,3 +1,4 @@
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { useEffect, useRef, useState } from "react";
 import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import type { ProjectFile } from "./types";
@@ -361,12 +362,10 @@ export default function PeripheralWorkbench({
     compile();
   });
   return (
-    <section className="pw" aria-label="Peripheral Workbench">
+    <section className="pw ui-workspace-framed" aria-label="Peripheral Workbench">
       <header className="pw-header">
         <div>
-          <span className="pw-kicker">REAL RTL · VERILATOR</span>
-          <h1>Peripheral Workbench</h1>
-          <p>{top} · Virtual connections stay separate from board pins.</p>
+          <WorkspaceTitle section="peripheral-workbench" />
         </div>
         <span role="status" className="pw-status">
           {status} · {((snapshot?.simTimePs ?? 0) / 1e6).toFixed(3)} µs

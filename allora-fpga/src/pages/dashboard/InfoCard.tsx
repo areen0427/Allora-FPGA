@@ -1,3 +1,5 @@
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
+import type { DashboardSection } from "./types";
 import type { CSSProperties, ReactNode } from "react";
 
 type InfoCardProps = {
@@ -6,6 +8,8 @@ type InfoCardProps = {
   style?: CSSProperties;
   className?: string;
   compact?: boolean;
+  pageTitle?: boolean;
+  pageSection?: DashboardSection;
 };
 
 export default function InfoCard({
@@ -13,28 +17,34 @@ export default function InfoCard({
   children,
   style,
   compact = false,
+  pageTitle = false,
+  pageSection,
   className,
 }: InfoCardProps) {
   return (
     <div
-      className={`dashboard-glass-card${className ? ` ${className}` : ""}`}
+      className={`dashboard-glass-card${pageTitle ? " ui-workspace-panel" : ""}${className ? ` ${className}` : ""}`}
       style={{
         border: "1px solid var(--ui-border-subtle)",
         borderRadius: "var(--ui-radius-2xl)",
-        padding: "28px",
+        padding: pageTitle ? undefined : compact ? "var(--ui-panel-inset)" : "28px",
         ...style,
       }}
     >
-      <h2
-        style={{
-          margin: 0,
-          marginBottom: compact ? "16px" : "22px",
-          fontSize: compact ? "18px" : "24px",
-          letterSpacing: "-0.03em",
-        }}
-      >
-        {title}
-      </h2>
+      {pageTitle ? (
+        <WorkspaceTitle section={pageSection} title={title} />
+      ) : (
+        <h2
+          className="ui-section-title"
+          style={{
+            margin: 0,
+            marginBottom: compact ? "16px" : "22px",
+            letterSpacing: "-0.03em",
+          }}
+        >
+          {title}
+        </h2>
+      )}
 
       {children}
     </div>

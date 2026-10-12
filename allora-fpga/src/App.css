@@ -18,6 +18,7 @@
 @import "./styles/welcome-landing.css";
 @import "./styles/button-glass.css";
 @import "./styles/controls.css";
+@import "./styles/workspace.css";
 @import "./styles/accessibility.css";
 
 html.theme-transitioning,

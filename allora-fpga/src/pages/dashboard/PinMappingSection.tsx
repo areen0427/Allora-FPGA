@@ -128,6 +128,8 @@ export default function PinMappingSection({
     >
       <InfoCard
         title="Pin Mapping"
+        pageTitle
+        pageSection="pin-mapping"
         style={{
           height: "100%",
           overflow: "hidden",
@@ -154,7 +156,7 @@ export default function PinMappingSection({
               flexWrap: "wrap",
             }}
           >
-            <div className="ui-button-group" style={{ display: "inline-flex", gap: "4px" }}>
+            <div className="ui-button-group ui-selection-group ui-button-group-flush-start" style={{ display: "inline-flex", gap: "4px" }}>
               {(["simple", "advanced"] as const).map((option) => (
                 <button
                   key={option}
@@ -227,16 +229,6 @@ export default function PinMappingSection({
           </div>
         </div>
 
-        <p
-          style={{
-            margin: 0,
-            color: "var(--ui-text-muted)",
-            fontSize: "14px",
-            lineHeight: 1.4,
-          }}
-        >
-          Select a signal, then choose where it lands on the package.
-        </p>
 
         {mode === "simple" ? (
           <SimplePinMapper
@@ -613,7 +605,7 @@ function ResourcePinMapper({
           </div>
 
           <div
-            className="ui-compact-button-group"
+            className="ui-button-group ui-selection-group"
             style={{
               flexShrink: 0,
               display: "flex",
@@ -643,6 +635,7 @@ function ResourcePinMapper({
           </div>
 
           <div
+            className="ui-workspace-split"
             style={{
               flex: "1 1 0",
               minHeight: 0,
@@ -712,9 +705,9 @@ function ResourcePinMapper({
             </div>
 
             <div
+              className="ui-workspace-framed ui-workspace-aside"
               style={{
-                flex: "0.65 1 0",
-                minWidth: "280px",
+                minWidth: 0,
                 minHeight: 0,
                 display: "flex",
                 flexDirection: "column",
@@ -729,15 +722,7 @@ function ResourcePinMapper({
                   padding: "14px",
                 }}
               >
-                <div
-                  style={{
-                    color: "var(--ui-text-muted)",
-                    fontSize: "11px",
-                    fontWeight: 900,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
+                <div className="ui-section-title" style={{ color: "var(--ui-text)" }}>
                   Current Assignment
                 </div>
                 <div
@@ -813,13 +798,7 @@ function ResourcePinMapper({
                   }}
                 >
                   <span>
-                    <span
-                      style={{
-                        color: "var(--ui-text)",
-                        fontSize: "13px",
-                        fontWeight: 900,
-                      }}
-                    >
+                    <span className="ui-section-title" style={{ color: "var(--ui-text)" }}>
                       Validation
                     </span>
                   </span>
@@ -930,7 +909,8 @@ function AdvancedAssignmentTable({
   return (
     <div
       style={{
-        minWidth: "720px",
+        minWidth: 0,
+        width: "100%",
         border: "1px solid var(--ui-border-control)",
         borderRadius: "var(--ui-radius-lg)",
         overflow: "hidden",
@@ -941,7 +921,7 @@ function AdvancedAssignmentTable({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
+            "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
           gap: "12px",
           padding: "11px 14px",
           background: "var(--ui-surface)",
@@ -983,7 +963,7 @@ function AdvancedAssignmentTable({
               background: active ? "var(--ui-control-active-bg)" : "var(--ui-panel)",
               display: "grid",
               gridTemplateColumns:
-                "minmax(170px, 1fr) 90px minmax(260px, 1.4fr) 110px",
+                "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
               gap: "12px",
               alignItems: "center",
               padding: "12px 14px",
@@ -1250,7 +1230,7 @@ function ResourceGroupCard({
         }}
       >
         <div>
-          <div style={{ color: "var(--ui-text)", fontSize: "15px", fontWeight: 900 }}>
+          <div className="ui-section-title" style={{ color: "var(--ui-text)" }}>
             {group.title}
           </div>
           <div

@@ -1,3 +1,4 @@
+import SerialMonitorSection from "./SerialMonitorSection";
 import { useEffect, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
@@ -16,6 +17,7 @@ type ProgrammingSectionProps = {
   projectName: string;
   projectPath?: string;
   topLevelFileName: string | null;
+  initialTab?: "program" | "serial";
 };
 
 type ProgrammerStatus = {
@@ -49,7 +51,10 @@ type ProgramResult = {
 export default function ProgrammingSection({
   board,
   files,
+  initialTab = "program",
 }: ProgrammingSectionProps) {
+  const [activeTab, setActiveTab] = useState<"program" | "serial">(initialTab);
+  useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
   const [programmerStatus, setProgrammerStatus] =
     useState<ProgrammerStatus | null>(null);
   const [boardStatus, setBoardStatus] = useState<BoardConnectionStatus | null>(
@@ -182,9 +187,9 @@ export default function ProgrammingSection({
 
   return (
     <div
+      className="ui-workspace-columns"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 240px",
         gap: "22px",
         alignItems: "start",
         height: "calc(100vh - 24px)",
@@ -195,6 +200,8 @@ export default function ProgrammingSection({
     >
       <InfoCard
         title="FPGA Programming"
+        pageTitle
+        pageSection="programming"
         style={{
           height: "100%",
           minHeight: 0,
@@ -203,23 +210,17 @@ export default function ProgrammingSection({
           flexDirection: "column",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "var(--ui-text-muted)",
-            fontSize: "16px",
-            lineHeight: 1.55,
-          }}
-        >
-          Program a connected FPGA board directly with the generated bitstream.
-        </p>
 
+        <div className="program-tabs ui-button-group ui-selection-group" role="tablist" aria-label="Board tools">
+          <button type="button" role="tab" aria-selected={activeTab === "program"} onClick={() => setActiveTab("program")}>Program</button>
+          <button type="button" role="tab" aria-selected={activeTab === "serial"} onClick={() => setActiveTab("serial")}>Serial Monitor</button>
+        </div>
+        <div className="program-tab-panel program-view" role="tabpanel" aria-label="Program FPGA" hidden={activeTab !== "program"}>
         <div
           className="ui-compact-button-group"
           style={{
             display: "flex",
             gap: "10px",
-            marginTop: "22px",
             flexWrap: "wrap",
           }}
         >
@@ -358,9 +359,14 @@ export default function ProgrammingSection({
               : 'No programming output yet.\n\nSelect a bitstream and click "Program FPGA" to begin.'}
           </div>
         </div>
+        </div>
+        <div className="program-tab-panel program-serial-view" role="tabpanel" aria-label="Serial Monitor" hidden={activeTab !== "serial"}>
+          <SerialMonitorSection board={board} embedded />
+        </div>
       </InfoCard>
 
       <div
+        className="ui-workspace-framed ui-workspace-aside"
         style={{
           display: "flex",
           flexDirection: "column",

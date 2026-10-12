@@ -1,4 +1,4 @@
-import { sectionAfterTargetChange } from "./dashboard/navigation";
+import { sectionAfterWorkspaceLaunch, workspaceOwner } from "./dashboard/navigation";
 import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
@@ -13,21 +13,16 @@ import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
 import ProgrammingSection from "./dashboard/ProgrammingSection";
-import SerialMonitorSection from "./dashboard/SerialMonitorSection";
-import HealthSection from "./dashboard/HealthSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
 import { WorkspaceDock } from "./dashboard/WorkspaceDock";
 import ChatPage from "./ChatPage";
 import type {
   DashboardSection,
-  ExecutionTarget,
   ProjectFile,
 } from "./dashboard/types";
 import {
   Plus,
   Upload,
-  Hammer,
-  Play,
   PanelLeftClose,
   FileCode2,
   FileJson,
@@ -77,10 +72,8 @@ type DashboardProps = {
   project: SavedProject | null;
   settings: AppSettings;
   projectWarning?: string;
-  launchTarget: ExecutionTarget;
   initialSection?: DashboardSection;
   onSettingsChange: (settings: AppSettings) => void;
-  onExecutionTargetChange: (target: ExecutionTarget) => void;
   onBack: () => void;
   onHome: () => void;
   onOpenChatProject: (path: string) => Promise<void>;
@@ -93,19 +86,16 @@ export default function Dashboard({
   project,
   settings,
   projectWarning,
-  launchTarget,
   initialSection,
   onSettingsChange,
-  onExecutionTargetChange,
   onBack,
   onHome,
   onOpenChatProject,
 }: DashboardProps) {
-  const [executionTarget, setExecutionTarget] =
-    useState<ExecutionTarget>(launchTarget);
   const [activeSection, setActiveSection] = useState<DashboardSection>(
-    initialSection ?? (launchTarget === "simulate" ? "peripheral-workbench" : "editor"),
+    initialSection ?? "editor",
   );
+  const activeWorkspaceSection = workspaceOwner(activeSection);
   // Track which sections have been opened so we can keep them mounted (and
   // their generated output intact) after the user switches away.
   const [visitedSections, setVisitedSections] = useState<Set<DashboardSection>>(
@@ -147,16 +137,8 @@ export default function Dashboard({
   }, [activeSection]);
 
   useEffect(() => {
-    setExecutionTarget(launchTarget);
-    setActiveSection((current) => sectionAfterTargetChange(launchTarget, current, initialSection));
-  }, [launchTarget, initialSection]);
-
-  function changeExecutionTarget(target: ExecutionTarget) {
-    if (board.id === "allora-virtual" && target === "build") return;
-    setExecutionTarget(target);
-    setActiveSection((current) => sectionAfterTargetChange(target, current));
-    onExecutionTargetChange(target);
-  }
+    setActiveSection((current) => sectionAfterWorkspaceLaunch(current, initialSection));
+  }, [initialSection]);
 
   // --- File management hook ---
   const fileMgmt = useFileManagement(project);
@@ -449,8 +431,7 @@ export default function Dashboard({
         }}
       >
         <WorkspaceDock
-          activeSection={activeSection}
-          executionTarget={executionTarget}
+          activeSection={activeWorkspaceSection}
           explorerCollapsed={explorerCollapsed}
           saving={saveProject.saveStatus === "saving"}
           onSectionChange={setActiveSection}
@@ -479,9 +460,7 @@ export default function Dashboard({
                   {projectName || "Untitled Project"}
                 </strong>
                 <span>
-                  {executionTarget === "simulate"
-                    ? "Simulation workspace"
-                    : "FPGA build workspace"}
+                  FPGA workspace
                 </span>
               </div>
               <button
@@ -494,37 +473,6 @@ export default function Dashboard({
                 <PanelLeftClose size={17} />
               </button>
             </header>
-
-            <div
-              className="dashboard-target-switch ui-button-group ui-selection-group"
-              aria-label="Execution target"
-            >
-              <button
-                type="button"
-                className={
-                  executionTarget === "simulate" ? "active simulate" : ""
-                }
-                aria-pressed={executionTarget === "simulate"}
-                onClick={() => changeExecutionTarget("simulate")}
-              >
-                <Play size={13} fill="currentColor" /> Simulate
-              </button>
-              <button
-                type="button"
-                className={executionTarget === "build" ? "active build" : ""}
-                aria-pressed={executionTarget === "build"}
-                onClick={() => changeExecutionTarget("build")}
-                disabled={board.id === "allora-virtual"}
-                title={
-                  board.id === "allora-virtual"
-                    ? "Choose a physical board before opening the Build workspace."
-                    : "Open the physical FPGA build workspace"
-                }
-              >
-                <Hammer size={13} />{" "}
-                {board.id === "allora-virtual" ? "Build unavailable" : "Build"}
-              </button>
-            </div>
 
             <button
               type="button"
@@ -652,7 +600,7 @@ export default function Dashboard({
       </div>
 
       <main
-        className="dashboard-main"
+        className={`dashboard-main${activeWorkspaceSection === "peripheral-workbench" || activeWorkspaceSection === "register-builder" ? "" : " ui-borderless-workspace ui-workspace-dot-grid"}`}
         style={{
           flex: 1,
           padding: "0",
@@ -742,16 +690,6 @@ export default function Dashboard({
             guidedTemplate={project?.starterTemplate}
           />
         </KeepAliveSection>
-        {activeSection === "health" && (
-          <HealthSection
-            board={board}
-            files={fileMgmt.files}
-            topLevelFileName={activeTabs.topLevelFileName}
-            dirtyFileNames={activeTabs.dirtyFileNames}
-            onNavigate={setActiveSection}
-            showBuildPreflight={executionTarget === "build"}
-          />
-        )}
         <KeepAliveSection
           active={activeSection === "synthesis"}
           visited={visitedSections.has("synthesis")}
@@ -816,10 +754,11 @@ export default function Dashboard({
           />
         )}
         <KeepAliveSection
-          active={activeSection === "bitstream"}
-          visited={visitedSections.has("bitstream")}
+          active={activeWorkspaceSection === "bitstream"}
+          visited={visitedSections.has("bitstream") || visitedSections.has("health")}
         >
           <BitstreamSection
+            initialTab="health"
             board={board}
             files={fileMgmt.files}
             projectName={projectName}
@@ -860,8 +799,9 @@ export default function Dashboard({
             }}
           />
         </KeepAliveSection>
-        {activeSection === "programming" && (
+        {activeWorkspaceSection === "programming" && (
           <ProgrammingSection
+            initialTab={activeSection === "serial" ? "serial" : "program"}
             board={board}
             files={fileMgmt.files}
             projectName={projectName}
@@ -869,7 +809,6 @@ export default function Dashboard({
             topLevelFileName={activeTabs.topLevelFileName}
           />
         )}
-        {activeSection === "serial" && <SerialMonitorSection board={board} />}
       </main>
 
       {showGitHubPublish ? (
@@ -897,44 +836,28 @@ export default function Dashboard({
 
       {contextMenu ? (
         <div
-          className="dashboard-glass-card dashboard-context-menu"
+          className="dashboard-glass-card dashboard-context-menu ui-context-menu"
           style={{
-            position: "fixed",
             top: contextMenu.y,
             left: contextMenu.x,
-            zIndex: 50,
-            minWidth: "180px",
-            borderRadius: "var(--ui-radius-sm)",
-            border: "1px solid var(--ui-border-control)",
-            background: "var(--ui-panel)",
-            boxShadow: "var(--ui-popup-shadow)",
-            padding: "6px",
           }}
           onClick={(event) => event.stopPropagation()}
         >
           <button
             type="button"
-            className="ui-button ui-button-secondary"
+            className="ui-button ui-button-secondary ui-menu-item"
             disabled={!isHdlFile(contextMenu.fileName)}
             onClick={() => {
               if (!isHdlFile(contextMenu.fileName)) return;
               handleMakeTopLevelFile(contextMenu.fileName);
               setContextMenu(null);
             }}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              justifyContent: "flex-start",
-              padding: "10px 12px",
-              fontSize: "14px",
-              fontWeight: 700,
-            }}
           >
             Set as Top Level
           </button>
           <button
             type="button"
-            className="ui-button ui-button-secondary"
+            className="ui-button ui-button-secondary ui-menu-item ui-menu-item-danger"
             onClick={() => {
               const fileName = contextMenu.fileName;
               setContextMenu(null);
@@ -943,16 +866,6 @@ export default function Dashboard({
               } else {
                 void handleDeleteFileFromProject(fileName);
               }
-            }}
-            style={{
-              width: "100%",
-              color: "var(--ui-error-text)",
-              textAlign: "left",
-              justifyContent: "flex-start",
-              padding: "10px 12px",
-              fontSize: "14px",
-              fontWeight: 700,
-              cursor: "pointer",
             }}
           >
             Delete from Project

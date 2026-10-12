@@ -1,3 +1,4 @@
+import { WorkspaceTitle } from "../components/ui/WorkspaceTitle";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -777,9 +778,7 @@ export default function ChatPage({
       <div className="chat-main">
         <header className="chat-header">
           <div className="chat-header-title">
-            <strong>
-              AI Integration
-            </strong>
+            <WorkspaceTitle section="chat" />
           </div>
           <div className="chat-header-actions">
             <div className={`chat-connection${ready ? " ready" : ""}`}>

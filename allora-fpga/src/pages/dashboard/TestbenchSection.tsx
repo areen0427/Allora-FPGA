@@ -286,9 +286,9 @@ export default function TestbenchSection({
 
   return (
     <div
+      className="ui-workspace-columns"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 250px",
         gap: "18px",
         height: "calc(100vh - 24px)",
         boxSizing: "border-box",
@@ -298,6 +298,8 @@ export default function TestbenchSection({
     >
       <InfoCard
         title="Testbench"
+        pageTitle
+        pageSection="testbench"
         style={{
           height: "100%",
           minHeight: 0,
@@ -359,25 +361,13 @@ export default function TestbenchSection({
         </div>
 
         {errorMessage ? (
-          <div className="testbench-status error">{errorMessage}</div>
-        ) : (
-          <div className="testbench-status">
-            Real simulation uses local `iverilog` and `vvp`, then renders the
-            generated VCD waveform.
-          </div>
-        )}
+          <div className="testbench-status ui-workspace-note error">{errorMessage}</div>
+        ) : null}
 
         <SignalWaveformPanel
-          className="testbench-waveform-panel"
-          title="Testbench waveform"
-          subtitle={
-            waveform
-              ? `${waveform.signals.length} signals · ${formatWaveTick(
-                  waveform.endTime,
-                  waveform.timescale,
-                )} capture`
-              : "Run a testbench or import a VCD file to inspect its signals"
-          }
+          className="testbench-waveform-panel ui-workspace-section"
+          showTitle={false}
+          subtitle=""
           traces={buildTestbenchWaveTraces(waveform)}
           selectedSignalIds={selectedWaveSignalIds}
           onToggleSignal={(signalId) =>
@@ -398,7 +388,7 @@ export default function TestbenchSection({
 
       </InfoCard>
 
-      <div className="testbench-side">
+      <div className="testbench-side ui-workspace-framed ui-workspace-aside">
         <InfoCard
           title="Setup"
           style={{ padding: "14px", borderRadius: "var(--ui-radius-lg)" }}

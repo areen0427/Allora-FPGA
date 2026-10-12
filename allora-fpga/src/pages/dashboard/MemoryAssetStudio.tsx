@@ -1,3 +1,4 @@
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
@@ -720,18 +721,16 @@ export default function MemoryAssetStudio({
   }
   if (!projectPath)
     return (
-      <section className="mas">
-        <h1>Memory Asset Studio</h1>
+      <section className="mas ui-workspace-panel">
+        <WorkspaceTitle section="memory-asset-studio" />
         <p>Open a saved project folder to import assets.</p>
       </section>
     );
   return (
-    <section className="mas">
-      <header className="mas-header">
+    <section className="mas ui-workspace-panel">
+      <header className="mas-header ui-workspace-header">
         <div>
-          <span className="mas-kicker">PROJECT ASSETS</span>
-          <h1>Memory Asset Studio</h1>
-          <p>Convert source data into deterministic FPGA memories.</p>
+          <WorkspaceTitle section="memory-asset-studio" />
         </div>
         <button
           className="mas-primary ui-action-button"
@@ -755,18 +754,18 @@ export default function MemoryAssetStudio({
       )}
       {dialog && <AssetDialog request={dialog} onResolve={resolveDialog} />}
       {!loaded ? (
-        <div className="mas-empty" role="status">
+        <div className="mas-empty ui-workspace-empty" role="status">
           Loading project assets…
         </div>
       ) : manifestError ? (
-        <div className="mas-empty">
+        <div className="mas-empty ui-workspace-empty">
           <h2>Unable to load assets</h2>
           <p>
             Repair assets/memory-assets.json and reopen the project to continue.
           </p>
         </div>
       ) : !manifest.assets.length ? (
-        <div className="mas-empty">
+        <div className="mas-empty ui-workspace-empty">
           <div className="mas-empty-icon">
             <MemoryAssetStudioIcon size={30} />
           </div>
@@ -811,7 +810,7 @@ export default function MemoryAssetStudio({
         </div>
       ) : (
         <div className="mas-grid">
-          <aside className="mas-assets">
+          <aside className="mas-assets ui-workspace-framed ui-workspace-support">
             <h2>
               Assets <span className="mas-count">{manifest.assets.length}</span>
             </h2>
@@ -835,7 +834,7 @@ export default function MemoryAssetStudio({
             ))}
             {!manifest.assets.length && <p>Import a source to begin.</p>}
           </aside>
-          <main className="mas-preview">
+          <main className="mas-preview ui-workspace-section">
             {previewLoading ? (
               <p role="status">Preparing preview…</p>
             ) : asset && preview ? (
@@ -1035,7 +1034,7 @@ export default function MemoryAssetStudio({
               <p>Select an asset to inspect it.</p>
             )}
           </main>
-          <aside className="mas-settings">
+          <aside className="mas-settings ui-workspace-framed ui-workspace-support ui-workspace-aside">
             <h2>Conversion settings</h2>
             <fieldset disabled={busy}>
               {asset?.kind === "image" && (

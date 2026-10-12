@@ -15,7 +15,7 @@ type UseSaveProjectParams = {
   topLevelFileName: string | null;
 };
 
-const AUTO_SAVE_INTERVAL_MS = 30_000;
+const AUTO_SAVE_INTERVAL_MS = 3_000;
 
 export function useSaveProject({
   project,

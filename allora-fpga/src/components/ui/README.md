@@ -26,6 +26,7 @@ Shared styling is imported by `src/App.css`:
   `aria-selected` for state. `ui-glass-control` opts an otherwise flat element
   into that same material; `ui-icon-button` supplies a shared 34px target. Add
   `ui-icon-button-hover` for hover-only liquid-glass edges (Collapse, Add, Import).
+  Text controls use `ui-hover-button` for the same material without icon sizing.
 - `ui-compact-button-group` is the shared control variant for tightly spaced
   actions, tabs, and toolbars: transparent backgrounds and borders at rest,
   separated by short vertical dividers. Enabled controls reveal their material,
@@ -96,3 +97,60 @@ inline message dismissal controls are separate from popup dismissal.
 Floating surfaces use `--ui-popup-bg` for the shared theme-aware glass fill,
 `--ui-border-control` for the edge, and `--ui-popup-shadow` for the halo. Avoid
 popup-specific theme palettes; compact layouts belong to the popup component.
+
+Standard Build/Simulate page headings use `InfoCard pageTitle` (or
+`ui-workspace-panel` with `ui-workspace-title` for another container). Shared
+workspace tokens own the Synthesis-aligned 20px inset, 24px title, and 22px
+content gap. Sidebar/subsection cards keep their smaller heading hierarchy.
+Custom editor, chat, workbench, and studio headers retain their own layouts.
+The first section below a page title uses Testbench's 22px gap, with no additional
+top margin. `ui-workspace-header` applies the same spacing to compound headers;
+grid layouts declare `--ui-workspace-row-gap` so their gap is counted once.
+`ui-button-group-flush-start` aligns a group's first text label with the page's
+content edge while retaining the button's padding and selected/hover border.
+
+All workspace titles use `WorkspaceTitle` with the section's dock icon and
+canonical name. Icons occupy equal 24px header slots; the entire header starts
+at the shared workspace inset, aligned with content. Tool headers omit kicker
+labels. Dock SVG slots use the shared icon-size token without wide-icon cases.
+
+`ui-borderless-workspace` is the shared workspace layout variant that removes structural
+card/section frames while preserving interactive control and status styling.
+`ui-workspace-dot-grid` adds a faint theme-aware dot canvas using the shared grid
+color and spacing tokens. The Dashboard main area supplies both variants to all workspace pages.
+`ui-workspace-framed` preserves normal card borders/material within a subsection,
+used by supporting side panels on Testbench, Synthesis, Bitstream, Pin Mapping,
+Programming, Serial, and the design tools. `ui-workspace-support` supplies the
+shared framed material for tool palettes/inspectors. Dialogs and popovers are
+excluded from the borderless canvas rules.
+
+Supporting right panels use `ui-workspace-columns` / `ui-workspace-split` and
+`ui-workspace-aside`, with the shared 205px Synthesis reference width. Section
+headings use the 16px title and 14px subheading tokens; page titles remain 24px.
+Introductory page subtitles are omitted. At narrow viewport widths, page side
+panels move below the main area.
+
+Build Health is Bitstream's default tab; Generate Bitstream switches to Build Log.
+Build Preflight uses its scrollable sidebar layout in Bitstream's right column.
+Serial Monitor lives in Programming's Program / Serial Monitor tabs. Both tools
+have embedded layouts; Health scrolls within the output area, and switching
+Programming tabs keeps the serial monitor mounted so a connection stays open.
+Legacy Health/Serial destinations resolve to their owning workspace and tab.
+
+The editor uses an open canvas with its gutter aligned to the workspace inset.
+`ui-workspace-soft-edges` applies a pointer-transparent, theme-aware blur/fade
+at the left, right, and bottom of a reading surface; shared edge tokens control
+its width and blur. Tab controls keep their rounded shape and hover close affordance.
+`ui-workspace-soft-code-edges` targets only the right and bottom of Monaco's
+scrolling code viewport, keeping the start of each line and the gutter clear.
+
+Peripheral Workbench and Register Builder retain their framed tool layouts;
+Memory Asset Studio uses the open workspace canvas. Passive validation messages
+are plain text; actionable messages use `ui-text-action` without glass borders.
+File context menus use `ui-context-menu` / `ui-menu-item` for compact popup sizing.
+
+Build and simulation share one workspace and dock, including physical-board and
+board-free projects. Virtual FPGA follows Register Builder; no execution-target
+switch gates navigation. Saved-project execution-target fields remain compatible.
+Welcome groups are Workspace (Build) and Design Tools, led by AI Design Studio.
+The supplied studio SVG is shared by its welcome entry, dock button, and title.

@@ -9,7 +9,6 @@ import {
   Check,
   ChevronRight,
   Circle,
-  Cloud,
   FileCode2,
   LoaderCircle,
   Plus,
@@ -80,6 +79,12 @@ export default function EditorSection({
   const managedAssetFile = /\/(?:src\/generated|assets|Register_Map)\//.test(activeFile?.path?.replaceAll("\\", "/") ?? "");
 
   useEffect(() => {
+    if (editorRef.current && monacoRef.current) {
+      void refreshEditorFontMetrics(editorRef.current, monacoRef.current);
+    }
+  }, [settings.editorFontSize]);
+
+  useEffect(() => {
     if (!navigation || activeFileName !== navigation.fileName) return;
     const editor = editorRef.current;
     if (!editor) return;
@@ -136,11 +141,9 @@ export default function EditorSection({
 
   return (
     <div
-      className="dashboard-glass-card editor-shell"
+      className="editor-shell ui-workspace-section"
       style={{
         height: "calc(100vh - 24px)",
-        border: "1px solid var(--ui-border-subtle)",
-        borderRadius: "var(--ui-radius-2xl)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -148,15 +151,6 @@ export default function EditorSection({
     >
       <div
         className="editor-tab-bar"
-        style={{
-          height: "44px",
-          display: "flex",
-          alignItems: "end",
-          background: "var(--ui-surface)",
-          borderBottom: "1px solid var(--ui-border-subtle)",
-          overflowX: "auto",
-          flexShrink: 0,
-        }}
       >
         {openFiles.map((file) => (
           <div
@@ -174,21 +168,6 @@ export default function EditorSection({
             onDoubleClick={() => {
               setEditingFile(file.name);
               setEditingName(file.name);
-            }}
-            style={{
-              height: "36px",
-              padding: "0 10px 0 16px",
-              border: "none",
-              borderRight: "1px solid var(--ui-border-subtle)",
-              background: file.name === activeFileName ? "var(--ui-panel)" : "var(--ui-surface)",
-              color: file.name === activeFileName ? "var(--ui-text)" : "var(--ui-text-muted)",
-              fontSize: "13px",
-              fontWeight: 800,
-              cursor: "pointer",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
             }}
           >
             {editingFile === file.name ? (
@@ -221,7 +200,7 @@ export default function EditorSection({
                 }}
               />
             ) : (
-              <span>{file.name}</span>
+              <span className="editor-file-tab-name" title={file.name}>{file.name}</span>
             )}
 
             {dirtyFileNames.includes(file.name) ? (
@@ -240,22 +219,13 @@ export default function EditorSection({
 
             <button
               type="button"
+              className="editor-file-tab-close"
               aria-label={`Close ${file.name}`}
               title={`Close ${file.name}`}
+              onKeyDown={(event) => event.stopPropagation()}
               onClick={(event) => {
                 event.stopPropagation();
                 closeOpenFile(file.name);
-              }}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "var(--ui-text-soft)",
-                fontWeight: 900,
-                fontSize: "15px",
-                lineHeight: 1,
-                padding: 0,
-                cursor: "pointer",
-                flexShrink: 0,
               }}
             >
               ×
@@ -313,19 +283,16 @@ export default function EditorSection({
           {activeFile?.name ?? "No file open"}
         </strong>
         <div className="editor-save-state" role="status" aria-live="polite">
-          <span className="editor-autosave-note">
-            <Cloud size={12} aria-hidden="true" />
-            Autosave on · every 30 seconds
-          </span>
           <span className={`editor-save-label ${saveStatus}`}>
             <SaveStatusIcon status={saveStatus} />
             {getEditorSaveLabel(saveStatus, lastSavedAt)}
           </span>
+          <span className="editor-autosave-note">Autosave: On</span>
         </div>
       </div>
 
       {managedAssetFile && <div className="editor-managed-note">{activeFile?.name.startsWith("Register_Map/") ? "Managed by Register Builder. Edit the map and regenerate there; handwritten design files are preserved." : "Managed by Memory Asset Studio. Use the Studio to change assets; external file changes are detected there."}</div>}
-      <div className="editor-body">
+      <div className="editor-body ui-workspace-soft-code-edges">
         <Editor
           height="100%"
           path={activeFile?.name}
@@ -387,6 +354,7 @@ export default function EditorSection({
             });
 
             monaco.editor.setTheme(isDarkEditor ? "allora-dark" : "allora");
+            void refreshEditorFontMetrics(editor, monaco);
           }}
           onChange={(value) => { if (!managedAssetFile) updateActiveFile(value ?? ""); }}
           options={{
@@ -397,6 +365,9 @@ export default function EditorSection({
               .trim(),
             minimap: { enabled: settings.editorMinimap },
             lineNumbers: "on",
+            lineNumbersMinChars: 3,
+            // Measure rendered tokens so italic glyphs use the same geometry as selections.
+            disableMonospaceOptimizations: true,
             wordWrap: settings.editorWordWrap ? "on" : "off",
             tabSize: settings.editorTabSize,
             renderWhitespace: settings.editorWhitespace,
@@ -406,7 +377,7 @@ export default function EditorSection({
             renderLineHighlight: "line",
             overviewRulerBorder: false,
             hideCursorInOverviewRuler: true,
-            glyphMargin: true,
+            glyphMargin: false,
             folding: true,
             foldingHighlight: true,
             guides: { indentation: true, bracketPairs: true },
@@ -430,6 +401,20 @@ export default function EditorSection({
       </div>
     </div>
   );
+}
+
+async function refreshEditorFontMetrics(editor: MonacoEditor.IStandaloneCodeEditor, monaco: Monaco) {
+  const font = editor.getOption(monaco.editor.EditorOption.fontInfo);
+  try {
+    await Promise.all(["normal", "italic", "bold"].map(style =>
+      document.fonts.load(`${style} ${font.fontSize}px ${font.fontFamily}`),
+    ));
+  } catch {
+    // Continue measuring the fallback if a bundled font cannot be loaded.
+  }
+  if (!editor.getDomNode()?.isConnected) return;
+  monaco.editor.remeasureFonts();
+  editor.layout();
 }
 
 function SaveStatusIcon({ status }: { status: SaveStatus }) {

@@ -1,3 +1,5 @@
+import HealthSection from "./HealthSection";
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { getBoardCapabilities } from "../../data/boardCapabilities";
@@ -35,6 +37,7 @@ type BitstreamSectionProps = {
   projectPath?: string;
   topLevelFileName: string | null;
   dirtyFileNames?: string[];
+  initialTab?: "log" | "health" | "preview";
   onNavigate?: (destination: "editor" | "pin-mapping") => void;
   onAddArtifact?: (artifact: {
     fileName: string;
@@ -76,6 +79,7 @@ export default function BitstreamSection({
   projectPath,
   topLevelFileName,
   dirtyFileNames = [],
+  initialTab = "health",
   onNavigate,
   onAddArtifact,
   onUpdateConstraints,
@@ -84,7 +88,7 @@ export default function BitstreamSection({
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
-  const [resultTab, setResultTab] = useState<"log" | "preview">("log");
+  const [resultTab, setResultTab] = useState<"log" | "health" | "preview">(initialTab);
   const logPanelRef = useRef<HTMLDivElement | null>(null);
   const capabilities = getBoardCapabilities(board);
   const preflight = useBuildPreflight(
@@ -101,7 +105,9 @@ export default function BitstreamSection({
     }
   }, [liveLogs, resultTab]);
 
-  function selectResultTab(tab: "log" | "preview") {
+  useEffect(() => { setResultTab(initialTab); }, [initialTab]);
+
+  function selectResultTab(tab: "log" | "health" | "preview") {
     if (logPanelRef.current) logPanelRef.current.scrollTop = 0;
     setResultTab(tab);
   }
@@ -185,6 +191,7 @@ export default function BitstreamSection({
   }, [board.id, buildInputKey, projectName, projectPath, topLevelFileName]);
 
   async function handleGenerateBitstream() {
+    selectResultTab("log");
     if (preflightBlocked) {
       setErrorMessage(
         "Resolve the build preflight blockers before generating a bitstream.",
@@ -232,7 +239,6 @@ export default function BitstreamSection({
     setIsGenerating(true);
     setErrorMessage(null);
     setLiveLogs([]);
-    setResultTab("log");
 
     const startedAt = Date.now();
     const streamedLogs: string[] = [];
@@ -419,11 +425,10 @@ export default function BitstreamSection({
   }
 
   return (
-    <div className="bitstream-layout">
-      <section className="dashboard-glass-card bitstream-main">
-        <header className="bitstream-header">
-          <h1>Bitstream</h1>
-          <p>Generate a programming artifact for {board.name}.</p>
+    <div className="bitstream-layout ui-workspace-columns">
+      <section className="dashboard-glass-card bitstream-main ui-workspace-panel">
+        <header className="bitstream-header ui-workspace-header">
+          <WorkspaceTitle section="bitstream" />
         </header>
 
         <div className="bitstream-actions ui-compact-button-group">
@@ -463,12 +468,6 @@ export default function BitstreamSection({
           </button>
         </div>
 
-        <BuildPreflight
-          checks={preflight}
-          onNavigate={onNavigate}
-          collapsible
-        />
-
         {errorMessage || artifact || !capabilities.bitstream.supported ? (
           <p
             className={`bitstream-status-message${errorMessage ? " error" : ""}`}
@@ -483,7 +482,7 @@ export default function BitstreamSection({
 
         <div className="bitstream-results">
           <div
-            className="bitstream-output-tabs ui-compact-button-group"
+            className="bitstream-output-tabs ui-compact-button-group ui-selection-group"
             role="tablist"
             aria-label="Build output"
           >
@@ -493,7 +492,15 @@ export default function BitstreamSection({
               aria-selected={resultTab === "log"}
               onClick={() => selectResultTab("log")}
             >
-              Build log
+              Build Log
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={resultTab === "health"}
+              onClick={() => selectResultTab("health")}
+            >
+              Health
             </button>
             <button
               type="button"
@@ -501,13 +508,19 @@ export default function BitstreamSection({
               aria-selected={resultTab === "preview"}
               onClick={() => selectResultTab("preview")}
             >
-              Bitstream preview
+              Bitstream Preview
             </button>
           </div>
           <div
             className="dashboard-glass-card bitstream-output-panel"
             role="tabpanel"
           >
+            {resultTab === "health" ? (
+              <div className="bitstream-health-content" role="region" aria-label="Build Health" tabIndex={0}>
+                <HealthSection board={board} files={files} topLevelFileName={topLevelFileName}
+                  dirtyFileNames={dirtyFileNames} onNavigate={onNavigate} showBuildPreflight={false} embedded />
+              </div>
+            ) : (
             <div ref={logPanelRef} className="bitstream-output-content">
               {resultTab === "log"
                 ? liveLogs.length
@@ -519,11 +532,12 @@ export default function BitstreamSection({
                   ? artifact.preview
                   : `No bitstream generated yet.\n\nExpected output: ${sanitizeName(projectName || "allora_project")}.${extension}`}
             </div>
+            )}
           </div>
         </div>
       </section>
 
-      <aside className="bitstream-sidebar" aria-label="Build details">
+      <aside className="bitstream-sidebar ui-workspace-framed ui-workspace-aside ui-workspace-aside-contained" aria-label="Build details">
         <InfoCard title="Build details" compact>
           <InfoRow
             label="Filename"
@@ -551,7 +565,14 @@ export default function BitstreamSection({
           <InfoRow label="Toolchain" value={capabilities.toolchain} compact />
         </InfoCard>
 
-        <InfoCard title="Pin mapping" compact className="bitstream-mapping-card">
+        <BuildPreflight
+          checks={preflight}
+          onNavigate={onNavigate}
+          collapsible
+          layout="sidebar"
+        />
+
+        <InfoCard title="Pin mapping" compact className="bitstream-mapping-card ui-workspace-grow-panel">
           <p className="bitstream-mapping-summary">
             {autoMappings.length - unmappedPorts.length}/{autoMappings.length}{" "}
             ports mapped

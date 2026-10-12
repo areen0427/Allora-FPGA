@@ -1,3 +1,4 @@
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from "lucide-react";
 import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
@@ -304,8 +305,8 @@ export default function RegisterBuilder({
   }
   if (!projectPath)
     return (
-      <section className="mas">
-        <h1>Register Builder</h1>
+      <section className="mas ui-workspace-framed">
+        <WorkspaceTitle section="register-builder" />
         <p>
           Create or open a disk-backed Allora project to define a register bank.
         </p>
@@ -321,14 +322,10 @@ export default function RegisterBuilder({
     }
   }
   return (
-    <section className="mas rb">
+    <section className="mas rb ui-workspace-framed">
       <header className="mas-header">
         <div>
-          <span className="mas-kicker">
-            <RegisterBuilderIcon size={18} /> REGISTER BUILDER
-          </span>
-          <h1>Register map workspace</h1>
-          <p>Define the software interface. Connect it to your hardware.</p>
+          <WorkspaceTitle section="register-builder" />
         </div>
         <div className="rb-actions ui-compact-button-group">
           <button
@@ -745,11 +742,17 @@ export default function RegisterBuilder({
           <ul>
             {issues.map((i, n) => (
               <li key={n}>
-                <button
-                  onClick={() => i.registerId && setSelected(i.registerId)}
-                >
-                  {i.message}
-                </button>
+                {i.registerId ? (
+                  <button
+                    className="ui-text-action"
+                    data-glass="off"
+                    onClick={() => setSelected(i.registerId!)}
+                  >
+                    {i.message}
+                  </button>
+                ) : (
+                  <span>{i.message}</span>
+                )}
               </li>
             ))}
           </ul>

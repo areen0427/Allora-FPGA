@@ -1,11 +1,16 @@
-import type { DashboardSection, ExecutionTarget } from "./types";
+import type { DashboardSection } from "./types";
 
-export function sectionAfterTargetChange(
-  target: ExecutionTarget,
+export function sectionAfterWorkspaceLaunch(
   current: DashboardSection,
   requested?: DashboardSection,
 ): DashboardSection {
   if (requested) return requested;
-  if (current === "chat") return "chat";
-  return target === "simulate" ? "peripheral-workbench" : "editor";
+  return current;
+}
+
+/** Legacy destinations still open the tool in its new owning workspace. */
+export function workspaceOwner(section: DashboardSection): DashboardSection {
+  if (section === "health") return "bitstream";
+  if (section === "serial") return "programming";
+  return section;
 }

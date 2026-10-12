@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
-  Activity,
   BookOpen,
   CheckCircle2,
   CircuitBoard,
@@ -10,17 +9,10 @@ import {
   ExternalLink,
   FolderClock,
   FolderOpen,
-  Gauge,
   Keyboard,
-  Layers3,
-  MessageSquare,
   Map as MapIcon,
   Play,
-  Radio,
   Search,
-  SlidersHorizontal,
-  Sparkles,
-  Timer,
   Zap,
   X,
 } from "lucide-react";
@@ -33,8 +25,7 @@ import { getBoardDefinitions, matchesBoardSearch } from "../../data/boardSupport
 import { getBoardCapabilities } from "../../data/boardCapabilities";
 import BoardCardIcon from "../../components/BoardCardIcon";
 import type { ExecutionTarget } from "../dashboard/types";
-import type { AppSettings } from "../../data/settings";
-import VirtualPcbDiagram from "../../components/VirtualPcbDiagram";
+import AiDesignStudioIcon from "../../components/AiDesignStudioIcon";
 import PeripheralWorkbenchIcon from "../../components/PeripheralWorkbenchIcon";
 import MemoryAssetStudioIcon from "../../components/MemoryAssetStudioIcon";
 import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
@@ -47,7 +38,6 @@ type HomeViewProps = {
   onCloseProductInfo: () => void;
   brandRef: React.RefObject<HTMLButtonElement | null>;
   reduceMotion: boolean;
-  settings: AppSettings;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
   showAllBoards: boolean;
@@ -63,14 +53,13 @@ type HomeViewProps = {
   onCreateSimulationProject: () => void;
   onOpenProject: (projectId: string, target: ExecutionTarget) => void;
   onRemoveRecentProject: (projectId: string) => void;
-  onSettingsChange: (settings: AppSettings) => void;
   onOpenMemoryProject: (projectId: string) => void;
   onOpenExistingMemoryProject: () => void;
   onCreateMemoryProject: () => void;
   onCreateMemoryBoardProject: (board: BoardCatalogItem) => void;
 };
 
-export type HomePath = ExecutionTarget | "peripheral-workbench" | "memory-asset-studio" | "register-builder";
+export type HomePath = "build" | "peripheral-workbench" | "memory-asset-studio" | "register-builder";
 
 export function HomeView({
   path,
@@ -79,7 +68,6 @@ export function HomeView({
   onCloseProductInfo,
   brandRef,
   reduceMotion,
-  settings,
   boards,
   visibleBoards,
   showAllBoards,
@@ -95,7 +83,6 @@ export function HomeView({
   onCreateSimulationProject,
   onOpenProject,
   onRemoveRecentProject,
-  onSettingsChange,
   onOpenMemoryProject,
   onOpenExistingMemoryProject,
   onCreateMemoryProject,
@@ -231,6 +218,7 @@ export function HomeView({
               setDepartingPath(target);
             }}
             onOpenPinMapping={onOpenPinMapping}
+            onOpenChat={onOpenChat}
           />
           {recentProjects[0] ? (
             <ContinueProjectTile
@@ -270,18 +258,6 @@ export function HomeView({
           </div>
         ) : path === "register-builder" ? (
           <div className="mas-home-layout"><div className="mas-home-main"><section className="mas-home-intro"><span className="mas-kicker">REGISTER BUILDER</span><h2>Give your hardware a software interface.</h2><p>Define registers and bit fields, validate their layout, and generate RTL, C definitions, and an integration wrapper in your Allora project.</p><button className="mas-primary ui-action-button" disabled={isOpeningExistingProject} onClick={() => onOpenExistingProject("simulate")}>{isOpeningExistingProject ? "Opening…" : "Open project folder"}</button>{openExistingProjectError && <div role="alert">{openExistingProjectError}</div>}</section><div className="mas-launch-grid"><section className="mas-launch-card"><h3>Start a simulation project</h3><p>Design and test your register bank without a board.</p><button onClick={onCreateSimulationProject}>Create simulation project</button></section><section className="mas-launch-card"><h3>Target a physical board</h3><label>Target board<select value={memoryBoardId} onChange={event => setMemoryBoardId(event.target.value)}>{boards.map(board => <option key={board.id} value={board.id}>{board.name}</option>)}</select></label><button disabled={!memoryBoardId} onClick={() => { const board = boards.find(item => item.id === memoryBoardId); if (board) onSelectBoard(board); }}>Create board project</button></section></div></div><aside className="mas-home-sidebar welcome-project-sidebar"><RecentProjectsCard projects={recentProjects} onOpenProject={projectId => onOpenProject(projectId, "simulate")} onRemoveProject={onRemoveRecentProject} emptyMessage="Open a project to start your register map." /></aside></div>
-        ) : path === "simulate" ? (
-          <SimulationHome
-            recentProjects={recentProjects}
-            isOpening={isOpeningExistingProject}
-            error={openExistingProjectError}
-            onOpenExisting={() => onOpenExistingProject("simulate")}
-            onCreateProject={onCreateSimulationProject}
-            onOpenProject={(projectId) => onOpenProject(projectId, "simulate")}
-            onRemoveProject={onRemoveRecentProject}
-            settings={settings}
-            onSettingsChange={onSettingsChange}
-          />
         ) : path === "peripheral-workbench" ? (
           <WorkbenchHome
             recentProjects={recentProjects}
@@ -306,11 +282,11 @@ export function HomeView({
 
             <div className="welcome-home-sidebar welcome-project-sidebar">
               <section className="liquid-home-card open-project-card">
-                <button type="button" className="open-project-button" onClick={onOpenChat} disabled={isOpeningExistingProject}>
-                  <span className="open-project-icon"><MessageSquare size={19} /></span>
+                <button type="button" className="open-project-button" onClick={onCreateSimulationProject} disabled={isOpeningExistingProject}>
+                  <span className="open-project-icon"><Zap size={19} /></span>
                   <span className="open-project-copy">
-                    <span className="open-project-title">Build with AI</span>
-                    <span className="open-project-subtitle">Describe your idea. Create RTL with Codex.</span>
+                    <span className="open-project-title">New board-free project</span>
+                    <span className="open-project-subtitle">Build and simulate RTL without a board.</span>
                   </span>
                 </button>
               </section>
@@ -336,36 +312,34 @@ function ExecutionPathChooser({
   selectedTarget,
   onChoose,
   onOpenPinMapping,
+  onOpenChat,
 }: {
   selectedTarget: HomePath | null;
   onChoose: (target: HomePath) => void;
   onOpenPinMapping: () => void;
+  onOpenChat: () => void;
 }) {
   return (
     <div className="welcome-path-groups">
-      <section className="welcome-develop-group" aria-labelledby="welcome-develop-title">
-        <h2 className="welcome-group-label" id="welcome-develop-title">Develop</h2>
-        <div className="execution-path-grid welcome-develop-grid">
-          <div className="execution-path-option">
-            <button type="button" onClick={() => onChoose("simulate")} className={`execution-path-card simulate${selectedTarget === "simulate" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
-              <span className="glass-edge glass-edge-top" aria-hidden="true" />
-              <span className="glass-specular" aria-hidden="true" />
-              <div className="execution-path-copy"><h3>Simulate</h3><span className="execution-path-microcopy">TEST & VISUALIZE RTL</span></div>
-            </button>
-          </div>
+      <section className="welcome-workspace-group" aria-labelledby="welcome-workspace-title">
+        <h2 className="welcome-group-label" id="welcome-workspace-title">Workspace</h2>
+        <div className="execution-path-grid welcome-workspace-grid">
           <div className="execution-path-option">
             <button type="button" onClick={() => onChoose("build")} className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
               <span className="glass-edge glass-edge-top" aria-hidden="true" />
               <span className="glass-specular" aria-hidden="true" />
-              <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">CREATE A DESIGN</span></div>
+              <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">BUILD & SIMULATE RTL</span></div>
             </button>
           </div>
 
         </div>
       </section>
       <section className="welcome-tools-group" aria-labelledby="welcome-tools-title">
-        <h2 className="welcome-group-label" id="welcome-tools-title">Design tools</h2>
+        <h2 className="welcome-group-label" id="welcome-tools-title">Design Tools</h2>
         <div className="welcome-tools-panel">
+          <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenChat} disabled={selectedTarget !== null}>
+            <AiDesignStudioIcon /><span>AI Design Studio</span><ChevronRight size={15} aria-hidden="true" />
+          </button>
           <button type="button" className={`execution-path-card welcome-tool-row workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`} onClick={() => onChoose("peripheral-workbench")} disabled={selectedTarget !== null}>
             <PeripheralWorkbenchIcon /><span>Peripheral Workbench</span><ChevronRight size={15} aria-hidden="true" />
           </button>
@@ -406,9 +380,6 @@ function ContinueProjectTile({
         minute: "2-digit",
       }).format(updatedAt)
     : "Unknown time";
-  const resumeTarget =
-    project.lastExecutionTarget ??
-    (project.projectKind === "simulation" ? "simulate" : null);
 
   return (
     <section className="welcome-continue-project" aria-label="Continue project">
@@ -423,144 +394,11 @@ function ContinueProjectTile({
         </div>
       </div>
       <div className="welcome-continue-actions">
-        {resumeTarget ? (
-          <button type="button" onClick={() => onOpen(resumeTarget)}>
-            {resumeTarget === "simulate" ? (
-              <Sparkles size={13} />
-            ) : (
-              <CircuitBoard size={13} />
-            )}
-            Resume {resumeTarget === "simulate" ? "Simulation" : "Build"}
-          </button>
-        ) : (
-          <>
-            <button type="button" onClick={() => onOpen("simulate")}>
-              <Sparkles size={13} /> Simulate
-            </button>
-            <button type="button" onClick={() => onOpen("build")}>
-              <CircuitBoard size={13} /> Build
-            </button>
-          </>
-        )}
+        <button type="button" onClick={() => onOpen("build")}>
+          <CircuitBoard size={13} /> Resume Workspace
+        </button>
       </div>
     </section>
-  );
-}
-
-function ProfessionalVirtualBoard({ clockHz }: { clockHz: number }) {
-  const [inputs, setInputs] = useState([true, false, true, false]);
-
-  const toggleInput = (index: number) => {
-    setInputs((current) =>
-      current.map((active, inputIndex) =>
-        inputIndex === index ? !active : active,
-      ),
-    );
-  };
-
-  return (
-    <div className="simulation-board-stage">
-      <div className="simulation-board-toolbar">
-        <span>
-          <Radio size={13} /> Interactive preview
-        </span>
-        <span className="simulation-board-live">
-          <i /> Live
-        </span>
-      </div>
-
-      <VirtualPcbDiagram
-        ariaLabel="Interactive virtual FPGA board preview"
-        clockHz={clockHz}
-        inputs={inputs}
-        onToggleInput={toggleInput}
-      />
-
-      <div className="simulation-board-caption">
-        <span><Zap size={13} /> Click the switches to test virtual inputs</span>
-        <span>4 inputs · 4 outputs</span>
-      </div>
-    </div>
-  );
-}
-
-function SimulationHome({
-  recentProjects,
-  isOpening,
-  error,
-  onOpenExisting,
-  onCreateProject,
-  onOpenProject,
-  onRemoveProject,
-  settings,
-  onSettingsChange,
-}: {
-  recentProjects: SavedProject[];
-  isOpening: boolean;
-  error: string;
-  onOpenExisting: () => void;
-  onCreateProject: () => void;
-  onOpenProject: (projectId: string) => void;
-  onRemoveProject: (projectId: string) => void;
-  settings: AppSettings;
-  onSettingsChange: (settings: AppSettings) => void;
-}) {
-  return (
-    <div className="simulation-home-layout">
-      <section className="simulation-welcome-card">
-        <div className="simulation-console-header">
-          <div className="simulation-welcome-copy">
-            <span>
-              <Sparkles size={15} /> Hardware-free RTL workspace
-            </span>
-            <h2>Validate your design before it reaches the board.</h2>
-            <p>
-              Run testbenches, inspect waveforms, and verify signal behavior in
-              one focused simulation workspace.
-            </p>
-          </div>
-          <div className="simulation-welcome-actions ui-compact-button-group">
-            <button type="button" onClick={onCreateProject}>
-              <Play size={17} fill="currentColor" /> New simulation
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={onOpenExisting}
-              disabled={isOpening}
-            >
-              <FolderOpen size={17} />
-              {isOpening ? "Opening…" : "Open project"}
-            </button>
-          </div>
-        </div>
-
-        {error ? <div className="open-project-error">{error}</div> : null}
-
-        <ProfessionalVirtualBoard clockHz={settings.simulatorDefaultClockHz} />
-
-        <div className="simulation-capability-strip" aria-label="Simulation capabilities">
-          <span><Activity size={15} /><strong>Waveforms</strong><small>VCD capture</small></span>
-          <span><Layers3 size={15} /><strong>RTL compile</strong><small>Verilator</small></span>
-          <span><Timer size={15} /><strong>Clock control</strong><small>Cycle precise</small></span>
-          <span><Gauge size={15} /><strong>I/O mapping</strong><small>Live controls</small></span>
-        </div>
-      </section>
-
-      <div className="simulation-sidebar-stack welcome-project-sidebar">
-        <SimulationLaunchDefaults
-          settings={settings}
-          onChange={onSettingsChange}
-        />
-        <RecentProjectsCard
-          projects={recentProjects}
-          onOpenProject={onOpenProject}
-          onRemoveProject={onRemoveProject}
-          emptyMessage="Open an Allora project to begin simulating."
-          showSimulationSummary
-        />
-      </div>
-    </div>
   );
 }
 
@@ -623,74 +461,6 @@ function WorkbenchHome({
         </p>
       </div>
     </div>
-  );
-}
-
-function SimulationLaunchDefaults({
-  settings,
-  onChange,
-}: {
-  settings: AppSettings;
-  onChange: (settings: AppSettings) => void;
-}) {
-  return (
-    <section className="liquid-home-card simulation-defaults-card">
-      <div className="simulation-defaults-heading">
-        <span><SlidersHorizontal size={15} /> Launch defaults</span>
-        <strong><i /> Verilator ready</strong>
-      </div>
-      <div className="simulation-default-controls">
-        <label>
-          <span>Clock</span>
-          <select
-            value={settings.simulatorDefaultClockHz}
-            onChange={(event) =>
-              onChange({
-                ...settings,
-                simulatorDefaultClockHz: Number(event.target.value) as AppSettings["simulatorDefaultClockHz"],
-              })
-            }
-          >
-            <option value={10_000_000}>10 MHz</option>
-            <option value={25_000_000}>25 MHz</option>
-            <option value={50_000_000}>50 MHz</option>
-            <option value={100_000_000}>100 MHz</option>
-          </select>
-        </label>
-        <label>
-          <span>Duration</span>
-          <select
-            value={settings.simulatorCycleLimit}
-            onChange={(event) =>
-              onChange({
-                ...settings,
-                simulatorCycleLimit: Number(event.target.value) as AppSettings["simulatorCycleLimit"],
-              })
-            }
-          >
-            <option value={100_000}>100K cycles</option>
-            <option value={1_000_000}>1M cycles</option>
-            <option value={10_000_000}>10M cycles</option>
-            <option value={0}>No limit</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          className={`simulation-trace-toggle${settings.simulatorCaptureWaveform ? " active" : ""}`}
-          role="switch"
-          aria-checked={settings.simulatorCaptureWaveform}
-          onClick={() =>
-            onChange({
-              ...settings,
-              simulatorCaptureWaveform: !settings.simulatorCaptureWaveform,
-            })
-          }
-        >
-          <span><Activity size={14} /> Record VCD trace</span>
-          <i><b /></i>
-        </button>
-      </div>
-    </section>
   );
 }
 

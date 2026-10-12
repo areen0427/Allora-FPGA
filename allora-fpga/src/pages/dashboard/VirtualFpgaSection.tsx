@@ -1,3 +1,4 @@
+import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -10,7 +11,6 @@ import {
   RotateCcw,
   StepForward,
   Wrench,
-  Zap,
 } from "lucide-react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
@@ -402,17 +402,10 @@ export default function VirtualFpgaSection({
   }
 
   return (
-    <div className="vfpga-page">
-      <header className="vfpga-hero">
+    <div className="vfpga-page ui-workspace-panel">
+      <header className="vfpga-hero ui-workspace-header ui-workspace-section">
         <div>
-          <div className="vfpga-eyebrow">
-            <Zap size={14} /> VIRTUAL FPGA V0.2
-          </div>
-          <h1>Prototype in RTL. Touch every signal.</h1>
-          <p>
-            Run the same design you build for hardware through a real Verilator
-            model.
-          </p>
+          <WorkspaceTitle section="virtual-fpga" />
         </div>
         <div className={`vfpga-status ${status}`}>
           <span /> {status === "compiling" ? "Compiling RTL" : status}
@@ -444,7 +437,7 @@ export default function VirtualFpgaSection({
         </div>
       ) : null}
 
-      <section className="vfpga-control-card">
+      <section className="vfpga-control-card ui-workspace-section">
         <div className="vfpga-toolbar">
           <div className="vfpga-stat ui-metric">
             <span>Engine</span>
@@ -531,8 +524,8 @@ export default function VirtualFpgaSection({
         </div>
       </section>
 
-      <div className="vfpga-grid">
-        <section className="vfpga-board-card">
+      <div className="vfpga-grid ui-workspace-columns">
+        <section className="vfpga-board-card ui-workspace-section">
           <div className="vfpga-board-heading">
             <div>
               <span>ALLORA</span>
@@ -622,7 +615,7 @@ export default function VirtualFpgaSection({
           </VirtualPcbDiagram>
         </section>
 
-        <section className="vfpga-panel vfpga-mapping">
+        <section className="vfpga-panel vfpga-mapping ui-workspace-framed ui-workspace-support ui-workspace-aside">
           <div className="vfpga-section-title">
             <Gauge size={17} />
             <div>
@@ -697,7 +690,7 @@ export default function VirtualFpgaSection({
         formatTime={() => simTime}
       />
 
-      <section className="vfpga-panel vfpga-signals">
+      <section className="vfpga-panel vfpga-signals ui-workspace-section">
         <div className="vfpga-section-title">
           <div>
             <strong>Signal inspector</strong>

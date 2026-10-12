@@ -145,9 +145,7 @@
   box-shadow: none;
 }
 
-.ui-dock-button:is([aria-label="Synthesis"], [aria-label^="Memory Asset Studio"]) .ui-dock-icon > svg {
-  width: calc(var(--ui-dock-icon-size) * 1.5);
-}
+
 
 .ui-dock-button > .ui-dock-icon::before,
 .ui-dock-button > .ui-dock-icon::after {
@@ -208,6 +206,45 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   content: none;
 }
 
+/* Compact context menus retain the same theme-aware popup and control material. */
+#root .ui-text-action {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+#root .ui-text-action::before,
+#root .ui-text-action::after { content: none; }
+
+#root .ui-context-menu {
+  position: fixed;
+  z-index: 50;
+  width: var(--ui-context-menu-width);
+  padding: 4px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-popup-bg) !important;
+  box-shadow: var(--ui-popup-shadow);
+}
+#root .ui-context-menu > .ui-menu-item {
+  width: 100%;
+  min-height: var(--ui-menu-item-height);
+  padding: 6px 8px;
+  font-size: var(--ui-menu-font-size);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
+  justify-content: flex-start;
+}
+#root .ui-context-menu > .ui-menu-item-danger {
+  color: var(--ui-error-text) !important;
+}
+
 /* Read-only metrics are text, not controls. A short separator replaces boxes. */
 #root .ui-metric {
   position: relative;
@@ -254,12 +291,16 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 /* Explorer controls keep their authored density; ordinary actions share size. */
 #root :is(.ui-button-group, .ui-compact-button-group):not(.project-explorer-view-switch, .project-explorer-actions, .dashboard-target-switch) > :is(button, .ui-button) {
   min-height: 38px;
-  padding: 8px 14px;
+  padding: 8px var(--ui-control-inline-padding);
   border-radius: var(--ui-radius-sm);
   font-family: inherit;
   font-size: 13px;
   font-weight: 750;
   line-height: 1.25;
+}
+/* Align the first label to the content edge while retaining its full glass hit area. */
+#root .ui-button-group-flush-start {
+  margin-inline-start: calc(-1 * (var(--ui-control-inline-padding) + 1px));
 }
 #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
   color: var(--ui-accent-text) !important;
@@ -363,23 +404,23 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   }
 }
 
-/* Hover-only icon controls share material whether standalone or in a group. */
-#root .ui-icon-button.ui-icon-button-hover {
+/* Hover-only controls share material whether standalone or in a group. */
+#root :is(.ui-hover-button, .ui-icon-button.ui-icon-button-hover) {
   border: 1px solid transparent !important;
   background: transparent !important;
   box-shadow: none !important;
   transition: var(--ui-control-transition);
 }
-#root .ui-icon-button.ui-icon-button-hover::before,
-#root .ui-icon-button.ui-icon-button-hover::after {
+#root :is(.ui-hover-button, .ui-icon-button.ui-icon-button-hover)::before,
+#root :is(.ui-hover-button, .ui-icon-button.ui-icon-button-hover)::after {
   opacity: 0;
 }
 @media (hover: hover) and (pointer: fine) {
-  #root .ui-icon-button.ui-icon-button-hover:hover:not(:disabled, [aria-disabled="true"]) {
+  #root :is(.ui-hover-button, .ui-icon-button.ui-icon-button-hover):hover:not(:disabled, [aria-disabled="true"]) {
     background: var(--ui-control-hover-bg) !important;
     transform: var(--ui-lift-subtle);
   }
-  #root .ui-icon-button.ui-icon-button-hover:hover:not(:disabled, [aria-disabled="true"])::after {
+  #root :is(.ui-hover-button, .ui-icon-button.ui-icon-button-hover):hover:not(:disabled, [aria-disabled="true"])::after {
     opacity: 1;
   }
 }

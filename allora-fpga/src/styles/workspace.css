@@ -1,0 +1,240 @@
+/* Standard workspace pages share title geometry and Testbench's content gap. */
+#root .ui-workspace-panel {
+  padding: var(--ui-workspace-inset);
+}
+#root .ui-workspace-title {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--ui-workspace-title-gap);
+  color: var(--ui-text);
+  font-size: var(--ui-workspace-title-size);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.ui-workspace-title-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+}
+.ui-workspace-title-icon > svg {
+  width: 24px;
+  height: 24px;
+}
+#root .chat-header .ui-workspace-title {
+  margin-bottom: 0;
+}
+
+/* The title owns the gap to the first section; headers add no second offset. */
+#root .ui-workspace-header {
+  margin-bottom: 0;
+  padding: 0;
+}
+#root .ui-workspace-header .ui-workspace-title {
+  margin-bottom: max(0px, calc(var(--ui-workspace-title-gap) - var(--ui-workspace-row-gap, 0px)));
+}
+#root :is(.ui-workspace-panel > .ui-workspace-title, .ui-workspace-header) + * {
+  margin-top: 0;
+}
+
+/* Workspace pattern: open canvas with framed supporting side panels. */
+#root .ui-workspace-dot-grid {
+  background-image: radial-gradient(var(--ui-workspace-grid-dot) 1px, transparent 1px);
+  background-size: var(--ui-workspace-grid-spacing) var(--ui-workspace-grid-spacing);
+}
+#root .ui-borderless-workspace :is(.dashboard-glass-card, .dashboard-surface-card, .ui-workspace-section, .ui-workspace-empty):not(.ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *) {
+  border: none !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+#root .ui-borderless-workspace :is(.dashboard-glass-card, .dashboard-surface-card):not(.ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *)::before,
+#root .ui-borderless-workspace :is(.dashboard-glass-card, .dashboard-surface-card):not(.ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *)::after {
+  content: none;
+}
+#root .ui-borderless-workspace :is(.ui-workspace-section, .ui-workspace-note):not(.ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *) {
+  padding: 0;
+}
+#root .ui-borderless-workspace .ui-workspace-note:not(.ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *) {
+  border: none;
+  box-shadow: none;
+}
+#root .ui-borderless-workspace .ui-workspace-note:not(.error, .ui-workspace-framed, .ui-workspace-framed *, [role="dialog"], [role="dialog"] *, dialog, dialog *, [popover], [popover] *) {
+  background: transparent;
+}
+
+/* Tool palettes/inspectors share the same framed sidebar material as InfoCard. */
+#root .ui-workspace-support {
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-dashboard-glass);
+  box-shadow: var(--ui-control-shadow);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+/* Open layouts keep their page-title inset even when a header is a section. */
+#root .ui-borderless-workspace .ui-workspace-panel {
+  padding: var(--ui-workspace-inset);
+}
+
+/* Shared section typography, independent of each page's layout. */
+#root .dashboard-main :is(h2, .ui-section-title, .vfpga-section-title strong):not([role="dialog"] *, dialog *) {
+  font-size: var(--ui-section-title-size);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+#root .dashboard-main h3:not([role="dialog"] *, dialog *) {
+  font-size: var(--ui-section-subtitle-size);
+  font-weight: 750;
+  line-height: 1.3;
+}
+#root :is(.ui-workspace-columns, .ui-workspace-split) {
+  grid-template-columns: minmax(0, 1fr) var(--ui-workspace-aside-width) !important;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+}
+#root .ui-workspace-split { display: grid !important; }
+#root .ui-workspace-aside {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto !important;
+  overflow-wrap: anywhere;
+}
+.ui-workspace-aside > * { flex-shrink: 0; min-width: 0; }
+@media (max-width: 900px) {
+  #root .ui-workspace-columns {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto;
+  }
+}
+
+/* Embedded tools fill their host's remaining space and scroll independently. */
+.bitstream-health-content {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 12px 0;
+}
+.health-content-embedded { overflow-wrap: anywhere; }
+.health-content-embedded > .dashboard-glass-card { padding: var(--ui-panel-inset); }
+.program-tabs { display: flex; flex-shrink: 0; margin-bottom: 12px; }
+.program-tab-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.program-tab-panel[hidden] { display: none; }
+#root .serial-monitor-embedded {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+.serial-monitor-embedded .serial-control { padding: 8px 10px; font-size: 12px; }
+.serial-monitor-embedded .serial-console { min-height: 120px; font-size: 12px; }
+
+#root .ui-workspace-aside :is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+.ui-workspace-aside .vfpga-map-control { grid-template-columns: minmax(0, 1fr); }
+
+/* Inspection lists scroll inside their card rather than moving the whole rail. */
+#root .ui-workspace-aside-contained { overflow: hidden !important; }
+.ui-workspace-aside-contained > .ui-workspace-grow-panel { flex-shrink: 1; }
+
+/* The preflight sidebar variant keeps long checks in its own scrolling panel. */
+#root .build-preflight.sidebar {
+  margin: 0;
+  padding: var(--ui-panel-inset);
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: min(320px, 40vh);
+  overflow: hidden;
+}
+.build-preflight.sidebar .build-preflight-summary {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+.build-preflight.sidebar .build-preflight-toggle {
+  margin-left: 0;
+}
+.build-preflight.sidebar .build-preflight-list {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* An open reading surface can soften its clipping edges without blocking input. */
+.ui-workspace-soft-edges { position: relative; }
+.ui-workspace-soft-edges::after,
+.ui-workspace-soft-code-edges .monaco-scrollable-element::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ui-canvas-bg) 40%, transparent);
+  backdrop-filter: blur(var(--ui-workspace-edge-blur));
+  -webkit-backdrop-filter: blur(var(--ui-workspace-edge-blur));
+  mask-image:
+    linear-gradient(to right, #000, transparent var(--ui-workspace-edge-width), transparent calc(100% - var(--ui-workspace-edge-width)), #000),
+    linear-gradient(to top, #000, transparent var(--ui-workspace-edge-bottom));
+  mask-composite: add;
+  -webkit-mask-image:
+    linear-gradient(to right, #000, transparent var(--ui-workspace-edge-width), transparent calc(100% - var(--ui-workspace-edge-width)), #000),
+    linear-gradient(to top, #000, transparent var(--ui-workspace-edge-bottom));
+  -webkit-mask-composite: source-over;
+}
+
+/* Code starts at the viewport's left edge; keep those first characters sharp. */
+.ui-workspace-soft-code-edges .monaco-scrollable-element::after {
+  /* A color wash creates a visible frame against the workspace gradient. */
+  background: transparent;
+  mask-image:
+    linear-gradient(to left, #000, transparent var(--ui-workspace-edge-width)),
+    linear-gradient(to top, #000, transparent var(--ui-workspace-edge-bottom));
+  -webkit-mask-image:
+    linear-gradient(to left, #000, transparent var(--ui-workspace-edge-width)),
+    linear-gradient(to top, #000, transparent var(--ui-workspace-edge-bottom));
+}
+
+#root .editor-shell {
+  border: none;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+#root .editor-shell :is(.editor-tab-bar, .editor-breadcrumbs) {
+  border: none;
+  background: transparent !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding-inline: var(--ui-workspace-inset);
+}
+#root .editor-body {
+  padding-inline: var(--ui-workspace-inset);
+}
+#root .editor-shell :is(.monaco-editor, .monaco-editor-background, .monaco-editor .inputarea.ime-input, .monaco-editor .margin) {
+  background: transparent !important;
+}
+#root .editor-shell .monaco-editor .line-numbers {
+  text-align: left;
+}

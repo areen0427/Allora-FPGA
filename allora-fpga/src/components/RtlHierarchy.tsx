@@ -92,7 +92,7 @@ function HierarchyItem({
         )}
         <button
           type="button"
-          className="rtl-hierarchy-definition"
+          className="rtl-hierarchy-definition ui-hover-button"
           onClick={() => onOpenDefinition(node.fileName, node.line)}
           title={`${node.fileName}:${node.line}`}
         >

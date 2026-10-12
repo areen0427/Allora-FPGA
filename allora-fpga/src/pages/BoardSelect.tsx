@@ -22,7 +22,7 @@ import ChatPage from "./ChatPage";
 type BoardSelectProps = {
   initialView?: WelcomeView;
   chatProjectPath?: string;
-  onDesignToolChange: (register: boolean) => void;
+  onDesignToolChange: (section: DashboardSection | undefined) => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
   onSelectBoard: (boardId: string) => void;
@@ -113,7 +113,7 @@ export default function BoardSelect({
   }
 
   function handleViewChange(view: WelcomeView) {
-    onDesignToolChange(false);
+    onDesignToolChange(undefined);
     setActiveView(view);
     setHomePath(null);
     setShowProductInfo(false);
@@ -152,14 +152,13 @@ export default function BoardSelect({
           path={homePath}
           onPathChange={(path) => {
             setHomePath(path);
-            onDesignToolChange(path === "register-builder");
+            onDesignToolChange(path === "register-builder" || path === "peripheral-workbench" ? path : undefined);
             setShowProductInfo(false);
           }}
           showProductInfo={showProductInfo}
           onCloseProductInfo={closeProductInfo}
           brandRef={brandRef}
           reduceMotion={settings.reduceMotion}
-          settings={settings}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
           showAllBoards={showAllBoards}
@@ -177,7 +176,6 @@ export default function BoardSelect({
           onCreateSimulationProject={onCreateSimulationProject}
           onOpenProject={onOpenProject}
           onRemoveRecentProject={removeRecentProject}
-          onSettingsChange={onSettingsChange}
           onOpenMemoryProject={onOpenMemoryProject}
           onOpenExistingMemoryProject={() => {
             if (isOpeningExistingProject) return;

@@ -26,8 +26,10 @@ const LINE_ENDINGS: Record<LineEnding, string> = {
 
 export default function SerialMonitorSection({
   board,
+  embedded = false,
 }: {
   board: BoardDefinition;
+  embedded?: boolean;
 }) {
   const [ports, setPorts] = useState<SerialPortRecord[]>([]);
   const [selectedPort, setSelectedPort] = useState("");
@@ -138,12 +140,12 @@ export default function SerialMonitorSection({
 
   return (
     <div
+      className={`ui-workspace-columns${embedded ? " serial-monitor-embedded" : ""}`}
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 240px",
         gap: "22px",
         alignItems: "start",
-        height: "calc(100vh - 24px)",
+        height: embedded ? "100%" : "calc(100vh - 24px)",
         boxSizing: "border-box",
         minHeight: 0,
         overflow: "visible",
@@ -151,6 +153,9 @@ export default function SerialMonitorSection({
     >
       <InfoCard
         title="Serial Monitor"
+        pageTitle={!embedded}
+        compact={embedded}
+        pageSection="serial"
         style={{
           height: "100%",
           minHeight: 0,
@@ -280,7 +285,9 @@ export default function SerialMonitorSection({
         </div>
       </InfoCard>
 
+      {!embedded && (
       <div
+        className="ui-workspace-framed ui-workspace-aside"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -338,6 +345,7 @@ export default function SerialMonitorSection({
           </div>
         </InfoCard>
       </div>
+      )}
     </div>
   );
 }

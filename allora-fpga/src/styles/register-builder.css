@@ -176,6 +176,9 @@
   color: var(--ui-error-text);
   background: none;
 }
+.rb-validation li {
+  color: var(--ui-error-text);
+}
 .rb pre {
   max-height: 350px;
   overflow: auto;

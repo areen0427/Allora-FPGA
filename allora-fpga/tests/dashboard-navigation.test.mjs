@@ -4,15 +4,22 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 const source = await readFile(new URL("../src/pages/dashboard/navigation.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
-const { sectionAfterTargetChange } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
-test("target changes keep chat active in both directions, including parent synchronization", () => {
-  assert.equal(sectionAfterTargetChange("simulate", "chat"), "chat");
-  assert.equal(sectionAfterTargetChange("build", "chat"), "chat");
+const { sectionAfterWorkspaceLaunch, workspaceOwner } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+test("workspace synchronization preserves the active page, including chat and virtual tools", () => {
+  for (const page of ["editor", "chat", "peripheral-workbench", "virtual-fpga", "bitstream"]) {
+    assert.equal(sectionAfterWorkspaceLaunch(page), page);
+  }
 });
-test("other sections retain their execution-target landing behavior", () => {
-  assert.equal(sectionAfterTargetChange("simulate", "editor"), "peripheral-workbench");
-  assert.equal(sectionAfterTargetChange("build", "peripheral-workbench"), "editor");
+test("explicit tool launches override the active page", () => {
+  assert.equal(sectionAfterWorkspaceLaunch("chat", "pin-mapping"), "pin-mapping");
+  assert.equal(sectionAfterWorkspaceLaunch("editor", "peripheral-workbench"), "peripheral-workbench");
+  assert.equal(sectionAfterWorkspaceLaunch("editor", "register-builder"), "register-builder");
 });
-test("explicit navigation still overrides the current chat section", () => {
-  assert.equal(sectionAfterTargetChange("build", "chat", "pin-mapping"), "pin-mapping");
+
+test("moved tool destinations resolve to their owning workspace", () => {
+  assert.equal(workspaceOwner("health"), "bitstream");
+  assert.equal(workspaceOwner("serial"), "programming");
+  for (const page of ["editor", "chat", "synthesis", "pin-mapping", "testbench", "virtual-fpga"]) {
+    assert.equal(workspaceOwner(page), page);
+  }
 });

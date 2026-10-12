@@ -17,6 +17,7 @@ export type SignalWaveTrace = {
 type Props = {
   className?: string;
   title?: string;
+  showTitle?: boolean;
   subtitle: string;
   traces: SignalWaveTrace[];
   selectedSignalIds: string[];
@@ -31,6 +32,7 @@ const MAX_RENDERED_WAVE_POINTS = 4_000;
 export default function SignalWaveformPanel({
   className,
   title = "Live waveform",
+  showTitle = true,
   subtitle,
   traces,
   selectedSignalIds,
@@ -45,13 +47,16 @@ export default function SignalWaveformPanel({
   const { startTime, endTime } = getTraceTimeRange(traces);
 
   return (
-    <section className={`vfpga-panel vfpga-waveform signal-waveform-panel${className ? ` ${className}` : ""}`}>
+    <section className={`vfpga-panel vfpga-waveform signal-waveform-panel ui-workspace-section${className ? ` ${className}` : ""}`}>
+      {(showTitle || traces.length > 0) && (
       <div className="vfpga-section-title">
-        <WavesIcon />
-        <div>
-          <strong>{title}</strong>
-          <span>{subtitle}</span>
-        </div>
+        {showTitle && <>
+          <WavesIcon />
+          <div>
+            <strong>{title}</strong>
+            <span>{subtitle}</span>
+          </div>
+        </>}
         <div className="vfpga-wave-picker" aria-label="Waveform signals">
           {traces.slice(0, 18).map((trace) => (
             <button
@@ -67,6 +72,7 @@ export default function SignalWaveformPanel({
           ))}
         </div>
       </div>
+      )}
       {visibleTraces.length ? (
         <div className="vfpga-wave-grid">
           <div className="vfpga-wave-labels" style={{ height }}>
@@ -133,7 +139,7 @@ export default function SignalWaveformPanel({
           </div>
         </div>
       ) : (
-        <div className="vfpga-wave-empty">{emptyMessage}</div>
+        <div className="vfpga-wave-empty ui-workspace-empty">{emptyMessage}</div>
       )}
     </section>
   );

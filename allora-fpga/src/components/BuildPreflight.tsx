@@ -12,19 +12,21 @@ export function BuildPreflight({
   checks,
   onNavigate,
   collapsible = false,
+  layout = "default",
 }: {
   checks: PreflightCheck[];
   onNavigate?: (destination: "editor" | "pin-mapping") => void;
   collapsible?: boolean;
+  layout?: "default" | "sidebar";
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const blockers = checks.filter((check) => check.state === "blocked").length;
   const warnings = checks.filter((check) => check.state === "warning").length;
   const expanded = !collapsible || showDetails || blockers > 0;
   return (
-    <div className={`build-preflight${collapsible ? " compact" : ""}`}>
+    <div className={`build-preflight ui-workspace-section${collapsible ? " compact" : ""}${layout === "sidebar" ? " sidebar ui-workspace-framed ui-workspace-support ui-workspace-grow-panel" : ""}`}>
       <div className="build-preflight-summary">
-        <strong>Build preflight</strong>
+        <strong className={layout === "sidebar" ? "ui-section-title" : undefined}>Build Preflight</strong>
         <span className={blockers ? "blocked" : warnings ? "warning" : "ready"}>
           {blockers
             ? `${blockers} blocker${blockers === 1 ? "" : "s"}`

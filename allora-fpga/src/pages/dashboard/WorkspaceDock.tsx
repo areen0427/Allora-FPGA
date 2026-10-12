@@ -1,8 +1,9 @@
 import type { MouseEventHandler } from "react";
-import { Home, PanelLeftOpen, MapPinned, Binary, Zap, Activity, Usb, MessageSquare, Gauge, Settings, ArrowLeft } from "lucide-react";
+import { Home, PanelLeftOpen, MapPinned, Binary, Zap, Gauge, Settings, ArrowLeft } from "lucide-react";
+import AiDesignStudioIcon from "../../components/AiDesignStudioIcon";
 import SidebarButton from "./SidebarButton";
 import { FloatingDockNav } from "../../components/ui/floating-dock-navigation";
-import type { DashboardSection, ExecutionTarget } from "./types";
+import type { DashboardSection } from "./types";
 import PeripheralWorkbenchIcon from "../../components/PeripheralWorkbenchIcon";
 import MemoryAssetStudioIcon from "../../components/MemoryAssetStudioIcon";
 import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
@@ -13,7 +14,6 @@ import ProgramIcon from "../../components/ProgramIcon";
 
 type WorkspaceDockProps = {
   activeSection: DashboardSection;
-  executionTarget: ExecutionTarget;
   explorerCollapsed?: boolean;
   saving?: boolean;
   onSectionChange: (section: DashboardSection) => void;
@@ -25,7 +25,7 @@ type WorkspaceDockProps = {
   onUsage: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function WorkspaceDock({ activeSection, executionTarget, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, onSettings, onUsage }: WorkspaceDockProps) {
+export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, onSettings, onUsage }: WorkspaceDockProps) {
   return (
         <div className="dashboard-activity-rail-slot">
           <div className="dashboard-activity-rail">
@@ -65,66 +65,40 @@ export function WorkspaceDock({ activeSection, executionTarget, explorerCollapse
                 active={activeSection === "testbench"}
                 onClick={() => onSectionChange("testbench")}
               />
-              {executionTarget === "build" ? (
-                <>
-                  <SidebarButton
-                    label="Synthesis"
-                    icon={<SynthesisIcon size={19} />}
-                    active={activeSection === "synthesis"}
-                    onClick={() => onSectionChange("synthesis")}
-                  />
-                  <SidebarButton
-                    label="Pin Mapping"
-                    icon={<MapPinned size={19} />}
-                    active={activeSection === "pin-mapping"}
-                    onClick={() => onSectionChange("pin-mapping")}
-                  />
-                  <SidebarButton
-                    label="Bitstream"
-                    icon={<Binary size={19} />}
-                    active={activeSection === "bitstream"}
-                    onClick={() => onSectionChange("bitstream")}
-                  />
-                  <SidebarButton
-                    label="Program"
-                    icon={<ProgramIcon size={19} />}
-                    active={activeSection === "programming"}
-                    onClick={() => onSectionChange("programming")}
-                  />
-                </>
-              ) : null}
-              {executionTarget === "simulate" ? (
-                <SidebarButton
-                  label="Virtual"
-                  icon={<Zap size={19} />}
-                  active={activeSection === "virtual-fpga"}
-                  onClick={() => onSectionChange("virtual-fpga")}
-                />
-              ) : null}
-              <div className="activity-rail-divider" role="separator" aria-label="Health and serial" />
               <SidebarButton
-                label="Health"
-                icon={<Activity size={19} />}
-                active={activeSection === "health"}
-                onClick={() => onSectionChange("health")}
+                label="Synthesis"
+                icon={<SynthesisIcon size={19} />}
+                active={activeSection === "synthesis"}
+                onClick={() => onSectionChange("synthesis")}
               />
-              {executionTarget === "build" ? (
-                <SidebarButton
-                  label="Serial"
-                  icon={<Usb size={19} />}
-                  active={activeSection === "serial"}
-                  onClick={() => onSectionChange("serial")}
-                />
-              ) : null}
-              <div className="activity-rail-divider" role="separator" aria-label="Design tools" />
+              <SidebarButton
+                label="Pin Mapping"
+                icon={<MapPinned size={19} />}
+                active={activeSection === "pin-mapping"}
+                onClick={() => onSectionChange("pin-mapping")}
+              />
+              <SidebarButton
+                label="Bitstream"
+                icon={<Binary size={19} />}
+                active={activeSection === "bitstream" || activeSection === "health"}
+                onClick={() => onSectionChange("bitstream")}
+              />
+              <SidebarButton
+                label="Program"
+                icon={<ProgramIcon size={19} />}
+                active={activeSection === "programming" || activeSection === "serial"}
+                onClick={() => onSectionChange("programming")}
+              />
+              <div className="activity-rail-divider" role="separator" aria-label="Design Tools" />
               <SidebarButton label="Peripheral Workbench" icon={<PeripheralWorkbenchIcon size={19} />} active={activeSection === "peripheral-workbench"} onClick={() => onSectionChange("peripheral-workbench")} />
               <SidebarButton label="Memory Asset Studio" icon={<MemoryAssetStudioIcon size={19} />} active={activeSection === "memory-asset-studio"} onClick={() => onSectionChange("memory-asset-studio")} />
               <SidebarButton label="Register Builder" icon={<RegisterBuilderIcon size={19} />} active={activeSection === "register-builder"} onClick={() => onSectionChange("register-builder")} />
+              <SidebarButton label="Virtual" icon={<Zap size={19} />} active={activeSection === "virtual-fpga"} onClick={() => onSectionChange("virtual-fpga")} />
             </FloatingDockNav>
             <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
               <SidebarButton
-                label="Chat"
-                icon={<MessageSquare size={18} />}
+                label="AI Design Studio"
+                icon={<AiDesignStudioIcon size={18} />}
                 active={activeSection === "chat"}
                 disabled={saving}
                 onClick={onChat}

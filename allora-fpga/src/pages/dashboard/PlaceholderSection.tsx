@@ -10,7 +10,7 @@ export default function PlaceholderSection({
   description,
 }: PlaceholderSectionProps) {
   return (
-    <InfoCard title={title}>
+    <InfoCard title={title} pageTitle>
       <p
         style={{
           margin: 0,

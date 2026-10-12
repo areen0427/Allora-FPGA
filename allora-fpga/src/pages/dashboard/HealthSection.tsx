@@ -20,6 +20,7 @@ type HealthSectionProps = {
   dirtyFileNames?: string[];
   onNavigate?: (destination: "editor" | "pin-mapping") => void;
   showBuildPreflight?: boolean;
+  embedded?: boolean;
 };
 
 type HealthMetric = {
@@ -45,6 +46,7 @@ export default function HealthSection({
   dirtyFileNames = [],
   onNavigate,
   showBuildPreflight = true,
+  embedded = false,
 }: HealthSectionProps) {
   const [simulationTools, setSimulationTools] =
     useState<SimulationTools | null>(null);
@@ -135,8 +137,8 @@ export default function HealthSection({
   ];
 
   return (
-    <div style={{ display: "grid", gap: "18px", minHeight: "100%", alignContent: "start" }}>
-      <InfoCard title="Build Health">
+    <div className={embedded ? "health-content health-content-embedded" : "health-content"} style={{ display: "grid", gap: embedded ? "12px" : "18px", minHeight: embedded ? 0 : "100%", alignContent: "start", minWidth: 0 }}>
+      <InfoCard title="Build Health" pageTitle={!embedded} pageSection="health" compact={embedded}>
         <div
           style={{
             display: "grid",

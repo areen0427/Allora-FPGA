@@ -1,9 +1,9 @@
 .vfpga-page {
+  --ui-workspace-row-gap: 16px;
   display: grid;
-  gap: 16px;
+  gap: var(--ui-workspace-row-gap);
   min-height: 100%;
   align-content: start;
-  padding-right: 2px;
   color: var(--dashboard-text, #10243f);
 }
 .vfpga-hero,

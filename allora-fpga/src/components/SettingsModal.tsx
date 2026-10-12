@@ -469,7 +469,7 @@ export function SettingsModal({
         <footer className="settings-footer">
           <span className="settings-save-status">
             <Check size={14} aria-hidden="true" />
-            Auto Save: 30 seconds
+            Auto Save: 3 seconds
           </span>
           <div className="settings-footer-actions ui-compact-button-group">
             <button

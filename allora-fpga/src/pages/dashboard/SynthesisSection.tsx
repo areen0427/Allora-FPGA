@@ -186,9 +186,9 @@ export default function SynthesisSection({
 
   return (
     <div
+      className="ui-workspace-columns"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 205px",
         gap: "16px",
         alignItems: "stretch",
         minWidth: 0,
@@ -199,32 +199,19 @@ export default function SynthesisSection({
     >
       <InfoCard
         title="Synthesis"
+        pageTitle
+        pageSection="synthesis"
         style={{
           height: "100%",
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          padding: "20px",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "var(--ui-text-muted)",
-            fontSize: "14px",
-            lineHeight: 1.45,
-          }}
-        >
-          Run real synthesis through the local toolchain, review the generated
-          design report, and explore the schematic in its dedicated workspace.
-        </p>
 
         <div
-          className="dashboard-glass-card synthesis-control-bar"
-          style={{
-            marginTop: "14px",
-          }}
+          className="dashboard-glass-card synthesis-control-bar ui-workspace-section"
         >
           <label className="synthesis-top-level-field">
             <span>Top level</span>
@@ -263,7 +250,7 @@ export default function SynthesisSection({
           ) : null}
         </div>
 
-        <div className="synthesis-report-shell">
+        <div className="synthesis-report-shell ui-workspace-section">
           {showAdvancedLog && visibleLog.length > 0 ? (
             <pre className="synthesis-log-panel">{visibleLog.join("\n")}</pre>
           ) : visibleDiagram ? (
@@ -288,6 +275,7 @@ export default function SynthesisSection({
       </InfoCard>
 
       <div
+        className="ui-workspace-framed ui-workspace-aside"
         style={{
           display: "grid",
           alignContent: "start",
@@ -366,7 +354,7 @@ function SynthesisReport({
       </div>
 
       <div className="synthesis-report-detail-grid">
-        <div className="synthesis-breakdown-card">
+        <div className="synthesis-breakdown-card ui-workspace-section">
           <div className="synthesis-card-heading">
             <div>
               <strong>Cell composition</strong>
@@ -385,7 +373,7 @@ function SynthesisReport({
           </div>
         </div>
 
-        <div className="synthesis-design-card">
+        <div className="synthesis-design-card ui-workspace-section">
           <div className="synthesis-card-heading">
             <div>
               <strong>Design interface</strong>

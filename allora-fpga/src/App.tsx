@@ -60,7 +60,6 @@ function App() {
   const [settings, setSettings] = useState<AppSettings>(() => getSettings());
   const [projectWarning, setProjectWarning] = useState("");
   const [studioLaunch, setStudioLaunch] = useState(false);
-  const [registerLaunch, setRegisterLaunch] = useState(false);
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
   const restoredStartupRef = useRef(false);
@@ -90,7 +89,6 @@ function App() {
     setReturnToChat(false);
     setWorkspaceSection(undefined);
     setChatProjectPath(undefined);
-    setRegisterLaunch(false);
     setStage("board-select");
     setSelectedBoardId(null);
     setProject(null);
@@ -268,7 +266,7 @@ function App() {
       <BoardSelect
         initialView={returnToChat ? "chat" : "home"}
         chatProjectPath={chatProjectPath}
-        onDesignToolChange={setRegisterLaunch}
+        onDesignToolChange={setWorkspaceSection}
         settings={settings}
         onSettingsChange={setSettings}
         onOpenProject={openProject}
@@ -439,22 +437,7 @@ function App() {
         project={project}
         settings={settings}
         projectWarning={projectWarning}
-        launchTarget={executionTarget}
-        initialSection={registerLaunch ? "register-builder" : studioLaunch ? "memory-asset-studio" : workspaceSection}
-        onExecutionTargetChange={(target) => {
-          setWorkspaceSection(undefined);
-          setRegisterLaunch(false);
-          setStudioLaunch(false);
-          setExecutionTarget(target);
-          if (!project) return;
-          const nextProject = {
-            ...project,
-            lastExecutionTarget: target,
-            updatedAt: new Date().toISOString(),
-          };
-          setProject(nextProject);
-          saveProject(nextProject);
-        }}
+        initialSection={studioLaunch ? "memory-asset-studio" : workspaceSection}
         onSettingsChange={setSettings}
         onBack={() =>
           setStage(
@@ -471,7 +454,7 @@ function App() {
 
   return (
     <BoardSelect
-        onDesignToolChange={setRegisterLaunch}
+        onDesignToolChange={setWorkspaceSection}
       settings={settings}
       onSettingsChange={setSettings}
       onOpenProject={openProject}

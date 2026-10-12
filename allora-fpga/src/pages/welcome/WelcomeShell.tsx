@@ -39,7 +39,7 @@ export function WelcomeShell({
     <div className="glass-page welcome-page">
       {activeView === "chat" ? (
         <aside className="dashboard-sidebar welcome-chat-workspace-dock">
-          <WorkspaceDock activeSection="chat" executionTarget="build"
+          <WorkspaceDock activeSection="chat"
             onSectionChange={onWorkspaceSection}
             onHome={() => onViewChange("home")}
             onChat={() => onViewChange("chat")}
