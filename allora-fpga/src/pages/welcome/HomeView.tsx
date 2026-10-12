@@ -99,6 +99,26 @@ export function HomeView({
   );
   const productInfoRef = useRef<HTMLElement>(null);
 
+  useLayoutEffect(() => {
+    if (!showProductInfo) return;
+    const panel = productInfoRef.current;
+    const anchor = brandRef.current;
+    if (!panel || !anchor) return;
+    function sizePanel() {
+      if (!panel || !anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      panel.style.width = `${Math.max(0, Math.min(430, rect.right - 24))}px`;
+      panel.style.maxHeight = `${Math.max(80, window.innerHeight - rect.bottom - 36)}px`;
+    }
+    sizePanel();
+    window.addEventListener("resize", sizePanel);
+    window.addEventListener("scroll", sizePanel, true);
+    return () => {
+      window.removeEventListener("resize", sizePanel);
+      window.removeEventListener("scroll", sizePanel, true);
+    };
+  }, [showProductInfo, brandRef]);
+
   useEffect(() => {
     if (!showProductInfo) return;
     function dismissOutside(event: PointerEvent) {
@@ -136,6 +156,16 @@ export function HomeView({
             aria-hidden="true"
           />
         ) : null}
+        <div className="welcome-action-stack">
+          <header className="welcome-dashboard-header">
+          <h1 className="welcome-title">
+            <strong className="welcome-title-name">Allora FPGA</strong>
+          </h1>
+          <div className="welcome-utilities" aria-label="Welcome tools">
+            <button type="button" className="execution-path-card welcome-utility" onClick={onOpenPinMapping}><MapIcon size={22} aria-hidden="true" /><span>Pin Mapper</span></button>
+            <button type="button" className="execution-path-card welcome-utility" onClick={onOpenSettings}><Settings size={22} aria-hidden="true" /><span>Settings</span></button>
+            <div className="welcome-product-anchor">
+            <button ref={brandRef} type="button" className="welcome-product-icon" data-glass="off" onClick={onOpenProductInfo} title="Product information" aria-label="Product information" aria-expanded={showProductInfo} aria-controls="welcome-product-info"><img src={alloraIcon} alt="" /></button>
         {showProductInfo ? (
           <section
             ref={productInfoRef}
@@ -212,11 +242,12 @@ export function HomeView({
             </div>
           </section>
         ) : null}
-        <div className="welcome-action-stack">
-          <h1 className="welcome-title">
-            <strong className="welcome-title-name">Allora FPGA</strong>
-          </h1>
+            </div>
+          </div>
+          </header>
           <ExecutionPathChooser
+            recentProject={recentProjects[0]}
+            onResume={(target) => { if (recentProjects[0]) onOpenProject(recentProjects[0].id, target); }}
             selectedTarget={departingPath}
             onChoose={(target) => {
               if (reduceMotion) {
@@ -227,19 +258,7 @@ export function HomeView({
             }}
             onOpenChat={onOpenChat}
           />
-          <div className="welcome-bottom-row">
-          {recentProjects[0] ? (
-            <ContinueProjectTile
-              project={recentProjects[0]}
-              onOpen={(target) => onOpenProject(recentProjects[0].id, target)}
-            />
-          ) : null}
-          <div className="welcome-utilities" aria-label="Welcome tools">
-            <button type="button" className="execution-path-card welcome-utility" onClick={onOpenPinMapping}><MapIcon size={22} aria-hidden="true" /><span>Pin Mapper</span></button>
-            <button type="button" className="execution-path-card welcome-utility" onClick={onOpenSettings}><Settings size={22} aria-hidden="true" /><span>Settings</span></button>
-            <button ref={brandRef} type="button" className="welcome-product-icon" data-glass="off" onClick={onOpenProductInfo} title="Product information" aria-label="Product information" aria-expanded={showProductInfo} aria-controls="welcome-product-info"><img src={alloraIcon} alt="" /></button>
-          </div>
-          </div>
+
         </div>
       </section>
     );
@@ -323,10 +342,14 @@ export function HomeView({
 }
 
 function ExecutionPathChooser({
+  recentProject,
+  onResume,
   selectedTarget,
   onChoose,
   onOpenChat,
 }: {
+  recentProject?: SavedProject;
+  onResume: (target: ExecutionTarget) => void;
   selectedTarget: HomePath | null;
   onChoose: (target: HomePath) => void;
   onOpenChat: () => void;
@@ -334,14 +357,18 @@ function ExecutionPathChooser({
   return (
     <div className="welcome-launch-panel" aria-label="Workspace and design tools">
 
+          <section className="welcome-build-panel" aria-label="Build workspace">
           <div className="execution-path-option">
             <button type="button" onClick={() => onChoose("build")} className={`execution-path-card welcome-tool-row build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
               <svg className="welcome-launch-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3,5.99406028 L3,18.0059397 C3,19.1054862 3.8932319,20 4.99508929,20 L19.0049107,20 C20.1073772,20 21,19.1072288 21,18.0059397 L21,5.99406028 C21,4.89451376 20.1067681,4 19.0049107,4 L4.99508929,4 C3.8926228,4 3,4.8927712 3,5.99406028 Z M1,5.99406028 C1,3.78785482 2.7884002,2 4.99508929,2 L19.0049107,2 C21.210775,2 23,3.78938161 23,5.99406028 L23,18.0059397 C23,20.2121452 21.2115998,22 19.0049107,22 L4.99508929,22 C2.78922499,22 1,20.2106184 1,18.0059397 L1,5.99406028 Z M5.26674525,11.6980752 C4.91108492,11.3097909 4.91108492,10.6902091 5.26674525,10.3019248 C5.63548778,9.89935839 6.24389719,9.89935839 6.61263972,10.3019248 L10,14 L6.61263972,17.6980752 C6.24389719,18.1006416 5.63548778,18.1006416 5.26674525,17.6980752 C4.91108492,17.3097909 4.91108492,16.6902091 5.26674525,16.3019248 L7.37526073,14 L5.26674525,11.6980752 Z M11,17 C11,16.4477153 11.4530363,16 11.9970301,16 L18.0029699,16 C18.5536144,16 19,16.4438648 19,17 C19,17.5522847 18.5469637,18 18.0029699,18 L11.9970301,18 C11.4463856,18 11,17.5561352 11,17 Z M3,6 L22,6 L22,8 L3,8 L3,6 Z" /></svg>
               <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">BUILD & SIMULATE RTL</span></div>
             </button>
           </div>
-
-
+          {recentProject ? <ContinueProjectTile project={recentProject} onOpen={onResume} /> : null}
+          </section>
+          <section className="welcome-design-panel" aria-labelledby="welcome-design-title">
+          <h2 id="welcome-design-title">Design Tools</h2>
+          <div className="welcome-design-grid">
           <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenChat} disabled={selectedTarget !== null}>
             <AiDesignStudioIcon size={24} /><div className="execution-path-copy"><h3>AI Design Studio</h3><span className="execution-path-microcopy">DESIGN WITH AI</span></div>
           </button>
@@ -355,6 +382,8 @@ function ExecutionPathChooser({
             <RegisterBuilderIcon size={24} /><div className="execution-path-copy"><h3>Register Builder</h3><span className="execution-path-microcopy">DEFINE REGISTERS</span></div>
           </button>
 
+          </div>
+          </section>
     </div>
   );
 }
