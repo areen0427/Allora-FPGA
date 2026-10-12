@@ -1,3 +1,4 @@
+import { welcomeDestination } from "./dashboard/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { AppSettings } from "../data/settings";
 import { getSavedProjects, removeSavedProject } from "../data/projects";
@@ -17,11 +18,12 @@ import { WelcomeShell } from "./welcome/WelcomeShell";
 import type { WelcomeView } from "./welcome/WelcomeShell";
 import { UsageDialog } from "../components/UsageDialog";
 import type { DashboardSection, ExecutionTarget } from "./dashboard/types";
-import ChatPage from "./ChatPage";
+import { ChatSessionHost, useResetChatSession } from "../components/ChatSession";
 
 type BoardSelectProps = {
   initialView?: WelcomeView;
   chatProjectPath?: string;
+  onChatOriginChange: (active: boolean) => void;
   onDesignToolChange: (section: DashboardSection | undefined) => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
@@ -34,10 +36,10 @@ type BoardSelectProps = {
   onCreateMemoryProject: () => void;
   onCreateMemoryBoardProject: (boardId: string) => void;
   onOpenChatProject: (projectPath: string) => Promise<void>;
-  onOpenWorkspaceSection: (projectId: string, section: DashboardSection) => void;
 };
 
 export default function BoardSelect({
+  onChatOriginChange,
   initialView = "home",
   chatProjectPath,
   onDesignToolChange,
@@ -52,8 +54,8 @@ export default function BoardSelect({
   onCreateMemoryProject,
   onCreateMemoryBoardProject,
   onOpenChatProject,
-  onOpenWorkspaceSection,
 }: BoardSelectProps) {
+  const resetChat = useResetChatSession();
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
   const [memoryBoardChoice, setMemoryBoardChoice] = useState(false);
@@ -66,6 +68,8 @@ export default function BoardSelect({
     useState(false);
   const [openExistingProjectError, setOpenExistingProjectError] = useState("");
   const [activeView, setActiveView] = useState<WelcomeView>(initialView);
+  const [returnToConversation, setReturnToConversation] = useState(false);
+  const [chatVisited, setChatVisited] = useState(initialView === "chat");
   const [homePath, setHomePath] = useState<HomePath | null>(null);
   const [showProductInfo, setShowProductInfo] = useState(false);
   const brandRef = useRef<HTMLButtonElement | null>(null);
@@ -114,10 +118,15 @@ export default function BoardSelect({
 
   function handleViewChange(view: WelcomeView) {
     onDesignToolChange(undefined);
+    setReturnToConversation(false);
+    onChatOriginChange(view === "chat");
+    if (view === "chat") setChatVisited(true);
     setActiveView(view);
     setHomePath(null);
     setShowProductInfo(false);
     if (view === "home") {
+      setChatVisited(false);
+      resetChat();
       setSelectedPinBoard(null);
       setHomeViewKey((current) => current + 1);
     }
@@ -127,15 +136,26 @@ export default function BoardSelect({
     <WelcomeShell
       activeView={activeView}
       onWorkspaceSection={(section) => {
-        if (recentProjects[0]) onOpenWorkspaceSection(recentProjects[0].id, section);
-        else { handleViewChange("home"); setHomePath("build"); }
+        setReturnToConversation(true);
+        onDesignToolChange(section);
+        setShowProductInfo(false);
+        const destination = welcomeDestination(section);
+        if (destination === "pin-mapping") {
+          setActiveView("pin-mapping");
+        } else {
+          setActiveView("home");
+          setHomePath(destination);
+        }
       }}
       onOpenUsage={setUsageAnchor}
-      onBack={activeView === "pin-mapping"
-        ? () => handleViewChange("home")
-        : activeView === "home" && homePath !== null
-          ? () => setHomePath(null)
-          : undefined}
+      backLabel={returnToConversation ? "Back to AI Design Studio" : "Back to welcome"}
+      onBack={returnToConversation
+        ? () => { setActiveView("chat"); setHomePath(null); setReturnToConversation(false); onDesignToolChange(undefined); }
+        : activeView === "pin-mapping"
+          ? () => handleViewChange("home")
+          : activeView === "home" && homePath !== null
+            ? () => setHomePath(null)
+            : undefined}
       brandRef={brandRef}
       showProductInfo={showProductInfo}
       onOpenProductInfo={activeView === "home" && homePath === null
@@ -146,6 +166,9 @@ export default function BoardSelect({
       onViewChange={handleViewChange}
       onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}
     >
+      {chatVisited && <ChatSessionHost hidden={activeView !== "chat"} initialProjectPath={chatProjectPath} resumeLatest={initialView === "chat"}
+        onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }}
+        onOpenProject={onOpenChatProject} onProjectCreated={onOpenChatProject} />}
       {activeView === "home" ? (
         <HomeView
           key={homeViewKey}
@@ -190,7 +213,7 @@ export default function BoardSelect({
           }}
         />
       ) : activeView === "chat" ? (
-        <ChatPage initialProjectPath={chatProjectPath} resumeLatest={initialView === "chat"} onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }} onOpenProject={onOpenChatProject} />
+        null
       ) : (
         <PinMappingBrowser
           boards={pinMappingBoards}

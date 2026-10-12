@@ -1,201 +1,145 @@
 # Allora FPGA — Project Context
 
-This document is a medium-detail orientation guide for contributors and future development sessions. It describes the current product, architecture, important data flows, and near-term direction. `README.md` remains the user-facing overview; `CONTINUATION.md` is the chronological engineering handoff.
+This is the current product and architecture guide for contributors and future development sessions. Keep it about present behavior, not abandoned UI experiments or a chronological change log. `README.md` is the user-facing overview; `CONTINUATION.md` records engineering handoffs. Unless otherwise noted, `src/` and `src-tauri/` paths below are relative to `allora-fpga/`.
 
-## Product purpose
+## Product and navigation
 
-Allora FPGA is a local-first desktop development environment for open-source FPGA workflows. It is intended to keep editing, simulation, synthesis, place-and-route, bitstream generation, programming, and hardware inspection in one application.
+Allora FPGA is a local-first Tauri desktop environment for editing HDL, testbench and interactive simulation, synthesis, pin mapping, bitstream generation, programming, and hardware inspection.
 
-The product has two equal execution paths:
+**Build and simulation share one workspace.** There are no separate navigation modes or Build/Simulate sidebar switches. Physical-board and board-free projects use the same dock; board capabilities still determine which hardware operations are supported. Virtual simulation mappings remain separate from physical constraints. Existing `projectKind` and `lastExecutionTarget` fields remain compatible with saved projects and are not navigation gates.
 
-- **Simulate / Virtual FPGA** runs Verilog or SystemVerilog designs through Verilator and presents interactive virtual inputs, outputs, signals, and optional waveform capture.
-- **Build / Physical FPGA** targets a selected board and provides source editing, board information, synthesis diagrams, pin mapping, timing analysis, bitstream generation, programming, serial monitoring, and project health.
+The welcome screen is organized as:
 
-Both paths operate on disk-backed Allora projects. A project can remember its most recent execution target, but virtual mappings and physical board constraints remain separate concerns.
+- **Workspace** — one **Build** entry. Its landing page offers the physical-board catalog, a new board-free project action, opening a project, and recent projects. It has no AI entry or Launch Defaults panel.
+- **Design Tools** — **AI Design Studio** first, followed by Peripheral Workbench, Memory Asset Studio, Register Builder, and Pin Mapper. AI Design Studio opens a fresh projectless chat directly; it never selects a recent project implicitly. The other tools retain their project-selection or pin-browser routes.
 
-## Peripheral Workbench V1
+AI Design Studio uses the supplied SVG through `src/components/AiDesignStudioIcon.tsx`; the welcome entry, dock action, and chat title share that component. Welcome tool rows reserve the same leading icon width so their labels align.
 
-Both project modes expose Peripheral Workbench, Register Builder, and Memory Asset Studio in the shared navigation. Peripheral Workbench, Memory Asset Studio, and Register Builder V1 are implemented. Simulate projects initially open Peripheral Workbench; the original Virtual FPGA view remains available.
+`WorkspaceDock` is shared by project workspaces and welcome chat. In projectless chat, dock destinations open their welcome landing pages (Build for build-related sections, dedicated landings for design tools and Pin Mapping), remembering the requested workspace for explicit project creation/opening. Back returns to the same live conversation; Home returns to Welcome. Within a project, dock, chat, tool, and editor destinations share workspace history: Back pops the previous workspace, falling back to project setup only when workspace history is empty. Duplicate destinations and legacy aliases do not add history entries. A macOS horizontal trackpad back swipe uses a continuous frame loop for a rightward nudge up to 40px, with a theme-aware glass chevron at the left edge, finishing the nudge before navigation, then invokes the same Back action and fades in the destination at rest over 300ms. Slow gestures tolerate brief input pauses and diagonal noise without resetting progress. Allora’s Reduce Motion setting and the system reduced-motion preference disable both effects. Gesture tracking survives route changes to suppress repeated navigation from momentum, while dialogs, editors/canvases, and gestures owned by horizontally scrolling content are excluded. Its main order is Editor, Testbench, Synthesis, Pin Mapping, Bitstream, Program, then Peripheral Workbench, Memory Asset Studio, Register Builder, and **Virtual**. Virtual is directly below Register Builder. The lower actions include AI Design Studio, Resource Usage, Settings, and Back. Health and Serial do not have separate dock buttons.
 
-`src/lib/peripheralWorkbench.ts` owns versioned metadata, mapping validation, legacy migration, UART host models, and serialized cycle advancement. `src/pages/dashboard/PeripheralWorkbench.tsx` owns library/canvas/inspector UI and the simulation command queue. Metadata is stored separately under `peripheralWorkbench`; physical constraints and original `simulation` metadata are preserved. Workbench source changes invalidate sessions, and leaving the workspace releases buttons and pauses execution.
+| Workspace | Current organization |
+| --- | --- |
+| Editor | Shared project explorer, open file tabs, breadcrumbs, autosave status, and Monaco code canvas. |
+| Testbench | Testbench selection/actions above an open waveform canvas; framed Setup, Files, and Simulator Log panels on the right. |
+| Synthesis | Top-level selection/actions, design report, and a framed right inspector. |
+| Pin Mapping | Simple/Advanced modes; Advanced has Assignments, Resources, Board, and Constraints views plus assignment/validation inspectors. |
+| Bitstream | **Build Log / Health / Bitstream Preview** tabs. Health is the default; clicking Generate Bitstream switches to Build Log. Build Preflight is a scrollable section in the right column, alongside build details and pin mapping. |
+| Program | **Program / Serial Monitor** tabs. Serial has a compact embedded layout; switching these tabs keeps it mounted so the connection is preserved. |
+| Virtual | Interactive Verilator workspace, reachable without changing a project mode. |
+| AI Design Studio | Codex conversation, project access, and compact recent-chat controls. Within a project it retains the shared file explorer and dock. |
 
-The existing Rust Verilator backend now compiles/discovers ports on blocking worker threads, uses collision-resistant temporary directories, returns every half-cycle trace point, uses configured picosecond timing, and accepts decimal strings for precise 64-bit inputs. Workbench run batches are bounded at 256 cycles and split at UART transmit deadlines. UART decoding and output activity capture consume all trace events before UI refresh. Reset recreates the entire model. See README and the two peripheral examples for operation and test commands.
+Legacy `health` and `serial` destinations resolve to Bitstream and Programming. Explicit tool launches select the requested section; ordinary workspace synchronization preserves the current page, including chat. Stateful sections that use `KeepAliveSection` preserve their results when hidden; do not assume every section remains mounted.
 
-## Memory Asset Studio architecture
+## Shared design system and interaction rules
 
-`src/lib/memoryAssets.ts` owns the typed memory model, deterministic image/binary/table conversion, `.hex` serialization, and synchronous Verilog ROM generation. `src/pages/dashboard/MemoryAssetStudio.tsx` owns the asset list, conversion settings, preview, inspector, and generation controls. The welcome tile routes through a dedicated project-selection landing page and project creation form; the editor rail enters the active project's Studio directly.
+Use the shared architecture instead of adding page-specific control styling. The detailed reference is [the UI guide](allora-fpga/src/components/ui/README.md); the [consistency audit](docs/DESIGN_SYSTEM_AUDIT.md) records intentional exceptions and regression coverage.
 
-The disk manifest is `assets/memory-assets.json` (schema version 1). Imported sources stay in `assets/sources/`, and generated memories/HDL are in `src/generated/`. Native `read_asset_file`/`write_asset_file`/`delete_asset_file` commands guard collisions using expected bytes. Editor autosave excludes Studio-owned paths, preventing stale editor snapshots from overwriting regenerated files. Project reopening reads the disk manifest and registers only its current generated outputs. Icarus, Yosys, and interactive Verilator workspaces copy the project's generated hex files before invoking the tools.
+- `src/styles/tokens.css` owns theme-aware colors, surfaces, radii, sizing, and motion. `controls.css` owns control variants, `button-glass.css` supplies glass material, and `workspace.css` owns shared workspace geometry. `App.css` imports these layers.
+- Ice and Black Ice use the same component behavior. Neutral text/icons use `--ui-text`, `--ui-text-muted`, or `--ui-text-soft`; accents use `--ui-accent-text`. Black Ice text is near-white and its accent text is pale blue. SVGs inherit `currentColor`. Fixed colors belong only to meaningful code/data visualization or physical artwork, not ordinary UI labels. The old style-substring theme shim is removed.
+- `WorkspaceTitle` supplies the canonical page name and dock icon. Standard pages use a 20px content inset, 24px title/icon slot, and **Testbench's 22px title-to-first-section gap**. Do not add another top margin below the title. Introductory page subtitles are omitted; useful empty-state instructions remain. Section headings are 16px and subheadings 14px.
+- Standard right columns use the 205px Synthesis reference width through `ui-workspace-columns` / `ui-workspace-split` and `ui-workspace-aside`. Text and fields must wrap or shrink within it. Narrow layouts stack supporting panels below the content.
+- Standard pages use an open, borderless canvas with a barely visible theme-aware dot grid. Supporting right panels keep their frames. **Peripheral Workbench and Register Builder retain their framed tool layouts; Memory Asset Studio retains the open workspace layout.** Preserve real reading/data surfaces, interactive controls, dialogs, and popovers when removing structural frames.
+- `ui-button-group` containers have no outer/shared border. `ui-compact-button-group` makes nearby controls transparent at rest, separates them with small vertical dividers, and restores glass borders/animation on hover. `useAutomaticCompactGroups` applies this behavior to at least three consecutive visible sibling controls in a flex/grid row with gaps at most 12px; pairs use an explicit group. It reevaluates layout, separates wrapped rows, and excludes dock, file-tree, card, and physical-switch controls.
+- `ui-selection-group` retains the selected button's theme-aware liquid-glass border. Files/Hierarchy and Pin Mapping's Simple/Advanced and Assignments/Resources/Board/Constraints use this variant. `ui-button-group-flush-start` aligns the first text label to the content edge without shrinking its hit area.
+- `ui-action-button` is for committing actions such as Generate, Program, Done, Run Synthesis, and Run Simulation. It keeps a blue border, transparent fill, and shared glass hover animation/subtle lift. Use the same variant inside and outside groups.
+- `ui-icon-button` provides a 34px target. Collapse Explorer, Add File, and Import File use `ui-icon-button-hover` for hover-only borders; preserve enough room so the icons and glass edges do not clip. Ordinary text hover controls use `ui-hover-button`.
+- Dock icons are borderless in every state, use a shared 22px SVG slot, and have restrained hover magnification (1.15 maximum). Do not restore individual icon borders. Memory Asset Studio uses a square icon footprint like the other navigation icons.
+- Passive counters use `ui-metric`: text with short separators, not bordered buttons. Passive validation messages are plain text; actionable messages can use `ui-text-action` without a glass border. Hierarchy rows have no non-clickable background hover target; the module-name control owns its hover border and padding.
+- File right-click menus use the compact `ui-context-menu` / `ui-menu-item` variants: 180px menu width, 30px minimum item height, and 12px text. Keep menu material consistent with other popups.
+- **Popups and dialogs have no X close button.** Outside clicks dismiss them; Escape and focus restoration remain supported. `useModalFocus` handles blocking overlays, topmost-only dismissal, and focus trapping. Keep explicit Cancel/Done actions where needed. File-tab close, search-clear, and inline message dismissal are separate behaviors.
+- Popup fill, border, and shadow use `--ui-popup-bg`, `--ui-border-control`, and `--ui-popup-shadow`. Resource Usage is compact, titled **Resource Usage**, and has no Allora FPGA kicker or separate theme palette.
+- Recent-project cards show three entries initially and expand to at most five, with the same keyboard/open/remove behavior everywhere. `welcome-project-sidebar` owns their shared sticky page-scroll behavior; avoid nested recent-project scrolling or independent per-page expansion logic.
+- Recent chats live in a small popover, separate from the New Chat button. These adjacent controls use the shared divider/hover group behavior. Respect shared disabled, focus, and reduced-motion rules across all controls.
 
-## Register Builder V1 architecture
+Scrollable content must stay within the intended surface: advanced Pin Mapping tables retain rounded edges without horizontal clipping; Health scrolls inside Bitstream's output area; preflight checks scroll inside their right-side panel; Inspect mapped ports scrolls inside its own panel rather than moving the other sidebar cards.
 
-`src/lib/registerBuilder.ts` owns the typed map, continuous validation, deterministic synthesizable RTL, C constants, instantiation snippets, and reviewed wrapper generation. The native bus uses byte offsets, aligned full-word writes, synchronous reset, and combinational reads. Field access/reset overrides register defaults. RO is hardware-driven; WO reads zero; W1C has hardware-set inputs with set priority over clear.
+## Editor behavior
 
-`src/lib/registerBuilderProject.ts` serializes map drafts and owns generated-file relationships in `Register_Map/register-builder.json`, independently of board and peripheral metadata. It reuses Memory Asset Studio's `read_asset_file`/`commit_asset_files` service with expected bytes and SHA-256 ownership. Missing owned outputs can be recreated; modified or unowned files block destructive regeneration. The editor and autosave protect the generated folder. `src/pages/dashboard/RegisterBuilder.tsx` provides map/bit-field editing, validation, generation, and integration review using the existing Studio palette for both themes.
+The editor is an open canvas without an outer frame or sectional borders. Open-file tabs remain rounded, reserve room for filenames and close controls, and reveal their X on hover or keyboard focus (always available on touch).
 
-The existing HDL source lists already include `Register_Map/*.sv`. Normal project reopening retains relative generated filenames, and top resolution matches actual module declarations in nested files. Assisted integration uses production Yosys port discovery, explicit selections, and a generated `<name>_top.sv` wrapper. Applying selects that wrapper and updates only top/source fields in project metadata; original RTL remains untouched. Returning to manual integration restores the original top selection. New wrapper ports require pin/peripheral mapping review. One map per project, up to 256 registers, full-word 8/16/32/64-bit data, and ordinary zero-based descending input/output wrapper ports are V1 boundaries. No protocol adapter or physical-programming verification is included. See README and `examples/register-builder` for usage and validation.
+The line-number gutter aligns with the shared page inset. Code softens only at the **right and bottom** clipping edges through `ui-workspace-soft-code-edges`; the left side, gutter, and header remain sharp. The code edge overlay has no color wash that could appear as a faint rectangular frame and does not intercept input.
 
-## Repository layout
+Monaco retains italic comments. Font metrics are refreshed after the bundled normal/italic/bold faces load and when font size changes; rendered-token measurement avoids selection/caret drift in italic text.
 
-- `allora-fpga/` — React/TypeScript frontend and Tauri/Rust desktop application.
-- `allora-fpga/src/` — application UI, project state, board data, editor, and frontend service wrappers.
-- `allora-fpga/src-tauri/` — native filesystem access, tool execution, build/simulation processes, programming, serial I/O, and secondary viewer windows.
-- `allora-website/` — the separate project website.
-- `examples/` — example projects that can be opened by the desktop app.
-- `README.md` — public product and development overview.
-- `CONTINUATION.md` — newest-first implementation log and handoff notes.
-- `CONTEXT.md` — this architectural and product context document.
+Unsaved work autosaves after **3 seconds**, with Cmd+S/Ctrl+S still available. The right-aligned header says **Autosave: On**, without a cloud icon or interval label, beside the save status. Autosave uses current edits and respects generated-file ownership; filesystem writes go through Tauri.
 
-## Technology stack
+## Project lifecycle and persistence
 
-| Area                              | Technology                                |
-| --------------------------------- | ----------------------------------------- |
-| Desktop shell and native commands | Tauri 2 + Rust                            |
-| Main interface                    | React 19 + TypeScript + Vite              |
-| Code editor                       | Monaco                                    |
-| Interactive RTL execution         | Verilator                                 |
-| Testbench simulation              | Icarus Verilog (`iverilog` and `vvp`)     |
-| Synthesis                         | Yosys                                     |
-| Place and route                   | nextpnr                                   |
-| FPGA packing/programming          | Board-family-specific open-source tools   |
-| Waveforms                         | VCD parsing and dedicated viewer surfaces |
-| Persistent lightweight UI state   | Browser `localStorage`                    |
-| Project source of truth           | Files in the selected project directory   |
+`src/App.tsx` owns welcome/project selection, physical-board setup, board-free setup, memory-project setup, and the unified dashboard. Design-tool launches carry an explicit section rather than depending on an execution target. `simulation-setup` remains the internal stage for creating a board-free project; it is not a separate workspace mode.
 
-## Application flow
+Every disk-backed project has `allora-project.json` plus HDL and optional constraints, testbenches, simulation metadata, and generated files. Typical directories are `src/`, `constraints/`, `sim/`, and `build/`. The project directory is the source of truth. `src/data/projects.ts` persists lightweight recent-project information in `localStorage`; disk-backed source contents are excluded to avoid stale copies and storage limits.
 
-`src/App.tsx` owns the top-level application stage:
+Metadata records the project name, board/virtual target, language, top module, starters, and relevant simulation/tool configuration. Physical constraints, original simulation metadata, Peripheral Workbench metadata, and design-tool manifests remain independent.
 
-1. `board-select` shows the Simulate/Build welcome experience and the physical board catalog.
-2. `simulation-setup` creates a board-agnostic simulation project.
-3. `project-setup` creates a hardware project for a selected board.
-4. `dashboard` opens the main editing and execution workspace.
+Physical-board setup has Project Details, Project Structure, and Board Summary columns. Empty Project is the default; language/top/source changes determine output names. Optional testbench creation produces a scaffold rather than a fully connected verification environment. Optional local Git initialization checks Git availability, runs `git init`, and writes ignore rules; it does not commit, add a remote, authenticate, or push.
 
-The dashboard maintains separate Simulate and Build navigation sets. Visited dashboard sections remain mounted so generated diagrams, bitstreams, logs, simulation sessions, and other transient results are not discarded when the user changes sections.
+The shared explorer presents Files or a lightweight RTL hierarchy from current in-memory Verilog/SystemVerilog or VHDL. Clicking a module/instance opens its definition. This source hierarchy is not a synthesized netlist. Generated Studio/Register Builder files are protected from ordinary editor writes.
 
-The shared explorer can switch between project files and an RTL hierarchy assembled from the current in-memory Verilog/SystemVerilog or VHDL source. Selecting a module or instance opens its definition in the editor. The hierarchy is a lightweight source view, not a synthesized netlist.
+## Feature architecture
 
-Build Health and Bitstream share a live preflight checklist for board support, HDL sources, the selected top module, port mappings/conflicts, and local Yosys availability. It uses current editor contents and marks unsaved changes. Custom constraint files that cannot be parsed are flagged for review. Nextpnr and board packers are still validated by the build runner when invoked, so preflight does not claim that every tool or physical board is verified.
+### Peripheral Workbench
 
-Inside an open project, the shared activity rail has a **Usage** gauge above Settings. It appears throughout both Simulate and Build workspaces, including when the file explorer is collapsed, but not on the welcome or path-selection screens. `src/components/UsageDialog.tsx` anchors a small panel beside the rail button, refreshes while open, and dismisses on an outside click or Escape. The welcome screen's Allora product-information panel uses the same outside-click and Escape behavior. Both panels have Ice and Black Ice styling.
+`src/lib/peripheralWorkbench.ts` owns versioned metadata, validation, migration, UART host models, and serialized cycle advancement. `src/pages/dashboard/PeripheralWorkbench.tsx` owns the library/canvas/inspector and simulation command queue. Workbench metadata is stored under `peripheralWorkbench` without replacing physical constraints or original simulation metadata.
 
-The app can also open a lightweight secondary viewer window. `src/main.tsx` selects `ViewerApp` when the URL contains a viewer query parameter; otherwise it mounts the primary application.
+The Verilator backend uses blocking compilation/discovery workers, unique temporary directories, half-cycle traces, configured picosecond timing, and decimal strings for precise 64-bit inputs. Workbench batches are bounded at 256 cycles and split at UART transmit deadlines. Source changes invalidate sessions; leaving the workspace releases buttons and pauses execution. Reset recreates the model. See the peripheral examples and README for operating details.
 
-## Project model and persistence
+### Memory Asset Studio
 
-Every disk-backed project contains an `allora-project.json` metadata file plus its HDL and optional constraints, simulation, and generated files. Typical hardware projects use this shape:
+`src/lib/memoryAssets.ts` owns deterministic image/binary/table conversion, the typed memory model, `.hex` serialization, and synchronous ROM generation. `src/pages/dashboard/MemoryAssetStudio.tsx` owns assets, conversion settings, previews, and generation. Welcome enters its project-selection flow; the dock enters the current project's Studio.
 
-```text
-project-root/
-  src/
-    top.v
-  constraints/
-    constraints.lpf
-  sim/                  # optional
-    top_tb.v
-  build/                # generated and normally ignored by Git
-  allora-project.json
-  .gitignore            # optional when local Git is initialized
-```
+The manifest is `assets/memory-assets.json` (schema 1), sources live in `assets/sources/`, and outputs live in `src/generated/`. Native asset operations check expected bytes before replacing/deleting files. Reopening registers the manifest's current outputs. Editor autosave excludes owned paths. Icarus, Yosys, and interactive Verilator stage generated memory files before tool execution.
 
-The project directory is the source of truth for file contents. `src/data/projects.ts` stores only lightweight recent-project information in `localStorage`, including the path, board, selected files, active file, top-level file, timestamps, and last execution target. Disk-backed file contents are deliberately removed from the persisted browser record to avoid storage limits and stale copies.
+### Register Builder
 
-`allora-project.json` records the project name, board or virtual target, language, top module, selected starter, and relevant simulation metadata. New hardware projects also record the selected source filename, optional testbench name, and whether local Git initialization was requested.
+`src/lib/registerBuilder.ts` owns map validation, synthesizable RTL, C constants, instantiation snippets, and reviewed wrappers. The native bus uses byte offsets, aligned full-word writes, synchronous reset, and combinational reads. RO is hardware-driven; WO reads zero; W1C has hardware-set inputs with set priority over clear.
 
-The editor autosaves unsaved work after 30 seconds and supports Cmd+S/Ctrl+S. File contents are written through Tauri commands rather than browser filesystem APIs.
+`src/lib/registerBuilderProject.ts` stores drafts and ownership in `Register_Map/register-builder.json`, using expected bytes and SHA-256 checks through the asset service. Modified/unowned outputs block destructive regeneration. Assisted integration uses Yosys discovery and explicit port selections, generates a wrapper, and updates top/source metadata without changing original RTL. New wrapper ports need mapping review. V1 supports one map, up to 256 registers, and 8/16/32/64-bit full-word data; no protocol adapter or physical-programming verification is included. See `examples/register-builder`.
 
-## Hardware project setup
+### Build, programming, and resource inspection
 
-The current hardware setup page has three columns:
+`useBuildPreflight` evaluates board support, sources, selected top, mappings/conflicts, unsaved edits, and Yosys availability. Bitstream's right-side checklist uses live project data; generating remains blocked when checks fail. Unparseable custom constraints require review. Nextpnr and packers are validated by the build runner, so preflight is not proof of every tool or connected board.
 
-- **Project Details** — project name, HDL language, parent directory, derived top/source/constraints summary, and the Create Project action.
-- **Project Structure** — compact starting-point dropdown, editable top module, editable source filename, optional testbench creation, optional local Git initialization, and a live list of files that will be created.
-- **Board Summary** — a moderately enlarged board preview, resources, capabilities, device/package information, constraints format, toolchain, and programmer.
+Health is embedded in Bitstream; Serial Monitor is embedded in Programming. Preserve their bounded scrolling and tab behavior rather than creating separate routes/dock controls.
 
-The default starting point is **Empty Project**. Other board-compatible starter generators remain available from the dropdown.
+`UsageDialog` anchors the Resource Usage popup to the dock gauge and polls every two seconds only while open. `src-tauri/src/usage.rs` samples the Allora process and descendants on macOS, including spawned tools. CPU is per logical core and may exceed 100%; resident-memory totals are approximate. Other operating systems currently report unavailable.
 
-Top-module and source-file defaults follow the project name until the user customizes them. Changing the HDL language updates the expected source extension. The setup page validates HDL identifiers and source filenames before enabling project creation.
+### Synthesis Explorer and waveforms
 
-When **Create testbench** is enabled, the app creates `sim/<top_module>_tb.<extension>`. The generated file is currently a syntactically valid scaffold with waveform setup for Verilog/SystemVerilog and a TODO for DUT signals/instantiation. It does not yet generate a fully connected testbench for every starter template.
+`generate_synthesis_diagram_service` retains the flattened compatibility graph and adds functional, optimized hierarchical, and optional iCE40/ECP5 mapped Yosys artifacts with source/memory snapshots. `src/lib/synthesisGraph.ts` owns normalization, aliases, provenance, structural traversal, projections, statistics, and conservative waveform matching; `synthesisLayout.ts` runs pin-aware ELK routing in a worker.
 
-When **Initialize local Git repository** is enabled:
+The secondary viewer (`ViewerApp` / `HardwareSchematicCanvas`) supports search, hierarchy navigation, selection, tracing/isolation, bounded expansion, and culling. `explorerBridge.ts` connects editor navigation through project-scoped Tauri events (BroadcastChannel in browser previews). Source must match the synthesis snapshot. Recorded values require matching provenance, scoped aliases, widths, and bit ordering; absent/ambiguous mappings remain unavailable. Module interiors are opaque until entered. Analysis compares actual stage counts, not inferred optimization history or timing. See [Synthesis Explorer](docs/SYNTHESIS_EXPLORER.md).
 
-- the native backend verifies that the `git` executable is available;
-- it runs `git init` in the newly created project directory;
-- it creates a project `.gitignore` covering build outputs, bitstreams, simulation waveforms, and common editor/OS files;
-- it does not create a commit, add a remote, authenticate to GitHub, or push anything.
+## AI Design Studio and provider integration
 
-If Git is missing, project creation reports a clear error before creating the workspace.
+`src/pages/ChatPage.tsx` supplies streamed Codex replies, local history, workspace selection, resumable threads, tool cards, cancellation, and queued hardware confirmations. It is available from welcome and the shared workspace dock. `src/components/ChatSession.tsx` keeps one live chat mounted through welcome landing visits, project setup, and AI project creation, preserving drafts and streaming state. AI-created projects attach to that conversation and open the dashboard in chat with its file explorer; completed AI turns refresh project files while preserving unsaved editor content. Existing project chat resumes project-scoped history. Home resets the live chat; recent conversations remain available explicitly. Recent chats are compact page controls rather than a replacement for the project explorer.
 
-## Board and template data
+Settings' AI Integration destination supports Codex and Claude Code installation/authentication status through `AiIntegrationSettings.tsx`, typed `aiIntegration.ts` calls, and `src-tauri/src/ai_integration.rs`. CLI discovery excludes the Codex desktop application's managed runtime. Checks have timeouts and structured results. On macOS, Connect opens the provider's normal login in Terminal; providers own credentials. Connected means local CLI authentication, not a successful live model request. Embedded chat uses Codex; Claude retains setup/login support.
 
-Board definitions live under `src/data/boards.ts` and `src/data/boards/`. A `BoardDefinition` identifies the FPGA family, device, package, constraints format, toolchain commands, clocks, pins, LEDs, buttons, and optional programmer information.
+`src/lib/aiChat.ts` wraps the native chat commands. `src-tauri/src/ai_chat.rs` uses the installed Codex CLI's JSON-RPC app-server and existing account, configures Allora's MCP server, and disables ambient execution tools without changing global Codex configuration. `--allora-mcp` runs `ai_mcp.rs` for catalog/toolchain context, workspace-scoped project/file operations, verified pin assignments, lint, finite simulation, builds, job polling/cancellation, and confirmed programming. Artifacts are bound to source/board/bitstream hashes; programming requires real user approval through MCP form elicitation. Browser UI checks do not verify live native chat, hardware programming, or tool execution.
 
-`src/data/boardCapabilities.ts` converts a board definition into user-facing support states for pin mapping, synthesis diagrams, bitstreams, and programming. Capabilities reflect the actual wired backend rather than merely whether a board appears in the catalog.
+## GitHub integration
 
-Hardware starter generators live in `src/data/templates.ts`. They produce source text and board-pin mappings, allowing the constraints file to be generated with matching top-level port names. Templates can disable themselves when the selected board lacks required resources or when the language is unsupported.
+Publish to GitHub is a single explorer entry point. Local creation, editing, simulation, and builds do not require GitHub or network access.
 
-## Build and simulation services
+Allora uses OAuth Device Flow as a public native client. The project owner must supply `ALLORA_GITHUB_CLIENT_ID` and enable Device Flow; there is no desktop client secret. Tokens stay in Rust and the OS credential vault, never in WebView/project/localStorage data, logs, remotes, or command arguments. Status validates tokens and requests reauthentication when needed.
 
-Frontend calls into native commands through `src/lib/tauri.ts`. Browser preview is useful for interface QA, but filesystem operations, tool execution, programming, serial communication, and real simulation require the Tauri runtime.
+`src-tauri/src/github.rs` owns REST authorization/repository operations and direct system-Git execution. `src/lib/github.ts` is the typed boundary; `GitHubPublishDialog.tsx` owns the UI. HTTPS pushes use a restricted temporary askpass helper and child-process environment. `gh` is optional diagnostics, not an authentication dependency.
 
-The main Rust command layer is `src-tauri/src/lib.rs`. It currently handles:
+Sign-in, commit, repository selection/creation, remote connection, and push are explicit actions. New repositories default private. Guided controls do not replace mismatched origins, force push, or silently fetch/pull/merge; command mode executes Git commands explicitly entered by the user without a shell. Ahead/behind uses existing local refs. See [GitHub Integration](GITHUB_INTEGRATION.md) for full behavior and security boundaries.
 
-- project creation, reading, writing, renaming, and deletion;
-- local Git initialization during project creation;
-- board and programmer detection;
-- Yosys synthesis and netlist-diagram generation;
-- nextpnr place-and-route, timing reports, and bitstream generation;
-- family-specific packing and programming commands;
-- Icarus testbench execution and VCD discovery;
-- HDL linting;
-- serial-port enumeration and monitor sessions;
-- secondary synthesis/waveform viewer windows;
-- macOS app-resource sampling through `src-tauri/src/usage.rs`.
+## Repository and runtime
 
-The `resource_usage` Tauri command samples CPU percentage and resident memory for the Allora process and its current descendants, including build or simulation tools it starts. It also reports installed RAM when available. The frontend polls it every two seconds only while the Usage panel is open. The displayed CPU percentage is per logical core and can exceed 100% for multicore work; resident-memory totals are approximate. Other operating systems currently return an unavailable message.
+- `allora-fpga/` — React 19 / TypeScript / Vite frontend and Tauri 2 / Rust desktop app.
+- `allora-fpga/src/pages/welcome/` — Workspace/Design Tools welcome routes, project cards, and pin browser.
+- `allora-fpga/src/pages/dashboard/` — unified workspace sections and shared dock/explorer coordination.
+- `allora-fpga/src/components/ui/` and `src/styles/` — shared UI behavior, control variants, workspace layouts, and Ice/Black Ice tokens.
+- `allora-fpga/src/hooks/` and `src/lib/` — editing/persistence state, typed native wrappers, and domain logic.
+- `allora-fpga/src-tauri/` — filesystem, tools, simulation/build processes, programming, serial I/O, provider/GitHub services, and viewer windows.
+- `allora-website/`, `examples/`, and `docs/` — website, runnable examples, and focused architecture references.
 
-Persistent interactive Virtual FPGA sessions are implemented in `src-tauri/src/virtual_fpga.rs`. The backend discovers top-level ports with Yosys, generates a Verilator harness, compiles the model, maintains the native process, exchanges input/output values, advances simulated time, and optionally records traces.
-
-External tools are resolved from the environment and common install locations. A successful frontend build does not prove that a particular FPGA toolchain or programmer is installed on the user's machine.
-
-## Synthesis Explorer architecture
-
-The existing synthesis viewer remains a secondary window opened by `openViewerWindow` and rendered in `ViewerApp`/`HardwareSchematicCanvas`. `generate_synthesis_diagram_service` retains the flattened compatibility graph and adds raw functional, optimized hierarchical logic, and optional iCE40/ECP5 mapped Yosys artifacts plus source/memory snapshots. The functional snapshot preserves collected memories and extracted FSMs before normal memory/FSM mapping. Physical bitstream generation is unchanged.
-
-`src/lib/synthesisGraph.ts` owns pin/bit normalization, aliases, source provenance, structural traversal, category projections, stage statistics and conservative waveform matching. `src/lib/synthesisLayout.ts` owns pin-aware ELK routing; layout runs in a worker. The existing canvas adds search, hierarchy navigation, semantic labels, category collapse, selection, tracing/isolation, bounded expansion and viewport culling. `SynthesisInspector` exposes actual connections and metadata. Module interiors are opaque trace boundaries until entered.
-
-`src/lib/explorerBridge.ts` uses project-scoped Tauri events (BroadcastChannel in browser fallback) to connect Monaco selections and Dashboard source navigation. Source text must match the synthesis snapshot. Captured Testbench runs include native source/memory provenance; recorded values require exact scoped aliases and widths, with connection overlays additionally checking bit order. Linked waveform windows use recording IDs. Unmapped/constant-folded aliases, missing provenance and unsupported times remain without values. Analysis compares measured stage counts, not inferred optimization history or timing. See `docs/SYNTHESIS_EXPLORER.md` for limitations and nonvisual verification.
-
-## AI Integration and embedded chat
-
-Settings has an **AI Integration** destination for OpenAI Codex and Claude Code. `src/components/AiIntegrationSettings.tsx` renders both providers from shared configuration, and `src/lib/aiIntegration.ts` exposes typed Tauri calls. Provider-specific CLI discovery, version checks, authentication status, and login initiation are isolated in `src-tauri/src/ai_integration.rs`; React does not run a shell or parse CLI output.
-
-The Rust layer executes `codex --version` and `codex login status`, or `claude --version` and `claude auth status --json`, with timeouts and structured status results. It searches the inherited PATH plus common macOS CLI locations and excludes the Codex desktop app's managed standalone runtime and app-bundled binary from independent CLI detection. Settings displays the detected executable path and a last-checked time so a PATH discrepancy or repeated scan is visible. On macOS, **Connect** opens the provider's normal login command in Terminal. The provider owns credential storage and browser authentication; Allora does not collect or persist provider credentials.
-
-The status **Connected** means the provider CLI reports an authenticated local session. It is not a live service or model request. Claude Code retains installation/login support; embedded chat uses Codex.
-
-Welcome **Chat** opens `src/pages/ChatPage.tsx`, with streamed replies, local conversation history, workspace selection, resumable Codex threads, tool cards, cancellation, and queued hardware confirmations. `src/lib/aiChat.ts` exposes six typed Tauri commands. `src-tauri/src/ai_chat.rs` runs the installed CLI's JSON-RPC `app-server` using its existing account. It configures only Allora's MCP server for the thread and disables ambient execution tools. This does not alter the user's global Codex configuration.
-
-The same executable's `--allora-mcp` mode runs `src-tauri/src/ai_mcp.rs`. Tools expose catalog/toolchain/hardware context, project creation and revision-checked file edits, verified pin assignments, HDL lint, finite Icarus simulation, Yosys/NextPNR builds, job polling/cancellation, and confirmed programming through shared production Rust services. Paths are scoped to the selected workspace; artifacts are tied to source, board, and bitstream hashes. MCP form elicitation requires a real approval from the chat user before programming. A real installed Codex has completed an iCEBreaker RTL/testbench/pins/simulation/bitstream workflow with passing timing. Physical programming has not been verified.
-
-## Frontend organization
-
-- `src/pages/welcome/` — welcome shell, Simulate/Build destinations, board selection helpers, pin browser, and variant selection.
-- `src/pages/ChatPage.tsx` — embedded Codex chat and local conversation history.
-- `src/pages/ProjectSetup.tsx` — physical-board project creation.
-- `src/pages/SimulationProjectSetup.tsx` — board-agnostic simulation project creation.
-- `src/pages/Dashboard.tsx` — main workspace coordinator and execution-target boundary.
-- `src/pages/dashboard/` — editor, Virtual FPGA, synthesis, testbench, pin mapping, timing, bitstream, programming, serial, and health sections.
-- `src/hooks/` — active tabs, file management, autosave, and shared helpers.
-- `src/lib/` — Tauri bridge, disk workspace construction, waveform parsing, build history, viewer windows, and Virtual FPGA metadata.
-- `src/styles/` — feature-level styles and Ice/Black Ice theme overrides.
-
-New native behavior should be exposed as a typed frontend wrapper rather than calling Tauri directly from many components. New board-specific behavior should generally be expressed through board definitions/capabilities instead of scattered component conditionals.
+Monaco provides the editor; Verilator provides interactive simulation; Icarus (`iverilog` / `vvp`) provides testbench execution; Yosys, nextpnr, and family-specific packing/programming tools provide hardware builds. External tools are resolved from the environment and common installation paths. Board definitions/capabilities determine actual support, not merely catalog presence. `src/main.tsx` selects the secondary viewer for viewer query URLs.
 
 ## Development and validation
-
-Run the desktop app:
 
 ```bash
 cd allora-fpga
@@ -203,61 +147,18 @@ npm install
 npm run tauri dev
 ```
 
-Common validation:
+Frontend checks are `npm test`, `npm run lint`, and `npm run build`. Native changes also require relevant `cargo check`, `cargo test`, and formatting checks from `src-tauri/`. The frontend build has known nonblocking chunk-size/IIFE advisories.
 
-```bash
-cd allora-fpga
-npm run build
-npm run lint
-npx prettier --check src
+Use focused UI checks where geometry or interaction needs confirmation; do not repeatedly inspect every page for a small change. Cover Ice/Black Ice, keyboard focus, reduced motion, and constrained layouts as relevant. Native filesystem/tool/programmer/serial behavior requires the Tauri runtime; browser previews only verify frontend behavior.
 
-cd src-tauri
-cargo check
-cargo test
-cargo fmt --check
-```
+## Current boundaries and working principles
 
-The production build currently emits a known bundle-size advisory for large JavaScript chunks. It is not a build failure.
-
-For UI changes, validate both Ice and Black Ice, the native WebView when native-only behavior is involved, keyboard focus, reduced-motion behavior where applicable, and constrained desktop heights. Browser preview cannot validate Tauri commands.
-
-## Current boundaries and known gaps
-
-- Interactive Virtual FPGA supports Verilog/SystemVerilog top-level signals up to 64 bits; VHDL interactive execution and top-level `inout` remain unsupported.
-- Physical board support varies by family. Presence in the catalog does not guarantee that synthesis, bitstream generation, and programming are all wired.
-- Generated testbenches are scaffolds, not template-aware complete verification environments.
-- GitHub publishing requires a project-owner-supplied OAuth client ID and the system `git` executable. `gh` remains optional.
-- GitHub V1 intentionally does not fetch, pull, merge, rebase, resolve divergence, manage collaborators, or work with issues and pull requests.
-- Embedded chat currently uses Codex and lives on the welcome screen. It supports the existing Verilog/SystemVerilog, Icarus, and iCE40/ECP5 build services; automated programmers are currently `iceprog`, `icesprog`, and `ecpprog`. Finish or stop a turn before opening its project. Native chat UI verification and physical programming remain unverified; Claude Code has no embedded chat support.
-- Project directories remain the canonical data store; Git must not replace or bypass the existing Tauri file-save path.
-- Resource Usage currently samples processes on macOS only. Windows preview work is paused while the macOS app is brought to full working order.
-
-## GitHub services
-
-The dashboard now has one **Publish to GitHub** entry point. GitHub remains optional: local project creation, editing, simulation, and hardware builds do not require an account or a network connection.
-
-Allora is treated as a public native OAuth client. It uses GitHub's OAuth Device Flow, displays the short-lived one-time code in the publish dialog, and polls only at GitHub's required interval. The project owner must enable Device Flow on the OAuth App and compile the public client ID through `ALLORA_GITHUB_CLIENT_ID`; no client secret belongs in the desktop binary. Until that client ID exists, the UI explains the exact missing configuration and does not attempt authentication.
-
-OAuth tokens remain entirely in Rust and are stored through the operating system credential vault (macOS Keychain, Windows Credential Manager, or Linux Secret Service). They are never returned to the WebView or stored in project files, `localStorage`, settings JSON, logs, remote URLs, or Git command arguments. Account status validates the token with GitHub and converts expired or revoked credentials into a signed-out state with reauthentication guidance.
-
-Responsibilities are intentionally separated:
-
-- `src-tauri/src/github.rs` uses the direct GitHub REST API for authorization, user validation, owned-repository discovery, and repository creation.
-- The same native service invokes the system `git` executable for repository initialization, status, staging, commits, local identity, remotes, and pushes. Structured data and error codes cross the Tauri boundary; the UI does not parse raw command output.
-- GitHub CLI (`gh`) is detected and displayed only as optional diagnostic information in V1. It is not required, invoked, or used as a second credential store.
-- Authenticated HTTPS pushes use a permissions-restricted temporary askpass helper. The token is read from the OS vault and passed only through the child process environment, never through a command argument.
-
-The guided workflow separates sign-in, local initialization, staging/commit, repository creation or selection, `origin` connection, and push into explicit user actions. New repositories default to private. A Git command mode lets users type one Git command at a time in the project directory, with output and refreshed status shown in the dialog. The native backend invokes Git directly without a shell and reuses vault-backed authentication for GitHub HTTPS pushes to `origin`. A bare first `git push` sets upstream tracking. The guided controls never replace a mismatched existing `origin`, fetch/pull/merge without instruction, or force push; the command mode runs operations explicitly typed by the user. Ahead/behind status is based on existing local upstream refs and does not imply that Allora silently contacted the network.
-
-`src/lib/github.ts` is the typed frontend service boundary and `src/components/GitHubPublishDialog.tsx` owns the progressive-disclosure UI. Full setup, security decisions, responsibility boundaries, and primary-source links are documented in `GITHUB_INTEGRATION.md`.
-
-## Working principles
-
-- Keep Simulate and Build as equal first-class paths.
-- Keep the application local-first and make network actions explicit.
-- Do not invent configurable tool choices when the board has only one supported synthesis/place-and-route path.
-- Only expose project-setup controls that alter generated output or project behavior.
-- Preserve disk files as the source of truth and use typed Tauri commands for native operations.
-- Avoid hidden Git commits, remote creation, pushes, or authentication side effects.
-- Preserve unrelated working-tree changes.
-- Add a newest-first entry to `CONTINUATION.md` after meaningful codebase changes, including validation, limitations, and the next useful step.
+- Interactive execution supports Verilog/SystemVerilog signals up to 64 bits; VHDL interactive execution and top-level `inout` are unsupported.
+- Hardware capabilities vary by board family. A frontend build, a catalog entry, or a passing preflight does not verify physical programming.
+- Generated testbenches remain scaffolds. Physical-programming verification and embedded Claude chat are not implemented.
+- Resource sampling is macOS-only; cross-platform behavior must not be assumed from a browser preview.
+- Preserve the unified workspace. Express operation availability through board capabilities, not separate navigation modes.
+- Reuse shared control/theme/layout behavior; retain the documented framed-tool and explorer exceptions. Avoid neutral hardcoded colors and duplicated page-level variants.
+- Keep project files canonical, preserve generated ownership, and use typed Tauri wrappers for native behavior. Git must not bypass the file-save path.
+- Keep network/authentication/Git/hardware actions explicit; never add hidden commits, remotes, pushes, or credential storage.
+- Preserve unrelated working-tree changes. Keep this guide current and record meaningful implementation history in `CONTINUATION.md` rather than accumulating obsolete instructions here.

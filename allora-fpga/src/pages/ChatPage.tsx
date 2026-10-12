@@ -70,6 +70,8 @@ type Conversation = {
 };
 type Approval = Extract<AiChatEvent, { type: "approval_required" }>;
 type ChatPageProps = {
+  onWorkspaceChanged?: (path: string) => Promise<void>;
+  onProjectCreated?: (path: string) => Promise<void>;
   resumeLatest?: boolean;
   initialProjectPath?: string;
   onOpenSettings: () => void;
@@ -141,6 +143,8 @@ function readHistory(): Conversation[] {
 }
 
 export default function ChatPage({
+  onWorkspaceChanged,
+  onProjectCreated,
   resumeLatest = false,
   initialProjectPath,
   onOpenSettings,
@@ -479,6 +483,7 @@ export default function ChatPage({
         ),
       }));
     }
+    let turnProjectPath = contextProjectPath;
     const onEvent = (event: AiChatEvent) => {
       if (!alive.current) return;
       switch (event.type) {
@@ -541,6 +546,7 @@ export default function ChatPage({
           setActivity("Waiting for your approval");
           break;
         case "project_created":
+          turnProjectPath = event.projectPath;
           updateMessage((current) => ({
             ...current,
             projectPath: event.projectPath,
@@ -549,6 +555,9 @@ export default function ChatPage({
           setWorkspacePath(event.projectPath);
           setContextProjectPath(event.projectPath);
           updateConversation(conversationId, (current) => ({ ...current, workspacePath: event.projectPath }));
+          void onProjectCreated?.(event.projectPath).catch(error => {
+            updateMessage(current => ({ ...current, error: errorText(error) }));
+          });
           break;
         case "error":
           if (!stopRequested.current)
@@ -559,6 +568,7 @@ export default function ChatPage({
           setActivity(event.message);
           break;
         case "turn_completed":
+          if (turnProjectPath) void onWorkspaceChanged?.(turnProjectPath).catch(error => setNotice(errorText(error)));
           if (event.threadId)
             updateConversation(conversationId, (current) => ({
               ...current,
@@ -779,6 +789,7 @@ export default function ChatPage({
         <header className="chat-header">
           <div className="chat-header-title">
             <WorkspaceTitle section="chat" />
+            <span className="ui-text-muted">{contextProjectPath ? folderName(contextProjectPath) : "No project selected"}</span>
           </div>
           <div className="chat-header-actions">
             <div className={`chat-connection${ready ? " ready" : ""}`}>

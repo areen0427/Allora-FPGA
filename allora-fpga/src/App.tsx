@@ -1,3 +1,5 @@
+import { useBackSwipe } from "./hooks/useBackSwipe";
+import { ChatSessionProvider, useResetChatSession } from "./components/ChatSession";
 import { useEffect, useRef, useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
@@ -51,6 +53,7 @@ type ProjectMetadata = {
 
 function App() {
   useAutomaticCompactGroups();
+  const resetChat = useResetChatSession();
   const [chatProjectPath, setChatProjectPath] = useState<string | undefined>();
   const [workspaceSection, setWorkspaceSection] = useState<DashboardSection | undefined>();
   const [returnToChat, setReturnToChat] = useState(false);
@@ -62,7 +65,12 @@ function App() {
   const [studioLaunch, setStudioLaunch] = useState(false);
   const [executionTarget, setExecutionTarget] =
     useState<ExecutionTarget>("build");
+  useBackSwipe(stage === "project-setup" || stage === "simulation-setup" || stage === "memory-project-setup" ? () => setStage("board-select") : undefined);
   const restoredStartupRef = useRef(false);
+
+  useEffect(() => {
+    if (stage === "dashboard") setReturnToChat(false);
+  }, [stage]);
 
   useEffect(() => {
     if (hasTauriInvoke()) void prepareCodexReadiness().catch(() => {});
@@ -86,6 +94,7 @@ function App() {
   }, []);
 
   function goHome() {
+    resetChat();
     setReturnToChat(false);
     setWorkspaceSection(undefined);
     setChatProjectPath(undefined);
@@ -264,6 +273,7 @@ function App() {
   if (stage === "board-select") {
     return (
       <BoardSelect
+        onChatOriginChange={setReturnToChat}
         initialView={returnToChat ? "chat" : "home"}
         chatProjectPath={chatProjectPath}
         onDesignToolChange={setWorkspaceSection}
@@ -271,8 +281,7 @@ function App() {
         onSettingsChange={setSettings}
         onOpenProject={openProject}
         onOpenExistingProject={openExistingProject}
-        onOpenChatProject={(path) => openProjectPath(path, "build")}
-        onOpenWorkspaceSection={(id, section) => { setWorkspaceSection(section); void openProject(id); }}
+        onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, "build"); }}
         onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
         onOpenExistingMemoryProject={() => openExistingProject("build", true)}
         onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
@@ -433,6 +442,7 @@ function App() {
   if (stage === "dashboard" && selectedBoard) {
     return (
       <Dashboard
+        key={project?.id}
         board={selectedBoard}
         project={project}
         settings={settings}
@@ -447,20 +457,20 @@ function App() {
           )
         }
         onHome={goHome}
-        onOpenChatProject={(path) => openProjectPath(path, executionTarget)}
+        onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, executionTarget); }}
       />
     );
   }
 
   return (
     <BoardSelect
-        onDesignToolChange={setWorkspaceSection}
+      onChatOriginChange={setReturnToChat}
+      onDesignToolChange={setWorkspaceSection}
       settings={settings}
       onSettingsChange={setSettings}
       onOpenProject={openProject}
       onOpenExistingProject={openExistingProject}
-      onOpenChatProject={(path) => openProjectPath(path, "build")}
-      onOpenWorkspaceSection={(id, section) => { setWorkspaceSection(section); void openProject(id); }}
+      onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, "build"); }}
       onOpenMemoryProject={(id) => void openProject(id, undefined, true)}
       onOpenExistingMemoryProject={() => openExistingProject("build", true)}
       onCreateMemoryProject={() => { setStudioLaunch(true); setSelectedBoardId(null); setStage("memory-project-setup"); }}
@@ -475,7 +485,9 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWithChatSession() {
+  return <ChatSessionProvider><App /></ChatSessionProvider>;
+}
 
 function folderNameFromPath(path: string) {
   return path.replace(/\/$/, "").split("/").pop() ?? "";

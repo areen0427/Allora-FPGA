@@ -1419,3 +1419,32 @@ Next:
 ### 2026-10-08 — Build slideshow black padding
 - Removed embedded black framing from twelve Build slideshow captures using bounded SVG viewports around the original image pixels. Preserved the source WebP assets and native app-window proportions; enlarged previews use the same framing. No content was regenerated.
 - Validation: detected outer black padding from pixel bounds, checked all twelve updated image references and matching dimensions, parsed generated SVGs, and ran diff whitespace checks. No browser or visual verification performed.
+
+### 2026-10-12 — Project-aware AI Design Studio navigation
+- Welcome launches a fresh chat without choosing a recent project. Its dock opens the appropriate landing page, remembers the requested section for explicit project creation/opening, and labels Back to return to AI Design Studio.
+- A stable chat portal preserves drafts, conversations, approvals, and streaming through landing/setup visits and AI project creation. Created projects open in chat with the file explorer; completed AI turns reload disk files while retaining unsaved editor content. Home resets the live session.
+- Added macOS trackpad back-swipe handling to the same callbacks as Back in welcome, dashboard, and project setup. Gesture thresholds and one-action-per-gesture handling exclude vertical scrolling, forward gestures, pinch gestures, dialogs, editor/canvas input, and horizontal scrolling away from its back edge.
+- Validation: frontend build, lint, full existing test suite, and focused navigation/chat-session/swipe regression tests. No visual verification or live native AI/trackpad testing performed, as requested.
+
+### 2026-10-12 — Welcome landing layout after chat navigation
+- Scoped welcome chat shell styles to the explicit active chat view. Hidden preserved chat no longer triggers `:has(.allora-chat)` layout overrides on landing pages, so both entry routes retain the same padding, content width, and responsive board grid.
+- Validation: targeted selector inspection, frontend build, lint, and diff whitespace check; no visual verification.
+
+### 2026-10-12 — Back-swipe momentum across navigation
+- Kept the trackpad gesture tracker alive across Back-handler unmounts and page transitions. A landing-to-chat swipe consumes its remaining momentum instead of triggering the newly mounted chat dock’s Back-to-Welcome action.
+- Validation: regression simulating landing handler disposal, chat dock mounting, continued momentum, and a separate second swipe; gesture tests, lint, build, and diff whitespace check. No visual verification or physical trackpad test.
+
+### 2026-10-12 — Back-swipe nudge and destination fade
+- Added a progress-driven rightward nudge (up to 24px), a 160ms settle for incomplete swipes, and a 220ms fade-in of the committed destination at its normal position. Asynchronous Back handlers finish before the destination fade; failed handlers clear the nudge without a fade.
+- Allora Reduce Motion and macOS reduced-motion preferences disable nudge and fade while retaining Back navigation. CSS also suppresses effects when preferences change mid-animation.
+- Validation: focused gesture and motion regression tests, frontend build, lint, and whitespace checks. No visual verification or physical trackpad test.
+
+### 2026-10-12 — Smooth swipe and project workspace history
+- Retarget swipe animations from the computed on-screen position instead of jumping between wheel-event targets; ignore zero-delta trackpad events and wait for the nudge to finish before replacing the page and fading the destination. Reduce Motion still skips the effects.
+- Added project workspace navigation history covering dock, AI chat, tool links, and editor jumps. Back pops the last workspace (e.g. Program → Bitstream), with project setup retained only as the empty-history fallback. Same-page visits and legacy owning-workspace aliases do not push history; Back never pushes a return visit.
+- Validation: navigation history, rendered-position retargeting, animation completion ordering, neutral wheel events, momentum suppression, and reduced-motion regression tests; frontend build, lint, and whitespace checks. No visual or physical trackpad verification.
+
+### 2026-10-12 — Continuous slow-swipe motion and glass chevron
+- Replaced per-wheel nudge animation restarts with one continuous frame loop. Slow gestures retain progress through diagonal noise and brief pauses; reversal reduces progress smoothly.
+- Increased the nudge to 40px and destination fade to 300ms. Added a fixed, theme-aware glass chevron at the left edge, with progress-driven appearance and accent color near the Back threshold; it disappears on cancellation/navigation. Reduce Motion suppresses all feedback while preserving Back.
+- Validation: frame-loop, slow-input, chevron cleanup, gesture momentum, reduced-motion and async failure tests, build, lint, and diff whitespace checks. No visual or physical trackpad verification.

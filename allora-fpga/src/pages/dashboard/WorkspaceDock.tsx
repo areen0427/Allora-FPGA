@@ -1,3 +1,4 @@
+import { useBackSwipe } from "../../hooks/useBackSwipe";
 import type { MouseEventHandler } from "react";
 import { Home, PanelLeftOpen, MapPinned, Binary, Zap, Gauge, Settings, ArrowLeft } from "lucide-react";
 import AiDesignStudioIcon from "../../components/AiDesignStudioIcon";
@@ -21,11 +22,13 @@ type WorkspaceDockProps = {
   onHome: () => void;
   onChat: () => void;
   onBack: () => void;
+  backLabel?: string;
   onSettings: () => void;
   onUsage: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, onSettings, onUsage }: WorkspaceDockProps) {
+export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, backLabel = "Back to project setup", onSettings, onUsage }: WorkspaceDockProps) {
+  useBackSwipe(saving ? undefined : onBack);
   return (
         <div className="dashboard-activity-rail-slot">
           <div className="dashboard-activity-rail">
@@ -116,7 +119,7 @@ export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSect
                 onClick={onSettings}
               />
               <SidebarButton
-                label="Back to project setup"
+                label={backLabel}
                 icon={<ArrowLeft size={18} />}
                 active={false}
                 disabled={saving}

@@ -1,10 +1,10 @@
-import { sectionAfterWorkspaceLaunch, workspaceOwner } from "./dashboard/navigation";
+import { workspaceNavigationReducer, workspaceOwner } from "./dashboard/navigation";
 import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
 import MemoryAssetStudio from "./dashboard/MemoryAssetStudio";
 import RegisterBuilder from "./dashboard/RegisterBuilder";
 import { writeWorkbench, type Workbench } from "../lib/peripheralWorkbench";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useReducer, useCallback } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 import type { BoardDefinition } from "../data/boards";
 import EditorSection from "./dashboard/EditorSection";
@@ -15,7 +15,7 @@ import BitstreamSection from "./dashboard/BitstreamSection";
 import ProgrammingSection from "./dashboard/ProgrammingSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
 import { WorkspaceDock } from "./dashboard/WorkspaceDock";
-import ChatPage from "./ChatPage";
+import { ChatSessionHost } from "../components/ChatSession";
 import type {
   DashboardSection,
   ProjectFile,
@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
-import { buildProjectFilePath } from "../lib/projectWorkspace";
+import { buildProjectFilePath, readProjectWorkspace } from "../lib/projectWorkspace";
 import { useFileManagement } from "../hooks/useFileManagement";
 import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
 import { useSaveProject } from "../hooks/useSaveProject";
@@ -92,9 +92,13 @@ export default function Dashboard({
   onHome,
   onOpenChatProject,
 }: DashboardProps) {
-  const [activeSection, setActiveSection] = useState<DashboardSection>(
-    initialSection ?? "editor",
-  );
+  const [navigation, dispatchNavigation] = useReducer(workspaceNavigationReducer, {
+    current: initialSection ?? "editor", history: [],
+  });
+  const activeSection = navigation.current;
+  const setActiveSection = useCallback((section: DashboardSection) => {
+    dispatchNavigation({ type: "visit", section });
+  }, []);
   const activeWorkspaceSection = workspaceOwner(activeSection);
   // Track which sections have been opened so we can keep them mounted (and
   // their generated output intact) after the user switches away.
@@ -137,8 +141,8 @@ export default function Dashboard({
   }, [activeSection]);
 
   useEffect(() => {
-    setActiveSection((current) => sectionAfterWorkspaceLaunch(current, initialSection));
-  }, [initialSection]);
+    if (initialSection) setActiveSection(initialSection);
+  }, [initialSection, setActiveSection]);
 
   // --- File management hook ---
   const fileMgmt = useFileManagement(project);
@@ -151,6 +155,8 @@ export default function Dashboard({
     setFiles: fileMgmt.setFiles,
   });
   const setDirtyFileNames = activeTabs.setDirtyFileNames;
+  const dirtyFilesRef = useRef(activeTabs.dirtyFileNames);
+  useEffect(() => { dirtyFilesRef.current = activeTabs.dirtyFileNames; }, [activeTabs.dirtyFileNames]);
 
   // --- Save project hook ---
   const saveProject = useSaveProject({
@@ -206,7 +212,7 @@ export default function Dashboard({
     activeTabs.openFile(file.name);
     setActiveSection("editor");
     void publishExplorer({ type: "navigation-result", projectKey: message.projectKey, message: `Opened ${file.name}:${message.start} in the editor.` });
-  }), [projectPath, projectName, fileMgmt.files, activeTabs]);
+  }), [projectPath, projectName, fileMgmt.files, activeTabs, setActiveSection]);
 
   function handleCloseOpenFile(fileName: string) {
     activeTabs.closeOpenFile(fileName);
@@ -444,9 +450,11 @@ export default function Dashboard({
             if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
             setActiveSection("chat");
           }}
+          backLabel={navigation.history.length ? "Back to previous workspace" : "Back to project setup"}
           onBack={async () => {
             if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
-            onBack();
+            if (navigation.history.length) dispatchNavigation({ type: "back" });
+            else onBack();
           }}
           onSettings={() => setShowSettings(true)}
           onUsage={(event) => setUsageAnchor(event.currentTarget)}
@@ -632,7 +640,14 @@ export default function Dashboard({
         ) : null}
 
         <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
-          <ChatPage initialProjectPath={projectPath ?? undefined} resumeLatest onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
+          <ChatSessionHost initialProjectPath={projectPath ?? undefined} resumeLatest onWorkspaceChanged={async path => {
+            if (path !== projectPath) return;
+            const diskFiles = await readProjectWorkspace(path);
+            fileMgmt.setFiles(current => [
+              ...diskFiles.map(file => dirtyFilesRef.current.includes(file.name) ? current.find(item => item.name === file.name) ?? file : file),
+              ...current.filter(file => dirtyFilesRef.current.includes(file.name) && !diskFiles.some(item => item.name === file.name)),
+            ]);
+          }} onProjectCreated={onOpenChatProject} onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
         </KeepAliveSection>
         {activeSection === "editor" && (
           <EditorSection

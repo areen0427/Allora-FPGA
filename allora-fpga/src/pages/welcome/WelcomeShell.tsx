@@ -1,3 +1,4 @@
+import { useBackSwipe } from "../../hooks/useBackSwipe";
 import type { ReactNode, RefObject } from "react";
 import { ArrowLeft, Settings } from "lucide-react";
 import { WorkspaceDock } from "../dashboard/WorkspaceDock";
@@ -15,6 +16,7 @@ type WelcomeShellProps = {
   newProjectRef: RefObject<HTMLElement | null>;
   onViewChange: (view: WelcomeView) => void;
   onOpenSettings: () => void;
+  backLabel?: string;
   onBack?: () => void;
   onWorkspaceSection: (section: DashboardSection) => void;
   onOpenUsage: (anchor: HTMLButtonElement) => void;
@@ -31,18 +33,21 @@ export function WelcomeShell({
   onViewChange,
   onOpenSettings,
   onBack,
+  backLabel = "Back to welcome",
   onWorkspaceSection,
   onOpenUsage,
   children,
 }: WelcomeShellProps) {
+  useBackSwipe(activeView === "chat" ? undefined : onBack);
   return (
-    <div className="glass-page welcome-page">
+    <div className={`glass-page welcome-page welcome-view-${activeView}`}>
       {activeView === "chat" ? (
         <aside className="dashboard-sidebar welcome-chat-workspace-dock">
           <WorkspaceDock activeSection="chat"
             onSectionChange={onWorkspaceSection}
             onHome={() => onViewChange("home")}
             onChat={() => onViewChange("chat")}
+            backLabel="Back to welcome"
             onBack={() => onViewChange("home")}
             onSettings={onOpenSettings}
             onUsage={(event) => onOpenUsage(event.currentTarget)}
@@ -72,7 +77,7 @@ export function WelcomeShell({
         </button>
 
         {onBack && (
-          <RailButton filled label="Back to welcome" onClick={onBack}>
+          <RailButton filled label={backLabel} onClick={onBack}>
             <ArrowLeft size={20} />
           </RailButton>
         )}

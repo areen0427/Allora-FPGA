@@ -11,15 +11,15 @@
   overflow: hidden;
   border-radius: var(--ui-radius-lg);
 }
-.welcome-page:has(.allora-chat) {
+.welcome-page.welcome-view-chat {
   height: 100dvh;
   overflow: hidden;
 }
-.welcome-page:has(.allora-chat) .welcome-main {
+.welcome-page.welcome-view-chat .welcome-main {
   padding: 0;
   overflow: hidden;
 }
-.welcome-page:has(.allora-chat) .welcome-content {
+.welcome-page.welcome-view-chat .welcome-content {
   width: 100%;
   max-width: none !important;
   height: 100%;
