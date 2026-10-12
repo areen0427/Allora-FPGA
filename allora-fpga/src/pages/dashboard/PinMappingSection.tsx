@@ -1215,8 +1215,9 @@ function ResourceGroupCard({
 
   return (
     <DashboardSurfaceCard
-      className="pin-map-resource-card"
+      className="pin-map-resource-card ui-workspace-framed"
       style={{
+        border: "1px solid var(--dashboard-surface-border)",
         borderRadius: "var(--ui-radius-lg)",
         padding: "14px",
         minWidth: 0,

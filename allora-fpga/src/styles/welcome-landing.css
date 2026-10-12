@@ -1903,23 +1903,24 @@ html[data-reduce-motion="true"] .welcome-page :is(
   justify-content: center; gap: clamp(28px, 5vh, 56px);
 }
 .welcome-title {
-  margin: 0; color: var(--landing-text); font-family: var(--font-code);
-  font-size: clamp(40px, 7vw, 96px); font-weight: 700; line-height: 1.15;
-  letter-spacing: -.055em; text-align: center;
-  align-self: center; max-width: 100%;
-  overflow-wrap: anywhere;
-  background: linear-gradient(165deg, var(--landing-text) 12%, var(--landing-muted) 46%, var(--landing-text) 53%, var(--ui-accent-text) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1px 1px var(--landing-reflection)) drop-shadow(0 4px 8px var(--landing-panel-shadow));
+  margin: 0 0 calc(-1 * clamp(8px, 1.5vh, 16px));
+  padding: .08em .12em; color: var(--landing-text);
+  font-family: var(--font-ui); font-size: clamp(36px, 6.5vw, 88px);
+  font-weight: 800; line-height: 1.15; letter-spacing: -.045em;
+  text-align: center; align-self: center; max-width: 100%; overflow: visible;
+}
+.welcome-title-name {
+  display: inline-block; padding: .04em .06em; font-weight: inherit;
+  color: inherit;
+  text-shadow: 0 1px 1px var(--landing-reflection), 0 4px 16px var(--landing-panel-shadow);
 }
 .welcome-launch-panel { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(12px, 1.5vw, 24px); }
 .execution-path-stage .welcome-launch-panel .execution-path-option { width: auto; min-width: 0; }
 .execution-path-stage .welcome-launch-panel .execution-path-card {
   height: 100%; min-height: clamp(160px, 20vh, 210px); aspect-ratio: auto;
   padding: clamp(16px, 1.8vw, 26px); border-radius: var(--ui-radius-lg);
-  display: grid; grid-template-rows: 24px minmax(0, 1fr);
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 24px minmax(0, 1fr);
+  justify-items: start; text-align: left;
   align-items: start; align-content: start; justify-content: stretch; gap: 20px;
 }
  .execution-path-stage .welcome-launch-panel .execution-path-card > svg {
@@ -1928,8 +1929,11 @@ html[data-reduce-motion="true"] .welcome-page :is(
 }
 .execution-path-stage .welcome-launch-panel .execution-path-copy {
   grid-column: 1; grid-row: 2; justify-self: stretch;
+  width: 100%; min-width: 0; left: 0; right: auto;
   margin: 0; padding: 0; transform: none; text-align: left;
-  display: grid; grid-template-rows: minmax(2.5em, auto) auto; align-content: start; gap: 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(2.5em, auto) auto;
+  justify-content: stretch; justify-items: start; align-content: start; gap: 10px;
 }
 .execution-path-stage .welcome-launch-panel .execution-path-copy h3 {
   margin: 0; min-height: 2.5em; color: var(--landing-text); font-family: var(--font-ui);
@@ -1940,14 +1944,16 @@ html[data-reduce-motion="true"] .welcome-page :is(
   line-height: 1.5; letter-spacing: .02em; white-space: normal;
 }
 .welcome-bottom-row { display: flex; align-items: stretch; gap: 20px; }
-.execution-path-stage .welcome-bottom-row .welcome-continue-project { flex: 1; width: auto; min-width: 0; margin: 0; min-height: 72px; padding: 12px 16px; }
+.execution-path-stage .welcome-bottom-row .welcome-continue-project { flex: 1; width: auto; min-width: 0; margin: 0; min-height: 60px; padding: 8px 16px; }
+.welcome-bottom-row .welcome-continue-project-meta { flex-direction: row; align-items: baseline; gap: 8px; }
+.welcome-bottom-row .welcome-continue-project-meta > small { min-width: 0; }
+.welcome-bottom-row .welcome-continue-project-meta > time { flex-shrink: 0; }
 .welcome-utilities { display: flex; align-items: stretch; gap: 12px; margin-left: auto; }
 .execution-path-stage .welcome-utilities .welcome-utility {
-  width: auto; height: auto; min-height: 72px; aspect-ratio: auto; flex-direction: row;
-  align-items: center; justify-content: center; gap: 10px; padding: 12px 18px;
+  width: auto; height: auto; min-height: 60px; aspect-ratio: auto; flex-direction: row;
+  align-items: center; justify-content: center; gap: 10px; padding: 8px 18px;
   border-radius: var(--ui-radius-lg); font-family: var(--font-ui); font-weight: 750;
 }
-.welcome-utility img { width: 36px; height: 36px; object-fit: contain; }
 .execution-path-stage .welcome-logo-info {
   position: fixed; top: auto; bottom: 24px; left: auto; right: clamp(24px, 5vw, 80px);
   width: min(430px, calc(100% - 48px)); max-height: calc(100dvh - 48px); overflow-y: auto; z-index: 20;
@@ -1961,7 +1967,7 @@ html[data-reduce-motion="true"] .welcome-page :is(
 @media (max-width: 560px) {
   .welcome-launch-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .welcome-utilities { flex-wrap: wrap; gap: 8px; }
-  .execution-path-stage .welcome-utilities .welcome-utility { padding: 14px; min-height: 64px; }
+  .execution-path-stage .welcome-utilities .welcome-utility { padding: 8px 14px; min-height: 60px; }
 }
 .execution-path-stage .welcome-launch-panel .execution-path-option:has(.build) { grid-column: auto; }
 
@@ -1969,3 +1975,13 @@ html[data-reduce-motion="true"] .welcome-page :is(
 button.welcome-continue-project { font-family: var(--font-ui); text-align: left; cursor: pointer; }
 button.welcome-continue-project:hover { border-color: var(--ui-accent); box-shadow: var(--ui-hover-shadow); }
 button.welcome-continue-project:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 4px; }
+
+/* The product mark is its own clickable surface, without a glass card. */
+.welcome-product-icon {
+  align-self: center; display: grid; place-items: center;
+  width: 60px; height: 60px; padding: 0;
+  border: 0; background: transparent; box-shadow: none; cursor: pointer;
+}
+.welcome-product-icon img { width: 60px; height: 60px; object-fit: contain; }
+.welcome-product-icon:hover { transform: var(--ui-lift-subtle); }
+.welcome-product-icon:focus-visible { outline: 2px solid var(--ui-accent-text); outline-offset: 3px; }

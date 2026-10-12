@@ -29,7 +29,7 @@ import AiDesignStudioIcon from "../../components/AiDesignStudioIcon";
 import PeripheralWorkbenchIcon from "../../components/PeripheralWorkbenchIcon";
 import MemoryAssetStudioIcon from "../../components/MemoryAssetStudioIcon";
 import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
-import alloraIcon from "../../../src-tauri/icons/128x128.png";
+import alloraIcon from "../../../src-tauri/icons/app-icon.svg";
 import { version } from "../../../package.json";
 
 type HomeViewProps = {
@@ -213,7 +213,9 @@ export function HomeView({
           </section>
         ) : null}
         <div className="welcome-action-stack">
-          <h1 className="welcome-title">Allora FPGA</h1>
+          <h1 className="welcome-title">
+            <strong className="welcome-title-name">Allora FPGA</strong>
+          </h1>
           <ExecutionPathChooser
             selectedTarget={departingPath}
             onChoose={(target) => {
@@ -235,7 +237,7 @@ export function HomeView({
           <div className="welcome-utilities" aria-label="Welcome tools">
             <button type="button" className="execution-path-card welcome-utility" onClick={onOpenPinMapping}><MapIcon size={22} aria-hidden="true" /><span>Pin Mapper</span></button>
             <button type="button" className="execution-path-card welcome-utility" onClick={onOpenSettings}><Settings size={22} aria-hidden="true" /><span>Settings</span></button>
-            <button ref={brandRef} type="button" className="execution-path-card welcome-utility" onClick={onOpenProductInfo} title="Product information" aria-label="Product information" aria-expanded={showProductInfo} aria-controls="welcome-product-info"><img src={alloraIcon} alt="" /></button>
+            <button ref={brandRef} type="button" className="welcome-product-icon" data-glass="off" onClick={onOpenProductInfo} title="Product information" aria-label="Product information" aria-expanded={showProductInfo} aria-controls="welcome-product-info"><img src={alloraIcon} alt="" /></button>
           </div>
           </div>
         </div>
@@ -333,9 +335,7 @@ function ExecutionPathChooser({
     <div className="welcome-launch-panel" aria-label="Workspace and design tools">
 
           <div className="execution-path-option">
-            <button type="button" onClick={() => onChoose("build")} className={`execution-path-card build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
-              <span className="glass-edge glass-edge-top" aria-hidden="true" />
-              <span className="glass-specular" aria-hidden="true" />
+            <button type="button" onClick={() => onChoose("build")} className={`execution-path-card welcome-tool-row build${selectedTarget === "build" ? " is-selected" : ""}`} disabled={selectedTarget !== null}>
               <svg className="welcome-launch-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3,5.99406028 L3,18.0059397 C3,19.1054862 3.8932319,20 4.99508929,20 L19.0049107,20 C20.1073772,20 21,19.1072288 21,18.0059397 L21,5.99406028 C21,4.89451376 20.1067681,4 19.0049107,4 L4.99508929,4 C3.8926228,4 3,4.8927712 3,5.99406028 Z M1,5.99406028 C1,3.78785482 2.7884002,2 4.99508929,2 L19.0049107,2 C21.210775,2 23,3.78938161 23,5.99406028 L23,18.0059397 C23,20.2121452 21.2115998,22 19.0049107,22 L4.99508929,22 C2.78922499,22 1,20.2106184 1,18.0059397 L1,5.99406028 Z M5.26674525,11.6980752 C4.91108492,11.3097909 4.91108492,10.6902091 5.26674525,10.3019248 C5.63548778,9.89935839 6.24389719,9.89935839 6.61263972,10.3019248 L10,14 L6.61263972,17.6980752 C6.24389719,18.1006416 5.63548778,18.1006416 5.26674525,17.6980752 C4.91108492,17.3097909 4.91108492,16.6902091 5.26674525,16.3019248 L7.37526073,14 L5.26674525,11.6980752 Z M11,17 C11,16.4477153 11.4530363,16 11.9970301,16 L18.0029699,16 C18.5536144,16 19,16.4438648 19,17 C19,17.5522847 18.5469637,18 18.0029699,18 L11.9970301,18 C11.4463856,18 11,17.5561352 11,17 Z M3,6 L22,6 L22,8 L3,8 L3,6 Z" /></svg>
               <div className="execution-path-copy"><h3>Build</h3><span className="execution-path-microcopy">BUILD & SIMULATE RTL</span></div>
             </button>

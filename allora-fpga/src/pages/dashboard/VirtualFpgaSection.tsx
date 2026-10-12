@@ -615,7 +615,7 @@ export default function VirtualFpgaSection({
           </VirtualPcbDiagram>
         </section>
 
-        <section className="vfpga-panel vfpga-mapping ui-workspace-framed ui-workspace-support ui-workspace-aside">
+        <section className="vfpga-panel vfpga-mapping ui-workspace-framed ui-workspace-support ui-workspace-aside ui-workspace-aside-contained">
           <div className="vfpga-section-title">
             <Gauge size={17} />
             <div>
@@ -628,7 +628,7 @@ export default function VirtualFpgaSection({
               <label key={peripheral.id}>
                 <span>
                   <i className={`kind-${peripheral.type}`} />
-                  {peripheral.label}
+                  <span className="vfpga-map-label">{peripheral.label}</span>
                   <small>{peripheral.type}</small>
                 </span>
                 <div className="vfpga-map-control">
