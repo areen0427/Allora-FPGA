@@ -604,6 +604,7 @@ impl Server {
             }
             metadata["boardId"] = json!(board.id);
             metadata["boardName"] = json!(board.name);
+            metadata["projectKind"] = json!(if board.id == "allora-virtual" { "simulation" } else { "hardware" });
         }
         if let Some(top) = args.get("topModule").and_then(Value::as_str) {
             identifier(top)?;

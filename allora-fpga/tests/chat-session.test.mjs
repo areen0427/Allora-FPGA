@@ -8,11 +8,13 @@ let id = 0;
 async function harness() {
   const states = [], refs = [];
   const queuedArtifacts = [];
+  const visibility = [];
   let stateIndex = 0, refIndex = 0;
-  const container = { style: {}, parentNode: null, remove() { this.parentNode = null; } };
+  const container = { style: {}, parentNode: null, get isConnected() { return this.parentNode !== null; }, remove() { this.parentNode = null; } };
   const jsx = (type, props, key) => ({ type, props, key });
   globalThis.chatSessionHarness = {
-    _jsx: jsx, _jsxs: jsx, ChatPage: "ChatPage",
+    _jsx: jsx, _jsxs: jsx, ChatPage: "ChatPage", ChatCompletionNotification: "ChatCompletionNotification",
+    chatNotifications: { setVisible(value) { visibility.push(value); }, reset() {} },
     createContext: () => ({ Provider: "Provider" }),
     createPortal: (child, target) => ({ child, target }),
     useRef(initial) { return refs[refIndex++] ??= { current: initial }; },
@@ -24,16 +26,17 @@ async function harness() {
     document: { createElement: () => container },
     queueChatArtifact: artifact => queuedArtifacts.push(artifact),
   };
-  const prefix = "const { _jsx, _jsxs, ChatPage, createContext, createPortal, useRef, useState, document, queueChatArtifact } = globalThis.chatSessionHarness;\n";
+  const prefix = "const { _jsx, _jsxs, ChatPage, createContext, createPortal, useRef, useState, document, queueChatArtifact, chatNotifications, ChatCompletionNotification } = globalThis.chatSessionHarness;\n";
   const { ChatSessionProvider } = await import(`data:text/javascript;base64,${Buffer.from(prefix + compiled).toString("base64")}#${id++}`);
   delete globalThis.chatSessionHarness;
   return {
     container,
     queuedArtifacts,
+    visibility,
     render() {
       stateIndex = refIndex = 0;
       const tree = ChatSessionProvider({ children: null });
-      return { api: tree.props.value, chat: tree.props.children[1]?.child };
+      return { api: tree.props.value, chat: tree.props.children.find(child => child?.child)?.child };
     },
     host() { return { appendChild(child) { child.parentNode = this; } }; },
   };
@@ -115,4 +118,25 @@ test("in-app return preserves the active chat and later project visits can resum
   assert.equal(h.render().chat.key, chat.key);
   api.attach(h.host(), { ...options("/projects/saved"), resumeLatest: true });
   assert.equal(h.render().chat.props.resumeLatest, true);
+});
+
+
+test("notification visibility follows hidden chat hosts, returns and detach", async () => {
+  const h = await harness(); const host = h.host(); const { api } = h.render();
+  api.attach(host, { ...options(), hidden: true }); assert.equal(h.visibility.at(-1), false);
+  api.update({ ...options(), hidden: false }); assert.equal(h.visibility.at(-1), true);
+  api.update({ ...options(), hidden: true }); assert.equal(h.visibility.at(-1), false);
+  api.detach(host); assert.equal(h.visibility.at(-1), false);
+  api.update(options()); assert.equal(h.visibility.at(-1), false);
+});
+
+test("recent chat project activation populates the workspace without remounting its conversation", async () => {
+  const h = await harness(); const { api } = h.render(); const host = h.host(); const opened = [];
+  api.attach(host, { ...options(), onOpenProject: async path => { opened.push(path); api.detach(host); api.attach(h.host(), options(path)); } });
+  const before = h.render().chat;
+  await before.props.onActivateProject("/projects/latest");
+  assert.deepEqual(opened, ["/projects/latest"]);
+  assert.equal(h.render().chat.key, before.key, "the chosen conversation survives the welcome-to-workspace handoff");
+  await h.render().chat.props.onActivateProject("/projects/latest");
+  assert.equal(opened.length, 1, "current project's editor state is not reloaded");
 });

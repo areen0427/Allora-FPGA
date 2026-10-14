@@ -10,8 +10,8 @@ async function loadHelper(name) {
   const code = ts.transpileModule(source, { compilerOptions }).outputText;
   return import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 }
-const [diagnostics, context, models] = await Promise.all([
-  loadHelper("projectDiagnostics"), loadHelper("chatContext"), loadHelper("chatModels"),
+const [diagnostics, context, models, notifications, historyDetails] = await Promise.all([
+  loadHelper("projectDiagnostics"), loadHelper("chatContext"), loadHelper("chatModels"), loadHelper("chatNotifications"), loadHelper("chatHistory"),
 ]);
 const source = await readFile(new URL("../src/pages/ChatPage.tsx", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions }).outputText;
@@ -41,6 +41,8 @@ function textContent(node) {
 }
 
 async function harness(projectPath = "/projects/one", options = {}) {
+  notifications.chatNotifications.reset();
+  notifications.chatNotifications.setVisible(true);
   const states = [], refs = [], requests = [], memoryUpdates = [], folderReplies = [], pickerCalls = [], starts = [], openedArtifacts = [];
   const localValues = new Map();
   if (options.history) localValues.set("allora-codex-conversations-v1", JSON.stringify(options.history));
@@ -54,7 +56,7 @@ async function harness(projectPath = "/projects/one", options = {}) {
     modelError: "",
   };
   const bindings = Object.fromEntries(importedNames.map(name => [name, () => null]));
-  Object.assign(bindings, diagnostics, context, models, {
+  Object.assign(bindings, diagnostics, context, models, notifications, historyDetails, {
     _jsx: jsx, _jsxs: jsx,
     useState(initial) {
       const index = stateIndex++;
@@ -70,7 +72,7 @@ async function harness(projectPath = "/projects/one", options = {}) {
     syncProjectDiagnosticMemory: async entries => { memoryUpdates.push(entries); },
     hasTauriInvoke: () => true,
     readCodexReadiness: () => readiness,
-    getSavedProjects: () => [],
+    getSavedProjects: () => options.projects ?? [],
     getLastProjectParentDirectory: () => undefined,
     createChatTitle: prompt => prompt.slice(0, 65),
     activityLabel: () => "Tracing signals",
@@ -99,10 +101,10 @@ async function harness(projectPath = "/projects/one", options = {}) {
   delete globalThis.chatDiagnosticsHarness;
   const render = () => {
     stateIndex = refIndex = 0;
-    return ChatPage({ initialProjectPath: projectPath, resumeLatest: Boolean(options.history), onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
+    return ChatPage({ initialProjectPath: projectPath, resumeLatest: options.resumeLatest ?? Boolean(options.history), onActivateProject: options.activate, onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
   };
   return {
-    store, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, render,
+    store, notifications: notifications.chatNotifications, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, render,
     conversations: () => states.find(value => Array.isArray(value) && typeof value[0]?.workspacePath === "string") ?? [],
     async submit(prompt) {
       const input = descendants(render()).find(node => node.type === "textarea" && node.props["aria-label"] === "Message Allora");
@@ -164,16 +166,11 @@ test("errors from other projects never leak into the chat prompt", async () => {
   assert.equal(request[5], "Help with the error");
 });
 
-test("the context picker has no file upload control", async () => {
+test("the composer has no attachment button or picker", async () => {
   const h = await harness();
-  let nodes = descendants(h.render());
-  const contextToggle = nodes.find(node => node.type === "button" && node.props["aria-label"] === "Attach context");
-  assert.ok(contextToggle);
-  contextToggle.props.onClick();
-  nodes = descendants(h.render());
-  assert.ok(nodes.some(node => node.props?.["aria-label"] === "Context to attach"), "the picker was opened before inspecting its controls");
+  const nodes = descendants(h.render());
   assert.ok(!nodes.some(node => node.type === "input" && node.props.type === "file"));
-  assert.ok(!nodes.some(node => node.type === "button" && /attach file|upload file|choose file/i.test(`${node.props["aria-label"] ?? ""} ${textContent(node)}`)));
+  assert.ok(!nodes.some(node => /Attach context|Context to attach/.test(node.props?.["aria-label"] ?? "")));
 });
 
 test("error suggestions prepare an editable request and preserve the existing draft without sending", async () => {
@@ -253,4 +250,80 @@ test("an active response has only its upper thinking indicator, with no composer
     release();
     await new Promise(resolve => setImmediate(resolve));
   }
+});
+
+
+test("a turn that finishes after navigating to editor notifies even without a streamed completion event", async () => {
+  let finish;
+  const waitForSend = new Promise(resolve => { finish = resolve; });
+  const h = await harness("/projects/one", { waitForSend });
+  const request = await h.submit("Update the counter");
+  h.notifications.setVisible(false);
+  request[4]({ type: "assistant_delta", delta: "Updated the counter." });
+  assert.equal(h.notifications.snapshot().toast, null, "streaming is not completion");
+  finish(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.conversations()[0].messages.at(-1).pending, false);
+  assert.equal(h.notifications.snapshot().unread, true);
+  assert.notEqual(h.notifications.snapshot().toast, null);
+});
+
+test("streamed completion waits for finalization and creates only one notification", async () => {
+  let finish;
+  const h = await harness("/projects/one", { waitForSend: new Promise(resolve => { finish = resolve; }) });
+  const request = await h.submit("Fix reset timing");
+  h.notifications.setVisible(false);
+  request[4]({ type: "turn_completed", threadId: "test-thread" });
+  assert.equal(h.notifications.snapshot().toast, null, "checkpoint/final response work is still pending");
+  finish(); await new Promise(resolve => setImmediate(resolve));
+  const id = h.notifications.snapshot().toast;
+  assert.notEqual(id, null);
+  request[4]({ type: "turn_completed", threadId: "test-thread" });
+  assert.equal(h.notifications.snapshot().toast, id, "late completion events never duplicate the popup");
+});
+
+test("finished turns stay quiet while the user remains in chat", async () => {
+  const h = await harness(); await h.submit("Explain the reset logic");
+  assert.deepEqual(h.notifications.snapshot(), { unread: false, toast: null });
+});
+
+
+test("selecting recent chats activates the latest project without clicking View Project", async () => {
+  const activated = [];
+  const history = [{ id: "old", title: "Two project conversation", workspacePath: "/chosen/parent", updatedAt: new Date().toISOString(), messages: [
+    { id: "first", role: "assistant", text: "First project", projectPath: "/projects/first" },
+    { id: "last", role: "assistant", text: "Latest project", projectPath: "/projects/latest" },
+  ] }];
+  const h = await harness(undefined, { history, resumeLatest: false, activate: async path => { activated.push(path); } });
+  const choose = () => descendants(h.render()).find(node => node.type === "button" && node.props.title === "Two project conversation");
+  descendants(h.render()).find(node => node.type === "button" && textContent(node).includes("Recent chats")).props.onClick();
+  choose().props.onClick(); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(activated, ["/projects/latest"]);
+  assert.ok(descendants(h.render()).some(node => node.props?.text === "Latest project"), "selected conversation remains visible");
+});
+
+test("projectless recent chats never try to open their save parent as a project", async () => {
+  const activated = [];
+  const h = await harness(undefined, { history: [{ id: "empty", title: "Uninitialized chat", workspacePath: "/chosen/parent", updatedAt: new Date().toISOString(), messages: [] }], resumeLatest: false, activate: async path => { activated.push(path); } });
+  descendants(h.render()).find(node => node.type === "button" && textContent(node).includes("Recent chats")).props.onClick();
+  descendants(h.render()).find(node => node.type === "button" && node.props.title === "Uninitialized chat").props.onClick();
+  await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(activated, []);
+});
+
+test("recent history is newest-first, limited to ten, with full history in the larger dialog", async () => {
+  const history = Array.from({ length: 16 }, (_, index) => ({ id: `chat-${index}`, title: `Chat ${index}`, workspacePath: "/parent", updatedAt: new Date(2026, 0, index + 1).toISOString(), messages: [] }));
+  const h = await harness(undefined, { history, resumeLatest: false });
+  descendants(h.render()).find(node => node.type === "button" && textContent(node).includes("Recent chats")).props.onClick();
+  const items = tree => descendants(tree).filter(node => node.props?.className?.startsWith("chat-history-item")).map(node => node.props.children[0].props.title);
+  assert.deepEqual(items(h.render()), Array.from({ length: 10 }, (_, index) => `Chat ${15 - index}`));
+  descendants(h.render()).find(node => node.props?.["aria-label"] === "View all chats").props.onClick();
+  const expanded = h.render();
+  assert.ok(descendants(expanded).some(node => node.type === "dialog" && node.props["aria-label"] === "All chats"));
+  assert.deepEqual(items(expanded), Array.from({ length: 16 }, (_, index) => `Chat ${15 - index}`));
+  assert.ok(!descendants(expanded).some(node => node.props?.["aria-label"] === "Close chat history"), "large history has no close X");
+  const dialog = descendants(expanded).find(node => node.type === "dialog");
+  const element = { getBoundingClientRect: () => ({ left: 100, right: 880, top: 24, bottom: 644 }) };
+  dialog.props.onClick({ target: element, currentTarget: element, clientX: 110, clientY: 40 });
+  assert.ok(descendants(h.render()).some(node => node.type === "dialog"), "clicking dialog padding does not dismiss");
+  dialog.props.onClick({ target: element, currentTarget: element, clientX: 40, clientY: 40 });
+  assert.ok(!descendants(h.render()).some(node => node.type === "dialog"), "clicking the backdrop closes history");
 });

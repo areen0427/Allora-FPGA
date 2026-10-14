@@ -36,7 +36,7 @@ html:is([data-theme="ice"], [data-theme="black-ice"]) :is(
   .dashboard-context-menu, .explorer-group-menu, .explorer-search-results,
   .explorer-inspector, .settings-modal,
   .variant-modal, .usage-dialog, .github-dialog, .board-diagram-popup,
-  .mas-dialog, .board-info-popup, .floating-dock-tooltip
+  .mas-dialog, .board-info-popup, .floating-dock-tooltip, .chat-completion-popup, .chat-sidebar
 ) {
   box-shadow: var(--ui-popup-shadow);
 }

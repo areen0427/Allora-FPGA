@@ -1,3 +1,4 @@
+import { chatNotifications } from "../lib/chatNotifications";
 import { WorkspaceTitle } from "../components/ui/WorkspaceTitle";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
@@ -13,7 +14,6 @@ import {
   LoaderCircle,
   MessageSquare,
   MoreHorizontal,
-  Paperclip,
   Pencil,
   Plus,
   RefreshCw,
@@ -44,7 +44,7 @@ import { reasoningFor } from "../lib/chatModels";
 import ChatTaskPanel, { type Activity } from "../components/ChatTaskPanel";
 import ChatTurnDetails, { type ChatArtifact } from "../components/ChatTurnDetails";
 import { activityLabel } from "../lib/chatActivity";
-import { buildContextPrompt, createContextPin, MAX_CONTEXT_PIN_CHARS, MAX_CONTEXT_TOTAL_CHARS, type ContextPin } from "../lib/chatContext";
+import { buildContextPrompt, MAX_CONTEXT_PIN_CHARS, type ContextPin } from "../lib/chatContext";
 import { subscribeChatPins, takeChatPins } from "../lib/chatPinsBridge";
 import { chatCheckpoints, type ChatChangeReview } from "../lib/chatCheckpoints";
 import { extractChatArtifacts } from "../lib/chatResults";
@@ -94,6 +94,7 @@ type Conversation = {
 };
 type Approval = Extract<AiChatEvent, { type: "approval_required" }>;
 type ChatPageProps = {
+  onActivateProject?: (path: string) => Promise<void>;
   onOpenArtifact?: (artifact: ChatArtifact) => void | Promise<void>;
   onWorkspaceChanged?: (path: string) => Promise<void>;
   onProjectCreated?: (path: string) => Promise<void>;
@@ -172,6 +173,7 @@ function readHistory(): Conversation[] {
 }
 
 export default function ChatPage({
+  onActivateProject,
   onOpenArtifact,
   onWorkspaceChanged,
   onProjectCreated,
@@ -201,9 +203,6 @@ export default function ChatPage({
   const historyMenuRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState("");
   const [pins, setPins] = useState<ContextPin[]>([]);
-  const [contextOpen, setContextOpen] = useState(false);
-  const [contextText, setContextText] = useState("");
-  const [contextKind, setContextKind] = useState<"selection" | "error">("selection");
   const creationReviews = useRef(new Map<string, ChatChangeReview>());
   const [activityTick, setActivityTick] = useState(0);
   const [provider, setProvider] = useState<AiProvider>("codex");
@@ -229,6 +228,7 @@ export default function ChatPage({
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [approving, setApproving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const historyPanelId = useId();
   const historyPanelRef = useRef<HTMLElement>(null);
   const historyToggleRef = useRef<HTMLButtonElement>(null);
@@ -253,6 +253,12 @@ export default function ChatPage({
       document.removeEventListener("keydown", dismissOnEscape);
     };
   }, [sidebarOpen]);
+  useEffect(() => {
+    if (!sidebarOpen || !historyExpanded) return;
+    const dialog = historyPanelRef.current as HTMLDialogElement | null;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => { if (dialog?.open) dialog.close(); };
+  }, [sidebarOpen, historyExpanded]);
   const [openingProject, setOpeningProject] = useState(false);
   const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string }) | null>(
     null,
@@ -310,17 +316,6 @@ export default function ChatPage({
     prepare();
     return projectDiagnostics.subscribeIntent(prepare);
   }, [diagnosticScope, busy, changingConversation]);
-
-  function addPin(pin: ContextPin) {
-    if (pins.length >= 8) { setNotice("Remove an attachment before adding more than eight context items."); return; }
-    const remaining = Math.min(MAX_CONTEXT_PIN_CHARS, MAX_CONTEXT_TOTAL_CHARS - pins.reduce((total, item) => total + item.text.length, 0));
-    if (remaining <= 30) { setNotice("Context is full. Remove an attachment before adding more."); return; }
-    if (pin.text.length > remaining) {
-      pin = { ...pin, text: `${pin.text.slice(0, remaining - 30)}\n[Context truncated]`, label: `${pin.label} (excerpt)` };
-      setNotice("Attached an excerpt to fit the context limit.");
-    }
-    setPins(current => [...current, pin]);
-  }
 
   async function openResult(artifact: ChatArtifact) {
     if (busyRef.current || changingConversationRef.current) return;
@@ -496,8 +491,7 @@ export default function ChatPage({
   async function selectConversation(conversation: Conversation) {
     if (
       busyRef.current ||
-      changingConversationRef.current ||
-      conversation.id === activeId
+      changingConversationRef.current
     )
       return;
     changingConversationRef.current = true;
@@ -509,14 +503,16 @@ export default function ChatPage({
       setPins([]);
       setWorkspacePath(conversation.workspacePath);
       setSaveDirectory(undefined);
-      setContextProjectPath([...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath
-        ?? getSavedProjects().find(project => project.projectPath === conversation.workspacePath)?.projectPath);
+      const projectPath = [...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath
+        ?? getSavedProjects().find(project => project.projectPath === conversation.workspacePath)?.projectPath;
+      setContextProjectPath(projectPath);
       setDraft("");
       setNotice("");
       setActivity("");
       setApprovals([]);
       if (window.innerWidth <= 760) setSidebarOpen(false);
       followScroll.current = true;
+      if (projectPath) await onActivateProject?.(projectPath);
     } catch (error) {
       if (alive.current) setNotice(errorText(error));
     } finally {
@@ -596,6 +592,7 @@ export default function ChatPage({
         ),
       }));
     }
+    let requestDispatched = false;
     let turnProjectPath = contextProjectPath;
     let checkpointId: string | undefined;
     const createdProjects = new Set<string>();
@@ -762,6 +759,7 @@ export default function ChatPage({
       await syncProjectDiagnosticMemory(projectDiagnostics.snapshot());
       if (stopRequested.current) return;
       setActivity("Thinking…");
+      requestDispatched = true;
       await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${turnSaveDirectory ? `The user selected this save parent directory for this request: ${JSON.stringify(turnSaveDirectory)}.\n` : ""}${buildContextPrompt(prompt, turnPins)}`, effectiveModel?.model, reasoningEffort, onEvent, prompt);
     } catch (error) {
       if (!stopRequested.current)
@@ -816,6 +814,7 @@ export default function ChatPage({
         setBusy(false);
         setActivity("");
         setApprovals([]);
+        if (requestDispatched && !stopRequested.current) chatNotifications.complete();
         inputRef.current?.focus();
       }
     }
@@ -889,6 +888,9 @@ export default function ChatPage({
         : (status?.error ?? "Checking your local Codex connection…");
 
   const historyProjects = sidebarOpen ? getSavedProjects() : [];
+  const orderedHistory = [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0));
+  const visibleHistory = historyExpanded ? orderedHistory : orderedHistory.slice(0, 10);
+  const HistoryPanel = historyExpanded ? "dialog" : "aside";
 
   return (
     <section
@@ -896,16 +898,23 @@ export default function ChatPage({
       aria-label="AI Integration"
     >
       {sidebarOpen && (
-        <aside id={historyPanelId} ref={historyPanelRef} className="chat-sidebar" aria-label="Recent chats">
+        <HistoryPanel id={historyPanelId} ref={(element: HTMLElement | null) => { historyPanelRef.current = element; }}
+          className={`chat-sidebar${historyExpanded ? " chat-history-modal" : ""}`} aria-label={historyExpanded ? "All chats" : "Recent chats"}
+          onCancel={event => { event.preventDefault(); setSidebarOpen(false); setHistoryExpanded(false); historyToggleRef.current?.focus(); }}
+          onClick={event => {
+            if (!historyExpanded || event.target !== event.currentTarget) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            if (event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY >= bounds.top && event.clientY <= bounds.bottom) return;
+            setSidebarOpen(false); setHistoryExpanded(false); historyToggleRef.current?.focus();
+          }}>
           <div className="chat-sidebar-top">
             <strong>
-              <History size={16} /> Recent chats
+              <History size={16} /> {historyExpanded ? "All chats" : "Recent chats"}
             </strong>
-
           </div>
           <div className="chat-history-list">
             {conversations.length ? (
-              conversations.map((conversation) => {
+              visibleHistory.map((conversation) => {
                 const details = chatHistoryDetails(conversation, historyProjects);
                 const boardLabel = details.boardId
                   ? getBoardById(details.boardId)?.name ?? details.boardId
@@ -920,7 +929,7 @@ export default function ChatPage({
                     type="button"
                     disabled={interactionLocked}
                     title={conversation.title}
-                    onClick={() => { setHistoryMenuId(null); setSidebarOpen(false); void selectConversation(conversation); }}
+                    onClick={() => { setHistoryMenuId(null); setSidebarOpen(false); setHistoryExpanded(false); void selectConversation(conversation); }}
                   >
                     <MessageSquare size={14} />
                     <span className="chat-history-copy">
@@ -978,7 +987,8 @@ export default function ChatPage({
               </p>
             )}
           </div>
-        </aside>
+          {!historyExpanded && <button type="button" data-glass="off" className="chat-history-more" aria-label="View all chats" onClick={() => { setHistoryMenuId(null); setHistoryExpanded(true); }}><MoreHorizontal size={20} /></button>}
+        </HistoryPanel>
       )}
 
       <div className="chat-main">
@@ -1016,7 +1026,7 @@ export default function ChatPage({
                 className="ui-button ui-button-secondary"
                 aria-expanded={sidebarOpen}
                 aria-controls={historyPanelId}
-                onClick={() => setSidebarOpen((current) => !current)}
+                onClick={() => { setHistoryExpanded(false); setSidebarOpen((current) => !current); }}
               >
                 <History size={15} /> Recent chats
               </button>
@@ -1308,8 +1318,6 @@ export default function ChatPage({
             />
             <div className="chat-composer-bottom">
               <div className="chat-composer-controls">
-                <button type="button" className="chat-icon-button" disabled={interactionLocked} aria-label="Attach context"
-                  aria-expanded={contextOpen} onClick={() => setContextOpen(value => !value)}><Paperclip size={17} /></button>
                 <ChatProviderSelect selected={provider} disabled={interactionLocked} desktopAvailable={desktopAvailable}
                   codexStatus={status} onChange={setProvider} />
                 {provider === "codex" && <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
@@ -1354,22 +1362,7 @@ export default function ChatPage({
               )}
             </div>
           </form>
-          {contextOpen && <section className="chat-context-picker" aria-label="Attach context">
-            <button type="button" disabled={interactionLocked || !contextProjectPath} onClick={() => {
-              const project = getSavedProjects().find(item => item.projectPath === contextProjectPath);
-              const board = project && getBoardById(project.boardId);
-              if (!board) { setNotice("Open a project with a known board to pin its details."); return; }
-              addPin(createContextPin("board", board.name, JSON.stringify(board, null, 2)));
-            }}>Pin board</button>
-            <label>Context type<select value={contextKind} disabled={interactionLocked} onChange={event => setContextKind(event.target.value as "selection" | "error")}>
-              <option value="selection">RTL selection</option><option value="error">Error output</option>
-            </select></label>
-            <textarea aria-label="Context to attach" value={contextText} disabled={interactionLocked} onChange={event => setContextText(event.target.value)} placeholder="Paste the selection or error output…" />
-            <button type="button" disabled={interactionLocked || !contextText.trim()} onClick={() => {
-              addPin(createContextPin(contextKind, contextKind === "error" ? "Error output" : "RTL selection", contextText));
-              setContextText(""); setContextOpen(false);
-            }}>Pin context</button>
-          </section>}
+
         </div>
       </div>
       <ChatTaskPanel activities={latestResponse?.activities ?? []} tools={latestResponse?.tools ?? []} busy={busy} ultra={provider === "codex" && reasoningEffort === "ultra"} />

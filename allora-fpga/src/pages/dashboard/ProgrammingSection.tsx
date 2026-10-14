@@ -1,3 +1,4 @@
+import { resolveGeneratedBitstream } from "../../lib/generatedBitstream";
 import SerialMonitorSection from "./SerialMonitorSection";
 import { useEffect, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
@@ -52,6 +53,8 @@ type ProgramResult = {
 export default function ProgrammingSection({
   board,
   files,
+  projectName,
+  projectPath,
   initialTab = "program",
 }: ProgrammingSectionProps) {
   const [activeTab, setActiveTab] = useState<"program" | "serial">(initialTab);
@@ -67,7 +70,8 @@ export default function ProgrammingSection({
   const [programResult, setProgramResult] = useState<ProgramResult | null>(
     null,
   );
-  const [selectedBitstream, setSelectedBitstream] = useState<string>("");
+  const bitstreamFile = resolveGeneratedBitstream(files, projectPath, projectName, board.family);
+  const selectedBitstream = bitstreamFile?.name ?? "";
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   const [programmerError, setProgrammerError] = useState("");
   const [boardError, setBoardError] = useState("");
@@ -79,7 +83,7 @@ export default function ProgrammingSection({
     boardError,
   ].filter(Boolean).join("\n");
   useProjectDiagnostic("programming", failure, failure ? [
-    selectedBitstream ? `Selected bitstream: ${selectedBitstream}` : "",
+    selectedBitstream ? `Generated bitstream: ${selectedBitstream}` : "",
     programResult && !programResult.success && programResult.logs.length ? `Programming output (last 60 lines):\n${programResult.logs.slice(-60).join("\n").slice(-12000)}` : "",
   ].filter(Boolean).join("\n\n") : undefined);
 
@@ -91,12 +95,7 @@ export default function ProgrammingSection({
 
   const capabilities = getBoardCapabilities(board);
   const programmer = resolveBoardProgrammer(board);
-  const bitstreamFiles = files.filter((file) => {
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    return (
-      ext && (programmer?.bitstreamExtensions ?? ["bin", "bit"]).includes(ext)
-    );
-  });
+
 
   async function detectProgrammer() {
     if (!programmer || !hasTauriInvoke()) return;
@@ -159,9 +158,6 @@ export default function ProgrammingSection({
       return;
     }
 
-    const bitstreamFile = bitstreamFiles.find(
-      (f) => f.name === selectedBitstream,
-    );
     if (!bitstreamFile?.path) {
       setProgramResult({
         success: false,
@@ -251,7 +247,6 @@ export default function ProgrammingSection({
             onClick={handleProgramFpga}
             disabled={
               !capabilities.programming.supported ||
-              bitstreamFiles.length === 0 ||
               isProgramming ||
               !selectedBitstream
             }
@@ -278,43 +273,10 @@ export default function ProgrammingSection({
           </button>
         </div>
 
-        {bitstreamFiles.length > 0 ? (
-          <div style={{ marginTop: "16px" }}>
-            <label
-              style={{
-                fontSize: "13px",
-                fontWeight: 800,
-                color: "var(--ui-text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Bitstream
-            </label>
-            <select
-              aria-label="Bitstream to program"
-              value={selectedBitstream}
-              onChange={(event) => setSelectedBitstream(event.target.value)}
-              style={{
-                marginTop: "6px",
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: "var(--ui-radius-sm)",
-                border: "1px solid var(--ui-border-subtle)",
-                background: "var(--ui-control-bg)",
-                color: "var(--ui-text)",
-                fontSize: "14px",
-                fontWeight: 700,
-              }}
-            >
-              {bitstreamFiles.map((file) => (
-                <option key={file.name} value={file.name}>
-                  {file.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+        <div className="ui-workspace-note" style={{ marginTop: "16px" }}>
+          {bitstreamFile ? <p>Generated bitstream: <strong>{bitstreamFile.name}</strong></p>
+            : <p>Generate a bitstream for this project before programming.</p>}
+        </div>
 
         <div
           style={{
@@ -378,7 +340,7 @@ export default function ProgrammingSection({
           >
             {consoleLogs.length
               ? consoleLogs.join("\n")
-              : 'No programming output yet.\n\nSelect a bitstream and click "Program FPGA" to begin.'}
+              : 'No programming output yet.\n\nGenerate a bitstream, then click "Program FPGA" to begin.'}
           </div>
         </div>
         </div>
@@ -477,12 +439,12 @@ export default function ProgrammingSection({
           compact
         >
           <InfoRow
-            label="Available"
-            value={String(bitstreamFiles.length)}
+            label="Source"
+            value="Project bitstream generator"
             compact
           />
           <InfoRow
-            label="Selected"
+            label="Generated file"
             value={selectedBitstream || "None"}
             compact
           />

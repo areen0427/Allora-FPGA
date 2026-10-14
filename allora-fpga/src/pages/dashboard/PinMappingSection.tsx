@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../../data/boards";
 import { getPinTypeColor } from "../../data/pinResourceGroups";
 import DashboardSurfaceCard from "./DashboardSurfaceCard";
@@ -74,6 +74,12 @@ export default function PinMappingSection({
   >("idle");
   const [saveError, setSaveError] = useState("");
   const [mappingEdited, setMappingEdited] = useState(false);
+
+  useEffect(() => {
+    setOverrides(savedMappings ?? {});
+    setMappingEdited(false);
+    setSaveState("idle");
+  }, [board.id, savedMappings]);
 
   const mappedCount = ports.filter(
     (port) => overrides[port.name] ?? suggestedMappings[port.name],

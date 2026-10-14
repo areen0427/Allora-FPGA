@@ -1531,3 +1531,56 @@ Next:
 - Increased shared SVG stroke from 2.112 to 3.8 with rounded joins/caps. Dock uses a 26px CSS box and workspace title 28px, compensating for intrinsic SVG padding; welcome retains its existing size.
 - Targeted visual comparison used actual WorkspaceDock, WorkspaceTitle and shared welcome icons in an isolated browser fixture in Ice and Black Ice. Confirmed balanced visible size and no clipping. Fixture, tab and dev server removed afterward.
 - Production build, lint and whitespace checks passed; existing nonblocking bundle advisories remain.
+
+### 2026-10-14 — Task activity opening motion
+- Expanded task activity reuses the welcome product info panel’s exact `welcome-product-open` keyframes, 400ms easing and top-right origin. Replays on each manual expansion and Ultra automatic expansion; streaming updates do not restart it. Both app and system reduced-motion settings disable it.
+- Production build, lint and whitespace checks passed; existing nonblocking bundle advisories remain. Native code unchanged. Visual animation not manually checked in this update.
+
+### 2026-10-14 — Automatic programmer bitstream
+- Removed manual binary selection and available-file count. Programming resolves only the generator’s canonical project-scoped build/<sanitized-project>.bin (iCE40) or .bit output, ignores internal AI artifact copies and unrelated binaries, and requires generation when absent. Uses native filename sanitization, including repeated punctuation.
+- Bitstream generation passes its actual returned artifact path into the workspace file entry rather than retaining a same-named file’s unrelated path. Internal AI copies remain intact for artifact validation.
+- Two focused resolver tests passed (duplicate copies, missing output, project isolation, formats and sanitization). No hardware programming or visual check performed.
+- Production build, repository lint and whitespace checks passed; existing nonblocking bundle advisories remain.
+
+### 2026-10-14 — In-app completion notifications and unread icon traces
+- A completed, non-stopped AI turn raises an in-app top-right toast only while the chat host is hidden/detached. Chat host visibility is explicit on Welcome and Dashboard. No OS notifications or polling; a tiny shared external store tracks one unread flag/current toast, and one mounted toast owns bounded timers.
+- Toast uses the shared popup shadow group and theme material/text tokens, with the Ultra-style moving gradient border/soft glow and masked outward smoke on all sides. Its 520ms entrance sweeps in from the right with blur, scale and slight overshoot. After a four-second hold (or manual dismissal), a 360ms fade/scale/blur exits right; animation completion removes it, with a fallback timer and stale-ID protection. Reduced-motion settings disable movement/smoke.
+- All shared AI Design Studio icons use a theme-aware gradient along their SVG traces and a quiet glow while unread, without smoke. Closing/expiring the toast retains unread; opening chat clears unread and any toast. Session reset clears it too.
+- Browser checked actual toast/icons in an isolated simulated-completion fixture in Ice/Black Ice: entrance/exit animation events, automatic dismissal, retained unread and return-to-chat clearing. No live model request or OS notification. Fixture/tab/server removed.
+- Validation: full 165-test frontend suite, production build, lint and whitespace checks passed; an additional focused host-visibility test added and checked separately. Existing nonblocking bundle advisories remain. Native code unchanged.
+
+### 2026-10-14 — Completion notification finalization fix
+- Notification delivery no longer depends on receiving the streaming `turn_completed` event. The dispatched request's finalization path sends one notice after the pending response and checkpoint work finish, provided the component is alive and the user did not stop the response. The shared visibility store still suppresses delivery while chat is visible, across app screens and reasoning levels. Late/duplicate completion events cannot duplicate the notice.
+- The icon inside the notification opts out of unread coloring; other shared AI Design Studio icons retain their unread gradient/glow.
+- Added real ChatPage send-pipeline regression checks for switching away while pending with no streamed completion, one final notice despite late completion events, and suppression while chat is visible; toast test asserts its icon stays plain. 23 focused tests passed.
+- Browser checked actual ChatPage + ChatSessionProvider/Host + toast with a simulated backend: send, switch to sample editor, finish without a completion event, see popup/plain popup icon and colored navigation icon. No live model request or real project edits; temporary fixture, tab and server removed.
+- Production build, repository lint and whitespace checks passed. Existing nonblocking bundle advisories remain; native code unchanged.
+
+### 2026-10-14 — Recent-chat project activation
+- Selecting a recent conversation now activates its latest recorded project (or its registered existing workspace project), opening the workspace/sidebar in chat automatically rather than waiting for View Project. A projectless conversation never opens its save-parent directory as a project.
+- ChatSessionProvider updates its scope before the project handoff so the selected conversation/stream container survive the welcome-to-dashboard transition. Same-project activation skips disk reload, preserving editor state. Failed project opening rolls back the provider scope and reports the error in chat rather than opening project setup.
+- Removed the same-conversation selection short circuit so reselecting the active history entry can also populate a missing workspace. Busy conversation switches remain blocked.
+- 23 focused chat/send/session tests passed, including latest-project activation from recent chats, no activation for an uninitialized chat, and stable chat identity across workspace handoff. No native code changes or manual visual check in this update.
+- Production build, repository lint and whitespace checks passed; existing nonblocking bundle advisories remain.
+
+### 2026-10-14 — Completion popup refinement
+- Reduced popup width from 350px to 292px, padding to 14px, icon to 22px, and increased corner radius to 22px. Removed the close button and increased the automatic hold to six seconds before the existing exit animation.
+- Slowed smoke cycle from 2.8s to 6.4s; enlarged the masked exterior from 56px to 80px. Smoke fades to zero at 68% before final travel/scale at 84%, with a smaller final scale, so it dissipates before reaching its mask boundary.
+- Ring now combines a full-color 2.5px core with a blurred gradient layer fading inward/outward; both layers share color flow and reduced-motion suppression. Popup entrance/exit still fade the whole ring.
+- Targeted browser styling check in Ice/Black Ice used the actual toast with simulated completion; no live model request. Temporary fixture/tab/server removed. Three notification tests (including six-second timing and no close button), build, lint and whitespace checks passed. Existing nonblocking bundle advisories remain.
+
+### 2026-10-14 — Notification typography and chat history windows
+- Centered notification text in the panel, enlarged title/body to 14px/13px and switched to shared translucent glass material with backdrop blur. The icon stays offset on the left, without moving the text's center.
+- Recent chats now sort by parsed last-updated time descending, display up to ten entries and cap the list at five 80px rows (shorter viewports may show fewer). Raised the popup above task activity. Three-dot footer opens the entire retained history in a native modal dialog sized like Settings (780x620 with viewport caps), with scrolling, close/Escape and browser-managed focus containment. Existing selection/project activation and per-chat controls remain shared between both views.
+- Browser checked actual ChatPage/Ultra task panel and toast with 16 labeled sample conversations in an isolated profile: ordering, five visible rows, scroll through the ten latest, full-history dialog scrolling to oldest, Escape, layering and larger centered translucent notification text. Ice/Black Ice inspected. No live model requests or project writes. Temporary fixture, tab and dev server removed.
+- Added an interaction regression for chronological ordering, ten-entry compact history and all 16 entries in the full dialog.
+- Final validation: all 173 frontend tests, production build, lint and whitespace checks passed. Existing nonblocking bundle advisories remain; native code unchanged.
+
+### 2026-10-14 — Large history backdrop dismissal
+- Removed All Chats close X and added native-dialog backdrop bounds handling. Outside clicks dismiss and restore focus to Recent chats; clicks on dialog padding/content keep it open; Escape remains. Audited other large dialogs: Settings/GitHub/board variant use the existing shared outside-click focus hook and already have no close X; Memory Asset dialogs already handle native backdrop clicks. Functional Done/Cancel actions remain.
+- All 16 focused chat interaction tests and whitespace checks passed, including inside-padding/outside-backdrop dismissal and absence of the close X. No visual check this update.
+- Production build and repository lint passed; existing nonblocking bundle advisories remain.
+
+### 2026-10-14 — Remove composer attachment control
+- Removed the paperclip/context attachment button and its manual context picker from the chat text bar, plus unused picker state/helpers. Existing automatic project error memory and externally queued context handling remain. Updated the composer regression to assert no attachment control/picker. All 16 focused chat interaction tests and whitespace checks passed.
+- Build and repository lint passed; existing nonblocking bundle advisories remain.

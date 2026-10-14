@@ -43,6 +43,7 @@ import { buildProjectFilePath, readProjectWorkspace } from "../lib/projectWorksp
 import { useFileManagement } from "../hooks/useFileManagement";
 import { useActiveFileTabs } from "../hooks/useActiveFileTabs";
 import { useSaveProject } from "../hooks/useSaveProject";
+import { reconcileProjectMetadata } from "../lib/projectMetadata";
 import { isHdlFile } from "../hooks/utils";
 import { SettingsModal } from "../components/SettingsModal";
 import { UsageDialog } from "../components/UsageDialog";
@@ -102,6 +103,7 @@ type DashboardProps = {
   onBack: () => void;
   onHome: () => void;
   onOpenChatProject: (path: string) => Promise<void>;
+  onRefreshChatProject: (path: string, files: ProjectFile[]) => void;
 };
 
 const DEFAULT_SIDEBAR_WIDTH = 368;
@@ -116,6 +118,7 @@ export default function Dashboard({
   onBack,
   onHome,
   onOpenChatProject,
+  onRefreshChatProject,
 }: DashboardProps) {
   const [navigation, dispatchNavigation] = useReducer(workspaceNavigationReducer, {
     current: initialSection ?? "editor", history: [],
@@ -201,10 +204,18 @@ export default function Dashboard({
   async function reloadChatFiles(path: string) {
     if (path !== projectPath) return;
     const diskFiles = await readProjectWorkspace(path);
-    fileMgmt.setFiles(current => [
-      ...diskFiles.map(file => dirtyFilesRef.current.includes(file.name) ? current.find(item => item.name === file.name) ?? file : file),
-      ...current.filter(file => dirtyFilesRef.current.includes(file.name) && !diskFiles.some(item => item.name === file.name)),
-    ]);
+    const mergedFiles = [
+      ...diskFiles.map(file => dirtyFilesRef.current.includes(file.name) ? fileMgmt.files.find(item => item.name === file.name) ?? file : file),
+      ...fileMgmt.files.filter(file => dirtyFilesRef.current.includes(file.name) && !diskFiles.some(item => item.name === file.name)),
+    ];
+    fileMgmt.setFiles(mergedFiles);
+    if (project) {
+      const refreshed = reconcileProjectMetadata(project, diskFiles);
+      if (refreshed.topLevelFileName !== project.topLevelFileName) {
+        activeTabs.makeTopLevelFile(refreshed.topLevelFileName ?? null);
+      }
+    }
+    onRefreshChatProject(path, mergedFiles);
     return diskFiles;
   }
 
@@ -718,7 +729,7 @@ export default function Dashboard({
 
         <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
           <TroubleshootChatEntrance active={activeSection === "chat"} request={troubleshootChatRequest}>
-          <ChatSessionHost initialProjectPath={projectPath ?? undefined} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}
+          <ChatSessionHost hidden={activeSection !== "chat"} initialProjectPath={projectPath ?? undefined} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}
             onOpenArtifact={openChatArtifact}
             onProjectCreated={onOpenChatProject} onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
           </TroubleshootChatEntrance>
@@ -859,10 +870,10 @@ export default function Dashboard({
             onUpdateConstraints={async (fileName, content) => {
               await handleUpdateConstraintFile(fileName, content);
             }}
-            onAddArtifact={async ({ fileName, content, isBinary }) => {
-              const artifactPath = projectPath
+            onAddArtifact={async ({ fileName, content, isBinary, path }) => {
+              const artifactPath = path ?? (projectPath
                 ? `${projectPath}/build/${fileName}`
-                : undefined;
+                : undefined);
 
               fileMgmt.setFiles((currentFiles) => {
                 const existing = currentFiles.find(
@@ -874,7 +885,7 @@ export default function Dashboard({
                       ? {
                           ...file,
                           content,
-                          path: file.path ?? artifactPath,
+                          path: artifactPath ?? file.path,
                           isBinary,
                         }
                       : file,

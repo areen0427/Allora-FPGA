@@ -176,3 +176,5 @@ Use focused UI checks where geometry or interaction needs confirmation; do not r
 - Keep project files canonical, preserve generated ownership, and use typed Tauri wrappers for native behavior. Git must not bypass the file-save path.
 - Keep network/authentication/Git/hardware actions explicit; never add hidden commits, remotes, pushes, or credential storage.
 - Preserve unrelated working-tree changes. Keep this guide current and record meaningful implementation history in `CONTINUATION.md` rather than accumulating obsolete instructions here.
+
+AI completion notifications: `chatNotifications` keeps in-memory unread/toast state. Explicit ChatSessionHost visibility suppresses notifications while chat is active. Off-screen completed turns show a four-second theme-aware popup with animated Ultra border/all-direction smoke and entrance/exit motion; shared AI icon traces glow until chat is opened. Toast dismissal preserves unread. No OS notification or polling.

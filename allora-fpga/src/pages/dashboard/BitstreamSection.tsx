@@ -42,6 +42,7 @@ type BitstreamSectionProps = {
   onNavigate?: (destination: "editor" | "pin-mapping") => void;
   onAddArtifact?: (artifact: {
     fileName: string;
+    path?: string;
     content: string;
     isBinary?: boolean;
   }) => Promise<void> | void;
@@ -341,6 +342,7 @@ export default function BitstreamSection({
       }
       await onAddArtifact?.({
         fileName: nextArtifact.fileName,
+        path: nextArtifact.artifactPath ?? undefined,
         content: `[binary ${extension.toUpperCase()} artifact generated at ${generatedAt}]`,
         isBinary: true,
       });

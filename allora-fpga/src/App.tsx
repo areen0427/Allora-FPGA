@@ -29,6 +29,8 @@ import {
   readProjectWorkspace,
 } from "./lib/projectWorkspace";
 import "./App.css";
+import { reconcileProjectMetadata } from "./lib/projectMetadata";
+import type { ProjectFile } from "./pages/dashboard/types";
 import { useAutomaticCompactGroups } from "./hooks/useAutomaticCompactGroups";
 import type { DashboardSection, ExecutionTarget } from "./pages/dashboard/types";
 import { prepareCodexReadiness } from "./lib/codexReadiness";
@@ -139,6 +141,7 @@ function App() {
               : (files.find((file) => isHdlFile(file.name))?.name ?? null),
           updatedAt: new Date().toISOString(),
         };
+        nextProject = reconcileProjectMetadata(nextProject, files);
         saveProject(nextProject);
         setProjectWarning("");
       } catch {
@@ -170,6 +173,15 @@ function App() {
     setSelectedBoardId(nextProject.boardId);
     setExecutionTarget(effectiveTarget);
     setStage("dashboard");
+  }
+
+  function refreshChatProject(path: string, files: ProjectFile[]) {
+    if (!project || project.projectPath !== path) return;
+    const next = reconcileProjectMetadata(project, files);
+    saveProject(next);
+    setProject(next);
+    setSelectedBoardId(next.boardId);
+    if (next.lastExecutionTarget) setExecutionTarget(next.lastExecutionTarget);
   }
 
   async function openExistingProject(target: ExecutionTarget = "build", studio = false) {
@@ -225,7 +237,7 @@ function App() {
           diskFiles[0]?.name ??
           null);
     const topLevelFileName =
-      existingProject?.topLevelFileName &&
+      !metadata.topModule && existingProject?.topLevelFileName &&
       diskFiles.some((file) => file.name === existingProject.topLevelFileName)
         ? existingProject.topLevelFileName
         : (findTopModuleFile(diskFiles, metadata.topModule) ??
@@ -463,6 +475,7 @@ function App() {
           )
         }
         onHome={goHome}
+        onRefreshChatProject={refreshChatProject}
         onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, executionTarget); }}
       />
     );

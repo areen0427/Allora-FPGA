@@ -1,10 +1,13 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import ChatCompletionNotification from "./ChatCompletionNotification";
+import { chatNotifications } from "../lib/chatNotifications";
 import ChatPage from "../pages/ChatPage";
 import type { ChatArtifact } from "./ChatTurnDetails";
 import { queueChatArtifact } from "../lib/chatArtifactsBridge";
 
 type Options = {
+  hidden?: boolean;
   initialProjectPath?: string;
   diagnosticsProjectKey?: string;
   resumeLatest?: boolean;
@@ -33,6 +36,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     attach(host, options) {
       optionsRef.current = options;
       host.appendChild(container);
+      chatNotifications.setVisible(!options.hidden);
       const nextScope = options.initialProjectPath ?? options.diagnosticsProjectKey;
       if (initialized.current && scope.current === nextScope) return;
       scope.current = nextScope;
@@ -42,16 +46,24 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       hasOpenedChat.current = true;
       setSession(current => ({ key: (current?.key ?? 0) + 1, options: sessionOptions }));
     },
-    detach(host) { if (container.parentNode === host) container.remove(); },
-    update(options) { optionsRef.current = options; },
-    reset() { initialized.current = false; scope.current = undefined; setSession(null); },
+    detach(host) { if (container.parentNode === host) { container.remove(); chatNotifications.setVisible(false); } },
+    update(options) { optionsRef.current = options; chatNotifications.setVisible(container.isConnected && !options.hidden); },
+    reset() { chatNotifications.reset(); initialized.current = false; scope.current = undefined; setSession(null); },
   }));
   return <Context.Provider value={api}>
     {children}
+    <ChatCompletionNotification />
     {session && createPortal(<ChatPage key={session.key}
       initialProjectPath={session.options.initialProjectPath}
       diagnosticsProjectKey={session.options.diagnosticsProjectKey}
       resumeLatest={session.options.resumeLatest}
+      onActivateProject={async path => {
+        if (optionsRef.current?.initialProjectPath === path) return;
+        const previousScope = scope.current;
+        scope.current = path;
+        try { await optionsRef.current?.onOpenProject(path); }
+        catch (error) { scope.current = previousScope; throw error; }
+      }}
       onOpenSettings={() => optionsRef.current?.onOpenSettings()}
       onOpenProject={path => optionsRef.current!.onOpenProject(path)}
       onOpenArtifact={async artifact => {
