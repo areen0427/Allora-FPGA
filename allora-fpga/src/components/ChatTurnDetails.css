@@ -1,0 +1,70 @@
+.chat-turn-details { margin-top: 14px; }
+.chat-result-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 9px; margin-bottom: 12px; }
+.chat-result-entry { min-width: 0; }
+.chat-result-card, .allora-chat button.chat-result-card {
+  display: block; width: 100%; min-width: 0; padding: 14px;
+  border: 1px solid var(--ui-border-control); border-radius: 10px;
+  background: var(--ui-control-bg); color: var(--ui-text); text-align: left;
+  font: inherit;
+}
+.allora-chat button.chat-result-card:hover:not(:disabled) { background: var(--ui-control-hover-bg); border-color: var(--ui-border-hover); }
+.chat-result-card-heading { display: flex; align-items: center; gap: 9px; color: var(--ui-accent-text); }
+.chat-result-card-heading > svg { flex-shrink: 0; }
+.chat-result-card-heading > strong { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 600; }
+.chat-result-card > small { display: block; color: var(--ui-text-muted); margin-top: 8px; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.chat-result-data { margin-top: 7px; padding: 10px 13px; border: 1px solid var(--ui-border-control); border-radius: 8px; background: var(--ui-control-bg); font-size: 11px; color: var(--ui-text-muted); }
+.chat-result-data summary { cursor: pointer; }
+.chat-result-data pre { max-height: 250px; overflow: auto; font: 10px/1.6 var(--font-code); white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-turn-summary { color: var(--chat-muted); font-size: 11px; }
+.chat-turn-summary > summary { display: flex; flex-wrap: wrap; gap: 7px 11px; align-items: center; cursor: pointer; list-style: none; }
+.chat-turn-summary > summary::-webkit-details-marker { display: none; }
+.chat-turn-summary > summary::after { content: "⌄"; }
+.chat-turn-summary[open] > summary::after { transform: rotate(180deg); }
+.chat-turn-summary > summary > small { font-size: 10px; }
+.chat-turn-summary.has-errors > summary > svg { color: var(--chat-warning); }
+.chat-turn-summary > div { padding: 8px 0 0; line-height: 1.7; }
+.chat-turn-summary p { display: flex; align-items: center; gap: 6px; margin: 5px 0; }
+.chat-turn-summary ul { margin: 5px 0 0; padding-left: 18px; }
+.chat-turn-summary .chat-turn-operation-list { list-style: none; margin: 8px 0 11px; padding: 0; display: grid; gap: 4px; }
+.chat-turn-operation-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.chat-turn-operation-list small { font-size: 10px; }
+.chat-turn-operation-list .error { color: var(--chat-warning); }
+.chat-change-review { border: 1px solid var(--chat-border); background: var(--chat-surface); border-radius: 10px; margin-top: 16px; overflow: hidden; }
+.chat-change-review > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 13px; }
+.chat-change-review > header > div { display: flex; align-items: center; gap: 7px; }
+.chat-change-review > header strong { font-size: 12px; font-weight: 600; }
+.chat-change-review > header small { font-size: 10px; color: var(--chat-muted); }
+.chat-change-review > header button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 7px; border: 1px solid var(--chat-border); border-radius: 6px; background: var(--chat-soft); font-size: 10px !important; }
+.chat-change-review > p, .chat-review-skipped { margin: 0; padding: 0 13px 11px; color: var(--chat-muted); font-size: 10px; line-height: 1.6; }
+.chat-change-review .chat-review-error { color: var(--chat-warning); }
+.chat-review-file { border-top: 1px solid var(--chat-border); }
+.chat-review-file > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; padding: 10px 13px; font-size: 11px; }
+.chat-review-file > summary > code { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 11px; }
+.chat-review-file > summary small { font-size: 10px; font-variant-numeric: tabular-nums; }
+.chat-diff-added { color: var(--ui-success-text); }
+.chat-diff-removed { color: var(--ui-error-text); }
+.chat-review-file-kind { color: var(--chat-muted); font-size: 9px; }
+.chat-file-diff { max-height: 460px; overflow: auto; padding: 7px 0; border-top: 1px solid var(--chat-border); background: var(--ui-control-solid); }
+.chat-diff-line { display: flex; align-items: baseline; gap: 7px; font-size: 11px; line-height: 1.8; width: max-content; min-width: 100%; padding-right: 15px; }
+.chat-diff-line.added { background: var(--ui-success-bg); }
+.chat-diff-line.removed { background: var(--ui-error-bg); }
+.chat-diff-line code { white-space: pre; font: inherit; font-family: var(--font-code); }
+.chat-diff-number { width: 31px; min-width: 31px; text-align: right; color: var(--chat-muted); user-select: none; font-family: var(--font-code); font-size: 10px; }
+.chat-diff-marker { width: 8px; color: var(--chat-muted); user-select: none; }
+.chat-diff-line.added .chat-diff-marker { color: var(--ui-success-text); }
+.chat-diff-line.removed .chat-diff-marker { color: var(--ui-error-text); }
+.chat-file-diff > p, .chat-review-limit { margin: 4px 13px; color: var(--chat-muted); font-size: 11px; }
+.chat-review-skipped { border-top: 1px solid var(--chat-border); padding-top: 10px; }
+.chat-review-skipped summary { cursor: pointer; }
+.chat-review-skipped ul { padding-left: 15px; }
+@media (max-width: 560px) {
+  .chat-change-review > header { align-items: flex-start; }
+  .chat-change-review > header > div { flex-wrap: wrap; }
+  .chat-change-review > header button { flex-shrink: 0; }
+  .chat-review-file-kind { display: none; }
+}
+
+.chat-turn-review-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; color: var(--ui-text-muted); font-size: 11px; }
+.chat-turn-review-status button { padding: 5px 8px; border: 1px solid var(--ui-border-control); border-radius: 6px; color: var(--ui-accent-text); background: var(--ui-control-bg); }
+.chat-turn-summary > div > .chat-review-error { color: var(--ui-warning-text); }
+.chat-turn-summary .chat-change-review p { display: block; }

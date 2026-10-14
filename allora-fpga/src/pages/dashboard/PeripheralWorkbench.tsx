@@ -1,4 +1,5 @@
 import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import type { ProjectFile } from "./types";
@@ -75,6 +76,9 @@ export default function PeripheralWorkbench({
   const [diagnostics, setDiagnostics] = useState(
     "Discovering structural RTL ports…",
   );
+  const operationalError = [...new Set([metadataError, error].filter(Boolean))].join("\n");
+  useProjectDiagnostic("peripheral-workbench", operationalError || null,
+    operationalError ? diagnostics.slice(-5000) : undefined);
   const [, redraw] = useState(0);
   const [viewRuntime, setViewRuntime] = useState<WorkbenchRuntime | null>(null);
   const runtime = useRef<WorkbenchRuntime | null>(null);
@@ -449,11 +453,13 @@ export default function PeripheralWorkbench({
       {metadataError && (
         <div role="alert" className="pw-error">
           {metadataError} — repair allora-project.json in the Editor.
+          <TroubleshootButton source="peripheral-workbench" />
         </div>
       )}
       {error && (
         <div role="alert" className="pw-error">
           {error}
+          {!metadataError && <TroubleshootButton source="peripheral-workbench" />}
         </div>
       )}
       {errors.clock?.map((e) => (

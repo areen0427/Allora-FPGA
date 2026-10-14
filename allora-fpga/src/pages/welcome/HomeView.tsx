@@ -94,7 +94,7 @@ export function HomeView({
   onCreateMemoryBoardProject,
 }: HomeViewProps) {
   const [memoryBoardId, setMemoryBoardId] = useState(boards[0]?.id ?? "");
-  const [departingPath, setDepartingPath] = useState<HomePath | null>(
+  const [departingPath, setDepartingPath] = useState<HomePath | "chat" | null>(
     null,
   );
   const productInfoRef = useRef<HTMLElement>(null);
@@ -144,7 +144,8 @@ export function HomeView({
         aria-busy={departingPath !== null}
         onAnimationEnd={(event) => {
           if (event.target !== event.currentTarget || !departingPath) return;
-          setPath(departingPath);
+          if (departingPath === "chat") onOpenChat();
+          else setPath(departingPath);
           setDepartingPath(null);
         }}
       >
@@ -256,7 +257,13 @@ export function HomeView({
               }
               setDepartingPath(target);
             }}
-            onOpenChat={onOpenChat}
+            onOpenChat={() => {
+              if (reduceMotion) onOpenChat();
+              else setDepartingPath("chat");
+            }}
+            onOpenExisting={() => onOpenExistingProject("build")}
+            isOpening={isOpeningExistingProject}
+            openError={openExistingProjectError}
           />
 
         </div>
@@ -347,12 +354,18 @@ function ExecutionPathChooser({
   selectedTarget,
   onChoose,
   onOpenChat,
+  onOpenExisting,
+  isOpening,
+  openError,
 }: {
   recentProject?: SavedProject;
   onResume: (target: ExecutionTarget) => void;
-  selectedTarget: HomePath | null;
+  selectedTarget: HomePath | "chat" | null;
   onChoose: (target: HomePath) => void;
   onOpenChat: () => void;
+  onOpenExisting: () => void;
+  isOpening: boolean;
+  openError: string;
 }) {
   return (
     <div className="welcome-launch-panel" aria-label="Workspace and design tools">
@@ -365,11 +378,16 @@ function ExecutionPathChooser({
             </button>
           </div>
           {recentProject ? <ContinueProjectTile project={recentProject} onOpen={onResume} /> : null}
+          <button type="button" className="welcome-continue-project welcome-open-project" onClick={onOpenExisting} disabled={isOpening || selectedTarget !== null}>
+            <FolderOpen size={24} aria-hidden="true" />
+            <span className="welcome-continue-project-copy"><strong>{isOpening ? "Opening…" : "Open Project"}</strong></span>
+          </button>
+          {openError && <div className="open-project-error" role="alert">{openError}</div>}
           </section>
           <section className="welcome-design-panel" aria-labelledby="welcome-design-title">
           <h2 id="welcome-design-title">Design Tools</h2>
           <div className="welcome-design-grid">
-          <button type="button" className="execution-path-card welcome-tool-row" onClick={onOpenChat} disabled={selectedTarget !== null}>
+          <button type="button" className={`execution-path-card welcome-tool-row${selectedTarget === "chat" ? " is-selected" : ""}`} onClick={onOpenChat} disabled={selectedTarget !== null}>
             <AiDesignStudioIcon size={24} /><div className="execution-path-copy"><h3>AI Design Studio</h3><span className="execution-path-microcopy">DESIGN WITH AI</span></div>
           </button>
           <button type="button" className={`execution-path-card welcome-tool-row workbench${selectedTarget === "peripheral-workbench" ? " is-selected" : ""}`} onClick={() => onChoose("peripheral-workbench")} disabled={selectedTarget !== null}>
@@ -413,6 +431,7 @@ function ContinueProjectTile({
 
   return (
     <button type="button" className="welcome-continue-project" aria-label={`Resume ${project.name}`} onClick={() => onOpen("build")}>
+      <FolderClock size={24} aria-hidden="true" />
       <span className="welcome-continue-project-copy">
         <span>Continue project</span>
         <strong>{project.name}</strong>

@@ -133,7 +133,7 @@ export default function ChatModelControls(props: Props) {
         </div>
       )}
       <div className="chat-reasoning-anchor" ref={reasoningAnchor}>
-      <button ref={reasoningTrigger} type="button" className={`chat-model-trigger chat-reasoning-control${effort?.reasoningEffort === "ultra" ? " is-ultra" : ""}`}
+      <button ref={reasoningTrigger} type="button" className="chat-model-trigger chat-reasoning-control"
         disabled={props.disabled || !choices.length} aria-haspopup="dialog" aria-expanded={reasoningOpen} aria-controls={`${popupId}-reasoning`}
         onClick={() => { setOpen(false); setSliderPosition(null); setReasoningOpen(true); }}>
         <span>{effort ? effortName(effort.reasoningEffort) : "Default"}</span>

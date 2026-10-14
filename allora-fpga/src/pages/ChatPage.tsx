@@ -1,5 +1,5 @@
 import { WorkspaceTitle } from "../components/ui/WorkspaceTitle";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import {
   AlertCircle,
@@ -13,6 +13,7 @@ import {
   LoaderCircle,
   MessageSquare,
   MoreHorizontal,
+  Paperclip,
   Pencil,
   Plus,
   RefreshCw,
@@ -21,6 +22,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { chatHistoryDetails } from "../lib/chatHistory";
+import { getSavedProjects } from "../data/projects";
+import { getBoardById } from "../data/boards";
 import { createChatTitle } from "../lib/chatTitles";
 import { aiChatApi } from "../lib/aiChat";
 import type { AiChatEvent, AiChatSession, AiChatModel } from "../lib/aiChat";
@@ -37,6 +41,16 @@ import type { ContextUsage, RateLimits } from "../lib/aiChat";
 import ChatProviderSelect from "../components/ChatProviderSelect";
 import ChatModelControls from "../components/ChatModelControls";
 import { reasoningFor } from "../lib/chatModels";
+import ChatTaskPanel, { type Activity } from "../components/ChatTaskPanel";
+import ChatTurnDetails, { type ChatArtifact } from "../components/ChatTurnDetails";
+import { activityLabel } from "../lib/chatActivity";
+import { buildContextPrompt, createContextPin, MAX_CONTEXT_PIN_CHARS, MAX_CONTEXT_TOTAL_CHARS, type ContextPin } from "../lib/chatContext";
+import { subscribeChatPins, takeChatPins } from "../lib/chatPinsBridge";
+import { chatCheckpoints, type ChatChangeReview } from "../lib/chatCheckpoints";
+import { extractChatArtifacts } from "../lib/chatResults";
+import { projectDiagnostics } from "../lib/projectDiagnostics";
+import { syncProjectDiagnosticMemory } from "../lib/projectDiagnosticMemory";
+import ChatErrorSuggestions from "../components/ChatErrorSuggestions";
 import "./ChatPage.css";
 
 const HISTORY_KEY = "allora-codex-conversations-v1";
@@ -46,6 +60,7 @@ type ToolActivity = {
   status: "running" | "complete" | "error";
   input?: string;
   output?: string;
+  agentId?: string;
 };
 type Message = {
   id: string;
@@ -57,6 +72,15 @@ type Message = {
   error?: string;
   interrupted?: boolean;
   pending?: boolean;
+  pins?: ContextPin[];
+  activities?: Activity[];
+  elapsedMs?: number;
+  checkpointId?: string;
+  changedFiles?: string[];
+  checkpointError?: string;
+  projectScope?: string;
+  artifacts?: ChatArtifact[];
+  creationReviewIds?: string[];
 };
 type Conversation = {
   contextUsage?: ContextUsage;
@@ -70,10 +94,12 @@ type Conversation = {
 };
 type Approval = Extract<AiChatEvent, { type: "approval_required" }>;
 type ChatPageProps = {
+  onOpenArtifact?: (artifact: ChatArtifact) => void | Promise<void>;
   onWorkspaceChanged?: (path: string) => Promise<void>;
   onProjectCreated?: (path: string) => Promise<void>;
   resumeLatest?: boolean;
   initialProjectPath?: string;
+  diagnosticsProjectKey?: string;
   onOpenSettings: () => void;
   onOpenProject: (path: string) => Promise<void>;
 };
@@ -126,6 +152,9 @@ function readHistory(): Conversation[] {
           ...message,
           pending: false,
           interrupted: message.pending || message.interrupted,
+          activities: message.activities?.map(item => item.status === "running" || item.status === "pending"
+            ? { ...item, status: "error" as const, detail: "Session ended before completion was reported." }
+            : item),
           tools: message.tools?.map((tool) =>
             tool.status === "running"
               ? {
@@ -143,10 +172,12 @@ function readHistory(): Conversation[] {
 }
 
 export default function ChatPage({
+  onOpenArtifact,
   onWorkspaceChanged,
   onProjectCreated,
   resumeLatest = false,
   initialProjectPath,
+  diagnosticsProjectKey,
   onOpenSettings,
   onOpenProject,
 }: ChatPageProps) {
@@ -161,12 +192,20 @@ export default function ChatPage({
     () => initialProjectPath ?? conversations.find((item) => item.id === activeId)?.workspacePath ?? getLastProjectParentDirectory() ?? "",
   );
   const [saveDirectory, setSaveDirectory] = useState<string | undefined>();
-  const [contextProjectPath, setContextProjectPath] = useState(initialProjectPath);
+  const [contextProjectPath, setContextProjectPath] = useState(() => initialProjectPath
+    ?? [...(conversations.find(item => item.id === activeId)?.messages ?? [])].reverse().find(message => message.projectPath)?.projectPath
+    ?? getSavedProjects().find(project => project.projectPath === workspacePath)?.projectPath);
   const [historyMenuId, setHistoryMenuId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const historyMenuRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState("");
+  const [pins, setPins] = useState<ContextPin[]>([]);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextText, setContextText] = useState("");
+  const [contextKind, setContextKind] = useState<"selection" | "error">("selection");
+  const creationReviews = useRef(new Map<string, ChatChangeReview>());
+  const [activityTick, setActivityTick] = useState(0);
   const [provider, setProvider] = useState<AiProvider>("codex");
   const [models, setModels] = useState<AiChatModel[]>(() => readCodexReadiness()?.models ?? []);
   const [loadingModels, setLoadingModels] = useState(() => desktopAvailable && !readCodexReadiness());
@@ -236,7 +275,73 @@ export default function ChatPage({
   const effectiveModel = models.find((item) => item.model === selectedModel)
     ?? models.find((item) => item.isDefault) ?? models[0];
   const reasoningEffort = reasoningFor(effectiveModel, preferredReasoning);
+  const diagnosticScope = contextProjectPath ?? (initialProjectPath ? undefined : diagnosticsProjectKey) ?? workspacePath;
+  useSyncExternalStore(projectDiagnostics.subscribe, projectDiagnostics.revision, projectDiagnostics.revision);
+  const currentDiagnostics = diagnosticScope ? projectDiagnostics.recent(diagnosticScope) : [];
+  const latestResponse = messages.findLast(message => message.role === "assistant");
+  const displayActivity = activity === "Thinking…" || activity === "Working…" || activity === "Responding…" || !activity
+    ? activityLabel(undefined, activityTick) : activity;
 
+  useEffect(() => {
+    const receive = () => {
+      const incoming = takeChatPins();
+      if (incoming.length) setPins(current => [...current, ...incoming].map(pin => pin.text.length > MAX_CONTEXT_PIN_CHARS
+        ? { ...pin, text: `${pin.text.slice(0, MAX_CONTEXT_PIN_CHARS - 30)}\n[Context truncated]`, label: `${pin.label} (excerpt)` } : pin));
+    };
+    receive();
+    return subscribeChatPins(receive);
+  }, []);
+
+  useEffect(() => {
+    if (!busy) return;
+    const timer = window.setInterval(() => setActivityTick(value => value + 1), 3000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
+
+  useEffect(() => {
+    if (!diagnosticScope || busy || changingConversation) return;
+    const prepare = () => {
+      const intent = projectDiagnostics.takeIntent(diagnosticScope);
+      if (!intent) return;
+      setDraft(current => current.trim() ? `${current}\n\n${intent.prompt}` : intent.prompt);
+      setNotice("");
+      inputRef.current?.focus();
+    };
+    prepare();
+    return projectDiagnostics.subscribeIntent(prepare);
+  }, [diagnosticScope, busy, changingConversation]);
+
+  function addPin(pin: ContextPin) {
+    if (pins.length >= 8) { setNotice("Remove an attachment before adding more than eight context items."); return; }
+    const remaining = Math.min(MAX_CONTEXT_PIN_CHARS, MAX_CONTEXT_TOTAL_CHARS - pins.reduce((total, item) => total + item.text.length, 0));
+    if (remaining <= 30) { setNotice("Context is full. Remove an attachment before adding more."); return; }
+    if (pin.text.length > remaining) {
+      pin = { ...pin, text: `${pin.text.slice(0, remaining - 30)}\n[Context truncated]`, label: `${pin.label} (excerpt)` };
+      setNotice("Attached an excerpt to fit the context limit.");
+    }
+    setPins(current => [...current, pin]);
+  }
+
+  async function openResult(artifact: ChatArtifact) {
+    if (busyRef.current || changingConversationRef.current) return;
+    try {
+      if (onOpenArtifact) await onOpenArtifact(artifact);
+      else if (artifact.projectPath) await openProject(artifact.projectPath);
+    } catch (error) { setNotice(errorText(error)); }
+  }
+
+  const loadTurnReview = useCallback(async (id: string) =>
+    creationReviews.current.get(id) ?? await chatCheckpoints.review(id), []);
+
+  const restoreTurnReview = useCallback(async (id: string, projectPath: string) => {
+    if (busyRef.current) throw new Error("Wait for the current response before restoring changes.");
+    const result = await chatCheckpoints.restore(id);
+    const message = `Restored ${result.restored} file${result.restored === 1 ? "" : "s"} to the checkpoint.`;
+    try {
+      await onWorkspaceChanged?.(projectPath);
+      setNotice(message);
+    } catch (error) { setNotice(`${message} Could not refresh the editor: ${errorText(error)}`); }
+  }, [onWorkspaceChanged]);
 
   const loadReadiness = useCallback(async (refresh = false) => {
     if (!desktopAvailable) return;
@@ -371,6 +476,7 @@ export default function ChatPage({
       if (!alive.current) return false;
       setActiveId(null);
       setDraft("");
+      setPins([]);
       setNotice("");
       setActivity("");
       setApprovals([]);
@@ -400,9 +506,11 @@ export default function ChatPage({
       await closeSession();
       if (!alive.current) return;
       setActiveId(conversation.id);
+      setPins([]);
       setWorkspacePath(conversation.workspacePath);
       setSaveDirectory(undefined);
-      setContextProjectPath([...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath);
+      setContextProjectPath([...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath
+        ?? getSavedProjects().find(project => project.projectPath === conversation.workspacePath)?.projectPath);
       setDraft("");
       setNotice("");
       setActivity("");
@@ -431,8 +539,7 @@ export default function ChatPage({
       !prompt ||
       busyRef.current ||
       changingConversationRef.current ||
-      !ready ||
-      !workspacePath
+      !ready
     )
       return;
     busyRef.current = true;
@@ -445,13 +552,19 @@ export default function ChatPage({
     followScroll.current = true;
     const conversationId = activeId ?? uid();
     const assistantId = uid();
+    const startedAt = Date.now();
+    const turnPins = pins;
+    const turnSaveDirectory = saveDirectory;
+    setSaveDirectory(undefined);
+    setPins([]);
     const additions: Message[] = [
-      { id: uid(), role: "user", text: prompt },
+      { id: uid(), role: "user", text: prompt, pins: turnPins },
       {
         id: assistantId,
         role: "assistant",
         text: "",
         tools: [],
+        activities: [],
         pending: true,
       },
     ];
@@ -484,9 +597,17 @@ export default function ChatPage({
       }));
     }
     let turnProjectPath = contextProjectPath;
+    let checkpointId: string | undefined;
+    const createdProjects = new Set<string>();
     const onEvent = (event: AiChatEvent) => {
       if (!alive.current) return;
       switch (event.type) {
+        case "activity":
+          updateMessage(current => ({
+            ...current,
+            activities: [...(current.activities ?? []).filter(item => item.id !== event.activity.id), event.activity],
+          }));
+          break;
         case "context_usage":
           updateConversation(conversationId, (current) => ({ ...current, contextUsage: event.usage }));
           break;
@@ -516,16 +637,18 @@ export default function ChatPage({
                 name: event.name,
                 status: "running",
                 input: preview(event.arguments),
+                agentId: event.agentId,
               },
             ],
           }));
-          setActivity(toolLabel(event.name));
+          setActivity(activityLabel(event.name));
           break;
         case "tool_completed":
           setStreaming(false);
           setActivity("Thinking…");
           updateMessage((current) => ({
             ...current,
+            artifacts: [...new Map([...(current.artifacts ?? []), ...extractChatArtifacts([{ id: event.id, name: event.name, status: event.isError ? "error" : "complete", result: event.result }], event.projectPath ?? turnProjectPath)].map(artifact => [`${artifact.kind}:${artifact.projectPath}:${artifact.path ?? "inline"}`, artifact])).values()],
             tools: (current.tools ?? []).map((tool) =>
               tool.id === event.id
                 ? {
@@ -545,8 +668,30 @@ export default function ChatPage({
           );
           setActivity("Waiting for your approval");
           break;
+        case "project_directory_required": {
+          const activeSession = session.current;
+          if (!activeSession || stopRequested.current) break;
+          setActivity("Choose where to save your project…");
+          void (async () => {
+            let path: string | null = null;
+            try {
+              path = await pickProjectParentDirectory();
+            } catch (error) {
+              setNotice(errorText(error));
+            }
+            if (stopRequested.current || session.current !== activeSession) return;
+            try {
+              await aiChatApi.projectDirectory(activeSession.sessionId, event.requestId, path);
+              if (path) saveLastProjectParentDirectory(path);
+            } catch (error) {
+              setNotice(errorText(error));
+            }
+          })();
+          break;
+        }
         case "project_created":
           turnProjectPath = event.projectPath;
+          createdProjects.add(event.projectPath);
           updateMessage((current) => ({
             ...current,
             projectPath: event.projectPath,
@@ -568,6 +713,7 @@ export default function ChatPage({
           setActivity(event.message);
           break;
         case "turn_completed":
+          if (event.sessionClosed) session.current = null;
           if (turnProjectPath) void onWorkspaceChanged?.(turnProjectPath).catch(error => setNotice(errorText(error)));
           if (event.threadId)
             updateConversation(conversationId, (current) => ({
@@ -580,6 +726,16 @@ export default function ChatPage({
     };
     try {
       if (!effectiveModel) throw new Error("Load an available Codex model before sending a message.");
+      const existingProject = contextProjectPath ?? getSavedProjects().find(project => project.projectPath === workspacePath)?.projectPath;
+      if (existingProject) {
+        try {
+          const checkpoint = await chatCheckpoints.create(existingProject);
+          checkpointId = checkpoint.id;
+          updateMessage(current => ({ ...current, checkpointId, projectScope: existingProject }));
+        } catch (error) {
+          updateMessage(current => ({ ...current, checkpointError: `Checkpoint unavailable: ${errorText(error)}` }));
+        }
+      }
       if (
         !session.current ||
         session.current.conversationId !== conversationId || session.current.workspacePath !== workspacePath
@@ -602,8 +758,11 @@ export default function ChatPage({
         }));
       }
       if (stopRequested.current) return;
+      // Refresh the read-only project memory; diagnostic text never becomes a user-message attachment.
+      await syncProjectDiagnosticMemory(projectDiagnostics.snapshot());
+      if (stopRequested.current) return;
       setActivity("Thinking…");
-      await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${saveDirectory ? `The user selected this save parent directory: ${JSON.stringify(saveDirectory)}.\n` : ""}${prompt}`, effectiveModel?.model, reasoningEffort, onEvent);
+      await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${turnSaveDirectory ? `The user selected this save parent directory for this request: ${JSON.stringify(turnSaveDirectory)}.\n` : ""}${buildContextPrompt(prompt, turnPins)}`, effectiveModel?.model, reasoningEffort, onEvent, prompt);
     } catch (error) {
       if (!stopRequested.current)
         updateMessage((current) => ({ ...current, error: errorText(error) }));
@@ -612,11 +771,35 @@ export default function ChatPage({
       if (failedSession)
         void aiChatApi.close(failedSession.sessionId).catch(() => {});
     } finally {
+      for (const path of createdProjects) {
+        try {
+          const createdReview = await chatCheckpoints.createdReview(path);
+          creationReviews.current.set(createdReview.id, createdReview);
+          updateMessage(current => ({ ...current,
+            creationReviewIds: [...(current.creationReviewIds ?? []), createdReview.id],
+            changedFiles: [...(current.changedFiles ?? []), ...createdReview.files.map(file => `${folderName(path)}/${file.path}`)],
+          }));
+        } catch (error) {
+          updateMessage(current => ({ ...current, checkpointError: `New project review unavailable: ${errorText(error)}` }));
+        }
+      }
+      if (checkpointId) {
+        try {
+          const changes = await chatCheckpoints.review(checkpointId);
+          updateMessage(current => ({ ...current, changedFiles: [...(current.changedFiles ?? []), ...changes.files.map(file => file.path)] }));
+        } catch (error) {
+          updateMessage(current => ({ ...current, checkpointError: `Change review unavailable: ${errorText(error)}` }));
+        }
+      }
       if (streamingTimer.current) clearTimeout(streamingTimer.current);
       if (alive.current) setStreaming(false);
       updateMessage((current) => ({
         ...current,
         pending: false,
+        elapsedMs: Date.now() - startedAt,
+        activities: current.activities?.map(item => item.status === "running" || item.status === "pending"
+          ? { ...item, status: "error", detail: `${item.detail ? `${item.detail}\n` : ""}Turn ended before completion was reported.` }
+          : item),
         interrupted: stopRequested.current || current.interrupted,
         tools: current.tools?.map((tool) =>
           tool.status === "running"
@@ -677,7 +860,8 @@ export default function ChatPage({
     setOpeningProject(true);
     setNotice("");
     try {
-      await onOpenProject(path);
+      if (onOpenArtifact) await onOpenArtifact({ id: `project:${path}`, kind: "file", label: "View Project", projectPath: path });
+      else await onOpenProject(path);
     } catch (error) {
       setNotice(errorText(error));
     } finally {
@@ -704,6 +888,8 @@ export default function ChatPage({
         ? "Sign in to Codex in AI Integration settings to start chatting."
         : (status?.error ?? "Checking your local Codex connection…");
 
+  const historyProjects = sidebarOpen ? getSavedProjects() : [];
+
   return (
     <section
       className="allora-chat"
@@ -719,7 +905,12 @@ export default function ChatPage({
           </div>
           <div className="chat-history-list">
             {conversations.length ? (
-              conversations.map((conversation) => (
+              conversations.map((conversation) => {
+                const details = chatHistoryDetails(conversation, historyProjects);
+                const boardLabel = details.boardId
+                  ? getBoardById(details.boardId)?.name ?? details.boardId
+                  : details.hasProject ? "Board unavailable" : "No project yet";
+                return (
                 <div
                   key={conversation.id}
                   ref={historyMenuId === conversation.id ? historyMenuRef : undefined}
@@ -732,7 +923,11 @@ export default function ChatPage({
                     onClick={() => { setHistoryMenuId(null); setSidebarOpen(false); void selectConversation(conversation); }}
                   >
                     <MessageSquare size={14} />
-                    <span>{conversation.title}</span>
+                    <span className="chat-history-copy">
+                      <span className="chat-history-title">{conversation.title}</span>
+                      <span className="chat-history-board">{boardLabel}</span>
+                      <time className="chat-history-updated" dateTime={details.updatedDateTime}>Updated {details.updatedLabel}</time>
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -775,7 +970,8 @@ export default function ChatPage({
                     </form>
                   )}
                 </div>
-              ))
+              );
+              })
             ) : (
               <p className="chat-history-empty">
                 Your conversations will appear here.
@@ -895,7 +1091,7 @@ export default function ChatPage({
                               ) : (
                                 <CheckCircle2 size={14} />
                               )}
-                              <span>{toolLabel(tool.name)}</span>
+                              <span>{toolLabel(tool.name)}{tool.agentId ? " · subagent" : ""}</span>
                               <small>
                                 {tool.status === "running"
                                   ? "Running"
@@ -930,6 +1126,19 @@ export default function ChatPage({
                       ) : (
                         <ChatMarkdown text={message.text} />
                       ))}
+                    {!!message.pins?.length && <div className="chat-pin-list" aria-label="Attached context">
+                      {message.pins.map(pin => <span className="chat-pin" key={pin.id} title={pin.text}>{pin.label}</span>)}
+                    </div>}
+                    {message.role === "assistant" && !message.pending && (
+                      <>
+                        <ChatTurnDetails tools={message.tools ?? []} artifacts={message.artifacts} elapsedMs={message.elapsedMs}
+                          files={message.changedFiles} projectPath={message.projectScope ?? message.projectPath}
+                          interrupted={message.interrupted} error={message.error}
+                          disabled={interactionLocked} onOpenArtifact={artifact => void openResult(artifact)}
+                          reviewIds={[...(message.checkpointId ? [message.checkpointId] : []), ...(message.creationReviewIds ?? [])]}
+                          loadReview={loadTurnReview} onRestore={restoreTurnReview} reviewError={message.checkpointError} />
+                      </>
+                    )}
                     {message.projectPath && (
                       <button
                         className="chat-project-result"
@@ -943,7 +1152,7 @@ export default function ChatPage({
                             {message.projectName ||
                               folderName(message.projectPath)}
                           </strong>
-                          <small>Open project in Allora</small>
+                          <small>View Project</small>
                         </span>
                         <ChevronRight size={17} />
                       </button>
@@ -978,7 +1187,7 @@ export default function ChatPage({
                       message.pending && busy && !streaming &&
                       !message.error && !message.interrupted && (
                         <div className="chat-thinking" role="status" aria-live="polite">
-                          <span>{approval ? "Waiting for your approval" : activity && activity !== "Responding…" ? activity : "Thinking…"}</span>
+                          <span>{approval ? "Waiting for your approval" : displayActivity}</span>
                           <i /><i /><i />
                         </div>
                       )}
@@ -1020,6 +1229,7 @@ export default function ChatPage({
         </div>
 
         <div className="chat-composer-area">
+
           {!ready && (
             <div className="chat-setup-notice">
               <AlertCircle size={17} />
@@ -1048,31 +1258,35 @@ export default function ChatPage({
               </button>
             </div>
           )}
-          {ready && !workspacePath && (
-            <button
-              className="chat-folder-prompt"
-              type="button"
-              onClick={() => void chooseWorkspace()}
-            >
-              <FolderOpen size={15} /> Choose a workspace folder to get started{" "}
-              <ChevronRight size={14} />
-            </button>
-          )}
-          {(busy || changingConversation) && (
+          {changingConversation && (
             <div className="chat-active-status" role="status">
               <LoaderCircle size={12} className="spinning" />
-              {changingConversation
-                ? "Switching conversations…"
-                : activity || "Working…"}
+              Switching conversations…
             </div>
           )}
+          <ChatErrorSuggestions entries={currentDiagnostics} disabled={interactionLocked} onChoose={(_entry, prompt) => {
+            setDraft(current => current.trim() ? `${current}\n\n${prompt}` : prompt);
+            setNotice("");
+            inputRef.current?.focus();
+          }} />
           <form
-            className={`chat-composer${busy ? " is-busy" : ""}`}
+            className={`chat-composer${busy ? " is-busy" : ""}${provider === "codex" && reasoningEffort === "ultra" ? " is-ultra" : ""}`}
             onSubmit={(event) => {
               event.preventDefault();
               void send();
             }}
           >
+            {provider === "codex" && reasoningEffort === "ultra" && (
+              <span className="chat-ultra-wisps" aria-hidden="true">
+                <i /><i /><i /><i /><i /><i />
+              </span>
+            )}
+            {!!pins.length && <div className="chat-pin-list" aria-label="Pinned context">
+              {pins.map(pin => <span className="chat-pin" key={pin.id}>
+                <span title={pin.text}>{pin.label}</span><button type="button" disabled={interactionLocked}
+                  onClick={() => setPins(current => current.filter(item => item.id !== pin.id))} aria-label={`Remove ${pin.label}`}><X size={12} /></button>
+              </span>)}
+            </div>}
             <textarea
               ref={inputRef}
               rows={1}
@@ -1094,6 +1308,8 @@ export default function ChatPage({
             />
             <div className="chat-composer-bottom">
               <div className="chat-composer-controls">
+                <button type="button" className="chat-icon-button" disabled={interactionLocked} aria-label="Attach context"
+                  aria-expanded={contextOpen} onClick={() => setContextOpen(value => !value)}><Paperclip size={17} /></button>
                 <ChatProviderSelect selected={provider} disabled={interactionLocked} desktopAvailable={desktopAvailable}
                   codexStatus={status} onChange={setProvider} />
                 {provider === "codex" && <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
@@ -1130,8 +1346,7 @@ export default function ChatPage({
                   disabled={
                     interactionLocked ||
                     !draft.trim() ||
-                    !ready ||
-                    !workspacePath
+                    !ready
                   }
                 >
                   <ArrowUp size={20} />
@@ -1139,12 +1354,25 @@ export default function ChatPage({
               )}
             </div>
           </form>
-          <p className="chat-composer-caption">
-            Allora shows tool activity and asks before programming hardware.{" "}
-            <span>Enter to send · Shift + Enter for a new line</span>
-          </p>
+          {contextOpen && <section className="chat-context-picker" aria-label="Attach context">
+            <button type="button" disabled={interactionLocked || !contextProjectPath} onClick={() => {
+              const project = getSavedProjects().find(item => item.projectPath === contextProjectPath);
+              const board = project && getBoardById(project.boardId);
+              if (!board) { setNotice("Open a project with a known board to pin its details."); return; }
+              addPin(createContextPin("board", board.name, JSON.stringify(board, null, 2)));
+            }}>Pin board</button>
+            <label>Context type<select value={contextKind} disabled={interactionLocked} onChange={event => setContextKind(event.target.value as "selection" | "error")}>
+              <option value="selection">RTL selection</option><option value="error">Error output</option>
+            </select></label>
+            <textarea aria-label="Context to attach" value={contextText} disabled={interactionLocked} onChange={event => setContextText(event.target.value)} placeholder="Paste the selection or error output…" />
+            <button type="button" disabled={interactionLocked || !contextText.trim()} onClick={() => {
+              addPin(createContextPin(contextKind, contextKind === "error" ? "Error output" : "RTL selection", contextText));
+              setContextText(""); setContextOpen(false);
+            }}>Pin context</button>
+          </section>}
         </div>
       </div>
+      <ChatTaskPanel activities={latestResponse?.activities ?? []} tools={latestResponse?.tools ?? []} busy={busy} ultra={provider === "codex" && reasoningEffort === "ultra"} />
     </section>
   );
 }

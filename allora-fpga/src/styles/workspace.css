@@ -26,6 +26,15 @@
   width: 24px;
   height: 24px;
 }
+.ui-workspace-title-icon-ai {
+  flex-basis: 28px;
+  width: 28px;
+  height: 28px;
+}
+.ui-workspace-title-icon-ai > svg {
+  width: 28px;
+  height: 28px;
+}
 #root .chat-header .ui-workspace-title {
   margin-bottom: 0;
 }

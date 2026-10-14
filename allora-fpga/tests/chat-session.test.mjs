@@ -7,6 +7,7 @@ const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.Scri
 let id = 0;
 async function harness() {
   const states = [], refs = [];
+  const queuedArtifacts = [];
   let stateIndex = 0, refIndex = 0;
   const container = { style: {}, parentNode: null, remove() { this.parentNode = null; } };
   const jsx = (type, props, key) => ({ type, props, key });
@@ -21,12 +22,14 @@ async function harness() {
       return [states[index], value => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
     },
     document: { createElement: () => container },
+    queueChatArtifact: artifact => queuedArtifacts.push(artifact),
   };
-  const prefix = "const { _jsx, _jsxs, ChatPage, createContext, createPortal, useRef, useState, document } = globalThis.chatSessionHarness;\n";
+  const prefix = "const { _jsx, _jsxs, ChatPage, createContext, createPortal, useRef, useState, document, queueChatArtifact } = globalThis.chatSessionHarness;\n";
   const { ChatSessionProvider } = await import(`data:text/javascript;base64,${Buffer.from(prefix + compiled).toString("base64")}#${id++}`);
   delete globalThis.chatSessionHarness;
   return {
     container,
+    queuedArtifacts,
     render() {
       stateIndex = refIndex = 0;
       const tree = ChatSessionProvider({ children: null });
@@ -50,6 +53,22 @@ test("landing and setup visits keep the same chat instance and stable portal tar
   assert.equal(h.render().chat.key, chat.key);
   assert.equal(h.container.parentNode, second);
 });
+
+test("result cards queue the exact artifact when opening its project from welcome", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  let opened;
+  api.attach(h.host(), { ...options(), onOpenProject: async path => { opened = path; } });
+  const artifact = { id: "wave", kind: "waveform", path: "/projects/new/sim/counter.vcd", projectPath: "/projects/new" };
+  await h.render().chat.props.onOpenArtifact(artifact);
+  assert.equal(opened, "/projects/new");
+  assert.deepEqual(h.queuedArtifacts, [artifact]);
+  let navigated;
+  api.update({ ...options("/projects/new"), onOpenArtifact: item => { navigated = item; } });
+  await h.render().chat.props.onOpenArtifact(artifact);
+  assert.equal(navigated, artifact);
+  assert.equal(h.queuedArtifacts.length, 1);
+});
 test("AI-created project retains its conversation; switching projects starts a scoped chat", async () => {
   const h = await harness();
   const { api } = h.render();
@@ -66,7 +85,7 @@ test("AI-created project retains its conversation; switching projects starts a s
   assert.equal(other.props.initialProjectPath, "/projects/other");
   assert.equal(other.props.resumeLatest, true);
 });
-test("Home clears the live conversation and next welcome launch is projectless", async () => {
+test("explicit session reset clears the conversation and next welcome launch is projectless", async () => {
   const h = await harness();
   const { api } = h.render();
   api.attach(h.host(), options("/projects/current"));
@@ -74,5 +93,26 @@ test("Home clears the live conversation and next welcome launch is projectless",
   assert.equal(h.render().chat, undefined);
   api.attach(h.host(), options());
   assert.equal(h.render().chat.props.initialProjectPath, undefined);
-  assert.equal(h.render().chat.props.resumeLatest, undefined);
+  assert.equal(h.render().chat.props.resumeLatest, false);
+});
+
+test("each app launch starts fresh even when its host requests latest history", async () => {
+  for (let launch = 0; launch < 2; launch++) {
+    const h = await harness();
+    const { api } = h.render();
+    api.attach(h.host(), { ...options("/projects/saved"), resumeLatest: true });
+    assert.equal(h.render().chat.props.resumeLatest, false);
+  }
+});
+test("in-app return preserves the active chat and later project visits can resume history", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  const first = h.host();
+  api.attach(first, { ...options(), resumeLatest: true });
+  const chat = h.render().chat;
+  api.detach(first);
+  api.attach(h.host(), { ...options(), resumeLatest: true });
+  assert.equal(h.render().chat.key, chat.key);
+  api.attach(h.host(), { ...options("/projects/saved"), resumeLatest: true });
+  assert.equal(h.render().chat.props.resumeLatest, true);
 });

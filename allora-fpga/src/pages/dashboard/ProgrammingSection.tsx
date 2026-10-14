@@ -10,6 +10,7 @@ import {
   invokeTauri,
 } from "../../lib/tauri";
 import type { ProjectFile } from "./types";
+import { useProjectDiagnostic, TroubleshootButton } from "../../components/ProjectDiagnostics";
 
 type ProgrammingSectionProps = {
   board: BoardDefinition;
@@ -68,7 +69,19 @@ export default function ProgrammingSection({
   );
   const [selectedBitstream, setSelectedBitstream] = useState<string>("");
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
+  const [programmerError, setProgrammerError] = useState("");
+  const [boardError, setBoardError] = useState("");
   const consoleRef = useRef<HTMLDivElement | null>(null);
+
+  const failure = [
+    programResult && !programResult.success ? programResult.message : "",
+    programmerError,
+    boardError,
+  ].filter(Boolean).join("\n");
+  useProjectDiagnostic("programming", failure, failure ? [
+    selectedBitstream ? `Selected bitstream: ${selectedBitstream}` : "",
+    programResult && !programResult.success && programResult.logs.length ? `Programming output (last 60 lines):\n${programResult.logs.slice(-60).join("\n").slice(-12000)}` : "",
+  ].filter(Boolean).join("\n\n") : undefined);
 
   useEffect(() => {
     if (consoleRef.current) {
@@ -89,12 +102,14 @@ export default function ProgrammingSection({
     if (!programmer || !hasTauriInvoke()) return;
 
     setIsDetectingProgrammer(true);
+    setProgrammerError("");
     try {
       const result = await invokeTauri<ProgrammerStatus>("detect_programmer", {
         request: { programmerCommand: programmer.command },
       });
       setProgrammerStatus(result);
-    } catch {
+    } catch (error) {
+      setProgrammerError(`Failed to detect programmer: ${getErrorMessage(error)}`);
       setProgrammerStatus({
         installed: false,
         versionOutput: null,
@@ -110,6 +125,7 @@ export default function ProgrammingSection({
     if (!programmer || !hasTauriInvoke()) return;
 
     setIsDetectingBoard(true);
+    setBoardError("");
     try {
       const result = await invokeTauri<BoardConnectionStatus>(
         "detect_connected_board",
@@ -122,7 +138,8 @@ export default function ProgrammingSection({
         },
       );
       setBoardStatus(result);
-    } catch {
+    } catch (error) {
+      setBoardError(`Failed to detect connected boards: ${getErrorMessage(error)}`);
       setBoardStatus({
         connected: false,
         details: "Failed to detect connected boards.",
@@ -136,7 +153,11 @@ export default function ProgrammingSection({
   }
 
   async function handleProgramFpga() {
-    if (!programmer || !selectedBitstream || !hasTauriInvoke()) return;
+    if (!programmer || !selectedBitstream) return;
+    if (!hasTauriInvoke()) {
+      setProgramResult({ success: false, logs: [], message: "Open the Allora desktop app to program the FPGA." });
+      return;
+    }
 
     const bitstreamFile = bitstreamFiles.find(
       (f) => f.name === selectedBitstream,
@@ -324,6 +345,7 @@ export default function ProgrammingSection({
             : capabilities.programming.supported
               ? "A programmer is configured. Confirm the tool, adapter, and target board before running it."
               : capabilities.programming.detail}
+          {programResult && !programResult.success && <div style={{ marginTop: "10px" }}><TroubleshootButton source="programming" /></div>}
         </div>
 
         <div
@@ -414,6 +436,7 @@ export default function ProgrammingSection({
               compact
             />
           ) : null}
+          {boardError && <div className="ui-workspace-note error" role="alert"><p>{boardStatus?.details}</p><TroubleshootButton source="programming" /></div>}
         </InfoCard>
 
         <InfoCard
@@ -445,6 +468,7 @@ export default function ProgrammingSection({
               compact
             />
           ) : null}
+          {programmerError && <div className="ui-workspace-note error" role="alert"><p>{programmerStatus?.message}</p><TroubleshootButton source="programming" /></div>}
         </InfoCard>
 
         <InfoCard

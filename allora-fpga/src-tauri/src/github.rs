@@ -1594,6 +1594,13 @@ mod tests {
             return;
         }
         let directory = tempfile::tempdir().expect("temporary directory");
+        // Never discover/commit an enclosing checkout when TMPDIR is inside it.
+        assert!(Command::new("git")
+            .args(["init", "--quiet", "--initial-branch=main"])
+            .current_dir(directory.path())
+            .status()
+            .expect("isolated fixture repository")
+            .success());
         let project_path = directory.path().to_string_lossy().to_string();
         fs::write(directory.path().join("allora-project.json"), "{}").expect("metadata");
         fs::write(directory.path().join("top.sv"), "module top; endmodule\n").expect("source");

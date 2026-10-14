@@ -1,4 +1,5 @@
 import { publishExplorer } from "../../lib/explorerBridge";
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
 import type { editor as MonacoEditor } from "monaco-editor";
@@ -138,6 +139,12 @@ export default function EditorSection({
 
   const errorCount = diagnostics.filter((d) => d.severity === "error").length;
   const warningCount = diagnostics.length - errorCount;
+  const lintErrors = diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+  const editorError = [
+    errorCount ? `${errorCount} HDL lint error${errorCount === 1 ? "" : "s"}` : "",
+  ].filter(Boolean).join(". ");
+  useProjectDiagnostic("editor", editorError || null, editorError ? lintErrors.slice(0, 30)
+    .map((diagnostic) => `${diagnostic.fileName}:${diagnostic.line}: ${diagnostic.message}`).join("\n") : undefined);
 
   return (
     <div
@@ -271,6 +278,7 @@ export default function EditorSection({
               : ""}
           </div>
         ) : null}
+        {errorCount > 0 && <TroubleshootButton source="editor" />}
       </div>
 
       <div className="editor-breadcrumbs" aria-label="Current file path">
@@ -288,6 +296,7 @@ export default function EditorSection({
             {getEditorSaveLabel(saveStatus, lastSavedAt)}
           </span>
           <span className="editor-autosave-note">Autosave: On</span>
+          {saveStatus === "error" && errorCount === 0 && <TroubleshootButton source="editor" />}
         </div>
       </div>
 

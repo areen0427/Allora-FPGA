@@ -18,7 +18,7 @@ import { WelcomeShell } from "./welcome/WelcomeShell";
 import type { WelcomeView } from "./welcome/WelcomeShell";
 import { UsageDialog } from "../components/UsageDialog";
 import type { DashboardSection, ExecutionTarget } from "./dashboard/types";
-import { ChatSessionHost, useResetChatSession } from "../components/ChatSession";
+import { ChatSessionHost } from "../components/ChatSession";
 
 type BoardSelectProps = {
   initialView?: WelcomeView;
@@ -55,7 +55,6 @@ export default function BoardSelect({
   onCreateMemoryBoardProject,
   onOpenChatProject,
 }: BoardSelectProps) {
-  const resetChat = useResetChatSession();
   const [selectedVariantBoard, setSelectedVariantBoard] =
     useState<VariantBoardCatalogItem | null>(null);
   const [memoryBoardChoice, setMemoryBoardChoice] = useState(false);
@@ -125,8 +124,6 @@ export default function BoardSelect({
     setHomePath(null);
     setShowProductInfo(false);
     if (view === "home") {
-      setChatVisited(false);
-      resetChat();
       setSelectedPinBoard(null);
       setHomeViewKey((current) => current + 1);
     }
@@ -166,7 +163,7 @@ export default function BoardSelect({
       onViewChange={handleViewChange}
       onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}
     >
-      {chatVisited && <ChatSessionHost hidden={activeView !== "chat"} initialProjectPath={chatProjectPath} resumeLatest={initialView === "chat"}
+      {chatVisited && <ChatSessionHost hidden={activeView !== "chat"} initialProjectPath={chatProjectPath} resumeLatest
         onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }}
         onOpenProject={onOpenChatProject} onProjectCreated={onOpenChatProject} />}
       {activeView === "home" ? (

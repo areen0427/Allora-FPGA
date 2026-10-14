@@ -30,7 +30,7 @@ export function WorkspaceTitle({ section, title }: { section?: DashboardSection;
   const Icon = page?.icon ?? CircleDot;
   return (
     <h1 className="ui-workspace-title">
-      <span className="ui-workspace-title-icon" aria-hidden="true"><Icon size={24} /></span>
+      <span className={`ui-workspace-title-icon${section === "chat" ? " ui-workspace-title-icon-ai" : ""}`} aria-hidden="true"><Icon size={section === "chat" ? 28 : 24} /></span>
       <span>{title ?? page?.title}</span>
     </h1>
   );

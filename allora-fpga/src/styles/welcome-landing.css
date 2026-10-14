@@ -2008,9 +2008,10 @@ button.welcome-continue-project:focus-visible { outline: 2px solid var(--ui-acce
 }
 .welcome-build-panel { display: flex; flex-direction: column; gap: 18px; }
 .execution-path-stage .welcome-build-panel .execution-path-option { flex: 1; }
-.execution-path-stage .welcome-build-panel .execution-path-card { min-height: 300px; height: 100%; align-content: center; }
+.execution-path-stage .welcome-build-panel .execution-path-card { min-height: 220px; height: 100%; align-content: center; }
 .execution-path-stage .welcome-build-panel .execution-path-copy h3 { font-size: clamp(36px, 4vw, 56px); min-height: auto; }
-.execution-path-stage .welcome-build-panel .welcome-continue-project { width: 100%; margin: 0; min-height: 60px; height: auto; padding: 12px 16px; text-align: left; }
+.execution-path-stage .welcome-build-panel .welcome-continue-project { width: 100%; margin: 0; flex: 0 0 70px; min-height: 70px; height: 70px; padding: 12px clamp(16px, 1.8vw, 26px); justify-content: flex-start; text-align: left; }
+.welcome-build-panel .welcome-continue-project > svg { flex: 0 0 24px; color: var(--landing-text); }
 .welcome-build-panel .welcome-continue-project-meta { flex-direction: row; gap: 8px; }
 .welcome-design-panel { display: flex; flex-direction: column; gap: 18px; }
 .welcome-design-panel > h2 { margin: 0; color: var(--landing-text); font-size: 18px; font-weight: 750; }
@@ -2044,4 +2045,13 @@ button.welcome-continue-project:focus-visible { outline: 2px solid var(--ui-acce
 html[data-reduce-motion="true"] .welcome-product-anchor .welcome-logo-info.glass-unfold { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .execution-path-stage .welcome-product-anchor .welcome-logo-info.glass-unfold { animation: none; }
+}
+
+/* Welcome chat uses the same destination arrival as the tool landings. */
+.welcome-view-chat .welcome-content {
+  animation: welcome-destination-content 520ms cubic-bezier(0.22, 0.72, 0.18, 1) both;
+}
+html[data-reduce-motion="true"] .welcome-view-chat .welcome-content { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .welcome-view-chat .welcome-content { animation: none; }
 }

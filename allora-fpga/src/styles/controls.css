@@ -147,6 +147,11 @@
 
 
 
+.ui-dock-icon > .ai-design-studio-icon {
+  width: calc(var(--ui-dock-icon-size) + 4px);
+  height: calc(var(--ui-dock-icon-size) + 4px);
+}
+
 .ui-dock-button > .ui-dock-icon::before,
 .ui-dock-button > .ui-dock-icon::after {
   opacity: 0;

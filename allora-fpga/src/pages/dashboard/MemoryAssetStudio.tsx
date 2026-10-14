@@ -1,4 +1,5 @@
 import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
@@ -279,6 +280,8 @@ export default function MemoryAssetStudio({
   const [inspected, setInspected] = useState(0);
   const [memoryIndex, setMemoryIndex] = useState(0);
   const [status, setStatus] = useState("");
+  const [operationError, setOperationError] = useState("");
+  useProjectDiagnostic("memory-asset-studio", operationError || null);
   const [sourceChanged, setSourceChanged] = useState(false);
   const [outputsChanged, setOutputsChanged] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -325,6 +328,7 @@ export default function MemoryAssetStudio({
     if (!projectPath) return;
     setLoaded(false);
     setManifestError(false);
+    setOperationError("");
     setManifest({ schemaVersion: 1, assets: [] });
     setSelected(null);
     let live = true;
@@ -342,6 +346,7 @@ export default function MemoryAssetStudio({
         if (live) {
           setManifestError(true);
           setStatus(message(error));
+          setOperationError(message(error));
         }
       })
       .finally(() => {
@@ -357,6 +362,7 @@ export default function MemoryAssetStudio({
       return null;
     });
     setSourceBytes(null);
+    setOperationError("");
     setSourceChanged(false);
     setOutputsChanged(false);
     setDraft(asset?.options ?? null);
@@ -401,6 +407,7 @@ export default function MemoryAssetStudio({
         if (live) {
           setPreview(null);
           setStatus(message(error));
+          setOperationError(message(error));
         }
       })
       .finally(() => {
@@ -445,10 +452,13 @@ export default function MemoryAssetStudio({
     actionLock.current = true;
     setBusy(true);
     setStatus("");
+    setOperationError("");
     try {
       await action();
     } catch (error) {
-      setStatus(message(error));
+      const failure = message(error);
+      setStatus(failure);
+      if (failure !== "Removal cancelled; existing files were kept.") setOperationError(failure);
     } finally {
       actionLock.current = false;
       setBusy(false);
@@ -748,8 +758,9 @@ export default function MemoryAssetStudio({
         />
       </header>
       {status && (
-        <p className="mas-status" role="status">
+        <p className="mas-status" role={operationError ? "alert" : "status"}>
           {status}
+          {operationError && <TroubleshootButton source="memory-asset-studio" />}
         </p>
       )}
       {dialog && <AssetDialog request={dialog} onResolve={resolveDialog} />}

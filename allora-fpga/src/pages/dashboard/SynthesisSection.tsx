@@ -1,3 +1,4 @@
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import type { SynthesisDiagramResponse } from "../../lib/synthesisGraph";
 export type { SynthesisDiagramResponse } from "../../lib/synthesisGraph";
 import { useEffect, useMemo, useState } from "react";
@@ -53,6 +54,11 @@ export default function SynthesisSection({
   const [diagram, setDiagram] = useState<SynthesisDiagramResponse | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showAdvancedLog, setShowAdvancedLog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const diagnosticDetails = useMemo(() => errorMessage
+    ? log.slice(-40).join("\n").slice(-8_000)
+    : undefined, [errorMessage, log]);
+  useProjectDiagnostic("synthesis", errorMessage, diagnosticDetails);
 
   const hdlFiles = files.filter((file) => isHdlFile(file.name));
   const selectedTopLevelFile = topLevelFileName
@@ -113,7 +119,9 @@ export default function SynthesisSection({
         `${projectName || nextDiagram.topModule} — Synthesis Explorer`,
         { ...nextDiagram, projectKey: projectPath ?? projectName, sourceFiles: nextDiagram.sourceFiles ?? synthesisFiles },
       );
+      setErrorMessage(current => current?.startsWith("Unable to open the synthesis viewer:") ? null : current);
     } catch (viewerError) {
+      setErrorMessage(`Unable to open the synthesis viewer: ${getErrorMessage(viewerError)}`);
       setLog((current) => [
         ...current.filter((line) => !line.startsWith("[viewer]")),
         `[viewer] ${getErrorMessage(viewerError)}`,
@@ -123,12 +131,14 @@ export default function SynthesisSection({
 
   async function runSynthesis() {
     if (status === "unsupported") {
+      setErrorMessage(capabilities.synthesisDiagram.detail);
       setDiagram(null);
       setLog(["[synthesis] Unsupported", capabilities.synthesisDiagram.detail]);
       return;
     }
 
     if (status === "blocked") {
+      setErrorMessage("No HDL files found. Create or import a .v or .sv file first.");
       setDiagram(null);
       setLog([
         "[synthesis] Blocked",
@@ -138,6 +148,7 @@ export default function SynthesisSection({
     }
 
     if (!hasTauriInvoke()) {
+      setErrorMessage("Launch the desktop app to generate a real synthesized hardware diagram.");
       setDiagram(null);
       setLog([
         "[synthesis] Tauri runtime unavailable",
@@ -147,6 +158,7 @@ export default function SynthesisSection({
     }
 
     setIsRunning(true);
+    setErrorMessage(null);
     setDiagram(null);
     setLog([
       "[synthesis] Starting real synthesis run",
@@ -177,6 +189,7 @@ export default function SynthesisSection({
       setShowAdvancedLog(false);
       await openDiagramViewer(result);
     } catch (error) {
+      setErrorMessage(getErrorMessage(error));
       setDiagram(null);
       setLog(["[synthesis] Failed", getErrorMessage(error)]);
     } finally {
@@ -249,6 +262,11 @@ export default function SynthesisSection({
             </button>
           ) : null}
         </div>
+
+        {errorMessage && <div className="ui-workspace-note error">
+          {errorMessage}
+          <TroubleshootButton source="synthesis" />
+        </div>}
 
         <div className="synthesis-report-shell ui-workspace-section">
           {showAdvancedLog && visibleLog.length > 0 ? (

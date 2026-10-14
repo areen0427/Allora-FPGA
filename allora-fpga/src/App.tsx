@@ -1,5 +1,5 @@
 import { useBackSwipe } from "./hooks/useBackSwipe";
-import { ChatSessionProvider, useResetChatSession } from "./components/ChatSession";
+import { ChatSessionProvider } from "./components/ChatSession";
 import { useEffect, useRef, useState } from "react";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
@@ -33,6 +33,8 @@ import { useAutomaticCompactGroups } from "./hooks/useAutomaticCompactGroups";
 import type { DashboardSection, ExecutionTarget } from "./pages/dashboard/types";
 import { prepareCodexReadiness } from "./lib/codexReadiness";
 import { hasTauriInvoke } from "./lib/tauri";
+import { projectDiagnostics } from "./lib/projectDiagnostics";
+import { syncProjectDiagnosticMemory } from "./lib/projectDiagnosticMemory";
 import { findTopModuleFile } from "./hooks/utils";
 
 type AppStage =
@@ -53,7 +55,6 @@ type ProjectMetadata = {
 
 function App() {
   useAutomaticCompactGroups();
-  const resetChat = useResetChatSession();
   const [chatProjectPath, setChatProjectPath] = useState<string | undefined>();
   const [workspaceSection, setWorkspaceSection] = useState<DashboardSection | undefined>();
   const [returnToChat, setReturnToChat] = useState(false);
@@ -77,6 +78,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const publish = () => { void syncProjectDiagnosticMemory(projectDiagnostics.snapshot()).catch(() => {}); };
+    publish();
+    return projectDiagnostics.subscribe(publish);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
     document.documentElement.dataset.background = settings.background;
     document.documentElement.dataset.reduceMotion = String(settings.reduceMotion);
@@ -94,7 +101,6 @@ function App() {
   }, []);
 
   function goHome() {
-    resetChat();
     setReturnToChat(false);
     setWorkspaceSection(undefined);
     setChatProjectPath(undefined);

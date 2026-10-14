@@ -1,14 +1,18 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import ChatPage from "../pages/ChatPage";
+import type { ChatArtifact } from "./ChatTurnDetails";
+import { queueChatArtifact } from "../lib/chatArtifactsBridge";
 
 type Options = {
   initialProjectPath?: string;
+  diagnosticsProjectKey?: string;
   resumeLatest?: boolean;
   onOpenSettings: () => void;
   onOpenProject: (path: string) => Promise<void>;
   onWorkspaceChanged?: (path: string) => Promise<void>;
   onProjectCreated?: (path: string) => Promise<void>;
+  onOpenArtifact?: (artifact: ChatArtifact) => void | Promise<void>;
 };
 type Session = { attach: (host: HTMLElement, options: Options) => void; detach: (host: HTMLElement) => void; update: (options: Options) => void; reset: () => void };
 const Context = createContext<Session | null>(null);
@@ -23,15 +27,20 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
   const optionsRef = useRef<Options | null>(null);
   const scope = useRef<string | undefined>(undefined);
   const initialized = useRef(false);
+  const hasOpenedChat = useRef(false);
   const [session, setSession] = useState<{ key: number; options: Options } | null>(null);
   const [api] = useState<Session>(() => ({
     attach(host, options) {
       optionsRef.current = options;
       host.appendChild(container);
-      if (initialized.current && scope.current === options.initialProjectPath) return;
-      scope.current = options.initialProjectPath;
+      const nextScope = options.initialProjectPath ?? options.diagnosticsProjectKey;
+      if (initialized.current && scope.current === nextScope) return;
+      scope.current = nextScope;
       initialized.current = true;
-      setSession(current => ({ key: (current?.key ?? 0) + 1, options }));
+      // Launch starts fresh; later scope changes may resume saved conversations.
+      const sessionOptions = { ...options, resumeLatest: hasOpenedChat.current && options.resumeLatest === true };
+      hasOpenedChat.current = true;
+      setSession(current => ({ key: (current?.key ?? 0) + 1, options: sessionOptions }));
     },
     detach(host) { if (container.parentNode === host) container.remove(); },
     update(options) { optionsRef.current = options; },
@@ -41,9 +50,17 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     {children}
     {session && createPortal(<ChatPage key={session.key}
       initialProjectPath={session.options.initialProjectPath}
+      diagnosticsProjectKey={session.options.diagnosticsProjectKey}
       resumeLatest={session.options.resumeLatest}
       onOpenSettings={() => optionsRef.current?.onOpenSettings()}
       onOpenProject={path => optionsRef.current!.onOpenProject(path)}
+      onOpenArtifact={async artifact => {
+        if (optionsRef.current?.onOpenArtifact) await optionsRef.current.onOpenArtifact(artifact);
+        else if (artifact.projectPath) {
+          queueChatArtifact(artifact);
+          await optionsRef.current?.onOpenProject(artifact.projectPath);
+        }
+      }}
       onWorkspaceChanged={async path => { await optionsRef.current?.onWorkspaceChanged?.(path); }}
       onProjectCreated={async path => {
         scope.current = path;
@@ -62,7 +79,7 @@ export function ChatSessionHost(options: Options & { hidden?: boolean }) {
     const element = host.current!;
     api.attach(element, latest.current);
     return () => api.detach(element);
-  }, [api, options.initialProjectPath]);
+  }, [api, options.initialProjectPath, options.diagnosticsProjectKey]);
   return <div ref={host} style={{ display: options.hidden ? "none" : "contents" }} />;
 }
 

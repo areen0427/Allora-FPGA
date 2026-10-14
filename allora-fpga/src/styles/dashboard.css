@@ -50,6 +50,11 @@
   overscroll-behavior: contain;
 }
 
+.dashboard-chat-surface {
+  height: 100%;
+  min-width: 0;
+}
+
 .editor-shell {
   overflow: hidden;
 }

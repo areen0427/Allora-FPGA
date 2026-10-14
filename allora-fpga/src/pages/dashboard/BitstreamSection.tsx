@@ -1,3 +1,4 @@
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import HealthSection from "./HealthSection";
 import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -90,6 +91,13 @@ export default function BitstreamSection({
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
   const [resultTab, setResultTab] = useState<"log" | "health" | "preview">(initialTab);
   const logPanelRef = useRef<HTMLDivElement | null>(null);
+  const buildIssue = errorMessage ?? (!isGenerating && artifact?.timing.status === "fail"
+    ? artifact.timing.message || "Timing analysis failed. Review the timing violations before programming."
+    : null);
+  const diagnosticDetails = useMemo(() => buildIssue
+    ? liveLogs.slice(-40).join("\n").slice(-8_000)
+    : undefined, [buildIssue, liveLogs]);
+  useProjectDiagnostic("bitstream", buildIssue, diagnosticDetails);
   const capabilities = getBoardCapabilities(board);
   const preflight = useBuildPreflight(
     board,
@@ -477,6 +485,7 @@ export default function BitstreamSection({
               : artifact
                 ? `Built ${artifact.fileName} · ${formatTimingStatus(artifact.timing)}`
                 : capabilities.bitstream.detail}
+            {buildIssue && <TroubleshootButton source="bitstream" />}
           </p>
         ) : null}
 

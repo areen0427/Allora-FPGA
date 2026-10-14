@@ -16,6 +16,10 @@ import ProgrammingSection from "./dashboard/ProgrammingSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
 import { WorkspaceDock } from "./dashboard/WorkspaceDock";
 import { ChatSessionHost } from "../components/ChatSession";
+import type { ChatArtifact } from "../components/ChatTurnDetails";
+import { queueChatArtifact, takeChatArtifact } from "../lib/chatArtifactsBridge";
+import { ProjectDiagnosticsProvider, ProjectDiagnostic, TroubleshootButton } from "../components/ProjectDiagnostics";
+import { projectDiagnostics, diagnosticSourceLabel } from "../lib/projectDiagnostics";
 import type {
   DashboardSection,
   ProjectFile,
@@ -67,6 +71,27 @@ function KeepAliveSection({
   );
 }
 
+function TroubleshootChatEntrance({ active, request, children }: {
+  active: boolean;
+  request: number;
+  children: ReactNode;
+}) {
+  const surface = useRef<HTMLDivElement>(null);
+  const lastRequest = useRef(0);
+  useEffect(() => {
+    if (!active || request === 0 || request === lastRequest.current) return;
+    lastRequest.current = request;
+    if (document.documentElement.dataset.reduceMotion === "true"
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const animation = surface.current?.animate?.([
+      { opacity: 0, transform: "translateY(12px) scale(.99)" },
+      { opacity: 1, transform: "translateY(0) scale(1)" },
+    ], { duration: 420, easing: "cubic-bezier(0.22, 0.72, 0.18, 1)" });
+    return () => animation?.cancel();
+  }, [active, request]);
+  return <div ref={surface} className="dashboard-chat-surface">{children}</div>;
+}
+
 type DashboardProps = {
   board: BoardDefinition;
   project: SavedProject | null;
@@ -107,6 +132,7 @@ export default function Dashboard({
   );
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+  const [troubleshootChatRequest, setTroubleshootChatRequest] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [usageAnchor, setUsageAnchor] = useState<HTMLButtonElement | null>(
     null,
@@ -169,6 +195,47 @@ export default function Dashboard({
 
   const projectName = project?.name ?? "Untitled Project";
   const projectPath = project?.projectPath;
+  const diagnosticsProjectKey = projectPath ?? `project:${project?.id ?? projectName}`;
+  const [requestedChatWaveform, setRequestedChatWaveform] = useState<{ path: string; id: number }>();
+
+  async function reloadChatFiles(path: string) {
+    if (path !== projectPath) return;
+    const diskFiles = await readProjectWorkspace(path);
+    fileMgmt.setFiles(current => [
+      ...diskFiles.map(file => dirtyFilesRef.current.includes(file.name) ? current.find(item => item.name === file.name) ?? file : file),
+      ...current.filter(file => dirtyFilesRef.current.includes(file.name) && !diskFiles.some(item => item.name === file.name)),
+    ]);
+    return diskFiles;
+  }
+
+  async function openChatArtifact(artifact: ChatArtifact) {
+    if (artifact.projectPath && artifact.projectPath !== projectPath) {
+      queueChatArtifact(artifact);
+      await onOpenChatProject(artifact.projectPath);
+      return;
+    }
+    if (artifact.kind === "file" && !artifact.path) {
+      setActiveSection("editor");
+      return;
+    }
+    const loadedFiles = projectPath ? await reloadChatFiles(projectPath) : fileMgmt.files;
+    const sections: Record<ChatArtifact["kind"], DashboardSection> = { waveform: "testbench", synthesis: "synthesis", timing: "health", bitstream: "bitstream", file: "editor" };
+    if (artifact.kind === "file" && artifact.path) {
+      const target = loadedFiles?.find(file => file.path === artifact.path || artifact.path?.endsWith(`/${file.name}`));
+      if (target) activeTabs.openFile(target.name);
+      else throw new Error("The saved report is no longer available in this project.");
+    }
+    if (artifact.kind === "waveform" && artifact.path) setRequestedChatWaveform(current => ({ path: artifact.path!, id: (current?.id ?? 0) + 1 }));
+    setActiveSection(sections[artifact.kind]);
+  }
+
+  useEffect(() => {
+    if (!projectPath) return;
+    const artifact = takeChatArtifact(projectPath);
+    if (artifact) void openChatArtifact(artifact).catch(error => saveProject.setSaveErrorMessage(String(error)));
+    // A queued card belongs to a single project-open transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectPath]);
 
   useEffect(() => {
     if (saveProject.saveStatus === "saved") {
@@ -402,6 +469,14 @@ export default function Dashboard({
   }
 
   return (
+    <ProjectDiagnosticsProvider projectKey={diagnosticsProjectKey} projectPath={projectPath} boardId={board.id}
+      onTroubleshoot={entry => {
+        projectDiagnostics.troubleshoot({ projectKey: diagnosticsProjectKey, diagnosticId: entry.id,
+          prompt: `Help me troubleshoot the recent ${diagnosticSourceLabel(entry.source)} error in this project.` });
+        setTroubleshootChatRequest(request => request + 1);
+        setActiveSection("chat");
+      }}>
+    <ProjectDiagnostic source="editor" message={saveProject.saveStatus === "error" ? saveProject.saveErrorMessage || "Project save failed." : undefined} />
     <div
       className="dashboard-workspace"
       style={
@@ -447,7 +522,8 @@ export default function Dashboard({
             onHome();
           }}
           onChat={async () => {
-            if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return;
+            // Keep failed-save diagnostics reachable without discarding the dirty editor state.
+            if (saveProject.saveStatus !== "saved") await saveProject.saveCurrentProject();
             setActiveSection("chat");
           }}
           backLabel={navigation.history.length ? "Back to previous workspace" : "Back to project setup"}
@@ -591,6 +667,7 @@ export default function Dashboard({
                   title={saveProject.saveErrorMessage}
                 >
                   Autosave failed
+                  <TroubleshootButton source="editor" />
                 </div>
               ) : null}
             </section>
@@ -640,14 +717,11 @@ export default function Dashboard({
         ) : null}
 
         <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
-          <ChatSessionHost initialProjectPath={projectPath ?? undefined} resumeLatest onWorkspaceChanged={async path => {
-            if (path !== projectPath) return;
-            const diskFiles = await readProjectWorkspace(path);
-            fileMgmt.setFiles(current => [
-              ...diskFiles.map(file => dirtyFilesRef.current.includes(file.name) ? current.find(item => item.name === file.name) ?? file : file),
-              ...current.filter(file => dirtyFilesRef.current.includes(file.name) && !diskFiles.some(item => item.name === file.name)),
-            ]);
-          }} onProjectCreated={onOpenChatProject} onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
+          <TroubleshootChatEntrance active={activeSection === "chat"} request={troubleshootChatRequest}>
+          <ChatSessionHost initialProjectPath={projectPath ?? undefined} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}
+            onOpenArtifact={openChatArtifact}
+            onProjectCreated={onOpenChatProject} onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
+          </TroubleshootChatEntrance>
         </KeepAliveSection>
         {activeSection === "editor" && (
           <EditorSection
@@ -723,6 +797,7 @@ export default function Dashboard({
           visited={visitedSections.has("testbench")}
         >
           <TestbenchSection
+            requestedWaveform={requestedChatWaveform}
             board={board}
             files={fileMgmt.files}
             projectName={projectName}
@@ -942,6 +1017,7 @@ export default function Dashboard({
         </div>
       ) : null}
     </div>
+    </ProjectDiagnosticsProvider>
   );
 }
 

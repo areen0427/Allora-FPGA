@@ -1,3 +1,4 @@
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
 import { getMemorySources, matchesSavedSimulator, readSavedResult } from "../../lib/savedProjectResults";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -85,6 +86,10 @@ export default function VirtualFpgaSection({
   const [status, setStatus] = useState<SimulationStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
+  const diagnosticDetails = useMemo(() => errorMessage
+    ? logs.slice(-40).join("\n").slice(-8_000)
+    : undefined, [errorMessage, logs]);
+  useProjectDiagnostic("virtual-fpga", errorMessage, diagnosticDetails);
   const [radix, setRadix] = useState(settings.simulatorDefaultRadix);
   const [selectedSignals, setSelectedSignals] = useState<string[]>([]);
   const [waveSamples, setWaveSamples] = useState<WaveSample[]>([]);
@@ -434,6 +439,7 @@ export default function VirtualFpgaSection({
         <div className="vfpga-error">
           <strong>Simulation issue</strong>
           {errorMessage}
+          <TroubleshootButton source="virtual-fpga" />
         </div>
       ) : null}
 

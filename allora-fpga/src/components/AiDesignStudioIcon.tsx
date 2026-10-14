@@ -1,7 +1,7 @@
 // Geometry from the user-supplied SVG (SVG Repo).
 export default function AiDesignStudioIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" strokeWidth="2.112" stroke="currentColor" fill="none" aria-hidden="true">
+    <svg className="ai-design-studio-icon" width={size} height={size} viewBox="0 0 64 64" strokeWidth="3.8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" fill="none" aria-hidden="true">
       <circle cx="34.52" cy="11.43" r="5.82" />
       <circle cx="53.63" cy="31.6" r="5.82" />
       <circle cx="34.52" cy="50.57" r="5.82" />

@@ -5,6 +5,7 @@ import DashboardSurfaceCard from "./DashboardSurfaceCard";
 import InfoCard from "./InfoCard";
 import VirtualBoard from "../../components/VirtualBoard";
 import type { ProjectFile } from "./types";
+import { useProjectDiagnostic, TroubleshootButton } from "../../components/ProjectDiagnostics";
 import {
   createSuggestedMappings,
   createPinMappingConstraints,
@@ -71,6 +72,8 @@ export default function PinMappingSection({
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [saveError, setSaveError] = useState("");
+  const [mappingEdited, setMappingEdited] = useState(false);
 
   const mappedCount = ports.filter(
     (port) => overrides[port.name] ?? suggestedMappings[port.name],
@@ -82,6 +85,8 @@ export default function PinMappingSection({
 
   function setPortMapping(portName: string, pinKey: string) {
     setSaveState("idle");
+    setSaveError("");
+    setMappingEdited(true);
     setOverrides((current) => ({
       ...current,
       [portName]: pinKey,
@@ -105,15 +110,32 @@ export default function PinMappingSection({
       (currentMappings[port.name] ?? "") !==
       ((savedMappings ?? suggestedMappings)[port.name] ?? ""),
   );
+  const validationErrors = mappingEdited
+    ? createPinMappingValidation(board, ports, getSelectedPin).filter(item => item.kind === "warning").map(item => item.message)
+    : [];
+  const mappingError = [saveState === "error" ? saveError : "", ...validationErrors].filter(Boolean).join("\n");
+  useProjectDiagnostic("pin-mapping", mappingError, mappingError ? [
+    `Top-level file: ${topLevelFileName ?? "not selected"}`,
+    `Constraints file: ${constraintFile?.name ?? `constraints.${board.constraintsFile}`}`,
+    `Current port mappings:\n${JSON.stringify(currentMappings, null, 2).slice(0, 12000)}`,
+  ].join("\n\n") : undefined);
 
   async function saveMappings() {
     setSaveState("saving");
-    const content = createPinMappingConstraints(board, ports, currentMappings);
-    const saved = await onSaveMappings(
-      constraintFile?.name ?? `constraints.${board.constraintsFile}`,
-      content,
-    );
-    setSaveState(saved ? "saved" : "error");
+    setSaveError("");
+    try {
+      const content = createPinMappingConstraints(board, ports, currentMappings);
+      const saved = await onSaveMappings(
+        constraintFile?.name ?? `constraints.${board.constraintsFile}`,
+        content,
+      );
+      setSaveError(saved ? "" : "Pin mapping could not be saved.");
+      setSaveState(saved ? "saved" : "error");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSaveError(message || "Pin mapping could not be saved.");
+      setSaveState("error");
+    }
   }
 
   return (
@@ -193,11 +215,12 @@ export default function PinMappingSection({
 
           <div className="ui-compact-button-group" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {saveState === "error" ? (
-              <span
+              <><span
                 style={{ color: "var(--ui-error-text)", fontSize: "12px", fontWeight: 800 }}
+                title={saveError}
               >
                 Save failed
-              </span>
+              </span><TroubleshootButton source="pin-mapping" /></>
             ) : saveState === "saved" && !hasUnsavedChanges ? (
               <span
                 style={{ color: "var(--ui-success-text)", fontSize: "12px", fontWeight: 800 }}
@@ -211,6 +234,8 @@ export default function PinMappingSection({
               onClick={() => {
                 setOverrides(savedMappings ?? {});
                 setSaveState("idle");
+                setSaveError("");
+                setMappingEdited(false);
               }}
               disabled={!canRevert}
 
@@ -229,6 +254,9 @@ export default function PinMappingSection({
           </div>
         </div>
 
+        {!!validationErrors.length && <div className="ui-workspace-note error" role="alert" style={{ marginBottom: "12px" }}>
+          <p>{validationErrors.join(" ")}</p>{saveState !== "error" && <TroubleshootButton source="pin-mapping" />}
+        </div>}
 
         {mode === "simple" ? (
           <SimplePinMapper

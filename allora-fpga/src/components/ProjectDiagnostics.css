@@ -1,0 +1,8 @@
+.project-troubleshoot-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin: 12px 0 4px 14px; padding: 7px 11px; border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-accent-text);
+  font: 600 11px var(--font-ui); cursor: pointer;
+}
+.project-troubleshoot-button:hover { background: var(--ui-control-hover-bg); }
+.project-troubleshoot-button:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }

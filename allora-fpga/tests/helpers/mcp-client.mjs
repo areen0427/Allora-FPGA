@@ -20,8 +20,15 @@ export class McpClient {
       try { message = JSON.parse(line); } catch { return; }
       if (message.method && message.id !== undefined) {
         this.elicitations.push(message);
-        // This test client must never authorize an actual hardware upload.
-        this.write({ jsonrpc: "2.0", id: message.id, result: { action: "decline", content: null } });
+        // Only this explicit folder fixture may be accepted; never authorize hardware.
+        const schema = message.params?.requestedSchema;
+        const folderOnly = schema?.["x-allora-project-directory"] === true
+          && Object.keys(schema.properties ?? {}).length === 1
+          && schema.properties.parentDirectory?.type === "string";
+        const result = folderOnly && typeof this.projectDirectory === "string"
+          ? { action: "accept", content: { parentDirectory: this.projectDirectory } }
+          : { action: "decline", content: null };
+        this.write({ jsonrpc: "2.0", id: message.id, result });
       } else if (message.id !== undefined) {
         const waiter = this.pending.get(message.id);
         if (!waiter) return;

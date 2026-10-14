@@ -1,3 +1,4 @@
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { listenExplorer, publishExplorer, type ExplorerMessage } from "../../lib/explorerBridge";
 import {
   useEffect,
@@ -17,6 +18,7 @@ import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 import SignalWaveformPanel from "../../components/SignalWaveformPanel";
 import { openViewerWindow } from "../../lib/viewerWindow";
+import { findChatWaveform } from "../../lib/chatResults";
 import {
   buildTestbenchWaveTraces,
   formatWaveTick,
@@ -40,6 +42,7 @@ type TestbenchSectionProps = {
   projectPath?: string;
   topLevelFileName: string | null;
   settings: AppSettings;
+  requestedWaveform?: { path: string; id: number };
   onCreateTestbench: (fileName: string, content: string) => void;
   onOpenFile: (fileName: string) => void;
   onAddArtifact?: (artifact: {
@@ -56,6 +59,7 @@ export default function TestbenchSection({
   projectPath,
   topLevelFileName,
   settings,
+  requestedWaveform,
   onCreateTestbench,
   onOpenFile,
   onAddArtifact,
@@ -68,11 +72,17 @@ export default function TestbenchSection({
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [waveformText, setWaveformText] = useState("");
+  const [waveformName, setWaveformName] = useState("");
+  const handledWaveformRequest = useRef<number | undefined>(undefined);
   const [selectedWaveSignalIds, setSelectedWaveSignalIds] = useState<string[]>(
     [],
   );
   const [errorMessage, setErrorMessage] = useState("");
   const logRef = useRef<HTMLPreElement | null>(null);
+  const diagnosticDetails = useMemo(() => errorMessage
+    ? logs.slice(-40).join("\n").slice(-8_000)
+    : undefined, [errorMessage, logs]);
+  useProjectDiagnostic("testbench", errorMessage, diagnosticDetails);
 
   useEffect(() => {
     if (logRef.current) {
@@ -146,17 +156,39 @@ export default function TestbenchSection({
 
   useEffect(() => {
     if (
+      !requestedWaveform &&
       settings.simulatorAutoOpenWaveform &&
       !waveformText &&
       initialWaveformContent
     ) {
       setWaveformText(initialWaveformContent);
+      setWaveformName(vcdFiles[0]?.name ?? "waveform.vcd");
     }
   }, [
     initialWaveformContent,
     settings.simulatorAutoOpenWaveform,
     waveformText,
+    requestedWaveform,
+    vcdFiles,
   ]);
+
+  useEffect(() => {
+    if (!requestedWaveform || handledWaveformRequest.current === requestedWaveform.id) return;
+    handledWaveformRequest.current = requestedWaveform.id;
+    const file = findChatWaveform(files, requestedWaveform.path, projectPath);
+    if (!file) {
+      setWaveformText("");
+      setWaveformName("");
+      setSelectedWaveSignalIds([]);
+      setErrorMessage(`The requested waveform is unavailable: ${requestedWaveform.path}`);
+      return;
+    }
+    const recording = parseVcd(file.content);
+    setWaveformText(file.content);
+    setWaveformName(file.name);
+    setSelectedWaveSignalIds(recording?.signals.slice(0, 6).map(signal => signal.id) ?? []);
+    setErrorMessage(recording?.signals.length ? "" : `No readable VCD signals were found in ${file.name}.`);
+  }, [requestedWaveform, files, projectPath]);
 
   function createTestbench() {
     const moduleName = topModule ?? "top";
@@ -179,7 +211,9 @@ export default function TestbenchSection({
         `${projectName} — Testbench Waveform`,
         { vcd, waveformName },
       );
+      setErrorMessage(current => current.startsWith("Unable to open the waveform viewer:") ? "" : current);
     } catch (viewerError) {
+      setErrorMessage(`Unable to open the waveform viewer: ${getErrorMessage(viewerError)}`);
       setLogs((current) => [
         ...current.filter((line) => !line.startsWith("[viewer]")),
         `[viewer] ${getErrorMessage(viewerError)}`,
@@ -264,6 +298,7 @@ export default function TestbenchSection({
         void publishExplorer(recording).catch(() => {});
         if (settings.simulatorAutoOpenWaveform) {
           setWaveformText(result.vcd);
+          setWaveformName(result.waveformName);
           await openWaveformViewer(result.vcd, result.waveformName);
         }
         await onAddArtifact?.({
@@ -342,7 +377,7 @@ export default function TestbenchSection({
               onClick={() =>
                 void openWaveformViewer(
                   waveformText,
-                  vcdFiles[0]?.name ?? "waveform.vcd",
+                  waveformName || "waveform.vcd",
                 )
               }
             >
@@ -361,7 +396,10 @@ export default function TestbenchSection({
         </div>
 
         {errorMessage ? (
-          <div className="testbench-status ui-workspace-note error">{errorMessage}</div>
+          <div className="testbench-status ui-workspace-note error">
+            {errorMessage}
+            <TroubleshootButton source="testbench" />
+          </div>
         ) : null}
 
         <SignalWaveformPanel
@@ -434,6 +472,8 @@ export default function TestbenchSection({
                 onClick={() => {
                   if (file.name.toLowerCase().endsWith(".vcd")) {
                     setWaveformText(file.content);
+                    setWaveformName(file.name);
+                    setErrorMessage("");
                   } else {
                     onOpenFile(file.name);
                   }

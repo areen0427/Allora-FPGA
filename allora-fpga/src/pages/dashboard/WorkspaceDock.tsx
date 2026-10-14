@@ -101,7 +101,7 @@ export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSect
             <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
               <SidebarButton
                 label="AI Design Studio"
-                icon={<AiDesignStudioIcon size={18} />}
+                icon={<AiDesignStudioIcon size={22} />}
                 active={activeSection === "chat"}
                 disabled={saving}
                 onClick={onChat}

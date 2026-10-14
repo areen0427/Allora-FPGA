@@ -1,3 +1,4 @@
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import { resolveBoardProgrammer } from "../../data/boardProgrammers";
@@ -43,6 +44,9 @@ export default function SerialMonitorSection({
   const [isBusy, setIsBusy] = useState(false);
   const consoleRef = useRef<HTMLPreElement | null>(null);
   const sessionRef = useRef<number | null>(null);
+  useProjectDiagnostic("serial", errorMessage, errorMessage
+    ? `Serial port: ${selectedPort || "not selected"}\nBaud rate: ${baudRate}`
+    : undefined);
 
   const programmer = resolveBoardProgrammer(board);
   const isConnected = sessionId !== null;
@@ -227,6 +231,7 @@ export default function SerialMonitorSection({
                 ? statusMessage ||
                   "Pick the board's USB serial port and connect to talk to your design."
                 : "Launch the Tauri desktop app to use the serial monitor."}
+          {errorMessage && <TroubleshootButton source="serial" />}
         </div>
 
         <pre className="serial-console" ref={consoleRef}>

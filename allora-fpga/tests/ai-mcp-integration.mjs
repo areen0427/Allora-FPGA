@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { readFile, writeFile, mkdir, mkdtemp, rm, access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -85,6 +85,17 @@ try {
   const inventory = await client.request("tools/list", {});
   assert.ok(inventory.tools.some((tool) => tool.name === "build_bitstream"));
   assert.ok(inventory.tools.some((tool) => tool.name === "cancel_all_jobs"));
+  const cancelled = await client.call("create_project", { name: "Cancelled Example", boardId: "icebreaker" });
+  assert.equal(cancelled.isError, true);
+  assert.match(cancelled.content[0].text, /cancelled/);
+  await assert.rejects(access(path.join(workspace, "Cancelled_Example")));
+  assert.equal(client.elicitations.at(-1).params.requestedSchema["x-allora-project-directory"], true);
+  client.projectDirectory = workspace;
+  const picked = await call("create_project", { name: "Picker Saved Example", boardId: "icebreaker" });
+  assert.equal(path.dirname(picked.projectPath), workspace);
+  assert.equal(JSON.parse(await readFile(path.join(picked.projectPath, "allora-project.json"), "utf8")).name, "Picker Saved Example");
+  client.projectDirectory = undefined;
+  const pickerCount = client.elicitations.length;
   const board = await call("get_board_definition", { boardId: "icebreaker" });
   assert.equal(board.clocks.find((clock) => clock.name === "clk12").frequency, 12000000);
   const tools = await call("get_toolchain_status", { boardId: "icebreaker" });
@@ -92,6 +103,7 @@ try {
     assert.equal(tools.tools.find((tool) => tool.command === command)?.installed, true, `${command} is required for this integration test`);
   }
   const project = await call("create_project", { name: "LED Blink Integration", boardId: "icebreaker", topModule: "top", parentDirectory: workspace });
+  assert.equal(client.elicitations.length, pickerCount, "an explicit destination does not open another picker");
   const projectPath = project.projectPath;
   await call("apply_file_changes", { projectPath, changes: [
     { path: "src/top.sv", content: rtl, expectedRevision: null },
@@ -166,7 +178,7 @@ try {
   const stale = await client.call("program_board", { projectPath, artifactId: build.result.artifactId });
   assert.equal(stale.isError, true);
   assert.match(stale.content[0].text, /stale/i);
-  console.log("Allora MCP PASS: saved interactive connections, actual Verilator compilation, saved synthesis graph, complete verified pins, testbench simulation, bitstream/timing, declined upload and stale artifact rejection.");
+  console.log("Allora MCP PASS: native-picker protocol accept/cancel, explicit destination, saved interactive connections, actual Verilator compilation, saved synthesis graph, complete verified pins, testbench simulation, bitstream/timing, declined upload and stale artifact rejection.");
 } finally {
   await client.close();
   await rm(workspace, { recursive: true, force: true });

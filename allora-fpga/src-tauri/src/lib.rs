@@ -18,6 +18,8 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 mod ai_integration;
 mod ai_chat;
 mod ai_mcp;
+mod chat_checkpoints;
+mod project_diagnostics;
 mod github;
 mod usage;
 mod virtual_fpga;
@@ -3998,6 +4000,8 @@ pub fn run() {
         .manage(VirtualFpgaState::default())
         .manage(ViewerPayloadState::default())
         .manage(ai_chat::AiChatState::default())
+        .manage(chat_checkpoints::ChatCheckpointState::default())
+        .manage(project_diagnostics::ProjectDiagnosticState::default())
         .setup(|app| {
             ai_integration::configure_codex_runtime(app.path().app_cache_dir()?.join("codex-runtime"));
             if cfg!(debug_assertions) {
@@ -4048,7 +4052,13 @@ pub fn run() {
             ai_chat::ai_chat_send,
             ai_chat::ai_chat_cancel,
             ai_chat::ai_chat_approve,
+            ai_chat::ai_chat_project_directory,
             ai_chat::ai_chat_close,
+            project_diagnostics::sync_project_diagnostic_memory,
+            chat_checkpoints::ai_chat_checkpoint_create,
+            chat_checkpoints::ai_chat_checkpoint_review,
+            chat_checkpoints::ai_chat_checkpoint_created_review,
+            chat_checkpoints::ai_chat_checkpoint_restore,
             ai_integration::ai_provider_status,
             ai_integration::ai_provider_start_login,
             github_tool_availability,
@@ -4071,6 +4081,7 @@ pub fn run() {
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 app.state::<ai_chat::AiChatState>().shutdown_all();
+                app.state::<project_diagnostics::ProjectDiagnosticState>().shutdown();
             }
         });
 }

@@ -1,4 +1,4 @@
-import { REAL_BOARDS } from "../data/boards";
+import { REAL_BOARDS, VIRTUAL_BOARD } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { createTauriChannel, invokeTauri } from "./tauri";
 
@@ -8,16 +8,20 @@ export type RateLimits = { limitId?: string | null; primary: RateWindow | null; 
 export type AccountUsage = { rateLimits: RateLimits; rateLimitsByLimitId?: Record<string, RateLimits> | null };
 
 export type AiChatEvent =
+  | { type: "activity"; activity: import("../components/ChatTaskPanel").Activity }
   | { type: "context_usage"; usage: ContextUsage }
   | { type: "rate_limits"; limits: RateLimits }
   | { type: "assistant_delta"; delta: string }
-  | { type: "tool_started"; id: string; name: string; arguments?: unknown }
+  | { type: "project_directory_required"; requestId: string }
+  | { type: "tool_started"; id: string; name: string; arguments?: unknown; agentId?: string; projectPath?: string }
   | {
       type: "tool_completed";
       id: string;
       name: string;
       result?: unknown;
       isError?: boolean;
+      agentId?: string;
+      projectPath?: string;
     }
   | {
       type: "approval_required";
@@ -26,7 +30,7 @@ export type AiChatEvent =
       description?: string;
       details?: unknown;
     }
-  | { type: "turn_completed"; threadId?: string }
+  | { type: "turn_completed"; threadId?: string; sessionClosed?: boolean }
   | { type: "error"; message: string }
   | { type: "project_created"; projectPath: string; projectName?: string }
   | { type: "status"; message: string };
@@ -64,7 +68,7 @@ export const aiChatApi = {
         workspacePath,
         threadId,
         model,
-        boards: REAL_BOARDS.map((board) => ({
+        boards: [...REAL_BOARDS, VIRTUAL_BOARD].map((board) => ({
           ...board,
           capabilities: getBoardCapabilities(board),
         })),
@@ -77,15 +81,18 @@ export const aiChatApi = {
     model: string | undefined,
     reasoningEffort: string | undefined,
     onEvent: (event: AiChatEvent) => void,
+    userText?: string,
   ) =>
     invokeTauri<void>("ai_chat_send", {
-      request: { sessionId, text, model, reasoningEffort },
+      request: { sessionId, text, model, reasoningEffort, userText },
       onEvent: eventChannel(onEvent),
     }),
   cancel: (sessionId: string) =>
     invokeTauri<void>("ai_chat_cancel", { sessionId }),
   approve: (sessionId: string, requestId: string, approved: boolean) =>
     invokeTauri<void>("ai_chat_approve", { sessionId, requestId, approved }),
+  projectDirectory: (sessionId: string, requestId: string, path: string | null) =>
+    invokeTauri<void>("ai_chat_project_directory", { sessionId, requestId, path }),
   close: (sessionId: string) =>
     invokeTauri<void>("ai_chat_close", { sessionId }),
 };

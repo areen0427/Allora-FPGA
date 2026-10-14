@@ -1,4 +1,5 @@
 import { WorkspaceTitle } from "../../components/ui/WorkspaceTitle";
+import { TroubleshootButton, useProjectDiagnostic } from "../../components/ProjectDiagnostics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from "lucide-react";
 import RegisterBuilderIcon from "../../components/RegisterBuilderIcon";
@@ -96,6 +97,7 @@ export default function RegisterBuilder({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Loading register map…");
   const [error, setError] = useState("");
+  useProjectDiagnostic("register-builder", error || null);
   const [outputs, setOutputs] = useState<string[]>([]);
   const [generatedKey, setGeneratedKey] = useState<string>();
   const [savedIntegration, setSavedIntegration] = useState<Integration>();
@@ -363,6 +365,7 @@ export default function RegisterBuilder({
       {error && (
         <div className="rb-error" role="alert">
           {error}
+          <TroubleshootButton source="register-builder" />
         </div>
       )}
       <fieldset disabled={!ready || busy} className="rb-config">
