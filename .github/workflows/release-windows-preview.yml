@@ -27,6 +27,12 @@ jobs:
           cache: npm
           cache-dependency-path: allora-fpga/package-lock.json
 
+      - name: Set app version from release tag
+        if: ${{ startsWith(github.ref, 'refs/tags/windows-v') }}
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node allora-fpga/scripts/set-release-version.mjs
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
