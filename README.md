@@ -1,6 +1,6 @@
 # Allora FPGA
 
-Allora FPGA is a desktop development environment for open-source FPGA workflows. Its goal is a one-app experience: write HDL, inspect and simulate it on a Virtual FPGA, synthesize it, generate a bitstream, and program a physical board within the same project. Simulation-only code must be converted to synthesizable RTL before it can run on a physical FPGA.
+Allora FPGA is a desktop development environment for open-source FPGA workflows. Its goal is a one-app experience: write HDL, inspect and simulate it on a Virtual FPGA, synthesize it, generate a bitstream, and program a physical board without changing projects or rewriting RTL.
 
 ```text
                          ALLORA PROJECT
@@ -34,7 +34,7 @@ Allora FPGA is a desktop development environment for open-source FPGA workflows.
   - scalar and vector-bit signal mapping persisted in `allora-project.json`;
   - run, pause, single-step, reset, signal inspection, and optional VCD capture.
 
-The physical workflow remains independent of virtual mappings. A project has one RTL source tree and two execution targets. The shared workspace includes editing, AI chat, simulation, synthesis, pin mapping, bitstream generation, programming, and design tools; available operations depend on the selected board and installed toolchains.
+The physical workflow remains independent of virtual mappings. A project has one RTL source tree and two execution targets.
 
 ## Welcome experience
 
@@ -90,7 +90,6 @@ Validation:
 
 ```bash
 cd allora-fpga
-npm test
 npm run build
 npm run lint
 cd src-tauri
@@ -125,17 +124,9 @@ Open **Settings → AI Integration** to check the Codex or Claude Code CLI, view
 
 An existing CLI login can appear as **Connected** immediately. The settings check uses `codex login status` or `claude auth status --json`; it does not make a live model request. The Codex desktop app's bundled runtime is not treated as a separate CLI installation. Claude Code retains installation/login status support; embedded chat currently uses Codex.
 
-Open **Chat** on the welcome screen or inside a project and describe what you want to build. You can start a new conversation without selecting a workspace; when a new project needs saving, Allora opens the native folder picker unless you supplied a destination. For example: "Create a one-second LED blinker on an iCEBreaker, write a testbench, map the verified clock and LED pins, simulate it, and build the bitstream." The desktop app launches the installed Codex CLI's `app-server` using the existing CLI login. The model popup shows provider descriptions and context windows; its reasoning slider uses each model’s reported options. Context sizes come from Codex’s local model metadata and are marked Not reported when unavailable. Responses stream into chat, tool calls show their inputs and results, and **Stop** interrupts the turn and cancels running FPGA jobs. Conversations are saved on this device and resume their Codex threads. Open a generated project from its chat card to inspect files and results in the existing Allora workspace.
+Open **Chat** on the welcome screen, choose a workspace folder, and describe what you want to build. For example: "Create a one-second LED blinker on an iCEBreaker, write a testbench, map the verified clock and LED pins, simulate it, and build the bitstream." The desktop app launches the installed Codex CLI's `app-server` using the existing CLI login. The model popup shows provider descriptions and context windows; its reasoning slider uses each model’s reported options. Context sizes come from Codex’s local model metadata and are marked Not reported when unavailable. Responses stream into chat, tool calls show their inputs and results, and **Stop** interrupts the turn and cancels running FPGA jobs. Conversations are saved on this device and resume their Codex threads. Open a generated project from its chat card to inspect files and results in the existing Allora workspace.
 
-### Editing designs and choosing a board
-
-Ask chat to create a design and it saves real project files rather than pasting generated HDL into the conversation. If a project is already open, chat works in that project. New projects use the native folder picker unless you explicitly supply a destination.
-
-Requests such as “make this code synthesizable” default to editing the existing source files, preserving filenames, module names, and interfaces where practical, and updating the existing testbench. A separate board wrapper may be added for clocks, buttons, or LEDs, but it uses the updated core and becomes the hardware top module when needed. A parallel replacement is reserved for an explicit request or a technical requirement that the assistant explains.
-
-When you ask to put an existing design on a physical board, chat must select that board in the project and save verified pin assignments. The workspace then refreshes its board, top module, pin mappings, build target, and recent-project information. Recent chats use the project's saved board label. Reopening a project reads its board configuration from disk, correcting stale cached Virtual FPGA information. Choosing a board does not program attached hardware; building still requires a supported flow and installed tools.
-
-Allora supplies its board catalog and project operations through a local stdio MCP server, launched in the same executable's `--allora-mcp` mode. Its configuration is scoped to the embedded session; it does not register a server in the user's global Codex configuration. Chat tools create projects, inspect and update files, assign verified pins, check installed tools/hardware, lint, simulate, build, and retrieve/cancel jobs. File operations stay within the selected folder, edits check expected revisions, and build artifacts are tied to source revisions and board definitions. Chat is available from the welcome screen and within a project; its session is preserved as you move between workspace sections.
+Allora supplies its board catalog and project operations through a local stdio MCP server, launched in the same executable's `--allora-mcp` mode. Its configuration is scoped to the embedded session; it does not register a server in the user's global Codex configuration. Chat tools create projects, inspect and update files, assign verified pins, check installed tools/hardware, lint, simulate, build, and retrieve/cancel jobs. File operations stay within the selected folder, edits check expected revisions, and build artifacts are tied to source revisions and board definitions. The initial chat lives on the welcome screen: finish or stop a turn before opening its project in the editor.
 
 Programming requires an in-chat approval for the specific target and artifact. Allora rejects stale or modified artifacts. Hardware discovery can identify possible boards, but shared USB identities do not prove the exact FPGA board or revision; confirm the attached target. A successful programmer command reports the upload result, not physical LED behavior. The chat supports the same Verilog/SystemVerilog, Icarus, Yosys/NextPNR iCE40/ECP5 flows as the app; other catalog boards may provide context or pin data without a working build/program flow. Missing toolchains, login failures, unavailable MCP tools, and build failures surface in chat. Chat in a plain web browser shows a desktop-required state and does not fabricate responses.
 
