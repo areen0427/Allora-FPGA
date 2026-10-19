@@ -198,6 +198,16 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   outline-offset: 3px;
 }
 
+/* Focusable data rows stay visually flat; the owning screen handles hover and selection. */
+#root .ui-selectable-row {
+  cursor: pointer;
+}
+
+#root .ui-selectable-row:focus-visible {
+  outline: 2px solid var(--ui-accent-text);
+  outline-offset: -2px;
+}
+
 /* Group layout belongs to screens; only the individual actions have material. */
 #root .ui-button-group {
   border: none;
@@ -355,6 +365,46 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   border-color: var(--ui-border-hover) !important;
 }
 #root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"])::after {
+  opacity: 1;
+}
+
+/* A short horizontal separator for stacked or multirow compact controls.
+   It leaves the button pseudo-elements available for the glass material. */
+#root .ui-control-divider-below {
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * var(--ui-compact-group-gap) / 2 - 1px);
+  width: var(--ui-compact-divider-height);
+  height: 1px;
+  background: var(--ui-border-control);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Quiet selection groups keep the shared glass edge and timing, without the
+   fill, lift, or accent text used by more prominent segmented controls. */
+#root .ui-quiet-selection-group > :is(button, .ui-button),
+#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]) {
+  color: var(--ui-text) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+#root .ui-quiet-selection-group > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]),
+#root .ui-quiet-selection-group > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+  color: var(--ui-text) !important;
+}
+#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]):not([aria-pressed="true"], [aria-selected="true"]) {
+  border-color: transparent !important;
+}
+#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"])::after {
+  opacity: 1;
+}
+#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]),
+#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ui-border-hover) !important;
+}
+#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"])::after {
   opacity: 1;
 }
 

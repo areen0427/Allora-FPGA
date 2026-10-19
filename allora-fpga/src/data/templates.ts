@@ -69,21 +69,20 @@ export function createConstraintLines(
   for (const { port, pin } of mappings) {
     const ioStandard =
       board.clocks.find((clock) => clock.pin === pin)?.ioStandard ??
-      board.pins.find((resource) => resource.pin === pin)?.ioStandard ??
-      "LVCMOS33";
+      board.pins.find((resource) => resource.pin === pin)?.ioStandard;
     if (board.constraintsFile === "xdc") {
       const portRef = port.includes("[") ? `{${port}}` : port;
       lines.push(
         `set_property PACKAGE_PIN ${pin.split("/")[0]} [get_ports ${portRef}]`,
       );
       lines.push(
-        `set_property IOSTANDARD ${ioStandard} [get_ports ${portRef}]`,
+        ioStandard ? `set_property IOSTANDARD ${ioStandard} [get_ports ${portRef}]` : `# Verify IO standard for ${port} before building`,
       );
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port} ${pin}`);
     } else if (board.constraintsFile === "lpf") {
       lines.push(`LOCATE COMP "${port}" SITE "${pin}";`);
-      lines.push(`IOBUF PORT "${port}" IO_TYPE=${ioStandard};`);
+      lines.push(ioStandard ? `IOBUF PORT "${port}" IO_TYPE=${ioStandard};` : `# Verify IO standard for ${port} before building`);
     } else if (board.constraintsFile === "cst") {
       lines.push(`IO_LOC "${port}" ${pin};`);
     } else {

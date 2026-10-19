@@ -1,6 +1,6 @@
 /* ── Virtual board ──────────────────────────────────────────────────────
    Uses the same teal Allora PCB language as the shared welcome and pinout
-   diagrams while retaining each physical board's component placement. */
+   diagrams. Physical resource placement is schematic and data-driven. */
 
 .vboard-shell {
   width: 100%;
@@ -196,3 +196,86 @@
   min-width: 70px;
   text-align: right;
 }
+
+/* Every catalog peripheral contact participates in workspace pin selection. */
+.vboard-resource-pin {
+  fill: #d6a53c;
+  stroke: #6f4811;
+  stroke-width: 0.12;
+}
+.vboard-clickable:hover .vboard-resource-pin,
+.vboard-clickable:focus-visible .vboard-resource-pin {
+  stroke: #38bdf8;
+  stroke-width: 0.4;
+}
+
+.board-resource-summary {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.board-resource-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+.board-resource-specs dt,
+.board-resource-facts h4 {
+  margin: 0 0 3px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+.board-resource-specs dd {
+  margin: 0;
+  font-weight: 800;
+}
+.board-resource-facts {
+  margin-top: 12px;
+}
+.board-resource-facts ul,
+.board-resource-sources ul {
+  margin: 5px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.board-resource-facts li {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+}
+.board-resource-facts li span,
+.board-resource-facts p {
+  color: var(--ui-text-muted);
+  line-height: 1.5;
+}
+.board-resource-facts p {
+  margin: 0;
+}
+.board-resource-sources {
+  margin-top: 12px;
+  color: var(--ui-text-muted);
+}
+.board-resource-sources summary {
+  cursor: pointer;
+}
+.board-resource-sources li {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.board-resource-sources a {
+  color: var(--ui-accent-text);
+}
+
+.board-resource-sources p { line-height: 1.5; overflow-wrap: anywhere; }
+
+.vboard-pan { overflow: auto; overscroll-behavior: contain; }
+.vboard-zoom-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 8px; color: var(--ui-text-muted); font-size: 12px; }
+.vboard-zoom-controls button { border: 1px solid var(--ui-border-control); border-radius: var(--ui-radius-sm); padding: 4px 8px; background: var(--ui-control-bg); color: var(--ui-text); cursor: pointer; }
+.vboard-zoom-controls button:disabled { opacity: 0.45; cursor: default; }
+.vboard-zoom-controls span { min-width: 38px; text-align: center; font-variant-numeric: tabular-nums; }

@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
 const ICESUGAR_LEDS: BoardPin[] = [
@@ -341,33 +342,36 @@ const ICESUGAR_PINS: BoardPin[] = [
   },
 ];
 
-export const icesugarV15: BoardDefinition = {
-  id: "icesugar-v1-5",
-  name: "iCESugar v1.5",
-  vendor: "Muse Lab",
-  family: "iCE40 UltraPlus",
-  device: "ICE40-UP5K",
-  package: "SG48",
-  fpgaId: "ice40up5k-sg48",
-  constraintsFile: "pcf",
-  synthesisFlow: "yosys-nextpnr",
-  toolchain: {
-    synth: "yosys",
-    placeRoute: "nextpnr-ice40",
-    pack: "icepack",
-    program: "icesprog",
-  },
-  clocks: [
-    {
-      name: "iCESugarv15_CLK",
-      pin: "35",
-      frequency: 12000000,
-      verified: true,
+export const icesugarV15: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "icesugar-v1-5",
+    name: "iCESugar v1.5",
+    vendor: "Muse Lab",
+    family: "iCE40 UltraPlus",
+    device: "ICE40-UP5K",
+    package: "SG48",
+    fpgaId: "ice40up5k-sg48",
+    constraintsFile: "pcf",
+    synthesisFlow: "yosys-nextpnr",
+    toolchain: {
+      synth: "yosys",
+      placeRoute: "nextpnr-ice40",
+      pack: "icepack",
+      program: "icesprog",
     },
-  ],
-  pins: ICESUGAR_PINS,
-  leds: ICESUGAR_LEDS,
-  buttons: [],
-  notes:
-    "Pin mapping populated from the iCESugar v1.5 PCF. Some pins are exposed through multiple alternate functions such as UART, USB, and PMOD headers.",
-};
+    clocks: [
+      {
+        name: "iCESugarv15_CLK",
+        pin: "35",
+        frequency: 12000000,
+        verified: true,
+      },
+    ],
+    pins: ICESUGAR_PINS,
+    leds: ICESUGAR_LEDS,
+    buttons: [],
+    notes:
+      "Pin mapping populated from the iCESugar v1.5 PCF. Some pins are exposed through multiple alternate functions such as UART, USB, and PMOD headers.",
+  },
+  "muselab_icesugar",
+);

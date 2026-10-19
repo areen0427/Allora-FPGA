@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin, BoardClock } from "../boardTypes";
 
 const ULX3S_CLOCKS: BoardClock[] = [
@@ -38,29 +39,32 @@ function createUlx3sVariant(
   device: string,
   fpgaId: string,
 ): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor: "Lattice",
-    family: "ECP5",
-    device,
-    package: "CABGA381",
-    fpgaId,
-    constraintsFile: "lpf",
-    synthesisFlow: "yosys-nextpnr",
-    toolchain: {
-      synth: "yosys",
-      placeRoute: "nextpnr-ecp5",
-      pack: "ecppack",
-      program: "fujprog",
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor: "Lattice",
+      family: "ECP5",
+      device,
+      package: "CABGA381",
+      fpgaId,
+      constraintsFile: "lpf",
+      synthesisFlow: "yosys-nextpnr",
+      toolchain: {
+        synth: "yosys",
+        placeRoute: "nextpnr-ecp5",
+        pack: "ecppack",
+        program: "fujprog",
+      },
+      clocks: ULX3S_CLOCKS,
+      pins: ULX3S_PINS,
+      leds: ULX3S_LEDS,
+      buttons: ULX3S_BUTTONS,
+      notes:
+        "Clock, LED and button pads match the maker's ulx3s_v20.lpf for ULX3S v2.x.x and v3.0.x; other revisions need their own pinout check. The maker documents fujprog bitstream.bit for SRAM, fujprog -j flash bitstream.bit for flash, and openFPGALoader --board=ulx3s equivalents. Published pins and commands have not been tested on hardware in Allora.",
     },
-    clocks: ULX3S_CLOCKS,
-    pins: ULX3S_PINS,
-    leds: ULX3S_LEDS,
-    buttons: ULX3S_BUTTONS,
-    notes:
-      "Clock, LED and button pads match the maker's ulx3s_v20.lpf for ULX3S v2.x.x and v3.0.x; other revisions need their own pinout check. The maker documents fujprog bitstream.bit for SRAM, fujprog -j flash bitstream.bit for flash, and openFPGALoader --board=ulx3s equivalents. Published pins and commands have not been tested on hardware in Allora.",
-  };
+    "ulx3s",
+  );
 }
 
 export const ulx3s12f = createUlx3sVariant(

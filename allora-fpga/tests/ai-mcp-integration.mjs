@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile, mkdir, mkdtemp, rm, access } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -11,11 +12,31 @@ const target = path.join(app, "src-tauri/target");
 await mkdir(target, { recursive: true });
 const workspace = await mkdtemp(path.join(target, "allora-ai-test-"));
 const catalogPath = path.join(workspace, "boards.json");
-// Use the actual checked-in board definition; do not invent hardware metadata.
-const boardSource = await readFile(path.join(app, "src/data/boards/icebreaker.ts"), "utf8");
-const boardJs = ts.transpileModule(boardSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { icebreaker } = await import(`data:text/javascript;base64,${Buffer.from(boardJs).toString("base64")}`);
-await writeFile(catalogPath, JSON.stringify([icebreaker]));
+// Load the same complete, source-backed catalog the GUI sends to the MCP host.
+// Relative imports matter: handwritten boards now include audited enrichment.
+const dataModules = new Map();
+function frontendDataModule(relativePath) {
+  const file = path.resolve(app, relativePath);
+  if (dataModules.has(file)) return dataModules.get(file);
+  const exports = {};
+  dataModules.set(file, exports);
+  const code = ts.transpileModule(readFileSync(file, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  new Function("require", "exports", code)((dependency) => {
+    assert.ok(dependency.startsWith("."), `Unexpected data dependency: ${dependency}`);
+    const resolved = path.resolve(path.dirname(file), dependency);
+    return frontendDataModule(existsSync(resolved) ? resolved : `${resolved}.ts`);
+  }, exports);
+  return exports;
+}
+const { REAL_BOARDS, VIRTUAL_BOARD } = frontendDataModule("src/data/boards.ts");
+const { getBoardCapabilities } = frontendDataModule("src/data/boardCapabilities.ts");
+const catalog = [...REAL_BOARDS, VIRTUAL_BOARD].map((board) => ({
+  ...board,
+  capabilities: getBoardCapabilities(board),
+}));
+await writeFile(catalogPath, JSON.stringify(catalog));
 const moduleUrl = (code) => `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
 async function frontendModule(file, replacements = {}) {
   let source = await readFile(path.join(app, file), "utf8");
@@ -85,6 +106,56 @@ try {
   const inventory = await client.request("tools/list", {});
   assert.ok(inventory.tools.some((tool) => tool.name === "build_bitstream"));
   assert.ok(inventory.tools.some((tool) => tool.name === "cancel_all_jobs"));
+  const listed = await call("list_supported_boards", {});
+  assert.equal(listed.boards.length, catalog.length, "the native server loads the entire shipped catalog");
+  assert.deepEqual(new Set(listed.boards.map((board) => board.id)), new Set(catalog.map((board) => board.id)));
+  let unknownPolarity = 0;
+  for (const expected of catalog) {
+    const description = await call("get_board_definition", { boardId: expected.id });
+    assert.equal(description.buildSupported, expected.capabilities.bitstream.supported, expected.id);
+    assert.equal(listed.boards.find((board) => board.id === expected.id).buildSupported, description.buildSupported, expected.id);
+    for (const field of ["device", "sources", "verificationNotes", "capabilities", "identityUnresolved"]) {
+      if (expected[field] !== undefined) assert.deepEqual(description[field], expected[field], `${expected.id}: ${field}`);
+    }
+    for (const group of ["pins", "leds", "buttons", "clocks"]) {
+      assert.equal(description[group].length, expected[group].length, `${expected.id}: ${group}`);
+      for (let index = 0; index < expected[group].length; index++) {
+        const original = expected[group][index];
+        const returned = description[group][index];
+        for (const [field, value] of Object.entries(original)) {
+          if (value === undefined) continue; // JSON omits unpublished optional fields.
+          assert.deepEqual(returned[field], value, `${expected.id}: ${group}[${index}].${field}`);
+        }
+        if (group !== "clocks" && original.activeLow === undefined) {
+          assert.equal(Object.hasOwn(returned, "activeLow"), false, `${expected.id}: unknown polarity must stay unknown`);
+          unknownPolarity++;
+        }
+      }
+    }
+  }
+  assert.ok(unknownPolarity > 0, "the integration exercises real resources with unpublished polarity");
+  const pinMappingOnly = REAL_BOARDS.find((board) => !getBoardCapabilities(board).bitstream.supported && board.pins.length);
+  assert.ok(pinMappingOnly, "the catalog includes pin-mapping-only hardware");
+  const filteredBoards = await call("list_supported_boards", { query: pinMappingOnly.id });
+  assert.ok(filteredBoards.boards.some((board) => board.id === pinMappingOnly.id && !board.buildSupported));
+
+  // A verified physical pad does not imply a verified electrical bank voltage.
+  // Use a real GPIO, not flash or a dedicated reference clock, to isolate this check.
+  const unknownIoBoard = REAL_BOARDS.find((board) => board.constraintsFile === "lpf" && board.pins.some((pin) => pin.verified && pin.type === "gpio" && !pin.ioStandard));
+  assert.ok(unknownIoBoard, "the catalog includes a verified LPF GPIO with unpublished IO standard");
+  const unknownIoPin = unknownIoBoard.pins.find((pin) => pin.verified && pin.type === "gpio" && !pin.ioStandard);
+  const electricalProject = await call("create_project", { name: "Unknown Electrical Standard", boardId: unknownIoBoard.id, parentDirectory: workspace });
+  await call("apply_file_changes", { projectPath: electricalProject.projectPath, changes: [
+    { path: "src/top.v", content: "module top(output wire signal); assign signal = 1'b0; endmodule\n", expectedRevision: null },
+  ] });
+  const unknownIo = await client.call("set_pin_assignments", { projectPath: electricalProject.projectPath, assignments: [
+    { port: "signal", boardPin: unknownIoPin.name },
+  ] });
+  assert.equal(unknownIo.isError, true);
+  assert.match(unknownIo.content[0].text, /No verified IO standard/);
+  assert.equal((await call("read_file", { projectPath: electricalProject.projectPath, path: "constraints/constraints.lpf" })).exists, false);
+  const electricalMetadata = JSON.parse(await readFile(path.join(electricalProject.projectPath, "allora-project.json"), "utf8"));
+  assert.equal(electricalMetadata.aiPinAssignments, undefined, "rejected constraints leave project metadata untouched");
   const cancelled = await client.call("create_project", { name: "Cancelled Example", boardId: "icebreaker" });
   assert.equal(cancelled.isError, true);
   assert.match(cancelled.content[0].text, /cancelled/);
@@ -178,7 +249,7 @@ try {
   const stale = await client.call("program_board", { projectPath, artifactId: build.result.artifactId });
   assert.equal(stale.isError, true);
   assert.match(stale.content[0].text, /stale/i);
-  console.log("Allora MCP PASS: native-picker protocol accept/cancel, explicit destination, saved interactive connections, actual Verilator compilation, saved synthesis graph, complete verified pins, testbench simulation, bitstream/timing, declined upload and stale artifact rejection.");
+  console.log(`Allora MCP PASS: full ${REAL_BOARDS.length}-board physical catalog plus virtual target, native source/pin/clock/polarity preservation, pin-mapping-only gating, unknown LPF IO-standard rejection, native-picker protocol accept/cancel, explicit destination, saved interactive connections, actual Verilator compilation, saved synthesis graph, complete verified pins, testbench simulation, bitstream/timing, declined upload and stale artifact rejection.`);
 } finally {
   await client.close();
   await rm(workspace, { recursive: true, force: true });

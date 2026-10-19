@@ -58,8 +58,8 @@ struct Pin {
     kind: String,
     #[serde(default)]
     verified: bool,
-    #[serde(default)]
-    active_low: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    active_low: Option<bool>,
     #[serde(default)]
     io_standard: Option<String>,
     #[serde(flatten)]
@@ -1745,7 +1745,8 @@ fn verified_constraints(board: &Board, assignments: &[Assignment]) -> Result<Str
                 Some(pin.pin.as_str()),
                 pin.io_standard.as_deref(),
                 pin.verified,
-                pin.kind == "flash",
+                pin.kind == "flash"
+                    || board.pins.iter().any(|candidate| candidate.kind == "flash" && candidate.pin == pin.pin),
             )
         } else if let Some(clock) = clock {
             (
@@ -1757,6 +1758,13 @@ fn verified_constraints(board: &Board, assignments: &[Assignment]) -> Result<Str
         } else {
             return Err(format!("Unknown board pin '{}'. Retrieve get_board_definition and use its exact pin/clock name.",assignment.board_pin));
         };
+        if package_pin.is_some_and(|pad| board.clocks.iter().any(|source| {
+            source.extra.get("role").and_then(Value::as_str) == Some("reference")
+                && (source.pin.as_deref() == Some(pad)
+                    || source.extra.get("differentialPin").and_then(Value::as_str) == Some(pad))
+        })) {
+            return Err("Dedicated reference-clock pads require a SERDES-specific configuration; they are not general logic clocks or GPIO.".into());
+        }
         if !verified {
             return Err(format!(
                 "{} is not verified in Allora's board catalog.",
@@ -1785,7 +1793,7 @@ fn verified_constraints(board: &Board, assignments: &[Assignment]) -> Result<Str
                 "LOCATE COMP \"{}\" SITE \"{}\";",
                 assignment.port, package_pin
             ));
-            let standard = io_standard.unwrap_or("LVCMOS33");
+            let standard = io_standard.ok_or_else(|| format!("No verified IO standard is recorded for {}. Verify the board bank voltage before generating electrical constraints.", assignment.board_pin))?;
             if !standard
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '_')
@@ -2346,6 +2354,41 @@ mod tests {
         assert!(verified_constraints(&board, &[assign("x", "flash")]).is_err());
         assert!(verified_constraints(&board, &[assign("a", "led"), assign("b", "led")]).is_err());
         assert!(verified_constraints(&board, &[assign("x; quit", "led")]).is_err());
+    }
+
+    #[test]
+    fn physical_aliases_cannot_bypass_flash_or_reference_clock_reservations() {
+        let mut flash_board = board();
+        flash_board.pins.push(serde_json::from_value(json!({"name":"header_alias","pin":"14","type":"gpio","verified":true})).unwrap());
+        let assignment = Assignment { port: "gpio".into(), board_pin: "header_alias".into() };
+        assert!(verified_constraints(&flash_board, &[assignment]).unwrap_err().contains("reserved"));
+        let mut reference_board = board();
+        reference_board.clocks[0].extra.insert("role".into(), json!("reference"));
+        reference_board.clocks[0].extra.insert("differentialPin".into(), json!("39"));
+        for name in ["clk12", "led"] {
+            let assignment = Assignment { port: "gpio".into(), board_pin: name.into() };
+            assert!(verified_constraints(&reference_board, &[assignment]).unwrap_err().contains("Dedicated reference"));
+        }
+    }
+
+    #[test]
+    fn unknown_control_polarity_stays_unknown_in_tool_descriptions() {
+        let board = board();
+        let description = board.description();
+        assert_eq!(description["pins"][0]["activeLow"], json!(true));
+        assert!(description["pins"][1].get("activeLow").is_none());
+    }
+
+    #[test]
+    fn lpf_constraints_require_a_published_io_standard() {
+        let mut board = board();
+        board.constraints_file = "lpf".into();
+        let assignments = [Assignment { port: "led".into(), board_pin: "led".into() }];
+        assert!(verified_constraints(&board, &assignments).unwrap_err().contains("No verified IO standard"));
+        board.pins[0].io_standard = Some("LVCMOS18".into());
+        let constraints = verified_constraints(&board, &assignments).unwrap();
+        assert!(constraints.contains("IO_TYPE=LVCMOS18"));
+        assert!(!constraints.contains("LVCMOS33"));
     }
 
     #[test]

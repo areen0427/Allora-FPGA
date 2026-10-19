@@ -61,6 +61,13 @@ export function getBuildPreflight({
   const unmappedCount = mappings ? ports.length - assignedPins.length : 0;
   const duplicatePins = assignedPins.length - new Set(assignedPins).size;
 
+  const unknownElectricalCount = ["lpf", "xdc"].includes(board.constraintsFile) && mappings
+    ? ports.filter(port => {
+        const key = mappings[port.name];
+        return key && !getPinOptions(board).find(option => option.key === key)?.ioStandard;
+      }).length
+    : 0;
+
   return [
     {
       id: "board",
@@ -92,6 +99,8 @@ export function getBuildPreflight({
       detail:
         !ports.length && !constraints
           ? "No top-level ports or constraints were found."
+          : unknownElectricalCount
+            ? `${unknownElectricalCount} mapped port(s) have no verified IO standard. Review their bank voltage and constraints.`
           : duplicatePins
             ? `${duplicatePins} physical pin conflict${duplicatePins === 1 ? "" : "s"} found. Review pin mapping.`
             : unmappedCount
@@ -100,7 +109,7 @@ export function getBuildPreflight({
                 ? `${ports.length} port${ports.length === 1 ? "" : "s"} mapped ${savedMappings ? "in saved constraints" : "by board suggestions"}.`
                 : `${constraints?.name ?? "Constraints"} uses custom assignments; review them before building.`,
       state:
-        (!ports.length && !constraints) || duplicatePins || unmappedCount
+        (!ports.length && !constraints) || duplicatePins || unmappedCount || unknownElectricalCount
           ? "blocked"
           : mappings
             ? "ready"

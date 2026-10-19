@@ -1321,6 +1321,29 @@ html[data-reduce-motion="true"] .chat-ultra-wisps { display: none; }
 }
 .chat-history-modal:not([open]) { display: none !important; }
 .chat-history-modal::backdrop { background: rgba(15, 23, 42, .3); backdrop-filter: blur(8px); }
+.welcome-product-info.chat-new-project-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--chat-border);
+  background: var(--ui-popup-bg);
+  color: var(--chat-text);
+  transform-origin: top right;
+}
+.chat-new-project-popup[data-placement="above"] { transform-origin: bottom right; }
+.welcome-product-info.chat-new-project-popup.glass-unfold { animation: welcome-product-open 400ms cubic-bezier(.22, 1, .36, 1) both; }
+.chat-new-project-popup h2 { margin: 0 0 10px; font-size: 18px; }
+.chat-new-project-popup p { margin: 0 0 16px; line-height: 1.5; color: var(--chat-muted); overflow-wrap: anywhere; }
+.chat-new-project-options { display: grid; gap: 10px; }
+html[data-reduce-motion="true"] .welcome-product-info.chat-new-project-popup.glass-unfold { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .welcome-product-info.chat-new-project-popup.glass-unfold { animation: none; }
+}
 .chat-history-modal .chat-history-list { overscroll-behavior: contain; }
 .chat-history-modal .chat-sidebar-top { padding-bottom: 14px; border-bottom: 1px solid var(--chat-border); }
 

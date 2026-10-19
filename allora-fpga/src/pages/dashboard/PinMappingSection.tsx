@@ -1,16 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BoardDefinition, BoardPin } from "../../data/boards";
-import { getPinTypeColor } from "../../data/pinResourceGroups";
+import type { BoardDefinition } from "../../data/boards";
+import {
+  getPinTypeColor,
+  getResourceGroupsForBrowser,
+  type PinBrowserResourceGroup,
+} from "../../data/pinResourceGroups";
 import DashboardSurfaceCard from "./DashboardSurfaceCard";
 import InfoCard from "./InfoCard";
 import VirtualBoard from "../../components/VirtualBoard";
+import BoardResourceSummary from "../../components/BoardResourceSummary";
 import type { ProjectFile } from "./types";
-import { useProjectDiagnostic, TroubleshootButton } from "../../components/ProjectDiagnostics";
+import {
+  useProjectDiagnostic,
+  TroubleshootButton,
+} from "../../components/ProjectDiagnostics";
 import {
   createSuggestedMappings,
   createPinMappingConstraints,
   findPorts,
   getPinOptions,
+  getPinMappingElectricalIssues,
   readPinMappingsFromConstraints,
   type HdlPort,
 } from "./pinMappingUtils";
@@ -116,21 +125,44 @@ export default function PinMappingSection({
       (currentMappings[port.name] ?? "") !==
       ((savedMappings ?? suggestedMappings)[port.name] ?? ""),
   );
-  const validationErrors = mappingEdited
-    ? createPinMappingValidation(board, ports, getSelectedPin).filter(item => item.kind === "warning").map(item => item.message)
-    : [];
-  const mappingError = [saveState === "error" ? saveError : "", ...validationErrors].filter(Boolean).join("\n");
-  useProjectDiagnostic("pin-mapping", mappingError, mappingError ? [
-    `Top-level file: ${topLevelFileName ?? "not selected"}`,
-    `Constraints file: ${constraintFile?.name ?? `constraints.${board.constraintsFile}`}`,
-    `Current port mappings:\n${JSON.stringify(currentMappings, null, 2).slice(0, 12000)}`,
-  ].join("\n\n") : undefined);
+  const electricalIssues = getPinMappingElectricalIssues(board, ports, currentMappings);
+  const validationErrors = [
+    ...electricalIssues,
+    ...(mappingEdited ? createPinMappingValidation(board, ports, getSelectedPin)
+      .filter((item) => item.kind === "warning").map((item) => item.message) : []),
+  ];
+  const mappingError = [
+    saveState === "error" ? saveError : "",
+    ...validationErrors,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  useProjectDiagnostic(
+    "pin-mapping",
+    mappingError,
+    mappingError
+      ? [
+          `Top-level file: ${topLevelFileName ?? "not selected"}`,
+          `Constraints file: ${constraintFile?.name ?? `constraints.${board.constraintsFile}`}`,
+          `Current port mappings:\n${JSON.stringify(currentMappings, null, 2).slice(0, 12000)}`,
+        ].join("\n\n")
+      : undefined,
+  );
 
   async function saveMappings() {
+    if (electricalIssues.length) {
+      setSaveError(electricalIssues.join(" "));
+      setSaveState("error");
+      return;
+    }
     setSaveState("saving");
     setSaveError("");
     try {
-      const content = createPinMappingConstraints(board, ports, currentMappings);
+      const content = createPinMappingConstraints(
+        board,
+        ports,
+        currentMappings,
+      );
       const saved = await onSaveMappings(
         constraintFile?.name ?? `constraints.${board.constraintsFile}`,
         content,
@@ -184,7 +216,10 @@ export default function PinMappingSection({
               flexWrap: "wrap",
             }}
           >
-            <div className="ui-button-group ui-selection-group ui-button-group-flush-start" style={{ display: "inline-flex", gap: "4px" }}>
+            <div
+              className="ui-button-group ui-selection-group ui-button-group-flush-start"
+              style={{ display: "inline-flex" }}
+            >
               {(["simple", "advanced"] as const).map((option) => (
                 <button
                   key={option}
@@ -211,7 +246,7 @@ export default function PinMappingSection({
                 label="Mapped"
                 value={`${mappedCount}/${ports.length}`}
               />
-              <SummaryPill label="Pins" value={String(board.pins.length)} />
+              <SummaryPill label="Pin aliases" value={String(board.pins.length)} />
               <SummaryPill
                 label="Constraints"
                 value={`.${board.constraintsFile}`}
@@ -219,17 +254,31 @@ export default function PinMappingSection({
             </div>
           </div>
 
-          <div className="ui-compact-button-group" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div
+            className="ui-compact-button-group"
+            style={{ display: "flex", alignItems: "center" }}
+          >
             {saveState === "error" ? (
-              <><span
-                style={{ color: "var(--ui-error-text)", fontSize: "12px", fontWeight: 800 }}
-                title={saveError}
-              >
-                Save failed
-              </span><TroubleshootButton source="pin-mapping" /></>
+              <>
+                <span
+                  style={{
+                    color: "var(--ui-error-text)",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                  }}
+                  title={saveError}
+                >
+                  Save failed
+                </span>
+                <TroubleshootButton source="pin-mapping" />
+              </>
             ) : saveState === "saved" && !hasUnsavedChanges ? (
               <span
-                style={{ color: "var(--ui-success-text)", fontSize: "12px", fontWeight: 800 }}
+                style={{
+                  color: "var(--ui-success-text)",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                }}
               >
                 Saved
               </span>
@@ -244,7 +293,6 @@ export default function PinMappingSection({
                 setMappingEdited(false);
               }}
               disabled={!canRevert}
-
             >
               Revert
             </button>
@@ -252,17 +300,26 @@ export default function PinMappingSection({
               type="button"
               className="ui-button ui-button-primary ui-action-button"
               onClick={() => void saveMappings()}
-              disabled={!hasUnsavedChanges || saveState === "saving"}
-
+              disabled={!hasUnsavedChanges || saveState === "saving" || electricalIssues.length > 0}
+              title={electricalIssues.join(" ") || undefined}
             >
               {saveState === "saving" ? "Saving…" : "Save Mapping"}
             </button>
           </div>
         </div>
 
-        {!!validationErrors.length && <div className="ui-workspace-note error" role="alert" style={{ marginBottom: "12px" }}>
-          <p>{validationErrors.join(" ")}</p>{saveState !== "error" && <TroubleshootButton source="pin-mapping" />}
-        </div>}
+        {!!validationErrors.length && (
+          <div
+            className="ui-workspace-note error"
+            role="alert"
+            style={{ marginBottom: "12px" }}
+          >
+            <p>{validationErrors.join(" ")}</p>
+            {saveState !== "error" && (
+              <TroubleshootButton source="pin-mapping" />
+            )}
+          </div>
+        )}
 
         {mode === "simple" ? (
           <SimplePinMapper
@@ -289,7 +346,10 @@ export default function PinMappingSection({
 
 function SummaryPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="ui-metric" style={{ minWidth: "72px", padding: "7px 10px" }}>
+    <div
+      className="ui-metric"
+      style={{ minWidth: "72px", padding: "7px 10px" }}
+    >
       <div
         style={{
           color: "var(--ui-text-muted)",
@@ -481,12 +541,13 @@ function ResourcePinMapper({
   const mappedPorts = ports.filter((port) => getSelectedPin(port.name));
   const unmappedPorts = ports.filter((port) => !getSelectedPin(port.name));
   const selectedPort =
-    unmappedPorts.find((port) => port.name === selectedPortName) ??
+    ports.find((port) => port.name === selectedPortName) ??
     unmappedPorts[0] ??
+    ports[0] ??
     null;
   const selectedPin = selectedPort ? getSelectedPin(selectedPort.name) : "";
   const selectedPinOption = pinOptions.find((pin) => pin.key === selectedPin);
-  const resourceGroups = getResourceGroups(board);
+  const resourceGroups = getResourceGroupsForBrowser(board);
   const constraintPreview = createConstraintPreview(
     board,
     ports,
@@ -536,7 +597,8 @@ function ResourcePinMapper({
   function assignPin(pinKey: string) {
     if (!selectedPort) return;
     const physicalPin = pinOptionMap.get(pinKey)?.pin;
-    if (physicalPin && mappedPhysicalPins.has(physicalPin)) return;
+    if (!physicalPin || (physicalPin !== selectedPinOption?.pin && mappedPhysicalPins.has(physicalPin))) return;
+    setSelectedPortName(selectedPort.name);
     setPortMapping(selectedPort.name, pinKey);
   }
 
@@ -574,9 +636,9 @@ function ResourcePinMapper({
             }}
           >
             <select
+              aria-label="Port to assign"
               value={selectedPort?.name ?? ""}
               onChange={(event) => setSelectedPortName(event.target.value)}
-              disabled={unmappedPorts.length === 0}
               style={{
                 width: "100%",
                 minWidth: 0,
@@ -589,10 +651,7 @@ function ResourcePinMapper({
                 fontWeight: 800,
               }}
             >
-              {unmappedPorts.length === 0 ? (
-                <option value="">All ports mapped</option>
-              ) : null}
-              {unmappedPorts.map((port) => (
+              {ports.map((port) => (
                 <option key={port.name} value={port.name}>
                   {port.name} - {port.direction}
                 </option>
@@ -643,7 +702,6 @@ function ResourcePinMapper({
             style={{
               flexShrink: 0,
               display: "flex",
-              gap: "6px",
               flexWrap: "wrap",
             }}
           >
@@ -661,7 +719,6 @@ function ResourcePinMapper({
                 className="ui-button ui-button-secondary"
                 aria-pressed={view === key}
                 onClick={() => setView(key)}
-
               >
                 {label}
               </button>
@@ -721,14 +778,17 @@ function ResourcePinMapper({
                   ))}
                 </div>
               ) : view === "board" ? (
-                <VirtualBoard
-                  board={board}
-                  selectable
-                  selectedPinKey={selectedPin || null}
-                  mappedPinKeys={mappedPinKeys}
-                  onSelectPin={assignPin}
-                  maxHeight={520}
-                />
+                <div>
+                  <VirtualBoard
+                    board={board}
+                    selectable
+                    selectedPinKey={selectedPin || null}
+                    mappedPinKeys={mappedPinKeys}
+                    onSelectPin={assignPin}
+                    maxHeight={520}
+                  />
+                  <BoardResourceSummary board={board} />
+                </div>
               ) : (
                 <ConstraintPreview
                   constraintPreview={constraintPreview}
@@ -756,7 +816,10 @@ function ResourcePinMapper({
                   padding: "14px",
                 }}
               >
-                <div className="ui-section-title" style={{ color: "var(--ui-text)" }}>
+                <div
+                  className="ui-section-title"
+                  style={{ color: "var(--ui-text)" }}
+                >
                   Current Assignment
                 </div>
                 <div
@@ -806,7 +869,10 @@ function ResourcePinMapper({
                       label="Format"
                       value={`.${board.constraintsFile}`}
                     />
-                    <PinInspectorFact label="I/O" value={selectedPinOption.ioStandard} />
+                    <PinInspectorFact
+                      label="I/O"
+                      value={selectedPinOption.ioStandard ?? "Not documented"}
+                    />
                   </div>
                 ) : null}
               </DashboardSurfaceCard>
@@ -832,14 +898,19 @@ function ResourcePinMapper({
                   }}
                 >
                   <span>
-                    <span className="ui-section-title" style={{ color: "var(--ui-text)" }}>
+                    <span
+                      className="ui-section-title"
+                      style={{ color: "var(--ui-text)" }}
+                    >
                       Validation
                     </span>
                   </span>
                   <span
                     style={{
                       color:
-                        validationItems.length === 0 ? "var(--ui-success-text)" : "var(--ui-warning-text)",
+                        validationItems.length === 0
+                          ? "var(--ui-success-text)"
+                          : "var(--ui-warning-text)",
                       fontSize: "12px",
                       fontWeight: 900,
                     }}
@@ -954,8 +1025,7 @@ function AdvancedAssignmentTable({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
+          gridTemplateColumns: "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
           gap: "12px",
           padding: "11px 14px",
           background: "var(--ui-surface)",
@@ -994,10 +1064,11 @@ function AdvancedAssignmentTable({
               width: "100%",
               border: "none",
               borderTop: "1px solid var(--ui-border-subtle)",
-              background: active ? "var(--ui-control-active-bg)" : "var(--ui-panel)",
+              background: active
+                ? "var(--ui-control-active-bg)"
+                : "var(--ui-panel)",
               display: "grid",
-              gridTemplateColumns:
-                "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
+              gridTemplateColumns: "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
               gap: "12px",
               alignItems: "center",
               padding: "12px 14px",
@@ -1063,7 +1134,9 @@ function AdvancedAssignmentTable({
                 borderRadius: "999px",
                 background: pin ? "var(--ui-success-bg)" : "var(--ui-surface)",
                 color: pin ? "var(--ui-success-text)" : "var(--ui-text-muted)",
-                border: pin ? "1px solid var(--ui-success-border)" : "1px solid var(--ui-border-subtle)",
+                border: pin
+                  ? "1px solid var(--ui-success-border)"
+                  : "1px solid var(--ui-border-subtle)",
                 padding: "4px 8px",
                 fontSize: "11px",
                 fontWeight: 900,
@@ -1169,8 +1242,7 @@ function ConstraintPreview({
           fontSize: "12px",
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
-          fontFamily:
-            "var(--font-code)",
+          fontFamily: "var(--font-code)",
         }}
       >
         {constraintPreview}
@@ -1217,18 +1289,7 @@ function createPinMappingValidation(
 
   return items;
 }
-type ResourceGroup = {
-  title: string;
-  detail: string;
-  pins: Array<{
-    key: string;
-    name: string;
-    pin: string;
-    type: string;
-    symbol: string;
-    detail?: string;
-  }>;
-};
+type ResourceGroup = PinBrowserResourceGroup;
 
 function ResourceGroupCard({
   group,
@@ -1279,41 +1340,46 @@ function ResourceGroupCard({
             {group.detail}
           </div>
         </div>
-        <span style={{ color: "var(--ui-text-soft)", fontSize: "12px", fontWeight: 900 }}>
+        <span
+          style={{
+            color: "var(--ui-text-soft)",
+            fontSize: "12px",
+            fontWeight: 900,
+          }}
+        >
           {visiblePins.length}
         </span>
       </div>
 
       <div
+        className="pin-map-resource-grid ui-compact-button-group ui-selection-group"
         style={{
           marginTop: "12px",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(86px, 1fr))",
           gap: "8px",
         }}
       >
         {visiblePins.map((pin) => {
           const active = selectedPin === pin.key;
           const color = getPinTypeColor(pin.type);
+          const clickable = Boolean(selectedPort) && pin.assignable !== false;
+          const Entry = clickable ? "button" : "div";
 
           return (
-            <button
-              className={`pin-map-resource-button${active ? " active" : ""}`}
+            <Entry
+              className={clickable ? "pin-map-resource-button ui-button ui-button-secondary" : "pin-map-resource-entry"}
               key={pin.key}
-              type="button"
-              disabled={!selectedPort}
-              onClick={() => onAssignPin(pin.key)}
-              title={`${pin.name} (${pin.pin})`}
+              type={clickable ? "button" : undefined}
+              aria-pressed={clickable ? active : undefined}
+              onClick={clickable ? () => onAssignPin(pin.key) : undefined}
+              title={`${pin.name} (${pin.pin})${pin.assignable === false ? " — not an assignable package pin" : ""}`}
               style={{
                 minWidth: 0,
                 minHeight: "58px",
-                border: active ? "2px solid var(--ui-border-hover)" : "1px solid var(--ui-border-control)",
                 borderRadius: "var(--ui-radius-md)",
-                cursor: selectedPort ? "pointer" : "not-allowed",
                 padding: "9px",
                 display: "grid",
                 gap: "3px",
-                boxShadow: active ? "var(--ui-focus-ring)" : "none",
               }}
             >
               <span
@@ -1350,121 +1416,18 @@ function ResourceGroupCard({
                   whiteSpace: "nowrap",
                 }}
               >
-                {pin.detail ?? pin.name}
+                {pin.name}
+                {pin.detail && pin.detail !== pin.name
+                  ? ` · ${pin.detail}`
+                  : ""}
               </span>
-            </button>
+              <span className="ui-control-divider-below" aria-hidden="true" />
+            </Entry>
           );
         })}
       </div>
     </DashboardSurfaceCard>
   );
-}
-
-function getResourceGroups(board: BoardDefinition): ResourceGroup[] {
-  const groups = new Map<string, ResourceGroup>();
-
-  function addPin(
-    groupTitle: string,
-    groupDetail: string,
-    pin: ResourceGroup["pins"][number],
-  ) {
-    const group = groups.get(groupTitle) ?? {
-      title: groupTitle,
-      detail: groupDetail,
-      pins: [],
-    };
-
-    group.pins.push(pin);
-    groups.set(groupTitle, group);
-  }
-
-  board.clocks
-    .filter((clock) => clock.pin)
-    .forEach((clock) =>
-      addPin("Clocks", "Clock sources", {
-        key: `clock:${clock.name}`,
-        name: clock.name,
-        pin: clock.pin ?? "",
-        type: "clock",
-        symbol: "CLK",
-        detail: `${Math.round(clock.frequency / 1_000_000)} MHz`,
-      }),
-    );
-
-  board.pins.forEach((pin) => {
-    const title = getResourceGroupTitle(pin);
-    addPin(title, pin.group ?? getPinTypeLabel(pin.type), {
-      key: `pin:${pin.name}:${pin.pin}`,
-      name: pin.name,
-      pin: pin.pin,
-      type: pin.type,
-      symbol: getResourceSymbol(pin),
-      detail: pin.signal ?? pin.group ?? pin.name,
-    });
-  });
-
-  return Array.from(groups.values()).sort(
-    (a, b) => getResourceOrder(a.title) - getResourceOrder(b.title),
-  );
-}
-
-function getResourceGroupTitle(pin: BoardPin) {
-  if (pin.type === "led") return "LEDs";
-  if (pin.type === "button") return "Buttons / Reset";
-  if (pin.type === "uart") return "UART";
-  if (pin.type === "spi" || pin.type === "flash") return "SPI / Flash";
-  if (pin.type === "i2c") return "I2C";
-  if (
-    pin.group?.toLowerCase().includes("usb") ||
-    pin.signal?.toLowerCase().includes("usb")
-  ) {
-    return "USB / Special";
-  }
-  if (pin.type === "gpio") return pin.group ?? "GPIO";
-  return pin.group ?? "Other";
-}
-
-function getResourceOrder(title: string) {
-  const order = [
-    "Clocks",
-    "LEDs",
-    "Buttons / Reset",
-    "UART",
-    "SPI / Flash",
-    "I2C",
-    "GPIO",
-    "USB / Special",
-  ];
-
-  const index = order.indexOf(title);
-  return index === -1 ? 100 : index;
-}
-
-function getResourceSymbol(pin: BoardPin) {
-  if (pin.type === "clock") return "CLK";
-  if (pin.type === "led") return "LED";
-  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
-  if (pin.type === "uart") return "URT";
-  if (pin.type === "spi" || pin.type === "flash") return "SPI";
-  if (pin.type === "i2c") return "I2C";
-  if (
-    pin.group?.toLowerCase().includes("usb") ||
-    pin.signal?.toLowerCase().includes("usb")
-  ) {
-    return "USB";
-  }
-  if (pin.type === "gpio") return "IO";
-  return "PIN";
-}
-
-function getPinTypeLabel(type: string) {
-  if (type === "led") return "User outputs";
-  if (type === "button") return "User inputs";
-  if (type === "uart") return "Serial";
-  if (type === "spi" || type === "flash") return "Serial bus";
-  if (type === "i2c") return "Two-wire bus";
-  if (type === "gpio") return "General I/O";
-  return "Board resources";
 }
 
 function createConstraintPreview(

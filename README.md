@@ -51,6 +51,14 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 - Responsive layouts preserve the shared right edge and card width, while reduced-motion preferences disable dimensional card movement.
 - Theme artwork lives at `allora-fpga/public/welcome_ice_molecular.png` and `allora-fpga/public/welcome_black_ice_molecular.png`.
 
+## Board data and resource diagrams
+
+The catalog contains 255 physical variants. Published pin, clock, LED, button, connector and peripheral mappings carry source/revision notes, including boards available only for pin mapping. Physical-board diagrams share one resource layout, so database changes propagate to project setup, pin mapping and the workspace. LED counts refer to driven channels; an RGB package contributes three. Diagrams are resource overviews rather than exact PCB drawings, and the Virtual FPGA simulator keeps its own layout.
+
+Manufacturer-backed capacity profiles cover 225 catalog entries and all 55 enabled build targets. Labels distinguish architecture-specific logic units and separate block RAM, SPRAM, LRAM and UltraRAM. Unknown identities, capacities, polarity and electrical standards stay explicit. Source metadata does not establish physical programming support, and pin-mapping-only boards retain their existing capability limits.
+
+See the [board audit and source links](docs/boards/BOARD_DATA_AUDIT.md), [all-board/workplan coverage](docs/boards/BOARD_COVERAGE.md), and [device resource audit](docs/boards/DEVICE_RESOURCE_AUDIT.md) for corrections and remaining gaps.
+
 ## Open-source stack
 
 | Layer                  | Technology                             |

@@ -720,18 +720,21 @@ function createGeneratedConstraints(
       continue;
     }
 
+    if (["lpf", "xdc"].includes(board.constraintsFile) && !pin.ioStandard) {
+      throw new Error(`No verified IO standard for ${pin.shortLabel}. Set reviewed electrical constraints before building.`);
+    }
     if (board.constraintsFile === "xdc") {
       lines.push(
         `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${port.name}]`,
       );
       lines.push(
-        `set_property IOSTANDARD ${pin.ioStandard} [get_ports ${port.name}]`,
+        pin.ioStandard ? `set_property IOSTANDARD ${pin.ioStandard} [get_ports ${port.name}]` : `# Verify IO standard for ${port.name} before building`,
       );
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);
     } else if (board.constraintsFile === "lpf") {
       lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
-      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};`);
+      lines.push(pin.ioStandard ? `IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};` : `# Verify IO standard for ${port.name} before building`);
     } else if (board.constraintsFile === "cst") {
       lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
     }

@@ -20,6 +20,50 @@ export function getBoardDefinitions(
     : [board];
 }
 
+/** True when every catalog variant resolves to the same physical pin mapping. */
+export function boardVariantsHaveSamePinMappings(
+  board: VariantBoardCatalogItem,
+): boolean {
+  const definitions = getBoardDefinitions(board);
+  if (definitions.length !== board.variants.length) return false;
+  if (definitions.length < 2) return true;
+
+  const baseline = getPinMappingSignature(definitions[0]);
+  return definitions.slice(1).every(
+    (definition) => getPinMappingSignature(definition) === baseline,
+  );
+}
+
+function getPinMappingSignature(board: BoardDefinition): string {
+  const pins = new Map<string, BoardDefinition["pins"][number]>();
+  for (const pin of [...board.pins, ...board.leds, ...board.buttons]) {
+    pins.set(`${pin.name}:${pin.pin}`, pin);
+  }
+
+  const pinMappings = [...pins.values()]
+    .map((pin) => [
+      pin.name,
+      pin.pin,
+      pin.type,
+      pin.group ?? "",
+      pin.signal ?? "",
+      pin.ioStandard ?? "",
+      pin.activeLow ?? null,
+    ])
+    .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  const clocks = board.clocks
+    .map((clock) => [
+      clock.name,
+      clock.pin ?? "",
+      clock.differentialPin ?? "",
+      clock.ioStandard ?? "",
+      clock.role ?? "",
+    ])
+    .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+
+  return JSON.stringify({ pinMappings, clocks });
+}
+
 export function boardSupportsBuildFlow(board: BoardCatalogItem): boolean {
   return getBoardDefinitions(board).some((boardDefinition) => {
     const capabilities = getBoardCapabilities(boardDefinition);

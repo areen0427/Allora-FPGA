@@ -632,19 +632,19 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
       ...(clock?.pin
         ? [
             `set_property PACKAGE_PIN ${clock.pin.split("/")[0]} [get_ports clk]`,
-            `set_property IOSTANDARD LVCMOS33 [get_ports clk]`,
+            clock.ioStandard ? `set_property IOSTANDARD ${clock.ioStandard} [get_ports clk]` : "# Verify IO standard for clk before building",
           ]
         : []),
       ...(led?.pin
         ? [
             `set_property PACKAGE_PIN ${led.pin} [get_ports led]`,
-            `set_property IOSTANDARD LVCMOS33 [get_ports led]`,
+            led.ioStandard ? `set_property IOSTANDARD ${led.ioStandard} [get_ports led]` : "# Verify IO standard for led before building",
           ]
         : []),
       ...(reset?.pin
         ? [
             `set_property PACKAGE_PIN ${reset.pin} [get_ports rst]`,
-            `set_property IOSTANDARD LVCMOS33 [get_ports rst]`,
+            reset.ioStandard ? `set_property IOSTANDARD ${reset.ioStandard} [get_ports rst]` : "# Verify IO standard for rst before building",
           ]
         : []),
       "",
@@ -667,19 +667,19 @@ function createConstraintsTemplate(board: BoardDefinition, topModule: string) {
       ...(clock?.pin
         ? [
             `LOCATE COMP "clk" SITE "${clock.pin}";`,
-            `IOBUF PORT "clk" IO_TYPE=${clock.ioStandard ?? "LVCMOS33"};`,
+            clock.ioStandard ? `IOBUF PORT "clk" IO_TYPE=${clock.ioStandard};` : "# Verify IO standard for clk before building",
           ]
         : []),
       ...(led?.pin
         ? [
             `LOCATE COMP "led" SITE "${led.pin}";`,
-            `IOBUF PORT "led" IO_TYPE=${led.ioStandard ?? "LVCMOS33"};`,
+            led.ioStandard ? `IOBUF PORT "led" IO_TYPE=${led.ioStandard};` : "# Verify IO standard for led before building",
           ]
         : []),
       ...(reset?.pin
         ? [
             `LOCATE COMP "rst" SITE "${reset.pin}";`,
-            `IOBUF PORT "rst" IO_TYPE=${reset.ioStandard ?? "LVCMOS33"};`,
+            reset.ioStandard ? `IOBUF PORT "rst" IO_TYPE=${reset.ioStandard};` : "# Verify IO standard for rst before building",
           ]
         : []),
       "",

@@ -12,6 +12,13 @@ Shared styling is imported by `src/App.css`:
   and keyboard-focus behavior. Existing action classes are aliases to those
   variants. New buttons can use `ui-button ui-button-primary` or
   `ui-button ui-button-secondary`.
+- Focusable data rows can use `ui-selectable-row` for a pointer cursor and a
+  static, theme-aware `:focus-visible` outline. It adds no button or glass
+  material and leaves table semantics intact; the owning screen supplies
+  `tabIndex` and row interaction behavior.
+  A roving row tab stop must include ArrowUp/ArrowDown and Home/End navigation
+  so every row can be reached. Focus and selection stay synchronized; nested
+  actions retain their independent key/click behavior.
 - Dock buttons use `ui-dock-button` with `ui-dock-icon`. This shared variant
   keeps icons borderless in every state, reveals the glass sheen only on hover,
   and sizes SVGs with `--ui-dock-icon-size`. Rail layout stays local.
@@ -40,6 +47,12 @@ Shared styling is imported by `src/App.css`:
   explicit groups and primary actions, and excludes dock, file-tree, card, and
   physical switch controls. `data-ui-compact="off"` opts a container out.
   Two-button groups can still use the explicit variant.
+  Pin Mapping resource grids combine compact and selection groups: only
+  assignable entries are buttons, with hover-only borders and a persistent
+  selected edge. Non-clickable entries remain plain data. Keep vertical dividers
+  inside multi-column rows, never on the outer left/right edges; add a short
+  `ui-control-divider-below` child beneath entries. Single-entry/stacked rows use
+  only the separator underneath. Preserve the selected resource after assignment.
   Read-only compact counters use
   `ui-metric`: no control surface or border, with a short separator between
   adjacent metrics. Do not apply it to clickable items.
@@ -86,6 +99,12 @@ Run `npm test`, `npm run lint`, and `npm run build` from `allora-fpga`.
 The [consistency audit](../../../../docs/DESIGN_SYSTEM_AUDIT.md) records migrated
 controls and behaviors, intentional hardcoded values, and regression coverage.
 
+**Persistent user preference:** “popup” means the Product Information pattern
+unless the user explicitly specifies otherwise: a compact glass panel anchored
+to its trigger, the same unfold animation, and outside-click/Escape dismissal,
+without dimming or blurring the page. Honor both reduced-motion preferences.
+Use the Settings modal treatment only when explicitly requested.
+
 Popup dismissal is shared behavior: do not render an X close button in popovers
 or dialogs. Clicking outside dismisses the popup; Escape remains available for
 keyboard users. Blocking overlays use `useModalFocus`, which handles outside
@@ -118,6 +137,8 @@ labels. Dock SVG slots use the shared icon-size token without wide-icon cases.
 card/section frames while preserving interactive control and status styling.
 `ui-workspace-dot-grid` adds a faint theme-aware dot canvas using the shared grid
 color and spacing tokens. The Dashboard main area supplies both variants to all workspace pages.
+The welcome Pin Mapper also uses both variants for its work column beside the
+board search, including its empty state; pin data surfaces keep their frames.
 `ui-workspace-framed` preserves normal card borders/material within a subsection,
 used by supporting side panels on Testbench, Synthesis, Bitstream, Pin Mapping,
 Programming, Serial, and the design tools. `ui-workspace-support` supplies the

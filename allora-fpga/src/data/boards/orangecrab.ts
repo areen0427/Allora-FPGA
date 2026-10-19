@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
 const ORANGECRAB_LEDS: BoardPin[] = [
@@ -34,6 +35,7 @@ const ORANGECRAB_BUTTONS: BoardPin[] = [
     pin: "J17",
     type: "button",
     group: "User Button",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -43,6 +45,7 @@ const ORANGECRAB_BUTTONS: BoardPin[] = [
     type: "button",
     group: "Reset",
     activeLow: true,
+    ioStandard: "LVCMOS33",
     verified: true,
   },
 ];
@@ -57,6 +60,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "N1",
     type: "unknown",
     group: "USB",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -65,6 +69,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "M2",
     type: "unknown",
     group: "USB",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -82,6 +87,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "N17",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -90,6 +96,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "M18",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -98,6 +105,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B10",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -106,6 +114,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B9",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -114,6 +123,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C8",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -122,6 +132,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B8",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -130,6 +141,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A8",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -138,6 +150,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "H2",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -146,6 +159,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "J2",
     type: "gpio",
     group: "GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -154,6 +168,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "L4",
     type: "gpio",
     group: "Analog GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -162,6 +177,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "N3",
     type: "gpio",
     group: "Analog GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -170,6 +186,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "N4",
     type: "gpio",
     group: "Analog GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
   {
@@ -178,6 +195,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "H4",
     type: "gpio",
     group: "Analog GPIO",
+    ioStandard: "LVCMOS33",
     verified: true,
   },
 
@@ -187,6 +205,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C4",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -195,6 +214,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D2",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -203,6 +223,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D3",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -211,6 +232,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A3",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -219,6 +241,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A4",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -227,6 +250,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D4",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -235,6 +259,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C3",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -243,6 +268,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B2",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -251,6 +277,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B1",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -259,6 +286,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D1",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -267,6 +295,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A7",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -275,6 +304,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C2",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -283,6 +313,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B6",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -291,6 +322,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C1",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -299,6 +331,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A2",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -307,6 +340,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C7",
     type: "unknown",
     group: "DDR3 address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -315,6 +349,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D6",
     type: "unknown",
     group: "DDR3 bank address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -323,6 +358,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B7",
     type: "unknown",
     group: "DDR3 bank address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -331,6 +367,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A6",
     type: "unknown",
     group: "DDR3 bank address",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -340,6 +377,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     type: "unknown",
     group: "DDR3 control",
     activeLow: true,
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -349,6 +387,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     type: "unknown",
     group: "DDR3 control",
     activeLow: true,
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -358,6 +397,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     type: "unknown",
     group: "DDR3 control",
     activeLow: true,
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -367,6 +407,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     type: "unknown",
     group: "DDR3 control",
     activeLow: true,
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -375,6 +416,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D16",
     type: "unknown",
     group: "DDR3 data mask",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -383,6 +425,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "G16",
     type: "unknown",
     group: "DDR3 data mask",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -391,6 +434,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C17",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -399,6 +443,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D15",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -407,6 +452,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B17",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -415,6 +461,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C16",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -423,6 +470,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A15",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -431,6 +479,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B13",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -439,6 +488,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A17",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -447,6 +497,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "A13",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -455,6 +506,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "F17",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -463,6 +515,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "F16",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -471,6 +524,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "G15",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -479,6 +533,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "F15",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -487,6 +542,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "J16",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -495,6 +551,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C18",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -503,6 +560,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "H16",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -511,6 +569,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "F18",
     type: "unknown",
     group: "DDR3 data",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -519,6 +578,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B15",
     type: "unknown",
     group: "DDR3 strobe",
+    ioStandard: "SSTL135D_I",
     verified: true,
   },
   {
@@ -527,6 +587,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "G18",
     type: "unknown",
     group: "DDR3 strobe",
+    ioStandard: "SSTL135D_I",
     verified: true,
   },
   {
@@ -535,6 +596,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "J18",
     type: "unknown",
     group: "DDR3 clock",
+    ioStandard: "SSTL135D_I",
     verified: true,
   },
   {
@@ -543,6 +605,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D18",
     type: "unknown",
     group: "DDR3 control",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -551,6 +614,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C13",
     type: "unknown",
     group: "DDR3 control",
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -560,6 +624,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     type: "unknown",
     group: "DDR3 control",
     activeLow: true,
+    ioStandard: "SSTL135_I",
     verified: true,
   },
   {
@@ -568,6 +633,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "K16",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -576,6 +642,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "D17",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -584,6 +651,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "K15",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -592,6 +660,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "K17",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -600,6 +669,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "B18",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -608,6 +678,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "C6",
     type: "unknown",
     group: "DDR3 VCCIO",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -616,6 +687,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "L15",
     type: "unknown",
     group: "DDR3 GND",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
   {
@@ -624,6 +696,7 @@ const ORANGECRAB_PINS: BoardPin[] = [
     pin: "L16",
     type: "unknown",
     group: "DDR3 GND",
+    ioStandard: "SSTL135_II",
     verified: true,
   },
 
@@ -670,33 +743,43 @@ const ORANGECRAB_PINS: BoardPin[] = [
   },
 ];
 
-export const orangecrab: BoardDefinition = {
-  id: "orangecrab-r02-25f",
-  name: "OrangeCrab r0.2 25F",
-  vendor: "Good Stuff Department",
-  family: "ECP5",
-  device: "LFE5U-25F",
-  package: "CSFBGA285",
-  fpgaId: "lfe5u-25f-csfbga285",
-  constraintsFile: "lpf",
-  synthesisFlow: "yosys-nextpnr",
-  toolchain: {
-    synth: "yosys",
-    placeRoute: "nextpnr-ecp5",
-    pack: "ecppack",
-    program: "dfu-util",
-  },
-  clocks: [
-    {
-      name: "clk48",
-      pin: "A9",
-      frequency: 48000000,
-      verified: true,
+export const orangecrab: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "orangecrab-r02-25f",
+    name: "OrangeCrab r0.2 25F",
+    vendor: "Good Stuff Department",
+    family: "ECP5",
+    device: "LFE5U-25F",
+    package: "CSFBGA285",
+    fpgaId: "lfe5u-25f-csfbga285",
+    constraintsFile: "lpf",
+    synthesisFlow: "yosys-nextpnr",
+    toolchain: {
+      synth: "yosys",
+      placeRoute: "nextpnr-ecp5",
+      pack: "ecppack",
+      program: "dfu-util",
     },
-  ],
-  pins: ORANGECRAB_PINS,
-  leds: ORANGECRAB_LEDS,
-  buttons: ORANGECRAB_BUTTONS,
-  notes:
-    "Pin mapping from OrangeCrab-r0.2 constraints.lpf. Programming target is the OrangeCrab r0.2 DFU bootloader, USB ID 1209:5af0.",
-};
+    clocks: [
+      {
+        name: "clk48",
+        pin: "A9",
+        frequency: 48000000,
+        verified: true,
+      },
+    ],
+    pins: ORANGECRAB_PINS,
+    leds: ORANGECRAB_LEDS,
+    buttons: ORANGECRAB_BUTTONS,
+    sources: [
+      {
+        url: "https://github.com/orangecrab-fpga/orangecrab-examples/blob/main/verilog/orangecrab_r0.2.pcf",
+        label: "Maker OrangeCrab r0.2 LPF (named .pcf)",
+        revision: "r0.2",
+      },
+    ],
+    notes:
+      "Pin mapping from OrangeCrab-r0.2 constraints.lpf. Programming target is the OrangeCrab r0.2 DFU bootloader, USB ID 1209:5af0.",
+  },
+  "gsd_orangecrab:r0.2",
+);

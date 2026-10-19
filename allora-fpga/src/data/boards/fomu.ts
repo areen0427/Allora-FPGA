@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
 const FOMU_LEDS: BoardPin[] = [
@@ -30,44 +31,44 @@ const FOMU_LEDS: BoardPin[] = [
   },
 ];
 
-const FOMU_BUTTONS: BoardPin[] = [
+const FOMU_TOUCH_PADS: BoardPin[] = [
   {
     name: "FomuPVT_USER1",
     signal: "user1",
     pin: "E4",
-    type: "button",
-    group: "User Buttons",
+    type: "gpio",
+    group: "Touch pads",
     verified: true,
   },
   {
     name: "FomuPVT_USER2",
     signal: "user2",
     pin: "D5",
-    type: "button",
-    group: "User Buttons",
+    type: "gpio",
+    group: "Touch pads",
     verified: true,
   },
   {
     name: "FomuPVT_USER3",
     signal: "user3",
     pin: "E5",
-    type: "button",
-    group: "User Buttons",
+    type: "gpio",
+    group: "Touch pads",
     verified: true,
   },
   {
     name: "FomuPVT_USER4",
     signal: "user4",
     pin: "F5",
-    type: "button",
-    group: "User Buttons",
+    type: "gpio",
+    group: "Touch pads",
     verified: true,
   },
 ];
 
 const FOMU_PINS: BoardPin[] = [
   ...FOMU_LEDS,
-  ...FOMU_BUTTONS,
+  ...FOMU_TOUCH_PADS,
 
   {
     name: "FomuPVT_SPI_MOSI",
@@ -144,33 +145,36 @@ const FOMU_PINS: BoardPin[] = [
   },
 ];
 
-export const fomuPvt: BoardDefinition = {
-  id: "fomu-pvt",
-  name: "Fomu PVT",
-  vendor: "Fomu",
-  family: "iCE40 UltraPlus",
-  device: "ICE40-UP5K",
-  package: "UWG30",
-  fpgaId: "ice40up5k-uwg30",
-  constraintsFile: "pcf",
-  synthesisFlow: "yosys-nextpnr",
-  toolchain: {
-    synth: "yosys",
-    placeRoute: "nextpnr-ice40",
-    pack: "icepack",
-    program: "dfu-util",
-  },
-  clocks: [
-    {
-      name: "FomuPVT_CLK",
-      pin: "F4",
-      frequency: 48000000,
-      verified: true,
+export const fomuPvt: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "fomu-pvt",
+    name: "Fomu PVT",
+    vendor: "Fomu",
+    family: "iCE40 UltraPlus",
+    device: "ICE40-UP5K",
+    package: "UWG30",
+    fpgaId: "ice40up5k-uwg30",
+    constraintsFile: "pcf",
+    synthesisFlow: "yosys-nextpnr",
+    toolchain: {
+      synth: "yosys",
+      placeRoute: "nextpnr-ice40",
+      pack: "icepack",
+      program: "dfu-util",
     },
-  ],
-  pins: FOMU_PINS,
-  leds: FOMU_LEDS,
-  buttons: FOMU_BUTTONS,
-  notes:
-    "Pin mapping populated from the Fomu PVT PCF. Programming metadata references the DFU bootloader, but in-app programming is not wired yet.",
-};
+    clocks: [
+      {
+        name: "FomuPVT_CLK",
+        pin: "F4",
+        frequency: 48000000,
+        verified: true,
+      },
+    ],
+    pins: FOMU_PINS,
+    leds: FOMU_LEDS,
+    buttons: [],
+    notes:
+      "Pin mapping populated from the Fomu PVT PCF. Four touch contacts are capacitive inputs, not mechanical buttons. Programming metadata references the DFU bootloader, but in-app programming is not wired yet.",
+  },
+  "kosagi_fomu_pvt",
+);

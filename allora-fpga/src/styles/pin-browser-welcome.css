@@ -1,0 +1,581 @@
+/* Styles for the Welcome Pin Mapping Browser only. */
+#root .welcome-page:has(.pin-browser-shell) .welcome-main {
+  padding-top: 22px;
+  padding-bottom: 24px;
+  min-height: 0;
+}
+#root .welcome-page:has(.pin-browser-shell) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+#root .pin-browser-shell {
+  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: calc(100dvh - 46px);
+  min-height: 520px;
+  column-gap: var(--ui-workspace-inset, 20px);
+}
+
+#root .pin-browser-sidebar,
+#root .pin-browser-workspace { grid-row: 1; }
+
+/* Match project workspaces: the work column owns the open dotted canvas. */
+#root .pin-browser-workspace {
+  container: pin-workspace / inline-size;
+  grid-column: 2;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#root .pin-browser-workspace > :is(.pin-detail-panel, .pin-browser-empty-state) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Board choices inherit their token-based interaction from the shared quiet
+   selection group; these rules only adapt the group to the sidebar layout. */
+#root .pin-browser-sidebar > .pin-board-list.ui-button-group {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-compact-group-gap) !important;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+#root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+}
+#root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item::before {
+  content: none;
+}
+#root .pin-board-list.ui-quiet-selection-group > button.pin-board-item[aria-pressed="true"] .pin-board-item-name {
+  color: var(--ui-text) !important;
+}
+#root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item > :is(.pin-board-item-name, .pin-board-item-meta) {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#root .pin-detail-panel {
+  padding: var(--ui-workspace-inset, 20px);
+  gap: var(--ui-panel-inset, 14px);
+}
+
+.pin-variant-mapping-note {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-md);
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-control-active-bg) 44%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.pin-variant-mapping-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--ui-accent-text);
+}
+.pin-variant-mapping-note p { margin: 0; }
+#root .pin-detail-panel > :is(.pin-catalog-view, .pin-board-data-view, .pin-output-workspace) {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+#root .pin-browser-view-toggle.ui-compact-button-group {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Variant selection floats from the board choice using the same glass panel
+   surface and unfold animation as Product Information. */
+#root .pin-variant-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  z-index: 30;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(460px, calc(100dvh - 32px));
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 16px;
+  border-radius: var(--ui-radius-lg);
+  transform-origin: top left;
+}
+#root .pin-variant-popup[data-placement="left"] {
+  transform-origin: top right;
+}
+#root .pin-variant-popup[data-placement="above"] {
+  transform-origin: bottom left;
+}
+#root .pin-variant-popup.glass-unfold {
+  animation: welcome-product-open 400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+#root .pin-variant-popup[data-placement="right"].glass-unfold {
+  animation-name: pin-variant-open-from-left;
+}
+@keyframes pin-variant-open-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(.96);
+    clip-path: inset(0 85% 65% 0 round var(--ui-radius-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    clip-path: inset(-40px round var(--ui-radius-lg));
+  }
+}
+#root .pin-variant-popup-header {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--landing-panel-border);
+}
+#root .pin-variant-popup-header > span {
+  color: var(--landing-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+#root .pin-variant-popup-header h2 {
+  margin: 0;
+  color: var(--landing-text);
+  font-size: 16px;
+  line-height: 1.3;
+}
+#root .pin-variant-options.ui-button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-compact-group-gap) !important;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+#root .pin-variant-options > button.pin-variant-option {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: 58px;
+  text-align: left;
+}
+#root .pin-variant-options.ui-button-group > button.pin-variant-option + button.pin-variant-option::before {
+  content: none !important;
+}
+#root .pin-variant-option > strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+#root .pin-variant-option > span {
+  color: var(--landing-muted) !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+#root .pin-variant-popup.glass-unfold {
+  --glass-unfold-radius: var(--ui-radius-lg);
+}
+html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #root .pin-variant-popup.glass-unfold { animation: none; }
+}
+
+.pin-catalog-view,
+.pin-board-data-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.pin-catalog-toolbar,
+.pin-output-panel-heading,
+.pin-catalog-pad-heading,
+.pin-board-identity-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pin-catalog-toolbar {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.pin-catalog-search,
+.pin-output-search {
+  min-width: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control-bg);
+  color: var(--ui-text-muted);
+  box-shadow: var(--ui-inset-highlight);
+}
+.pin-catalog-search { width: min(460px, 100%); }
+#root .board-search-field.pin-browser-search {
+  border-radius: 999px;
+  transition: var(--ui-control-transition);
+}
+#root :is(.board-search-field.pin-browser-search, .pin-catalog-search, .pin-output-search):focus-within {
+  border-color: var(--ui-border-hover);
+  box-shadow: var(--ui-focus-ring), var(--ui-inset-highlight);
+}
+#root :is(.board-search-field.pin-browser-search, .pin-catalog-search, .pin-output-search) > input:focus-visible {
+  outline: none !important;
+  outline-offset: 0;
+  box-shadow: none;
+}
+.pin-catalog-search input,
+.pin-output-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 12px;
+}
+.pin-catalog-search input::placeholder,
+.pin-output-search input::placeholder { color: var(--ui-text-muted); opacity: .8; }
+
+.pin-catalog-pad-list,
+.pin-output-pad-list {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ui-text-muted) 30%, transparent) transparent;
+}
+
+.pin-catalog-pad-card,
+.pin-board-identity-card,
+.pin-output-assignment-panel,
+.pin-output-pad-panel {
+  min-width: 0;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-dashboard-glass, var(--ui-control-bg));
+  box-shadow: var(--ui-control-shadow);
+}
+.pin-catalog-pad-card { flex: 0 0 auto; overflow: hidden; }
+
+.pin-catalog-pad-heading,
+.pin-board-identity-heading {
+  padding: var(--ui-panel-inset, 14px);
+  border-bottom: 1px solid var(--ui-border-subtle);
+  background: color-mix(in srgb, var(--ui-control-bg) 62%, transparent);
+}
+.pin-catalog-pad-heading > div,
+.pin-board-identity-heading > div { min-width: 0; }
+.pin-catalog-pad-heading > div > span,
+.pin-board-identity-heading > div > span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.pin-catalog-pad-heading h3,
+.pin-board-identity-heading h3 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.pin-catalog-alias-count,
+.pin-output-pad-count {
+  flex: 0 0 auto;
+  min-width: 26px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 999px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pin-catalog-alias-list { display: flex; flex-direction: column; }
+.pin-catalog-alias-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(175px, 1.15fr) minmax(0, 2.2fr);
+  gap: 8px 14px;
+  align-items: center;
+  padding: 10px var(--ui-panel-inset, 14px);
+  border-top: 1px solid var(--ui-border-subtle);
+}
+.pin-catalog-alias-row:first-child { border-top: 0; }
+.pin-catalog-alias-name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pin-catalog-alias-name .pin-tile-symbol {
+  box-sizing: border-box;
+  width: 32px;
+  min-width: 32px;
+  height: 28px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+.pin-catalog-alias-name > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pin-catalog-alias-name strong { color: var(--ui-text); font-size: 13px; font-weight: 850; overflow-wrap: anywhere; }
+.pin-catalog-alias-name > div > span { color: var(--ui-text-muted); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+.pin-catalog-alias-facts {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  gap: 8px;
+}
+.pin-catalog-alias-facts > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--ui-text);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.pin-catalog-alias-facts b {
+  color: var(--ui-text-muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.pin-catalog-source-fact a { color: var(--ui-accent-text); font-weight: 800; text-decoration: none; }
+.pin-catalog-source-fact a:hover { text-decoration: underline; }
+.pin-catalog-alias-detail {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 41px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.pin-catalog-empty,
+.pin-output-empty-state { padding: 22px; color: var(--ui-text-muted); font-size: 13px; font-weight: 750; text-align: center; }
+
+.pin-board-data-view { overflow: auto; overscroll-behavior: contain; padding-right: 2px; }
+.pin-board-identity-card { flex: 0 0 auto; overflow: hidden; }
+.pin-board-identity-grid {
+  margin: 0;
+  padding: var(--ui-panel-inset, 14px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.pin-board-identity-grid > div { min-width: 0; }
+.pin-board-identity-grid dt { color: var(--ui-text-muted); font-size: 10px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.pin-board-identity-grid dd { margin: 4px 0 0; color: var(--ui-text); font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+.pin-board-identity-status { flex: 0 0 auto; padding: 5px 9px; border: 1px solid var(--ui-border-control); border-radius: 999px; color: var(--ui-text-muted); font-size: 10px; font-weight: 850; }
+.pin-board-identity-status.unresolved { border-color: var(--ui-warning-border); background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.pin-board-verification-notes { margin: 0; padding: 0 var(--ui-panel-inset, 14px) var(--ui-panel-inset, 14px) 30px; color: var(--ui-warning-text); font-size: 12px; line-height: 1.5; }
+.pin-board-data-view > .board-resource-summary { margin-top: 12px; }
+
+.pin-output-workspace { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.pin-output-workspace[hidden] { display: none !important; }
+.pin-output-toolbar { flex: 0 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.pin-output-create-form,
+.pin-output-actions,
+.pin-output-counts { min-width: 0; display: flex; align-items: flex-end; gap: 8px; }
+.pin-output-form-field { min-width: 160px; display: flex; flex-direction: column; gap: 5px; color: var(--ui-text-muted); font-size: 10px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+.pin-output-form-field input { width: 100%; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--ui-border-control); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-text); font: inherit; font-size: 12px; font-weight: 650; text-transform: none; box-shadow: var(--ui-inset-highlight); }
+#root .pin-detail-panel .pin-output-form-field input:focus { outline: none; border-color: var(--ui-border-hover); box-shadow: var(--ui-focus-ring), var(--ui-inset-highlight); }
+.pin-output-width-field { min-width: 80px; width: 80px; }
+.pin-output-primary-button { flex: 0 0 auto; white-space: nowrap; }
+.pin-output-counts { align-self: center; color: var(--ui-text-muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.pin-output-counts span + span { padding-left: 8px; border-left: 1px solid var(--ui-border-control); }
+.pin-output-workspace-grid { flex: 1 1 0; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(220px, .8fr); gap: 14px; }
+.pin-output-assignment-panel,
+.pin-output-pad-panel { padding: var(--ui-panel-inset, 14px); display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.pin-output-panel-heading > div { min-width: 0; }
+.pin-output-panel-heading h3 { margin: 0; color: var(--ui-text); font-size: 14px; font-weight: 850; }
+.pin-output-panel-heading p { margin: 3px 0 0; color: var(--ui-text-muted); font-size: 11px; line-height: 1.35; }
+.pin-output-table-scroll { min-width: 0; min-height: 0; flex: 1 1 0; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--ui-border-subtle); border-radius: var(--ui-radius-sm); }
+.pin-output-table { width: 100%; border-collapse: collapse; color: var(--ui-text); font-size: 11px; }
+.pin-output-table th { position: sticky; top: 0; z-index: 1; padding: 9px 8px; background: var(--ui-control-bg); color: var(--ui-text-muted); font-size: 9px; font-weight: 900; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.pin-output-table td { padding: 8px; border-top: 1px solid var(--ui-border-subtle); vertical-align: middle; }
+.pin-output-table tbody tr.ui-selectable-row { cursor: pointer; }
+.pin-output-table tbody tr { scroll-margin-top: 36px; }
+.pin-output-table tbody tr.ui-selectable-row:not(.selected):hover td { background: color-mix(in srgb, var(--ui-control-hover-bg) 55%, transparent); }
+.pin-output-table tbody tr.ui-selectable-row.selected td { background: color-mix(in srgb, var(--ui-control-active-bg) 62%, transparent); }
+.pin-output-port-name { border: 0; background: transparent; box-shadow: none; color: var(--ui-text); font: inherit; font-weight: 850; }
+.pin-output-direction { color: var(--ui-text-muted); font-weight: 750; }
+.pin-output-assigned-pin { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pin-output-assigned-pin strong { color: var(--ui-text); font-size: 11px; font-weight: 850; }
+.pin-output-assigned-pin span,
+.pin-output-unassigned { color: var(--ui-text-muted); font-size: 10px; overflow-wrap: anywhere; }
+.pin-output-status { display: inline-flex; padding: 4px 7px; border-radius: 999px; font-size: 9px; font-weight: 900; white-space: nowrap; }
+.pin-output-status.mapped { background: var(--ui-success-bg, rgba(34, 197, 94, .12)); color: var(--ui-success-text, #15803d); }
+.pin-output-status.unmapped { background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.pin-output-row-actions { display: flex; align-items: center; justify-content: flex-end; white-space: nowrap; }
+.pin-output-text-action,
+.pin-output-icon-action { color: var(--ui-text-muted); cursor: pointer; }
+.pin-output-text-action { min-height: 38px; padding: 0 8px; font-size: 11px; font-weight: 800; }
+#root .pin-output-row-actions > .pin-output-icon-action.ui-icon-button { width: 38px; height: 38px; min-width: 38px; min-height: 38px; flex-basis: 38px; }
+#root .pin-output-danger-action:hover:not(:disabled, [aria-disabled="true"]) { border-color: var(--ui-error-border) !important; background: var(--ui-error-bg) !important; color: var(--ui-error-text) !important; }
+.pin-output-inline-message { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 8px; padding: 9px 10px; border: 1px solid var(--ui-border-control); border-radius: var(--ui-radius-sm); color: var(--ui-text-muted); font-size: 11px; line-height: 1.4; }
+.pin-output-inline-message.warning { border-color: var(--ui-warning-border); background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.pin-output-inline-message.error { border-color: var(--ui-error-border); background: var(--ui-error-bg); color: var(--ui-error-text); }
+.pin-output-download-card { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px; border: 1px solid var(--ui-success-border, rgba(34, 197, 94, .35)); border-radius: var(--ui-radius-sm); background: var(--ui-success-bg, rgba(34, 197, 94, .08)); }
+.pin-output-download-card > div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pin-output-download-card strong { color: var(--ui-text); font-size: 11px; font-weight: 900; }
+.pin-output-download-card span,
+.pin-output-download-card small { color: var(--ui-text-muted); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+.pin-output-pad-panel { min-height: 0; }
+.pin-output-search { flex: 0 0 auto; }
+.pin-output-pad-list { flex: 1 1 0; padding-right: 2px; }
+.pin-output-pad-group { flex: 0 0 auto; border: 1px solid var(--ui-border-subtle); border-radius: var(--ui-radius-sm); overflow: hidden; }
+.pin-output-pad-title { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; background: var(--ui-control-bg); }
+.pin-output-pad-title strong { color: var(--ui-text); font-size: 12px; font-weight: 900; }
+.pin-output-pad-title span { color: var(--ui-text-muted); font-size: 9px; font-weight: 800; white-space: nowrap; }
+.pin-output-pad-aliases { display: flex; flex-direction: column; }
+.pin-output-pad-alias { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; border: 1px solid transparent; background: transparent; color: var(--ui-text); text-align: left; }
+.pin-output-pad-alias span { font-size: 11px; font-weight: 800; overflow-wrap: anywhere; }
+.pin-output-pad-alias small { color: var(--ui-text-muted); font-size: 9px; line-height: 1.3; overflow-wrap: anywhere; }
+.pin-output-pad-alias.unavailable { opacity: .48; }
+/* Stacked controls use only the shared separator beneath each entry. */
+#root .pin-output-pad-aliases > button + button::before {
+  content: none !important;
+}
+.pin-output-table .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 1100px) {
+  .pin-catalog-alias-row { grid-template-columns: minmax(150px, .8fr) minmax(0, 1.5fr); }
+  .pin-catalog-alias-facts { grid-template-columns: repeat(2, minmax(80px, 1fr)); }
+  .pin-output-toolbar { align-items: stretch; flex-direction: column; }
+  .pin-output-create-form { width: 100%; flex-wrap: wrap; }
+  .pin-output-form-field { flex: 1 1 180px; }
+  .pin-output-width-field { flex: 0 0 80px; }
+  .pin-output-actions { justify-content: space-between; }
+}
+
+@media (max-width: 980px) {
+  #root .pin-browser-shell {
+    height: calc(100dvh - 46px);
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  #root .pin-browser-sidebar {
+    grid-row: 1;
+    height: auto;
+    max-height: min(26dvh, 220px);
+  }
+  #root .pin-browser-sidebar > .pin-board-list.ui-button-group { flex-basis: auto; }
+  #root .pin-browser-workspace { grid-column: 1; grid-row: 2; }
+  #root .pin-detail-panel,
+  #root .pin-browser-empty-state { height: auto; }
+}
+
+/* Adapt to the available work column, including a desktop beside the board list. */
+@container pin-workspace (max-width: 850px) {
+  .pin-detail-header { flex-direction: column; }
+  .pin-browser-view-toggle { flex-wrap: wrap; max-width: 100%; }
+  .pin-output-toolbar { align-items: stretch; flex-direction: column; }
+  .pin-output-create-form { width: 100%; flex-wrap: wrap; }
+  .pin-output-form-field { flex: 1 1 160px; }
+  .pin-output-width-field { flex: 0 0 80px; }
+  .pin-output-actions { justify-content: space-between; }
+}
+
+@container pin-workspace (max-width: 760px) {
+  .pin-catalog-toolbar { align-items: stretch; flex-direction: column; }
+  .pin-catalog-search { width: 100%; }
+  .pin-catalog-alias-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .pin-catalog-alias-detail { padding-left: 0; }
+  .pin-board-identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pin-output-workspace { overflow-x: hidden; overflow-y: auto; }
+  .pin-output-create-form { align-items: stretch; }
+  .pin-output-form-field { flex: 1 1 160px; }
+  .pin-output-width-field { flex: 0 0 80px; }
+  .pin-output-workspace-grid { flex: 0 0 auto; display: flex; flex-direction: column; }
+  .pin-output-assignment-panel { flex: 0 0 auto; min-height: 320px; }
+  .pin-output-table-scroll { flex: 0 1 auto; min-height: 120px; max-height: 360px; }
+  .pin-output-pad-panel { flex: 0 0 auto; height: 320px; }
+  .pin-output-download-card { align-items: stretch; flex-direction: column; }
+}
+
+@container pin-workspace (max-width: 480px) {
+  #root .pin-detail-panel { padding: 12px; }
+  #root .pin-browser-view-toggle { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  #root .pin-browser-view-toggle > button { min-width: 0; flex-direction: column; padding-inline: 4px; font-size: 11px; white-space: normal; }
+  .pin-detail-header > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .pin-output-form-field { min-width: 0; }
+  .pin-output-actions { flex-wrap: wrap; }
+  .pin-output-panel-heading { flex-wrap: wrap; }
+  .pin-output-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .pin-output-table tbody { display: grid; }
+  .pin-output-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px; border-top: 1px solid var(--ui-border-subtle); scroll-margin-top: 0; }
+  .pin-output-table td { min-width: 0; padding: 4px; border: 0; overflow-wrap: anywhere; }
+  .pin-output-table td:nth-child(-n + 3) { grid-column: 1; }
+  .pin-output-table td:nth-child(4) { grid-column: 2; grid-row: 1; }
+  .pin-output-table td:nth-child(5) { grid-column: 2; grid-row: 2 / span 2; align-self: end; }
+  .pin-output-table tbody tr.ui-selectable-row.selected { background: color-mix(in srgb, var(--ui-control-active-bg) 62%, transparent); }
+  .pin-output-table tbody tr.ui-selectable-row:not(.selected):hover { background: color-mix(in srgb, var(--ui-control-hover-bg) 55%, transparent); }
+  .pin-output-table tbody tr.ui-selectable-row:is(.selected, :hover) td { background: transparent; }
+}
+
+@media (max-width: 600px) {
+  #root .welcome-page:has(.pin-browser-shell) .welcome-main { padding-inline: 12px; }
+}

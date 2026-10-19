@@ -39,14 +39,18 @@ export type BoardPin = {
   activeLow?: boolean;
   ioStandard?: string;
   verified: boolean;
+  sourceUrl?: string;
 };
 
 export type BoardClock = {
   name: string;
   pin?: string;
+  differentialPin?: string;
+  role?: "system" | "reference";
   frequency: number;
   ioStandard?: string;
   source?: "external" | "internal-hfosc";
+  sourceUrl?: string;
   verified: boolean;
 };
 
@@ -109,6 +113,8 @@ export type BoardDefinition = {
   buttons: BoardPin[];
   notes?: string;
   identityUnresolved?: boolean;
+  sources?: { url: string; label: string; revision?: string; sha256?: string }[];
+  verificationNotes?: string[];
 };
 
 export type BoardVariant = {

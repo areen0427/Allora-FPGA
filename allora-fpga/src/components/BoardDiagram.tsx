@@ -15,12 +15,15 @@ type BoardDiagramProps = {
 };
 
 /**
- * Data-driven board explorer. The physical board is rendered from the board's
- * own layout definition while resource controls live in rails outside the PCB.
+ * Data-driven board explorer. Physical board resources share one schematic
+ * layout while resource controls live in rails outside the diagram.
  * At narrow widths the rails become horizontally scrollable docks, so controls
  * never overlap the board or force the surrounding page to scroll.
  */
-export default function BoardDiagram({ board, compact = false }: BoardDiagramProps) {
+export default function BoardDiagram({
+  board,
+  compact = false,
+}: BoardDiagramProps) {
   const resourceGroups = useMemo(
     () => getResourceGroupsForBrowser(board),
     [board],
@@ -47,7 +50,11 @@ export default function BoardDiagram({ board, compact = false }: BoardDiagramPro
   const highlightedPinKeys = activeGroup?.pins.map((pin) => pin.key) ?? [];
 
   return (
-    <div className={compact ? "board-diagram board-diagram-compact" : "board-diagram"}>
+    <div
+      className={
+        compact ? "board-diagram board-diagram-compact" : "board-diagram"
+      }
+    >
       <div className="board-diagram-scroll">
         <div className="board-diagram-workbench">
           <div className="board-diagram-stage">
@@ -62,10 +69,12 @@ export default function BoardDiagram({ board, compact = false }: BoardDiagramPro
                   mappedPinKeys={highlightedPinKeys}
                   maxHeight={compact ? 144 : 480}
                   showCaption={false}
+                  compact
                 />
               </div>
               <div className="board-diagram-layout-note">
-                Physical component layout · resources stay outside the PCB
+                Catalog resource map · schematic placement · aliases may share
+                package pins
               </div>
             </div>
 
@@ -73,6 +82,7 @@ export default function BoardDiagram({ board, compact = false }: BoardDiagramPro
               groups={resourceGroups}
               activeTitle={activeTitle}
               onSelect={setActiveTitle}
+              showLabels={!compact}
             />
           </div>
 
@@ -81,7 +91,10 @@ export default function BoardDiagram({ board, compact = false }: BoardDiagramPro
       </div>
 
       {compact && activeGroup ? (
-        <CompactResourceDialog group={activeGroup} onClose={() => setActiveTitle(null)} />
+        <CompactResourceDialog
+          group={activeGroup}
+          onClose={() => setActiveTitle(null)}
+        />
       ) : null}
     </div>
   );
@@ -91,10 +104,12 @@ function ResourceRail({
   groups,
   activeTitle,
   onSelect,
+  showLabels,
 }: {
   groups: PinBrowserResourceGroup[];
   activeTitle: string | null;
   onSelect: (title: string) => void;
+  showLabels: boolean;
 }) {
   return (
     <div className="board-resource-rail" aria-label="Board resources">
@@ -108,14 +123,20 @@ function ResourceRail({
             className={active ? "board-rail-item active" : "board-rail-item"}
             onClick={() => onSelect(group.title)}
             aria-pressed={active}
-            title={`${group.title} — ${group.pins.length} pins`}
+            title={`${group.title} — ${group.pins.length} resource entries`}
           >
             <span
               className="board-rail-symbol"
-              style={{ background: appearance.background, color: appearance.color }}
+              style={{
+                background: appearance.background,
+                color: appearance.color,
+              }}
             >
               {getCategorySymbol(group)}
             </span>
+            {showLabels ? (
+              <span className="board-rail-label">{group.title}</span>
+            ) : null}
             <span className="board-rail-count">{group.pins.length}</span>
           </button>
         );
@@ -124,7 +145,11 @@ function ResourceRail({
   );
 }
 
-function ResourceInspector({ group }: { group: PinBrowserResourceGroup | null }) {
+function ResourceInspector({
+  group,
+}: {
+  group: PinBrowserResourceGroup | null;
+}) {
   if (!group) {
     return (
       <aside className="board-resource-inspector empty">
@@ -145,7 +170,9 @@ function ResourceInspector({ group }: { group: PinBrowserResourceGroup | null })
         </span>
         <div>
           <strong>{group.title}</strong>
-          <small>{group.detail} · {group.pins.length} pins</small>
+          <small>
+            {group.detail} · {group.pins.length} entries
+          </small>
         </div>
       </div>
       <PinList group={group} />
@@ -177,17 +204,19 @@ function CompactResourceDialog({
         <div className="board-diagram-popup-header">
           <span
             className="board-diagram-breakdown-symbol"
-            style={{ background: appearance.background, color: appearance.color }}
+            style={{
+              background: appearance.background,
+              color: appearance.color,
+            }}
           >
             {getCategorySymbol(group)}
           </span>
           <div className="board-diagram-popup-heading">
             <div className="board-diagram-breakdown-title">{group.title}</div>
             <div className="board-diagram-breakdown-detail">
-              {group.detail} · {group.pins.length} pins
+              {group.detail} · {group.pins.length} entries
             </div>
           </div>
-
         </div>
         <PinList group={group} />
       </div>
@@ -208,10 +237,16 @@ function PinList({ group }: { group: PinBrowserResourceGroup }) {
             >
               {pin.symbol}
             </span>
-            <span className="board-diagram-pin-name" title={pin.detail ?? pin.name}>
-              {pin.detail ?? pin.name}
+            <span
+              className="board-diagram-pin-name"
+              title={`${pin.name}${pin.detail && pin.detail !== pin.name ? ` · ${pin.detail}` : ""}`}
+            >
+              {pin.name}
+              {pin.detail && pin.detail !== pin.name ? ` · ${pin.detail}` : ""}
             </span>
-            <span className="board-diagram-pin-pad" title={pin.pin}>{pin.pin}</span>
+            <span className="board-diagram-pin-pad" title={pin.pin}>
+              {pin.pin}
+            </span>
           </div>
         );
       })}

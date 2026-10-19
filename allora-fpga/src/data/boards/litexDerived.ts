@@ -1,11 +1,18 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
-function makeLed(name: string, pin: string, index?: number): BoardPin {
+function makeLed(
+  name: string,
+  pin: string,
+  index?: number,
+  activeLow?: boolean,
+): BoardPin {
   return {
     name,
     signal: index === undefined ? "led" : `led${index}`,
     pin,
     type: "led",
+    activeLow,
     group: "User LEDs",
     verified: true,
   };
@@ -59,35 +66,52 @@ function makeEcp5Variant({
   buttons: BoardPin[];
   notes: string;
 }): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor,
-    family: "ECP5",
-    device: `${deviceClass}-${device}`,
-    package: packageName,
-    fpgaId: `${deviceClass.toLowerCase()}-${device.toLowerCase()}-${packageName.toLowerCase()}`,
-    constraintsFile: "lpf",
-    synthesisFlow: "yosys-nextpnr",
-    toolchain: {
-      synth: "yosys",
-      placeRoute: "nextpnr-ecp5",
-      pack: "ecppack",
-      program,
-    },
-    clocks: [
-      {
-        name: clockName,
-        pin: clockPin,
-        frequency: clockFrequency,
-        verified: true,
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor,
+      family: "ECP5",
+      device: `${deviceClass}-${device}`,
+      package: packageName,
+      fpgaId: `${deviceClass.toLowerCase()}-${device.toLowerCase()}-${packageName.toLowerCase()}`,
+      constraintsFile: "lpf",
+      synthesisFlow: "yosys-nextpnr",
+      toolchain: {
+        synth: "yosys",
+        placeRoute: "nextpnr-ecp5",
+        pack: "ecppack",
+        program,
       },
-    ],
-    pins,
-    leds,
-    buttons,
-    notes,
-  };
+      clocks: [
+        {
+          name: clockName,
+          pin: clockPin,
+          frequency: clockFrequency,
+          verified: true,
+        },
+      ],
+      pins,
+      leds,
+      buttons,
+      sources:
+        id === "icesugar-pro"
+          ? [
+              {
+                url: "https://github.com/wuxx/icesugar-pro/blob/master/schematic/iCESugar-Pro-v1.3.pdf",
+                label: "Maker iCESugar Pro schematic",
+                revision: "v1.3",
+              },
+            ]
+          : [],
+      notes,
+    },
+    id.startsWith("butterstick-")
+      ? "gsd_butterstick"
+      : id.startsWith("ecpix-5-")
+        ? "lambdaconcept_ecpix5"
+        : "muselab_icesugar_pro",
+  );
 }
 
 const BUTTERSTICK_LEDS: BoardPin[] = [
@@ -211,7 +235,7 @@ function createButterstickVariant(
     leds: BUTTERSTICK_LEDS,
     buttons: BUTTERSTICK_BUTTONS,
     notes:
-      "Pin mapping based on the LiteX ButterStick r1.0 platform. High-speed SYZYGY and DDR3 buses are summarized.",
+      "Pin mapping based on the LiteX ButterStick r1.0 platform. High-speed SYZYGY and DDR3 buses are expanded from the reviewed platform where static package pads are published.",
   });
 }
 
@@ -321,7 +345,7 @@ const ECPIX5_PINS: BoardPin[] = [
 ];
 
 function createEcpix5Variant(device: "45F" | "85F"): BoardDefinition {
-  return makeEcp5Variant({
+  const board = makeEcp5Variant({
     id: `ecpix-5-${device.toLowerCase()}`,
     name: `ECPIX-5 ${device}`,
     vendor: "LambdaConcept",
@@ -335,14 +359,52 @@ function createEcpix5Variant(device: "45F" | "85F"): BoardDefinition {
     leds: ECPIX5_LEDS,
     buttons: ECPIX5_BUTTONS,
     notes:
-      "Pin mapping based on the LiteX ECPIX-5 platform. PMOD, DDR3, USB-C, SATA, and HDMI buses are summarized.",
+      "Pin mapping based on the LiteX ECPIX-5 platform. PMOD, DDR3, USB-C, SATA, and HDMI buses are expanded from the reviewed platform where static package pads are published.",
   });
+  const sourceUrl =
+    "https://docs.lambdaconcept.com/ecpix-5/_static/resources/SCH_ECPIX-5_R02.PDF";
+  const pins = board.pins.map((pin) =>
+    pin.type === "led" ? { ...pin, activeLow: true } : pin,
+  );
+  return {
+    ...board,
+    pins,
+    leds: pins.filter((pin) => pin.type === "led"),
+    clocks: [
+      ...board.clocks,
+      {
+        name: "clk26",
+        pin: "N22",
+        frequency: 26000000,
+        ioStandard: "LVCMOS33",
+        sourceUrl,
+        verified: true,
+      },
+      {
+        name: "serdes_ref100",
+        pin: "AF12",
+        differentialPin: "AF13",
+        frequency: 100000000,
+        role: "reference",
+        sourceUrl,
+        verified: true,
+      },
+    ],
+    sources: [
+      ...(board.sources ?? []),
+      { url: sourceUrl, label: "Maker ECPIX-5 schematic", revision: "R02" },
+    ],
+    verificationNotes: [
+      ...(board.verificationNotes ?? []),
+      "Four RGB LEDs have active-low channels through non-inverting 74HC244 buffers (schematic sheet 17). 26 MHz SD oscillator is populated. The AUX VCXO footprint is not mounted; its frequency is unspecified. AF12/AF13 carry a dedicated 100 MHz SERDES reference and are not ordinary GPIO clock inputs.",
+    ],
+  };
 }
 
 const ICESUGAR_PRO_LEDS: BoardPin[] = [
-  makeLed("user_led_n_r", "B11", 0),
-  makeLed("user_led_n_g", "A11", 1),
-  makeLed("user_led_n_b", "A12", 2),
+  makeLed("user_led_n_r", "B11", 0, false),
+  makeLed("user_led_n_g", "A11", 1, false),
+  makeLed("user_led_n_b", "A12", 2, false),
 ];
 
 const ICESUGAR_PRO_BUTTONS: BoardPin[] = [
@@ -458,25 +520,25 @@ export const icesugarPro: BoardDefinition = makeEcp5Variant({
   leds: ICESUGAR_PRO_LEDS,
   buttons: ICESUGAR_PRO_BUTTONS,
   notes:
-    "Pin mapping based on the LiteX iCESugar Pro platform. This is the ECP5 iCESugar Pro, not the UP5K iCESugar board.",
+    "Pin mapping based on the LiteX iCESugar Pro platform. This is the ECP5 iCESugar Pro, not the UP5K iCESugar board. Maker schematic v1.3 shows active-high RGB channels despite the LiteX user_led_n alias.",
 });
 
 const TANG_NANO_9K_LEDS: BoardPin[] = [
-  makeLed("user_led_0", "10", 0),
-  makeLed("user_led_1", "11", 1),
-  makeLed("user_led_2", "13", 2),
-  makeLed("user_led_3", "14", 3),
-  makeLed("user_led_4", "15", 4),
-  makeLed("user_led_5", "16", 5),
+  makeLed("user_led_0", "10", 0, true),
+  makeLed("user_led_1", "11", 1, true),
+  makeLed("user_led_2", "13", 2, true),
+  makeLed("user_led_3", "14", 3, true),
+  makeLed("user_led_4", "15", 4, true),
+  makeLed("user_led_5", "16", 5, true),
 ];
 
 const TANG_NANO_20K_LEDS: BoardPin[] = [
-  makeLed("led_n_0", "15", 0),
-  makeLed("led_n_1", "16", 1),
-  makeLed("led_n_2", "17", 2),
-  makeLed("led_n_3", "18", 3),
-  makeLed("led_n_4", "19", 4),
-  makeLed("led_n_5", "20", 5),
+  makeLed("led_n_0", "15", 0, true),
+  makeLed("led_n_1", "16", 1, true),
+  makeLed("led_n_2", "17", 2, true),
+  makeLed("led_n_3", "18", 3, true),
+  makeLed("led_n_4", "19", 4, true),
+  makeLed("led_n_5", "20", 5, true),
   makeLed("rgb_led", "79"),
 ];
 
@@ -671,35 +733,38 @@ function makeTangNanoBoard({
   buttons: BoardPin[];
   pins: BoardPin[];
 }): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor: "Sipeed",
-    family: "Gowin",
-    device,
-    package: "QN88",
-    fpgaId,
-    constraintsFile: "cst",
-    synthesisFlow: "gowin",
-    toolchain: {
-      synth: "gowin",
-      placeRoute: "gowin",
-      program: "openFPGALoader",
-    },
-    clocks: [
-      {
-        name: "clk27",
-        pin: id === "tang-nano-9k" ? "52" : "4",
-        frequency: 27000000,
-        verified: true,
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor: "Sipeed",
+      family: "Gowin",
+      device,
+      package: "QN88",
+      fpgaId,
+      constraintsFile: "cst",
+      synthesisFlow: "gowin",
+      toolchain: {
+        synth: "gowin",
+        placeRoute: "gowin",
+        program: "openFPGALoader",
       },
-    ],
-    pins,
-    leds,
-    buttons,
-    notes:
-      "Pin mapping based on the LiteX Tang Nano platform. Gowin synthesis and bitstream generation are not wired in the app yet.",
-  };
+      clocks: [
+        {
+          name: "clk27",
+          pin: id === "tang-nano-9k" ? "52" : "4",
+          frequency: 27000000,
+          verified: true,
+        },
+      ],
+      pins,
+      leds,
+      buttons,
+      notes:
+        "Pin mapping based on the LiteX Tang Nano platform. Gowin synthesis and bitstream generation are not wired in the app yet.",
+    },
+    id === "tang-nano-9k" ? "sipeed_tang_nano_9k" : "sipeed_tang_nano_20k",
+  );
 }
 
 export const butterstickBoards: BoardDefinition[] = [

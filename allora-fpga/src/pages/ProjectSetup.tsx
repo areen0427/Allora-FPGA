@@ -21,6 +21,7 @@ import {
   type TemplateLanguage,
 } from "../data/templates";
 import BoardDiagram from "../components/BoardDiagram";
+import BoardResourceSummary from "../components/BoardResourceSummary";
 import { useProjectLocation } from "../hooks/useProjectLocation";
 
 type ProjectSetupProps = {
@@ -124,7 +125,8 @@ export default function ProjectSetup({
       isChoosingLocation ||
       !canCreateProject ||
       requiresLocation
-    ) return;
+    )
+      return;
     setIsCreating(true);
     setCreationError("");
     clearLocationError();
@@ -161,7 +163,11 @@ export default function ProjectSetup({
   return (
     <div className="glass-page project-setup-page">
       <header className="project-setup-topbar">
-        <button className="ui-button ui-button-secondary project-setup-back" type="button" onClick={onBack}>
+        <button
+          className="ui-button ui-button-secondary project-setup-back"
+          type="button"
+          onClick={onBack}
+        >
           <ArrowLeft size={16} /> Back
         </button>
 
@@ -256,7 +262,10 @@ export default function ProjectSetup({
             className="ui-button ui-button-primary project-create-button ui-action-button"
             type="button"
             disabled={
-              !canCreateProject || requiresLocation || isCreating || isChoosingLocation
+              !canCreateProject ||
+              requiresLocation ||
+              isCreating ||
+              isChoosingLocation
             }
             onClick={() => void createProject()}
           >
@@ -403,7 +412,7 @@ export default function ProjectSetup({
             <div className="board-resource-strip">
               <MiniFact
                 icon={<MemoryStick size={14} />}
-                label="Pins"
+                label="Pin aliases"
                 value={String(board.pins.length)}
               />
               <MiniFact
@@ -413,7 +422,7 @@ export default function ProjectSetup({
               />
               <MiniFact
                 icon={<Lightbulb size={14} />}
-                label="LEDs"
+                label="LED pins"
                 value={String(board.leds.length)}
               />
               <MiniFact
@@ -422,6 +431,8 @@ export default function ProjectSetup({
                 value={String(board.buttons.length)}
               />
             </div>
+
+            <BoardResourceSummary board={board} />
 
             <div className="capability-pill-list">
               <CapabilityPill
@@ -498,7 +509,11 @@ function CapabilityPill({
 }) {
   return (
     <span
-      className={supported ? "capability-pill ui-metric supported" : "capability-pill ui-metric"}
+      className={
+        supported
+          ? "capability-pill ui-metric supported"
+          : "capability-pill ui-metric"
+      }
     >
       {label}
     </span>

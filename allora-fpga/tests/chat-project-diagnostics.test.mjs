@@ -309,6 +309,78 @@ test("projectless recent chats never try to open their save parent as a project"
   await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(activated, []);
 });
 
+const projectChat = {
+  id: "project-chat", title: "Counter design", workspacePath: "/projects/counter", threadId: "old-thread",
+  updatedAt: new Date().toISOString(),
+  messages: [{ id: "created", role: "assistant", text: "Created the counter.", projectPath: "/projects/counter" }],
+};
+function clickButton(h, label) {
+  const button = descendants(h.render()).find(node => node.type === "button" && textContent(node).trim() === label);
+  assert.ok(button, `button ${label} is available`);
+  button.props.onClick();
+}
+async function selectProjectChat(h) {
+  clickButton(h, "Recent chats");
+  descendants(h.render()).find(node => node.type === "button" && node.props.title === projectChat.title).props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+}
+
+test("New chat from recent history offers a choice and can keep the project with a fresh thread", async () => {
+  const h = await harness("", { history: [projectChat], resumeLatest: false });
+  await selectProjectChat(h);
+  clickButton(h, "New chat");
+  assert.ok(descendants(h.render()).some(node => node.props?.role === "dialog" && node.props.popover === "auto"));
+  assert.ok(descendants(h.render()).some(node => node.props?.text === "Created the counter."), "the existing chat remains until a choice is made");
+  clickButton(h, "Stay in this project");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(!descendants(h.render()).some(node => node.props?.role === "dialog"));
+  const request = await h.submit("Explain the clock");
+  assert.equal(h.starts[0][0], "/projects/counter");
+  assert.equal(h.starts[0][1], undefined, "the old thread is never resumed");
+  assert.match(request[1], /Current project: "\/projects\/counter"/);
+  assert.equal(h.conversations().find(item => item.id === projectChat.id).messages.length, 1, "history remains unchanged");
+});
+
+test("Start a new project clears the recent chat's workspace, context and save destination", async () => {
+  const h = await harness("", { history: [projectChat], resumeLatest: false, projects: [{ projectPath: "/projects/counter" }], requestDirectory: true });
+  await selectProjectChat(h);
+  clickButton(h, "New chat");
+  clickButton(h, "Start a new project");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(textContent(h.render()), /No project selected/);
+  assert.ok(!descendants(h.render()).some(node => node.props?.text === "Created the counter."));
+  const request = await h.submit("Create a traffic light project");
+  assert.equal(h.starts[0][0], "");
+  assert.equal(h.starts[0][1], undefined);
+  assert.doesNotMatch(request[1], /Current project:|\/projects\/counter|selected this save parent directory/);
+  assert.equal(h.pickerCalls.length, 1, "creation asks for a destination instead of using the old project");
+  assert.deepEqual(h.folderReplies, [["test-session", "folder-1", "/chosen/projects"]]);
+  assert.equal(h.conversations().find(item => item.id === projectChat.id).messages.length, 1);
+});
+
+test("native popup dismissal preserves the recent conversation and draft", async () => {
+  const h = await harness("", { history: [projectChat], resumeLatest: false });
+  await selectProjectChat(h);
+  descendants(h.render()).find(node => node.type === "textarea").props.onChange({ target: { value: "Keep my question" } });
+  clickButton(h, "New chat");
+  descendants(h.render()).find(node => node.props?.popover === "auto").props.onToggle({ newState: "closed" });
+  const nodes = descendants(h.render());
+  assert.ok(!nodes.some(node => node.props?.role === "dialog"));
+  assert.ok(nodes.some(node => node.props?.text === "Created the counter."));
+  assert.equal(nodes.find(node => node.type === "textarea").props.value, "Keep my question");
+  assert.equal(h.starts.length, 0);
+});
+
+test("New chat without a project starts immediately without a project choice", async () => {
+  const h = await harness("");
+  await h.submit("Explain Verilog");
+  clickButton(h, "New chat");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(!descendants(h.render()).some(node => node.props?.role === "dialog"));
+  assert.ok(!descendants(h.render()).some(node => node.props?.text === "Explain Verilog"));
+  assert.match(textContent(h.render()), /No project selected/);
+});
+
 test("recent history is newest-first, limited to ten, with full history in the larger dialog", async () => {
   const history = Array.from({ length: 16 }, (_, index) => ({ id: `chat-${index}`, title: `Chat ${index}`, workspacePath: "/parent", updatedAt: new Date(2026, 0, index + 1).toISOString(), messages: [] }));
   const h = await harness(undefined, { history, resumeLatest: false });

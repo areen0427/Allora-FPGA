@@ -17,7 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { getBoardById } from "../../data/boards";
-import { getFpgaById } from "../../data/fpgas";
+import { getFpgaForBoard } from "../../data/fpgas";
+import { formatClockFrequency } from "../../data/pinResourceGroups";
 import { formatProjectTime } from "../../data/projects";
 import type { SavedProject } from "../../data/projects";
 import type { BoardCatalogItem } from "../../data/boardSupport";
@@ -686,7 +687,7 @@ function BoardCard({
           </header>
           <div className="board-info-variants">
             {definitions.map((variant) => {
-              const fpga = getFpgaById(variant.fpgaId);
+              const fpga = getFpgaForBoard(variant);
               const peripherals = [...new Set(variant.pins
                 .filter((pin) => pin.type !== "clock" && pin.type !== "led" && pin.type !== "button")
                 .map((pin) => pin.group || pin.type.toUpperCase()))];
@@ -698,11 +699,14 @@ function BoardCard({
                   ) : null}
                   <p>{variant.device} · {variant.package}</p>
                   <dl>
-                    <div><dt>LUTs / logic cells</dt><dd>{fpga?.logicCells?.toLocaleString() ?? "Unknown"}</dd></div>
-                    <div><dt>Block RAM</dt><dd>{fpga?.bramKb !== undefined ? `${fpga.bramKb.toLocaleString()} Kbit` : "Unknown"}</dd></div>
-                    <div><dt>DSP blocks</dt><dd>{fpga?.dsp ?? "Unknown"}</dd></div>
-                    <div><dt>Board clocks</dt><dd>{variant.clocks.length ? variant.clocks.map((clock) => `${clock.name}: ${clock.frequency / 1_000_000} MHz`).join(" · ") : "Unknown"}</dd></div>
-                    <div><dt>LEDs / buttons</dt><dd>{variant.leds.length} / {variant.buttons.length}</dd></div>
+                    <div><dt>{fpga?.logicUnit ?? "Logic resources"}</dt><dd>{fpga?.logicCells?.toLocaleString() ?? "Unknown"}</dd></div>
+                    <div><dt>Block RAM</dt><dd>{fpga?.bramKb !== undefined ? `${fpga.bramKb.toLocaleString()} Kibit` : "Unknown"}</dd></div>
+                    <div><dt>{fpga?.dspUnit ?? "DSP resources"}</dt><dd>{fpga?.dsp ?? "Unknown"}</dd></div>
+                    {fpga?.spramKb !== undefined ? <div><dt>SPRAM</dt><dd>{fpga.spramKb.toLocaleString()} Kibit</dd></div> : null}
+                    {fpga?.largeRamKb !== undefined ? <div><dt>Large RAM (LRAM)</dt><dd>{fpga.largeRamKb.toLocaleString()} Kibit</dd></div> : null}
+                    {fpga?.ultraRamKb !== undefined ? <div><dt>UltraRAM</dt><dd>{fpga.ultraRamKb.toLocaleString()} Kibit</dd></div> : null}
+                    <div><dt>Board clocks</dt><dd>{variant.clocks.length ? variant.clocks.map((clock) => `${clock.name}: ${formatClockFrequency(clock.frequency)}${clock.pin ? clock.differentialPin ? ` (pins ${clock.pin}/${clock.differentialPin})` : ` (pin ${clock.pin})` : clock.source === "internal-hfosc" ? " (internal)" : ""}`).join(" · ") : "Unknown"}</dd></div>
+                    <div><dt>LED channels / buttons</dt><dd>{variant.leds.length} / {variant.buttons.length}</dd></div>
                     <div><dt>Peripherals / connectors</dt><dd>{peripherals.join(" · ") || "Unknown"}</dd></div>
                   </dl>
                   <button type="button" className="board-show-more board-info-select" onClick={() => onSelect(variant)}>Select {variant.name}<ChevronRight size={16} /></button>

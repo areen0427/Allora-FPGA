@@ -1,4 +1,5 @@
 import type { BoardDefinition, BoardPin } from "../../data/boards";
+import { formatClockFrequency, getUnavailableBoardPads } from "../../data/pinResourceGroups";
 import type { ProjectFile } from "./types";
 
 export type HdlPort = {
@@ -130,23 +131,26 @@ export function createSuggestedMappings(
 ) {
   const mappings: Record<string, string> = {};
   const usedPins = new Set<string>();
+  const unavailablePads = getUnavailableBoardPads({ pins, clocks });
+  const assignablePins = pins.filter((pin) => pin.verified && pin.pin && pin.pin !== "unknown" && !unavailablePads.has(pin.pin));
 
   for (const port of ports) {
     const clockMatch = findClockMatch(
       port,
-      clocks.filter((clock) => clock.pin && clock.pin !== "unknown"),
+      clocks.filter((clock) => clock.verified && clock.pin && clock.pin !== "unknown" && clock.role !== "reference" && !unavailablePads.has(clock.pin) && !usedPins.has(clock.pin)),
     );
 
     if (clockMatch?.pin) {
       mappings[port.name] = `clock:${clockMatch.name}`;
+      usedPins.add(clockMatch.pin);
       continue;
     }
 
-    const pinMatch = findPinMatch(port, pins, usedPins);
+    const pinMatch = findPinMatch(port, assignablePins, usedPins);
 
     if (pinMatch) {
       mappings[port.name] = `pin:${pinMatch.name}:${pinMatch.pin}`;
-      usedPins.add(pinMatch.name);
+      usedPins.add(pinMatch.pin);
     }
   }
 
@@ -178,7 +182,7 @@ function findPinMatch(port: HdlPort, pins: BoardPin[], usedPins: Set<string>) {
 
   for (const type of preferredTypes) {
     const candidates = pins.filter(
-      (pin) => pin.type === type && !usedPins.has(pin.name),
+      (pin) => pin.type === type && !usedPins.has(pin.pin),
     );
     const indexedMatch = findIndexedCandidate(port, candidates);
     if (indexedMatch) return indexedMatch;
@@ -189,7 +193,7 @@ function findPinMatch(port: HdlPort, pins: BoardPin[], usedPins: Set<string>) {
 
   return findAliasCandidate(
     aliases,
-    pins.filter((pin) => !usedPins.has(pin.name)),
+    pins.filter((pin) => !usedPins.has(pin.pin)),
     { allowShortAliases: false },
   );
 }
@@ -369,25 +373,28 @@ function getPinSearchTerms(pin: BoardPin) {
 }
 
 export function getPinOptions(board: BoardDefinition) {
+  const unavailablePads = getUnavailableBoardPads(board);
+  const pins = [...new Map([...board.pins, ...board.leds, ...board.buttons]
+    .map((pin) => [`${pin.name}:${pin.pin}`, pin])).values()];
   return [
     ...board.clocks
-      .filter((clock) => clock.pin)
+      .filter((clock) => clock.verified && clock.pin && clock.pin !== "unknown" && clock.role !== "reference" && !unavailablePads.has(clock.pin))
       .map((clock) => ({
         key: `clock:${clock.name}`,
-        label: `${clock.name} (${clock.pin}) - Clock`,
+        label: `${clock.name} (${clock.pin}) - ${formatClockFrequency(clock.frequency)} Clock`,
         shortLabel: `${clock.name} ${clock.pin}`,
         pin: clock.pin ?? "",
         type: "clock",
-        ioStandard: clock.ioStandard ?? "LVCMOS33",
+        ioStandard: clock.ioStandard,
         symbol: "CLK",
       })),
-    ...board.pins.map((pin) => ({
+    ...pins.filter((pin) => pin.verified && pin.pin && pin.pin !== "unknown" && !unavailablePads.has(pin.pin)).map((pin) => ({
       key: `pin:${pin.name}:${pin.pin}`,
       label: `${pin.name} (${pin.pin})${pin.group ? ` - ${pin.group}` : ""}`,
       shortLabel: `${pin.name} ${pin.pin}`,
       pin: pin.pin,
       type: pin.type,
-      ioStandard: pin.ioStandard ?? "LVCMOS33",
+      ioStandard: pin.ioStandard,
       symbol: getPinSymbol(pin),
     })),
   ];
@@ -413,22 +420,23 @@ export function createPinMappingConstraints(
       lines.push(
         `set_property PACKAGE_PIN ${pin.pin.split("/")[0]} [get_ports ${portRef}]`,
       );
-      lines.push(
-        `set_property IOSTANDARD ${pin.ioStandard} [get_ports ${portRef}]`,
-      );
+      if (pin.ioStandard) lines.push(`set_property IOSTANDARD ${pin.ioStandard} [get_ports ${portRef}]`);
+      else lines.push(`# I/O standard is not documented for ${port.name}; no voltage standard was inferred.`);
     } else if (board.constraintsFile === "pcf") {
       lines.push(`set_io ${port.name} ${pin.pin}`);
     } else if (board.constraintsFile === "lpf") {
       lines.push(`LOCATE COMP "${port.name}" SITE "${pin.pin}";`);
-      lines.push(`IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};`);
+      if (pin.ioStandard) lines.push(`IOBUF PORT "${port.name}" IO_TYPE=${pin.ioStandard};`);
+      else lines.push(`# I/O standard is not documented for ${port.name}; no voltage standard was inferred.`);
     } else if (board.constraintsFile === "cst") {
       lines.push(`IO_LOC "${port.name}" ${pin.pin};`);
     } else if (board.constraintsFile === "qsf") {
-      lines.push(`set_location_assignment PIN_${pin.pin} -to ${port.name}`);
+      lines.push(`set_location_assignment PIN_${pin.pin} -to ${portRef}`);
     } else if (board.constraintsFile === "pdc") {
       lines.push(`set_io -port_name {${port.name}} -pin_name ${pin.pin}`);
     } else if (board.constraintsFile === "ccf") {
-      lines.push(`Pin_in "${port.name}" Loc = "${pin.pin}"`);
+      const direction = port.direction === "input" ? "in" : port.direction === "output" ? "out" : "inout";
+      lines.push(`Pin_${direction} "${port.name}" Loc = "${pin.pin}";`);
     } else {
       // Efinity .peri files are XML in a full project. Keep a readable,
       // durable mapping until that toolchain's project writer is wired up.
@@ -477,15 +485,16 @@ export function readPinMappingsFromConstraints(
       if (match) match = [match[0], match[2], match[1]];
     } else if (board.constraintsFile === "qsf") {
       match = trimmed.match(
-        /^set_location_assignment\s+PIN_(\S+)\s+-to\s+(\S+)/i,
+        /^set_location_assignment\s+PIN_(\S+)\s+-to\s+(?:\{([^}]+)}|"([^"]+)"|(\S+))/i,
       );
+      if (match) match = [match[0], match[1], match[2] ?? match[3] ?? match[4]];
     } else if (board.constraintsFile === "pdc") {
       match = trimmed.match(
         /^set_io\s+-port_name\s+\{([^}]+)}\s+-pin_name\s+(\S+)/i,
       );
       if (match) match = [match[0], match[2], match[1]];
     } else if (board.constraintsFile === "ccf") {
-      match = trimmed.match(/^Pin_in\s+"([^"]+)"\s+Loc\s*=\s*"([^"]+)"/i);
+      match = trimmed.match(/^Pin_(?:in|out|inout)\s+"([^"]+)"\s+Loc\s*=\s*"([^"]+)"/i);
       if (match) match = [match[0], match[2], match[1]];
     } else {
       match = trimmed.match(/^#\s+(.+?)\s+->\s+(\S+)$/);
@@ -528,7 +537,7 @@ export function readPinMappingsFromConstraints(
 export function getPinSymbol(pin: BoardPin) {
   if (pin.type === "clock") return "CLK";
   if (pin.type === "led") return "LED";
-  if (pin.type === "button") return pin.activeLow ? "RST" : "BTN";
+  if (pin.type === "button") return /rst|reset/i.test(`${pin.name} ${pin.signal ?? ""} ${pin.group ?? ""}`) ? "RST" : "BTN";
   if (pin.type === "uart") return "URT";
   if (pin.type === "spi" || pin.type === "flash") return "SPI";
   if (pin.type === "i2c") return "I2C";
@@ -544,4 +553,20 @@ export function getPinSymbol(pin: BoardPin) {
 
 export function normalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/** Package locations alone are not complete LPF/XDC electrical constraints. */
+export function getPinMappingElectricalIssues(board: BoardDefinition, ports: HdlPort[], mappings: Record<string, string>) {
+  const options = new Map(getPinOptions(board).map((pin) => [pin.key, pin]));
+  const issues: string[] = [];
+  for (const port of ports) {
+    const key = mappings[port.name];
+    if (!key) continue;
+    const pin = options.get(key);
+    if (!pin) issues.push(`${port.name} uses an unavailable or unverified pad. Review its assignment.`);
+    else if (["lpf", "xdc"].includes(board.constraintsFile) && !pin.ioStandard) {
+      issues.push(`${port.name} (${pin.pin}) has no documented I/O standard. Verify its electrical standard before saving this mapping.`);
+    }
+  }
+  return issues;
 }

@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { BoardDefinition, BoardPin } from "../data/boards";
+import { getUnavailableBoardPads } from "../data/pinResourceGroups";
 import {
   getBoardLayout,
   type LayoutComponent,
@@ -18,6 +19,7 @@ type VirtualBoardProps = {
   onSelectPin?: (pinKey: string) => void;
   maxHeight?: number;
   showCaption?: boolean;
+  compact?: boolean;
 };
 
 const LED_PALETTE: Record<LedColor, { on: string; off: string; glow: string }> =
@@ -38,8 +40,13 @@ export default function VirtualBoard({
   onSelectPin,
   maxHeight = 340,
   showCaption = true,
+  compact = false,
 }: VirtualBoardProps) {
-  const layout = useMemo(() => getBoardLayout(board), [board]);
+  const [zoom, setZoom] = useState(1);
+  const layout = useMemo(
+    () => getBoardLayout(board, compact),
+    [board, compact],
+  );
   const pinsByName = useMemo(() => {
     const map = new Map<string, BoardPin>();
     for (const pin of [...board.pins, ...board.leds, ...board.buttons]) {
@@ -52,18 +59,30 @@ export default function VirtualBoard({
     [mappedPinKeys],
   );
 
+  const unavailablePads = useMemo(
+    () => getUnavailableBoardPads(board),
+    [board],
+  );
   const fontSize = Math.min(2.6, Math.max(1.7, layout.width / 36));
 
   function pinKeyFor(component: LayoutComponent): string | null {
-    if (component.kind === "led" || component.kind === "button") {
+    if (
+      component.kind === "led" ||
+      component.kind === "button" ||
+      component.kind === "pin"
+    ) {
       const pin = pinsByName.get(component.pinName);
-      return pin ? `pin:${pin.name}:${pin.pin}` : null;
+      return pin?.verified && !unavailablePads.has(pin.pin)
+        ? `pin:${pin.name}:${pin.pin}`
+        : null;
     }
     if (component.kind === "clock") {
       const clock = board.clocks.find(
         (entry) => entry.name === component.clockName,
       );
-      return clock?.pin ? `clock:${clock.name}` : null;
+      return clock?.verified && clock.pin && clock.role !== "reference"
+        ? `clock:${clock.name}`
+        : null;
     }
     return null;
   }
@@ -95,12 +114,15 @@ export default function VirtualBoard({
   function isBottomEdgeConnector(component: LayoutComponent) {
     return (
       component.kind === "header" &&
+      !component.resource &&
       component.w > layout.width * 0.45 &&
       component.y + component.h > layout.height - 6
     );
   }
 
-  function renderEdgeConnector(component: Extract<LayoutComponent, { kind: "header" }>) {
+  function renderEdgeConnector(
+    component: Extract<LayoutComponent, { kind: "header" }>,
+  ) {
     const connectorWidth = Math.min(component.w * 0.62, layout.width * 0.58);
     const connectorHeight = Math.min(2.4, Math.max(1.8, component.h * 0.58));
     const x = (layout.width - connectorWidth) / 2;
@@ -132,7 +154,8 @@ export default function VirtualBoard({
           rx={0.12}
         />
         {Array.from({ length: toothCount }, (_, toothIndex) => {
-          const toothX = x + toothIndex * toothGap + (toothGap - toothWidth) / 2;
+          const toothX =
+            x + toothIndex * toothGap + (toothGap - toothWidth) / 2;
           return (
             <rect
               className="vboard-edge-connector-finger"
@@ -168,227 +191,446 @@ export default function VirtualBoard({
     };
   }
 
+  function renderHitArea(
+    component: LayoutComponent,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) {
+    if (!selectable || !pinKeyFor(component) || !onSelectPin) return null;
+    return (
+      <rect
+        className="vboard-hit-area"
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill="transparent"
+        pointerEvents="all"
+      />
+    );
+  }
+
   return (
     <div className="vboard-shell">
-      <svg
-        className="vboard-svg"
-        viewBox={`-2 -2 ${layout.width + 4} ${layout.height + 4}`}
-        style={{ width: "100%", maxHeight: `${maxHeight}px`, display: "block" }}
-        aria-label={`${board.name} virtual board`}
-      >
-        {/* PCB */}
-        <rect
-          className="vboard-pcb"
-          x={0}
-          y={0}
-          width={layout.width}
-          height={layout.height}
-          rx={2.2}
-        />
-        <rect
-          className="vboard-pcb-inner"
-          x={0.8}
-          y={0.8}
-          width={layout.width - 1.6}
-          height={layout.height - 1.6}
-          rx={1.7}
-          fill="none"
-        />
-        <g className="vboard-base-details" aria-hidden="true">
-          {[
-            [2.2, 2.2],
-            [layout.width - 2.2, 2.2],
-            [2.2, layout.height - 2.2],
-            [layout.width - 2.2, layout.height - 2.2],
-          ].map(([x, y], index) => (
-            <circle className="vboard-mount" cx={x} cy={y} r={0.9} key={index} />
-          ))}
-          {Array.from({ length: 14 }, (_, index) => {
-            const spacing = (layout.width * 0.42) / 13;
-            const x = layout.width * 0.29 + spacing * index;
-            return (
-              <g key={index}>
-                <rect className="vboard-base-pad" x={x} y={1.35} width={0.85} height={0.85} rx={0.08} />
-                <rect className="vboard-base-pad" x={x} y={layout.height - 2.2} width={0.85} height={0.85} rx={0.08} />
-              </g>
-            );
-          })}
-        </g>
-        <text
-          className="vboard-board-name"
-          x={layout.width - 1.6}
-          y={layout.height - 1.8}
-          textAnchor="end"
-          fontSize={fontSize * 0.92}
+      {selectable ? (
+        <div
+          className="vboard-zoom-controls"
+          role="group"
+          aria-label="Board diagram zoom"
         >
-          {board.name}
-        </text>
-
-        {layout.components.map((component, index) => {
-          if (component.kind === "header") {
-            return (
-              <g key={index}>
-                {isBottomEdgeConnector(component) ? (
-                  renderEdgeConnector(component)
-                ) : (
+          <button
+            type="button"
+            aria-label="Zoom board out"
+            disabled={zoom <= 1}
+            onClick={() => setZoom((current) => Math.max(1, current - 0.5))}
+          >
+            −
+          </button>
+          <span>{Math.round(zoom * 100)}%</span>
+          <button
+            type="button"
+            aria-label="Zoom board in"
+            disabled={zoom >= 4}
+            onClick={() => setZoom((current) => Math.min(4, current + 0.5))}
+          >
+            +
+          </button>
+          <button type="button" onClick={() => setZoom(1)}>
+            Fit board
+          </button>
+        </div>
+      ) : null}
+      <div
+        className={selectable ? "vboard-pan" : undefined}
+        style={selectable ? { maxHeight: `${maxHeight}px` } : undefined}
+      >
+        <svg
+          className="vboard-svg"
+          viewBox={`-2 -2 ${layout.width + 4} ${layout.height + 4}`}
+          style={
+            selectable
+              ? {
+                  height: `${maxHeight * zoom}px`,
+                  width: "auto",
+                  maxWidth: zoom === 1 ? "100%" : undefined,
+                  display: "block",
+                  margin: "0 auto",
+                }
+              : { width: "100%", maxHeight: `${maxHeight}px`, display: "block" }
+          }
+          aria-label={`${board.name} ${board.id === "allora-virtual" ? "virtual board" : "resource diagram"}`}
+        >
+          {/* PCB */}
+          <rect
+            className="vboard-pcb"
+            x={0}
+            y={0}
+            width={layout.width}
+            height={layout.height}
+            rx={2.2}
+          />
+          <rect
+            className="vboard-pcb-inner"
+            x={0.8}
+            y={0.8}
+            width={layout.width - 1.6}
+            height={layout.height - 1.6}
+            rx={1.7}
+            fill="none"
+          />
+          <g className="vboard-base-details" aria-hidden="true">
+            {[
+              [2.2, 2.2],
+              [layout.width - 2.2, 2.2],
+              [2.2, layout.height - 2.2],
+              [layout.width - 2.2, layout.height - 2.2],
+            ].map(([x, y], index) => (
+              <circle
+                className="vboard-mount"
+                cx={x}
+                cy={y}
+                r={0.9}
+                key={index}
+              />
+            ))}
+            {Array.from({ length: 14 }, (_, index) => {
+              const spacing = (layout.width * 0.42) / 13;
+              const x = layout.width * 0.29 + spacing * index;
+              return (
+                <g key={index}>
                   <rect
-                    className="vboard-connector"
+                    className="vboard-base-pad"
+                    x={x}
+                    y={1.35}
+                    width={0.85}
+                    height={0.85}
+                    rx={0.08}
+                  />
+                  <rect
+                    className="vboard-base-pad"
+                    x={x}
+                    y={layout.height - 2.2}
+                    width={0.85}
+                    height={0.85}
+                    rx={0.08}
+                  />
+                </g>
+              );
+            })}
+          </g>
+          <text
+            className="vboard-board-name"
+            x={layout.width - 1.6}
+            y={layout.height - 1.8}
+            textAnchor="end"
+            fontSize={fontSize * 0.92}
+          >
+            {board.name}
+          </text>
+
+          {layout.components.map((component, index) => {
+            if (component.kind === "header") {
+              return (
+                <g key={index}>
+                  {isBottomEdgeConnector(component) ? (
+                    renderEdgeConnector(component)
+                  ) : (
+                    <rect
+                      className="vboard-connector"
+                      x={component.x}
+                      y={component.y}
+                      width={component.w}
+                      height={component.h}
+                      rx={0.6}
+                    />
+                  )}
+                  {component.label && !isBottomEdgeConnector(component) ? (
+                    <text
+                      className="vboard-silk"
+                      x={component.x + component.w / 2}
+                      y={
+                        component.resource
+                          ? component.y + 4.5
+                          : component.y + component.h / 2 + fontSize * 0.32
+                      }
+                      textAnchor="middle"
+                      fontSize={fontSize * 0.7}
+                      textLength={
+                        component.resource && component.label.length > 21
+                          ? component.w - 4
+                          : undefined
+                      }
+                      lengthAdjust="spacingAndGlyphs"
+                    >
+                      {component.label}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            }
+
+            if (component.kind === "usb") {
+              return (
+                <g key={index}>
+                  <rect
+                    className="vboard-usb"
                     x={component.x}
                     y={component.y}
                     width={component.w}
                     height={component.h}
-                    rx={0.6}
+                    rx={0.8}
                   />
-                )}
-                {component.label && !isBottomEdgeConnector(component) ? (
                   <text
                     className="vboard-silk"
                     x={component.x + component.w / 2}
-                    y={component.y + component.h / 2 + fontSize * 0.32}
+                    y={component.y + component.h + fontSize}
                     textAnchor="middle"
                     fontSize={fontSize * 0.7}
                   >
+                    {component.label ?? "USB"}
+                  </text>
+                </g>
+              );
+            }
+
+            if (component.kind === "chip") {
+              return (
+                <g key={index}>
+                  <rect
+                    className="vboard-chip"
+                    x={component.x}
+                    y={component.y}
+                    width={component.w}
+                    height={component.h}
+                    rx={0.9}
+                  />
+                  <text
+                    className="vboard-chip-label"
+                    x={component.x + component.w / 2}
+                    y={
+                      component.y +
+                      component.h / 2 -
+                      (component.sublabel ? fontSize * 0.25 : -fontSize * 0.35)
+                    }
+                    textAnchor="middle"
+                    fontSize={fontSize * 0.95}
+                    textLength={
+                      component.label.length > 14 ? component.w - 3 : undefined
+                    }
+                    lengthAdjust="spacingAndGlyphs"
+                  >
                     {component.label}
                   </text>
-                ) : null}
-              </g>
-            );
-          }
+                  {component.sublabel ? (
+                    <text
+                      className="vboard-chip-sublabel"
+                      x={component.x + component.w / 2}
+                      y={component.y + component.h / 2 + fontSize}
+                      textAnchor="middle"
+                      fontSize={fontSize * 0.62}
+                      textLength={
+                        component.sublabel.length > 20
+                          ? component.w - 3
+                          : undefined
+                      }
+                      lengthAdjust="spacingAndGlyphs"
+                    >
+                      {component.sublabel}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            }
 
-          if (component.kind === "usb") {
-            return (
-              <g key={index}>
-                <rect
-                  className="vboard-usb"
-                  x={component.x}
-                  y={component.y}
-                  width={component.w}
-                  height={component.h}
-                  rx={0.8}
-                />
-                <text
-                  className="vboard-silk"
-                  x={component.x + component.w / 2}
-                  y={component.y + component.h + fontSize}
-                  textAnchor="middle"
-                  fontSize={fontSize * 0.7}
+            if (component.kind === "pin") {
+              const pin = pinsByName.get(component.pinName);
+              if (!pin) return null;
+              const key = pinKeyFor(component);
+              return (
+                <g
+                  key={index}
+                  {...interactiveProps(
+                    component,
+                    `${pin.name} (pin ${pin.pin})`,
+                  )}
                 >
-                  {component.label ?? "USB"}
-                </text>
-              </g>
-            );
-          }
+                  <title>{`${pin.name} · ${pin.signal ?? pin.group ?? pin.type} · pin ${pin.pin}${pin.ioStandard ? ` · ${pin.ioStandard}` : ""}`}</title>
+                  {renderHitArea(
+                    component,
+                    component.x - 1.4,
+                    component.y - 1.4,
+                    2.8,
+                    2.8,
+                  )}
+                  {renderSelectionRing(component.x, component.y, 1.7, key)}
+                  <rect
+                    className="vboard-resource-pin"
+                    x={component.x - 0.8}
+                    y={component.y - 0.8}
+                    width={1.6}
+                    height={1.6}
+                    rx={0.2}
+                  />
+                </g>
+              );
+            }
 
-          if (component.kind === "chip") {
-            return (
-              <g key={index}>
-                <rect
-                  className="vboard-chip"
-                  x={component.x}
-                  y={component.y}
-                  width={component.w}
-                  height={component.h}
-                  rx={0.9}
-                />
-                <text
-                  className="vboard-chip-label"
-                  x={component.x + component.w / 2}
-                  y={
-                    component.y +
-                    component.h / 2 -
-                    (component.sublabel ? fontSize * 0.25 : -fontSize * 0.35)
-                  }
-                  textAnchor="middle"
-                  fontSize={fontSize * 0.95}
+            if (component.kind === "clock") {
+              const key = pinKeyFor(component);
+              const label = component.label ?? component.clockName;
+              const clock = board.clocks.find(
+                (entry) => entry.name === component.clockName,
+              );
+              const clockLocation = clock?.pin
+                ? clock.differentialPin
+                  ? `pins ${clock.pin} / ${clock.differentialPin}`
+                  : `pin ${clock.pin}`
+                : clock?.source === "internal-hfosc"
+                  ? "internal oscillator"
+                  : "pin not verified";
+              return (
+                <g
+                  key={index}
+                  {...interactiveProps(
+                    component,
+                    `clock ${component.clockName}`,
+                  )}
                 >
-                  {component.label}
-                </text>
-                {component.sublabel ? (
+                  <title>{`${component.clockName} · ${label} · ${clockLocation}`}</title>
+                  {renderHitArea(
+                    component,
+                    component.x - 3,
+                    component.y - 1.5,
+                    10.5,
+                    8,
+                  )}
+                  {renderSelectionRing(
+                    component.x + 2.1,
+                    component.y + 1.3,
+                    3.2,
+                    key,
+                  )}
+                  <rect
+                    className="vboard-clock"
+                    x={component.x}
+                    y={component.y}
+                    width={4.2}
+                    height={2.6}
+                    rx={1.2}
+                  />
                   <text
-                    className="vboard-chip-sublabel"
-                    x={component.x + component.w / 2}
-                    y={component.y + component.h / 2 + fontSize}
+                    className="vboard-silk"
+                    x={component.x + 2.1}
+                    y={component.y + 2.6 + fontSize}
+                    textAnchor="middle"
+                    fontSize={fontSize * 0.7}
+                  >
+                    {label}
+                  </text>
+                </g>
+              );
+            }
+
+            if (component.kind === "led") {
+              const pin = pinsByName.get(component.pinName);
+              if (!pin) return null;
+              const key = pinKeyFor(component);
+              const palette = LED_PALETTE[component.color ?? "green"];
+              const rawState = signalStates?.[pin.name];
+              const isOn =
+                pin.activeLow === true
+                  ? rawState === false
+                  : pin.activeLow === false && rawState === true;
+              const label = component.label ?? pin.name;
+
+              return (
+                <g
+                  key={index}
+                  {...interactiveProps(component, `LED ${pin.name}`)}
+                >
+                  <title>{`${pin.name} (LED, pin ${pin.pin}; ${pin.activeLow === true ? "active low" : pin.activeLow === false ? "active high" : "polarity not documented; physical state unavailable"})`}</title>
+                  {renderHitArea(
+                    component,
+                    component.x - 3.5,
+                    component.y - 3,
+                    7,
+                    8,
+                  )}
+                  {renderSelectionRing(component.x, component.y, 2.5, key)}
+                  {isOn ? (
+                    <circle
+                      cx={component.x}
+                      cy={component.y}
+                      r={2.6}
+                      fill={palette.glow}
+                    />
+                  ) : null}
+                  <circle
+                    className="vboard-led"
+                    cx={component.x}
+                    cy={component.y}
+                    r={1.4}
+                    fill={isOn ? palette.on : palette.off}
+                  />
+                  <text
+                    className="vboard-silk"
+                    x={component.x}
+                    y={component.y + 1.4 + fontSize}
                     textAnchor="middle"
                     fontSize={fontSize * 0.62}
                   >
-                    {component.sublabel}
+                    {label}
                   </text>
-                ) : null}
-              </g>
-            );
-          }
+                </g>
+              );
+            }
 
-          if (component.kind === "clock") {
-            const key = pinKeyFor(component);
-            const label = component.label ?? component.clockName;
-            return (
-              <g
-                key={index}
-                {...interactiveProps(component, `clock ${component.clockName}`)}
-              >
-                <title>{`${component.clockName} (clock)`}</title>
-                {renderSelectionRing(
-                  component.x + 2.1,
-                  component.y + 1.3,
-                  3.2,
-                  key,
-                )}
-                <rect
-                  className="vboard-clock"
-                  x={component.x}
-                  y={component.y}
-                  width={4.2}
-                  height={2.6}
-                  rx={1.2}
-                />
-                <text
-                  className="vboard-silk"
-                  x={component.x + 2.1}
-                  y={component.y + 2.6 + fontSize}
-                  textAnchor="middle"
-                  fontSize={fontSize * 0.7}
-                >
-                  {label}
-                </text>
-              </g>
-            );
-          }
-
-          if (component.kind === "led") {
+            // button
             const pin = pinsByName.get(component.pinName);
             if (!pin) return null;
             const key = pinKeyFor(component);
-            const palette = LED_PALETTE[component.color ?? "green"];
             const rawState = signalStates?.[pin.name];
-            const isOn = pin.activeLow ? rawState === false : rawState === true;
+            const isPressed =
+              pin.activeLow === true
+                ? rawState === false
+                : pin.activeLow === false && rawState === true;
             const label = component.label ?? pin.name;
+            const size = 4;
 
             return (
               <g
                 key={index}
-                {...interactiveProps(component, `LED ${pin.name}`)}
+                {...interactiveProps(component, `button ${pin.name}`)}
               >
-                <title>{`${pin.name} (LED, pin ${pin.pin})`}</title>
-                {renderSelectionRing(component.x, component.y, 2.5, key)}
-                {isOn ? (
-                  <circle
-                    cx={component.x}
-                    cy={component.y}
-                    r={2.6}
-                    fill={palette.glow}
-                  />
-                ) : null}
+                <title>{`${pin.name} (button, pin ${pin.pin}; ${pin.activeLow === true ? "active low" : pin.activeLow === false ? "active high" : "polarity not documented; physical state unavailable"})`}</title>
+                {renderHitArea(
+                  component,
+                  component.x - 4,
+                  component.y - 3,
+                  8,
+                  9,
+                )}
+                {renderSelectionRing(component.x, component.y, 3.1, key)}
+                <rect
+                  className="vboard-button-base"
+                  x={component.x - size / 2}
+                  y={component.y - size / 2}
+                  width={size}
+                  height={size}
+                  rx={0.7}
+                />
                 <circle
-                  className="vboard-led"
+                  className={`vboard-button-cap${isPressed ? " pressed" : ""}`}
                   cx={component.x}
                   cy={component.y}
-                  r={1.4}
-                  fill={isOn ? palette.on : palette.off}
+                  r={1.3}
                 />
                 <text
                   className="vboard-silk"
                   x={component.x}
-                  y={component.y + 1.4 + fontSize}
+                  y={component.y + size / 2 + fontSize}
                   textAnchor="middle"
                   fontSize={fontSize * 0.62}
                 >
@@ -396,59 +638,15 @@ export default function VirtualBoard({
                 </text>
               </g>
             );
-          }
-
-          // button
-          const pin = pinsByName.get(component.pinName);
-          if (!pin) return null;
-          const key = pinKeyFor(component);
-          const rawState = signalStates?.[pin.name];
-          const isPressed = pin.activeLow
-            ? rawState === false
-            : rawState === true;
-          const label = component.label ?? pin.name;
-          const size = 4;
-
-          return (
-            <g
-              key={index}
-              {...interactiveProps(component, `button ${pin.name}`)}
-            >
-              <title>{`${pin.name} (button, pin ${pin.pin})`}</title>
-              {renderSelectionRing(component.x, component.y, 3.1, key)}
-              <rect
-                className="vboard-button-base"
-                x={component.x - size / 2}
-                y={component.y - size / 2}
-                width={size}
-                height={size}
-                rx={0.7}
-              />
-              <circle
-                className={`vboard-button-cap${isPressed ? " pressed" : ""}`}
-                cx={component.x}
-                cy={component.y}
-                r={1.3}
-              />
-              <text
-                className="vboard-silk"
-                x={component.x}
-                y={component.y + size / 2 + fontSize}
-                textAnchor="middle"
-                fontSize={fontSize * 0.62}
-              >
-                {label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+          })}
+        </svg>
+      </div>
 
       {showCaption ? (
         <div className="vboard-caption">
-          {layout.handcrafted
-            ? "Stylized layout — placement follows the physical board."
-            : "Generic Layout."}
+          {board.id === "allora-virtual"
+            ? "Generic Layout."
+            : "Schematic resource map · aliases may share package pins · positions do not represent the physical PCB."}
         </div>
       ) : null}
     </div>

@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
 const COLORLIGHT_I5_LEDS: BoardPin[] = [
@@ -372,76 +373,85 @@ const COLORLIGHT_I9_PINS: BoardPin[] = [
   },
 ];
 
-export const colorlightI5: BoardDefinition = {
-  id: "colorlight-i5",
-  name: "Colorlight i5",
-  vendor: "Colorlight",
-  family: "ECP5",
-  device: "LFE5U-25F",
-  package: "CABGA381",
-  fpgaId: "lfe5u-25f-cabga381",
-  constraintsFile: "lpf",
-  synthesisFlow: "yosys-nextpnr",
-  toolchain: {
-    synth: "yosys",
-    placeRoute: "nextpnr-ecp5",
-    pack: "ecppack",
-    program: "ecpdap",
+export const colorlightI5: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "colorlight-i5",
+    name: "Colorlight i5",
+    vendor: "Colorlight",
+    family: "ECP5",
+    device: "LFE5U-25F",
+    package: "CABGA381",
+    fpgaId: "lfe5u-25f-cabga381",
+    constraintsFile: "lpf",
+    synthesisFlow: "yosys-nextpnr",
+    toolchain: {
+      synth: "yosys",
+      placeRoute: "nextpnr-ecp5",
+      pack: "ecppack",
+      program: "ecpdap",
+    },
+    clocks: [{ name: "clk25", pin: "P3", frequency: 25000000, verified: true }],
+    pins: COLORLIGHT_I5_PINS,
+    leds: COLORLIGHT_I5_LEDS,
+    buttons: COLORLIGHT_I5_BUTTONS,
+    notes:
+      "Pin mapping based on the LiteX Colorlight i5 v7.0 platform. Main low-speed IOs are listed; SDRAM and full Ethernet buses are expanded from the reviewed platform where static package pads are published.",
   },
-  clocks: [{ name: "clk25", pin: "P3", frequency: 25000000, verified: true }],
-  pins: COLORLIGHT_I5_PINS,
-  leds: COLORLIGHT_I5_LEDS,
-  buttons: COLORLIGHT_I5_BUTTONS,
-  notes:
-    "Pin mapping based on the LiteX Colorlight i5 v7.0 platform. Main low-speed IOs are listed; SDRAM and full Ethernet buses are intentionally summarized.",
-};
+  "colorlight_i5:v7.0",
+);
 
-export const colorlightI5a907: BoardDefinition = {
-  id: "colorlight-i5a-907",
-  name: "Colorlight i5A-907",
-  vendor: "Colorlight",
-  family: "ECP5",
-  device: "LFE5U-25F",
-  package: "CABGA256",
-  fpgaId: "lfe5u-25f-cabga256",
-  constraintsFile: "lpf",
-  synthesisFlow: "yosys-nextpnr",
-  toolchain: {
-    synth: "yosys",
-    placeRoute: "nextpnr-ecp5",
-    pack: "ecppack",
-    program: "openocd",
+export const colorlightI5a907: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "colorlight-i5a-907",
+    name: "Colorlight i5A-907",
+    vendor: "Colorlight",
+    family: "ECP5",
+    device: "LFE5U-25F",
+    package: "CABGA256",
+    fpgaId: "lfe5u-25f-cabga256",
+    constraintsFile: "lpf",
+    synthesisFlow: "yosys-nextpnr",
+    toolchain: {
+      synth: "yosys",
+      placeRoute: "nextpnr-ecp5",
+      pack: "ecppack",
+      program: "openocd",
+    },
+    clocks: [{ name: "clk25", pin: "P6", frequency: 25000000, verified: true }],
+    pins: COLORLIGHT_I5A_907_PINS,
+    leds: COLORLIGHT_I5A_907_LEDS,
+    buttons: COLORLIGHT_I5A_907_BUTTONS,
+    notes:
+      "Pin mapping based on the LiteX Colorlight i5A-907 v7.0 platform. Some pins have alternate functions such as UARTBone and USB.",
   },
-  clocks: [{ name: "clk25", pin: "P6", frequency: 25000000, verified: true }],
-  pins: COLORLIGHT_I5A_907_PINS,
-  leds: COLORLIGHT_I5A_907_LEDS,
-  buttons: COLORLIGHT_I5A_907_BUTTONS,
-  notes:
-    "Pin mapping based on the LiteX Colorlight i5A-907 v7.0 platform. Some pins have alternate functions such as UARTBone and USB.",
-};
+  "colorlight_i5a_907:v7.0",
+);
 
-export const colorlightI9Plus: BoardDefinition = {
-  id: "colorlight-i9-plus",
-  name: "Colorlight i9+",
-  vendor: "Colorlight",
-  family: "Artix-7",
-  device: "XC7A50T",
-  package: "FGG484",
-  fpgaId: "xc7a50t-fgg484-1",
-  constraintsFile: "xdc",
-  synthesisFlow: "vivado",
-  toolchain: {
-    synth: "vivado",
-    placeRoute: "vivado",
-    program: "openFPGALoader",
+export const colorlightI9Plus: BoardDefinition = enrichHandwrittenBoard(
+  {
+    id: "colorlight-i9-plus",
+    name: "Colorlight i9+",
+    vendor: "Colorlight",
+    family: "Artix-7",
+    device: "XC7A50T",
+    package: "FGG484",
+    fpgaId: "xc7a50t-fgg484-1",
+    constraintsFile: "xdc",
+    synthesisFlow: "vivado",
+    toolchain: {
+      synth: "vivado",
+      placeRoute: "vivado",
+      program: "openFPGALoader",
+    },
+    clocks: [{ name: "clk25", pin: "K4", frequency: 25000000, verified: true }],
+    pins: COLORLIGHT_I9_PINS,
+    leds: COLORLIGHT_I9_LEDS,
+    buttons: [],
+    notes:
+      "Pin mapping based on the LiteX Colorlight i9+ platform. This Artix-7 board needs the Vivado runner for synthesis and bitstream generation.",
   },
-  clocks: [{ name: "clk25", pin: "K4", frequency: 25000000, verified: true }],
-  pins: COLORLIGHT_I9_PINS,
-  leds: COLORLIGHT_I9_LEDS,
-  buttons: [],
-  notes:
-    "Pin mapping based on the LiteX Colorlight i9+ platform. This Artix-7 board needs the Vivado runner for synthesis and bitstream generation.",
-};
+  "colorlight_i9plus",
+);
 
 export const COLORLIGHT_I5_BOARDS: BoardDefinition[] = [
   colorlightI5,

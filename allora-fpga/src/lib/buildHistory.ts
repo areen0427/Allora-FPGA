@@ -88,8 +88,10 @@ export function parseBuildMetrics(logs: string[]) {
 }
 
 const RESOURCE_LABELS: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /^ICESTORM_LC$/, label: "Logic cells" },
+  { pattern: /^(TRELLIS_SLICE|SLICE)$/, label: "Slices" },
   {
-    pattern: /^(ICESTORM_LC|TRELLIS_SLICE|TRELLIS_COMB|SLICE|LUT[0-9]?|LUTS?)$/,
+    pattern: /^(TRELLIS_COMB|LUT[0-9]?|LUTS?)$/,
     label: "LUT",
   },
   {

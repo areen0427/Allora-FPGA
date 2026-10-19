@@ -1,6 +1,6 @@
 import { chatNotifications } from "../lib/chatNotifications";
 import { WorkspaceTitle } from "../components/ui/WorkspaceTitle";
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import {
   AlertCircle,
@@ -228,6 +228,11 @@ export default function ChatPage({
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [approving, setApproving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [newChatChoiceOpen, setNewChatChoiceOpen] = useState(false);
+  const newChatPopupRef = useRef<HTMLElement>(null);
+  const newChatTriggerRef = useRef<HTMLButtonElement>(null);
+  const newChatDialogTitleId = useId();
+  const newChatDialogDescriptionId = useId();
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const historyPanelId = useId();
   const historyPanelRef = useRef<HTMLElement>(null);
@@ -259,6 +264,36 @@ export default function ChatPage({
     if (dialog && !dialog.open) dialog.showModal();
     return () => { if (dialog?.open) dialog.close(); };
   }, [sidebarOpen, historyExpanded]);
+  useLayoutEffect(() => {
+    if (!newChatChoiceOpen) return;
+    const popup = newChatPopupRef.current;
+    const trigger = newChatTriggerRef.current;
+    if (!popup || !trigger) return;
+    popup.showPopover();
+    function place() {
+      if (!popup || !trigger) return;
+      const anchor = trigger.getBoundingClientRect();
+      const edge = 16;
+      const gap = 8;
+      popup.style.width = `${Math.min(360, window.innerWidth - edge * 2)}px`;
+      const below = window.innerHeight - anchor.bottom - gap - edge;
+      const above = anchor.top - gap - edge;
+      const opensAbove = below < popup.scrollHeight && above > below;
+      popup.style.maxHeight = `${Math.max(0, opensAbove ? above : below)}px`;
+      popup.style.left = `${Math.max(edge, Math.min(anchor.right - popup.offsetWidth, window.innerWidth - popup.offsetWidth - edge))}px`;
+      popup.style.top = `${opensAbove ? Math.max(edge, anchor.top - gap - popup.offsetHeight) : anchor.bottom + gap}px`;
+      popup.dataset.placement = opensAbove ? "above" : "below";
+    }
+    place();
+    popup.classList.add("glass-unfold");
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      if (popup.matches(":popover-open")) popup.hidePopover();
+    };
+  }, [newChatChoiceOpen]);
   const [openingProject, setOpeningProject] = useState(false);
   const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string }) | null>(
     null,
@@ -462,19 +497,33 @@ export default function ChatPage({
     }
   }
 
-  async function newChat() {
+  function requestNewChat() {
+    if (busyRef.current || changingConversationRef.current) return;
+    setSidebarOpen(false);
+    if (contextProjectPath) setNewChatChoiceOpen(current => !current);
+    else void newChat();
+  }
+
+  async function newChat(project: "current" | "new" = "current") {
     if (busyRef.current || changingConversationRef.current) return false;
     changingConversationRef.current = true;
     setChangingConversation(true);
     try {
       await closeSession();
       if (!alive.current) return false;
+      if (project === "new") {
+        setContextProjectPath(undefined);
+        setWorkspacePath("");
+        setSaveDirectory(undefined);
+      }
       setActiveId(null);
       setDraft("");
       setPins([]);
       setNotice("");
       setActivity("");
       setApprovals([]);
+      newChatPopupRef.current?.hidePopover();
+      setNewChatChoiceOpen(false);
       if (window.innerWidth <= 760) setSidebarOpen(false);
       followScroll.current = true;
       inputRef.current?.focus();
@@ -991,6 +1040,30 @@ export default function ChatPage({
         </HistoryPanel>
       )}
 
+      {newChatChoiceOpen && (
+        <section
+          ref={newChatPopupRef}
+          id={`${newChatDialogTitleId}-popup`}
+          popover="auto"
+          role="dialog"
+          className="welcome-product-info chat-new-project-popup"
+          aria-labelledby={newChatDialogTitleId}
+          aria-describedby={newChatDialogDescriptionId}
+          onToggle={event => { if (event.newState === "closed") setNewChatChoiceOpen(false); }}
+        >
+          <h2 id={newChatDialogTitleId}>Start a new chat</h2>
+          <p id={newChatDialogDescriptionId}>Keep working in <strong title={contextProjectPath}>{folderName(contextProjectPath ?? "")}</strong> or start a new project?</p>
+          <div className="chat-new-project-options">
+            <button type="button" autoFocus className="ui-button ui-button-secondary" disabled={interactionLocked} onClick={() => void newChat("current")}>
+              <FolderOpen size={16} /> Stay in this project
+            </button>
+            <button type="button" className="ui-button ui-button-primary" disabled={interactionLocked} onClick={() => void newChat("new")}>
+              <Plus size={16} /> Start a new project
+            </button>
+          </div>
+        </section>
+      )}
+
       <div className="chat-main">
         <header className="chat-header">
           <div className="chat-header-title">
@@ -1013,9 +1086,13 @@ export default function ChatPage({
             </div>
             <div className="chat-conversation-actions ui-compact-button-group">
               <button
+                ref={newChatTriggerRef}
                 className="ui-button ui-button-secondary"
                 type="button"
-                onClick={() => { setSidebarOpen(false); void newChat(); }}
+                onClick={requestNewChat}
+                aria-haspopup="dialog"
+                aria-expanded={newChatChoiceOpen}
+                aria-controls={newChatChoiceOpen ? `${newChatDialogTitleId}-popup` : undefined}
                 disabled={interactionLocked}
               >
                 <Plus size={15} /> New chat

@@ -1,3 +1,4 @@
+import { enrichHandwrittenBoard } from "./handwrittenResources";
 import type { BoardDefinition, BoardPin } from "../boardTypes";
 
 function led(name: string, pin: string, signal = name): BoardPin {
@@ -69,30 +70,37 @@ function makeIce40Board({
   program: string;
   notes: string;
 }): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor,
-    family: "iCE40 UltraPlus",
-    device: "ICE40-UP5K",
-    package: packageName,
-    fpgaId: `ice40up5k-${packageName.toLowerCase()}`,
-    constraintsFile: "pcf",
-    synthesisFlow: "yosys-nextpnr",
-    toolchain: {
-      synth: "yosys",
-      placeRoute: "nextpnr-ice40",
-      pack: "icepack",
-      program,
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor,
+      family: "iCE40 UltraPlus",
+      device: "ICE40-UP5K",
+      package: packageName,
+      fpgaId: `ice40up5k-${packageName.toLowerCase()}`,
+      constraintsFile: "pcf",
+      synthesisFlow: "yosys-nextpnr",
+      toolchain: {
+        synth: "yosys",
+        placeRoute: "nextpnr-ice40",
+        pack: "icepack",
+        program,
+      },
+      clocks: [
+        { name: "clk12", pin: clockPin, frequency: 12000000, verified: true },
+      ],
+      pins,
+      leds,
+      buttons,
+      notes,
     },
-    clocks: [
-      { name: "clk12", pin: clockPin, frequency: 12000000, verified: true },
-    ],
-    pins,
-    leds,
-    buttons,
-    notes,
-  };
+    id === "ice-v-wireless"
+      ? "ice_v_wireless"
+      : id.startsWith("icebreaker-bitsy-")
+        ? `icebreaker_bitsy:${id.endsWith("v0") ? "v0" : "v1"}`
+        : "lattice_ice40up5k_evn",
+  );
 }
 
 function makeEcp5Board({
@@ -124,35 +132,45 @@ function makeEcp5Board({
   program: string;
   notes: string;
 }): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor,
-    family: "ECP5",
-    device,
-    package: packageName,
-    fpgaId: `${device.toLowerCase()}-${packageName.toLowerCase()}`,
-    constraintsFile: "lpf",
-    synthesisFlow: "yosys-nextpnr",
-    toolchain: {
-      synth: "yosys",
-      placeRoute: "nextpnr-ecp5",
-      pack: "ecppack",
-      program,
-    },
-    clocks: [
-      {
-        name: clockName,
-        pin: clockPin,
-        frequency: clockFrequency,
-        verified: true,
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor,
+      family: "ECP5",
+      device,
+      package: packageName,
+      fpgaId: `${device.toLowerCase()}-${packageName.toLowerCase()}`,
+      constraintsFile: "lpf",
+      synthesisFlow: "yosys-nextpnr",
+      toolchain: {
+        synth: "yosys",
+        placeRoute: "nextpnr-ecp5",
+        pack: "ecppack",
+        program,
       },
-    ],
-    pins,
-    leds,
-    buttons,
-    notes,
-  };
+      clocks: [
+        {
+          name: clockName,
+          pin: clockPin,
+          frequency: clockFrequency,
+          verified: true,
+        },
+      ],
+      pins,
+      leds,
+      buttons,
+      notes,
+    },
+    id.startsWith("icepi-zero-")
+      ? "icepi_zero"
+      : id === "lattice-ecp5-evn"
+        ? "lattice_ecp5_evn"
+        : id === "lattice-versa-ecp5"
+          ? "lattice_versa_ecp5"
+          : "trellisboard",
+    { excludedClocks: id === "trellisboard" ? ["clk100"] : [] },
+  );
 }
 
 function makeVivadoBoard({
@@ -186,34 +204,41 @@ function makeVivadoBoard({
   buttons?: BoardPin[];
   notes: string;
 }): BoardDefinition {
-  return {
-    id,
-    name,
-    vendor,
-    family,
-    device,
-    package: packageName,
-    fpgaId,
-    constraintsFile: "xdc",
-    synthesisFlow: "vivado",
-    toolchain: {
-      synth: "vivado",
-      placeRoute: "vivado",
-      program: "vivado",
-    },
-    clocks: [
-      {
-        name: clockName,
-        pin: clockPin,
-        frequency: clockFrequency,
-        verified: true,
+  return enrichHandwrittenBoard(
+    {
+      id,
+      name,
+      vendor,
+      family,
+      device,
+      package: packageName,
+      fpgaId,
+      constraintsFile: "xdc",
+      synthesisFlow: "vivado",
+      toolchain: {
+        synth: "vivado",
+        placeRoute: "vivado",
+        program: "vivado",
       },
-    ],
-    pins,
-    leds,
-    buttons,
-    notes,
-  };
+      clocks: [
+        {
+          name: clockName,
+          pin: clockPin,
+          frequency: clockFrequency,
+          verified: true,
+        },
+      ],
+      pins,
+      leds,
+      buttons,
+      notes,
+    },
+    id.startsWith("kosagi-netv2-")
+      ? "kosagi_netv2"
+      : id.startsWith("sqrl-acorn-")
+        ? "sqrl_acorn"
+        : "sqrl_fk33",
+  );
 }
 
 const ICE_V_WIRELESS_LEDS = [
@@ -347,7 +372,7 @@ function makeIcepiZero(device: "25F" | "45F"): BoardDefinition {
       gpio("gpdi_clk_p", "gpdi_clk_p", "R12", "GPDI"),
     ],
     notes:
-      "Pin mapping based on the LiteX iCEpi Zero platform. SDRAM, USB, GPIO header, and GPDI buses are summarized.",
+      "Pin mapping based on the LiteX iCEpi Zero platform. SDRAM, USB, GPIO header, and GPDI buses are expanded from the reviewed platform where static package pads are published.",
   });
 }
 
@@ -425,7 +450,7 @@ export const latticeVersaEcp5 = makeEcp5Board({
     gpio("eth_tx_ctl", "eth_tx_ctl", "R20", "Ethernet"),
   ],
   notes:
-    "Pin mapping based on the LiteX Lattice Versa ECP5 platform. DDR3, PCIe, Ethernet, and SMA buses are summarized.",
+    "Pin mapping based on the LiteX Lattice Versa ECP5 platform. DDR3, PCIe, Ethernet, and SMA buses are expanded from the reviewed platform where static package pads are published.",
 });
 
 export const trellisBoard = makeEcp5Board({
@@ -452,7 +477,7 @@ export const trellisBoard = makeEcp5Board({
     gpio("eth_tx_ctl", "eth_tx_ctl", "D15", "Ethernet"),
   ],
   notes:
-    "Pin mapping based on the LiteX TrellisBoard platform. DDR3, PCIe, Ethernet, DVI, and PMOD buses are summarized.",
+    "Pin mapping based on the LiteX TrellisBoard platform. The 100 MHz B29 input is documented broken on revision 1.0 (non-differential routing); it is retained as a pin reference but excluded from selectable clocks. DDR3, PCIe, Ethernet, DVI, and PMOD buses are expanded from the reviewed platform where static package pads are published.",
 });
 
 function makeKosagiNetV2(variant: "a7-35" | "a7-100"): BoardDefinition {
@@ -471,8 +496,8 @@ function makeKosagiNetV2(variant: "a7-35" | "a7-100"): BoardDefinition {
     leds: [led("user_led", "M21")],
     pins: [
       led("user_led", "M21"),
-      uart("serial_tx", "uart_tx", "M19"),
-      uart("serial_rx", "uart_rx", "M20"),
+      uart("serial_tx", "uart_tx", "E14"),
+      uart("serial_rx", "uart_rx", "E13"),
     ],
     notes:
       "Pin mapping based on the LiteX Kosagi NetV2 platform. Vivado runner is needed for synthesis and bitstream generation.",
@@ -498,7 +523,7 @@ function makeSqrlAcorn(
     packageName: variant === "cle-101" ? "FGG484" : "FBG484",
     fpgaId,
     clockName: "clk200",
-    clockPin: "J19/H19",
+    clockPin: "J19",
     clockFrequency: 200000000,
     leds: [led("user_led_0", "G3", "led0"), led("user_led_1", "H3", "led1")],
     pins: [
@@ -522,7 +547,7 @@ export const sqrlFk33 = makeVivadoBoard({
   packageName: "FSVH2104",
   fpgaId: "xcvu33p-fsvh2104-2L-e",
   clockName: "clk200",
-  clockPin: "unknown",
+  clockPin: "BC26",
   clockFrequency: 200000000,
   leds: [],
   pins: [],

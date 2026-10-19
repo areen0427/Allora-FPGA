@@ -16,9 +16,9 @@
   height: calc(100vh - 64px);
   min-height: 520px;
   display: grid;
-  grid-template-columns: 400px minmax(0, 1fr);
+  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr);
-  column-gap: 24px;
+  column-gap: var(--ui-workspace-inset);
   align-items: stretch;
 }
 
@@ -31,7 +31,7 @@
 .pin-browser-heading {
   grid-column: 1;
   grid-row: 2;
-  margin: 0 0 18px;
+  margin: 0 0 16px;
 }
 
 .pin-browser-heading .welcome-title {
@@ -61,10 +61,10 @@
   min-height: 0;
   overflow: hidden;
   border-radius: var(--ui-radius-lg);
-  padding: 24px;
+  padding: var(--ui-workspace-inset);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .pin-detail-header {
@@ -88,6 +88,12 @@
   line-height: 1.45;
 }
 
+.pin-detail-panel > :is(.pin-catalog-view, .pin-board-data-view, .pin-output-workspace) {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
 .pin-summary-list {
   display: flex;
   gap: 8px;
@@ -97,44 +103,15 @@
 .pin-browser-view-toggle {
   flex: 0 0 auto;
   display: inline-flex;
-  gap: 4px;
-  border: 1px solid var(--ui-border-control);
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-control-bg);
-  box-shadow: var(--ui-inset-highlight);
-  padding: 4px;
 }
 
 .pin-browser-view-button {
-  min-height: 32px;
-  border: 0;
-  border-radius: var(--ui-radius-sm);
-  background: transparent;
-  color: var(--ui-text-muted);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 900;
   line-height: 1;
-  transition:
-    background var(--ui-motion-base),
-    color var(--ui-motion-base),
-    box-shadow var(--ui-motion-base);
-}
-
-.pin-browser-view-button:hover:not(:disabled, [aria-disabled="true"]) {
-  background: var(--ui-control-active-bg);
-  color: var(--ui-accent-text);
-}
-
-.pin-browser-view-button.active {
-  background: var(--ui-control-active-bg);
-  color: var(--ui-accent-text);
-  box-shadow: inset 0 0 0 1px var(--ui-border-hover);
 }
 
 .pin-group-scroll {
@@ -1024,3 +1001,23 @@
     flex: 1;
   }
 }
+
+/* Keep the resource dock reachable beside narrow catalogs, including boards
+   with hundreds of connector aliases. Pin details retain their own inspector. */
+@container (max-width: 720px) {
+  .board-diagram:not(.board-diagram-compact) .board-diagram-board-frame .vboard-svg {
+    max-height: 300px !important;
+  }
+  .board-diagram:not(.board-diagram-compact) .board-diagram-stage {
+    align-self: start;
+  }
+}
+
+.board-resource-inspector .board-diagram-pin-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.4;
+}
+
+.board-rail-label { max-width: 130px; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
