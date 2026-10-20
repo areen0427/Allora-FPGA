@@ -204,9 +204,10 @@
   cursor: pointer;
 }
 
-.build-board-search:focus-within {
-  outline: 2px solid var(--ui-accent-text);
-  outline-offset: 2px;
+#root .build-board-search.ui-search-control:focus-within {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: var(--ui-accent-glow) !important;
 }
 
 .build-board-empty {

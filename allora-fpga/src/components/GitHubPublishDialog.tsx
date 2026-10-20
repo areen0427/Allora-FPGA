@@ -806,7 +806,7 @@ export function GitHubPublishDialog({
                       <div className="github-form-stack">
                         <label>
                           <span>Repository</span>
-                          <select
+                          <select className="ui-dropdown"
                             value={selectedRepositoryId}
                             onChange={(event) =>
                               setSelectedRepositoryId(event.target.value)

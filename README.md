@@ -51,6 +51,12 @@ The initial screen presents **Simulate / Virtual FPGA** and **Build / Physical F
 - Responsive layouts preserve the shared right edge and card width, while reduced-motion preferences disable dimensional card movement.
 - Theme artwork lives at `allora-fpga/public/welcome_ice_molecular.png` and `allora-fpga/public/welcome_black_ice_molecular.png`.
 
+## Import outputs into Pin Mapper
+
+In **Pin Mapper → select a board → Map Outputs → Import design**, choose a Verilog, SystemVerilog or VHDL top-level file. In the desktop app you can also choose a Vivado `.xpr` project. Select the top-level module/entity, review its output ports and bus ranges, then add them and assign pads as usual. Existing output declarations and mappings are preserved; Save mapping prepares the board-specific constraint download.
+
+Import reads declarations without running Vivado. IP/block designs need an existing generated HDL wrapper; unresolved or unsupported types/ranges report a diagnostic. See [Pin Mapper import](docs/PIN_MAPPER_IMPORT.md) for supported syntax and limits.
+
 ## Board data and resource diagrams
 
 The catalog contains 255 physical variants. Published pin, clock, LED, button, connector and peripheral mappings carry source/revision notes, including boards available only for pin mapping. Physical-board diagrams share one resource layout, so database changes propagate to project setup, pin mapping and the workspace. LED counts refer to driven channels; an RGB package contributes three. Diagrams are resource overviews rather than exact PCB drawings, and the Virtual FPGA simulator keeps its own layout.

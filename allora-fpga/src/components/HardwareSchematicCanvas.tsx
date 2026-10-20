@@ -563,7 +563,7 @@ export default function HardwareSchematicCanvas({
           >
             <label>
               View{" "}
-              <select
+              <select className="ui-dropdown"
                 value={level}
                 onChange={(event) => {
                   setLevel(event.target.value as Abstraction);
@@ -614,6 +614,7 @@ export default function HardwareSchematicCanvas({
             ) : null}
             <div className="explorer-search">
               <input
+                className="ui-search-control"
                 aria-label="Search hardware and signals"
                 placeholder="Search signals, registers, modules…"
                 value={search}

@@ -468,7 +468,7 @@ export default function VirtualFpgaSection({
           </div>
           <label className="vfpga-frequency">
             <span>Clock</span>
-            <select
+            <select className="ui-dropdown"
               value={config.clockFrequencyHz}
               disabled={sessionId !== null}
               onChange={(event) =>
@@ -638,7 +638,7 @@ export default function VirtualFpgaSection({
                   <small>{peripheral.type}</small>
                 </span>
                 <div className="vfpga-map-control">
-                  <select
+                  <select className="ui-dropdown"
                     value={mappingKey(peripheral)}
                     disabled={sessionId !== null}
                     onChange={(event) =>

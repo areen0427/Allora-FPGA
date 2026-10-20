@@ -7,6 +7,7 @@ import {
   Code2,
   Folder,
   Gauge,
+  MessageSquare,
   Palette,
   RefreshCw,
   RotateCcw,
@@ -28,10 +29,18 @@ type SettingsModalProps = {
   initialCategory?: SettingsCategory;
 };
 
-type SettingsCategory = "general" | "appearance" | "editor" | "workspace" | "simulator" | "ai";
+type SettingsCategory =
+  | "general"
+  | "chat"
+  | "appearance"
+  | "editor"
+  | "workspace"
+  | "simulator"
+  | "ai";
 
 const categories = [
   { id: "general", label: "General", icon: SlidersHorizontal },
+  { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "editor", label: "Editor", icon: Code2 },
   { id: "workspace", label: "Workspace", icon: Folder },
@@ -200,6 +209,36 @@ export function SettingsModal({
                   label="Reduce Motion"
                   checked={settings.reduceMotion}
                   onChange={(value) => updateSetting("reduceMotion", value)}
+                />
+              </SettingsGroup>
+            </SettingsSection>
+          ) : null}
+
+          {activeCategory === "chat" ? (
+            <SettingsSection
+              title="Chat"
+              description="Choose how long conversation history should be kept."
+            >
+              <SettingsGroup>
+                <SettingSelect
+                  label="Chat history retention"
+                  description="Your choice is saved, but automatic deletion is not active yet."
+                  value={settings.chatHistoryRetention}
+                  onChange={(value) =>
+                    updateSetting(
+                      "chatHistoryRetention",
+                      value as AppSettings["chatHistoryRetention"],
+                    )
+                  }
+                  options={[
+                    { value: "1-week", label: "1 week" },
+                    { value: "2-weeks", label: "2 weeks" },
+                    { value: "1-month", label: "1 month" },
+                    { value: "3-months", label: "3 months" },
+                    { value: "6-months", label: "6 months" },
+                    { value: "1-year", label: "1 year" },
+                    { value: "never-delete", label: "Never Delete" },
+                  ]}
                 />
               </SettingsGroup>
             </SettingsSection>
@@ -716,7 +755,7 @@ function SettingSelect({
   return (
     <SettingRow label={label} description={description} disabled={disabled}>
       <select
-        className="settings-control"
+        className="ui-dropdown settings-control"
         aria-label={label}
         value={value}
         disabled={disabled}

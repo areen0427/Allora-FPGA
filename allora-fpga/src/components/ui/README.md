@@ -29,8 +29,9 @@ Shared styling is imported by `src/App.css`:
   animation and the shared subtle lift, without a changing fill, including inside
   compact groups. Reduced-motion preferences suppress the lift.
 - Add `ui-selection-group` to a paired group when the selected control should
-  retain its theme-aware liquid-glass edge at rest. Use `aria-pressed` or
-  `aria-selected` for state. `ui-glass-control` opts an otherwise flat element
+  retain its theme-aware liquid-glass edge at rest. Selection buttons do not
+  inherit the editable-field focus glow. Use `aria-pressed` or `aria-selected`
+  for state. `ui-glass-control` opts an otherwise flat element
   into that same material; `ui-icon-button` supplies a shared 34px target. Add
   `ui-icon-button-hover` for hover-only liquid-glass edges (Collapse, Add, Import).
   Text controls use `ui-hover-button` for the same material without icon sizing.
@@ -40,6 +41,17 @@ Shared styling is imported by `src/App.css`:
   border, and animation on hover. Shared sizing lives in controls.css; only
   explorer groups retain custom density. Selected text, keyboard focus, and
   reduced-motion preferences remain intact.
+  Editable inputs, textareas, dropdowns, and search controls share the
+  `--ui-radius-pill` shape through the shared control rules. Focused pill
+  fields use the theme-aware outward accent glow in Ice and Black Ice; this
+  applies on pointer and keyboard focus, and excludes buttons and other action
+  controls. Put `ui-search-control` on a composite search wrapper with an icon
+  or clear action. Search controls keep a borderless inner field and show one
+  glow around the whole control, with no inner focus border. Text fields retain
+  their own surfaces and dimensions; dropdown material belongs to the shared dropdown defaults
+  below. A screen may keep a
+  distinct treatment for a non-pill widget or a specifically requested
+  selection, such as the selected board in the Pin Mapping Browser.
   `useAutomaticCompactGroups` also applies this shared variant to three or more
   consecutive visible sibling controls in flex/grid rows, with gaps of at most
   `--ui-compact-auto-distance` (12px). `--ui-compact-auto-min-count` defaults to 3.
@@ -48,8 +60,8 @@ Shared styling is imported by `src/App.css`:
   physical switch controls. `data-ui-compact="off"` opts a container out.
   Two-button groups can still use the explicit variant.
   Pin Mapping resource grids combine compact and selection groups: only
-  assignable entries are buttons, with hover-only borders and a persistent
-  selected edge. Non-clickable entries remain plain data. Keep vertical dividers
+  assignable entries are buttons, with hover-only borders and the shared glass
+  selection edge. Non-clickable entries remain plain data. Keep vertical dividers
   inside multi-column rows, never on the outer left/right edges; add a short
   `ui-control-divider-below` child beneath entries. Single-entry/stacked rows use
   only the separator underneath. Preserve the selected resource after assignment.
@@ -59,6 +71,20 @@ Shared styling is imported by `src/App.css`:
 - Screen styles own layout and size. Use `--ui-accent-text` for accent text,
   `--ui-control-bg` for neutral controls, and `--ui-control-fill` when a select
   needs an arrow layered above its fill. Reserve status colors for actual status.
+- Every native `<select>` and custom `[role="combobox"]` automatically inherits
+  the shared dropdown style, with no class required. Other custom dropdown
+  triggers opt in with `ui-dropdown`; existing uses remain supported.
+  `controls.css` owns the pill shape, shared surface, border, centered chevron,
+  hover, disabled state, and outward accent focus/open glow in both themes.
+  Native macOS appearance is disabled so it cannot replace the shared shape.
+  Pages retain their existing heights, vertical padding, font metrics, and
+  widths; avoid page-specific dropdown material. Dropdowns are excluded from
+  compact action-button grouping and button-glass layers.
+  Composer dropdowns combine `ui-dropdown ui-hover-button`: the shared hover
+  control owns transparent idle material and the glass hover edge; dropdown
+  rules retain the pill radius and focus/open glow. Avoid separate page-level
+  idle surface overrides. Composer dropdowns hide both shared chevron layers
+  with `--ui-dropdown-chevron-start/end: none` and use symmetric padding.
 - Neutral text and icons use `--ui-text`, `--ui-text-muted`, or
   `--ui-text-soft`; active navigation and accents use `--ui-accent-text`.
   Black Ice uses near-white text and a pale, low-saturation blue accent.

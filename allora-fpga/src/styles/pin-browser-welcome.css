@@ -2,6 +2,7 @@
 #root .welcome-page:has(.pin-browser-shell) .welcome-main {
   padding-top: 22px;
   padding-bottom: 24px;
+  padding-inline: 24px;
   min-height: 0;
 }
 #root .welcome-page:has(.pin-browser-shell) {
@@ -10,7 +11,7 @@
   overflow: hidden;
 }
 #root .pin-browser-shell {
-  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+  grid-template-columns: clamp(290px, 24%, 368px) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   height: calc(100dvh - 46px);
   min-height: 520px;
@@ -48,7 +49,10 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 0;
+  /* Keep row geometry flush with the sidebar while giving selected-row halos
+     room inside the scrollport instead of clipping them at its edges. */
+  margin: -16px;
+  padding: 16px;
 }
 #root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item {
   display: flex;
@@ -57,6 +61,10 @@
   align-items: flex-start;
   justify-content: center;
   text-align: left;
+}
+#root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item[aria-pressed="true"] {
+  border-color: transparent !important;
+  box-shadow: var(--ui-accent-glow), var(--ui-control-shadow) !important;
 }
 #root .pin-browser-sidebar > .pin-board-list.ui-button-group > button.pin-board-item::before {
   content: none;
@@ -72,9 +80,12 @@
   overflow-wrap: anywhere;
 }
 
+/* The shell owns the page inset. Keep content flush with the board search
+   and list rather than applying a second inset inside the work column. */
 #root .pin-detail-panel {
-  padding: var(--ui-workspace-inset, 20px);
+  padding: 0;
   gap: var(--ui-panel-inset, 14px);
+  overflow: visible;
 }
 
 .pin-variant-mapping-note {
@@ -246,25 +257,25 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border: 1px solid var(--ui-border-control);
-  border-radius: var(--ui-radius-sm);
+  border: 1px solid transparent;
   background: var(--ui-control-bg);
   color: var(--ui-text-muted);
-  box-shadow: var(--ui-inset-highlight);
+  box-shadow: none;
 }
 .pin-catalog-search { width: min(460px, 100%); }
 #root .board-search-field.pin-browser-search {
-  border-radius: 999px;
   transition: var(--ui-control-transition);
 }
 #root :is(.board-search-field.pin-browser-search, .pin-catalog-search, .pin-output-search):focus-within {
-  border-color: var(--ui-border-hover);
-  box-shadow: var(--ui-focus-ring), var(--ui-inset-highlight);
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: var(--ui-accent-glow) !important;
 }
 #root :is(.board-search-field.pin-browser-search, .pin-catalog-search, .pin-output-search) > input:focus-visible {
   outline: none !important;
   outline-offset: 0;
-  box-shadow: none;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 .pin-catalog-search input,
 .pin-output-search input {
@@ -294,7 +305,6 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
 
 .pin-catalog-pad-card,
 .pin-board-identity-card,
-.pin-output-assignment-panel,
 .pin-output-pad-panel {
   min-width: 0;
   border: 1px solid var(--ui-border-subtle);
@@ -432,42 +442,64 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
 .pin-board-verification-notes { margin: 0; padding: 0 var(--ui-panel-inset, 14px) var(--ui-panel-inset, 14px) 30px; color: var(--ui-warning-text); font-size: 12px; line-height: 1.5; }
 .pin-board-data-view > .board-resource-summary { margin-top: 12px; }
 
-.pin-output-workspace { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.pin-output-workspace { display: flex; flex-direction: column; gap: 12px; overflow: visible; }
 .pin-output-workspace[hidden] { display: none !important; }
 .pin-output-toolbar { flex: 0 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .pin-output-create-form,
 .pin-output-actions,
 .pin-output-counts { min-width: 0; display: flex; align-items: flex-end; gap: 8px; }
 .pin-output-form-field { min-width: 160px; display: flex; flex-direction: column; gap: 5px; color: var(--ui-text-muted); font-size: 10px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
-.pin-output-form-field input { width: 100%; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--ui-border-control); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-text); font: inherit; font-size: 12px; font-weight: 650; text-transform: none; box-shadow: var(--ui-inset-highlight); }
-#root .pin-detail-panel .pin-output-form-field input:focus { outline: none; border-color: var(--ui-border-hover); box-shadow: var(--ui-focus-ring), var(--ui-inset-highlight); }
+.pin-output-form-field :is(input, select) { width: 100%; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--ui-border-control); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-text); font: inherit; font-size: 12px; font-weight: 650; text-transform: none; box-shadow: none; }
+#root .pin-detail-panel .pin-output-form-field :is(input, select):focus {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: var(--ui-accent-glow) !important;
+}
 .pin-output-width-field { min-width: 80px; width: 80px; }
 .pin-output-primary-button { flex: 0 0 auto; white-space: nowrap; }
 .pin-output-counts { align-self: center; color: var(--ui-text-muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
 .pin-output-counts span + span { padding-left: 8px; border-left: 1px solid var(--ui-border-control); }
 .pin-output-workspace-grid { flex: 1 1 0; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(220px, .8fr); gap: 14px; }
 .pin-output-assignment-panel,
-.pin-output-pad-panel { padding: var(--ui-panel-inset, 14px); display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.pin-output-pad-panel { min-width: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.pin-output-assignment-panel { padding: 0; }
+.pin-output-pad-panel { padding: var(--ui-panel-inset, 14px); }
 .pin-output-panel-heading > div { min-width: 0; }
+.pin-output-assignment-panel > .pin-output-panel-heading { flex-wrap: wrap; }
+.pin-output-assignment-panel > .pin-output-panel-heading > div:first-child { flex: 1 1 180px; }
+.pin-output-import-control { margin-left: auto; flex: 0 0 auto; }
 .pin-output-panel-heading h3 { margin: 0; color: var(--ui-text); font-size: 14px; font-weight: 850; }
 .pin-output-panel-heading p { margin: 3px 0 0; color: var(--ui-text-muted); font-size: 11px; line-height: 1.35; }
-.pin-output-table-scroll { min-width: 0; min-height: 0; flex: 1 1 0; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--ui-border-subtle); border-radius: var(--ui-radius-sm); }
-.pin-output-table { width: 100%; border-collapse: collapse; color: var(--ui-text); font-size: 11px; }
-.pin-output-table th { position: sticky; top: 0; z-index: 1; padding: 9px 8px; background: var(--ui-control-bg); color: var(--ui-text-muted); font-size: 9px; font-weight: 900; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
-.pin-output-table td { padding: 8px; border-top: 1px solid var(--ui-border-subtle); vertical-align: middle; }
+.pin-output-table-scroll { min-width: 0; min-height: 0; flex: 1 1 0; overflow: auto; overscroll-behavior: contain; border: 0; border-radius: var(--ui-radius-sm); }
+.pin-output-table { width: 100%; border-collapse: separate; border-spacing: 0; color: var(--ui-text); font-size: 11px; }
+.pin-output-table th { position: sticky; top: 0; z-index: 1; padding: 9px 8px; background: var(--ui-control-solid); color: var(--ui-text-soft); font-size: 9px; font-weight: 750; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.pin-output-table td { padding: 8px; border: 0; vertical-align: middle; }
+.pin-output-table :is(th, td):first-child { border-top-left-radius: var(--ui-radius-sm); border-bottom-left-radius: var(--ui-radius-sm); }
+.pin-output-table :is(th, td):last-child { border-top-right-radius: var(--ui-radius-sm); border-bottom-right-radius: var(--ui-radius-sm); }
+.pin-output-table .pin-output-group-start:not(:first-child) td { border-top: 1px solid var(--ui-border-subtle); padding-top: 14px; }
 .pin-output-table tbody tr.ui-selectable-row { cursor: pointer; }
 .pin-output-table tbody tr { scroll-margin-top: 36px; }
 .pin-output-table tbody tr.ui-selectable-row:not(.selected):hover td { background: color-mix(in srgb, var(--ui-control-hover-bg) 55%, transparent); }
 .pin-output-table tbody tr.ui-selectable-row.selected td { background: color-mix(in srgb, var(--ui-control-active-bg) 62%, transparent); }
 .pin-output-port-name { border: 0; background: transparent; box-shadow: none; color: var(--ui-text); font: inherit; font-weight: 850; }
+.pin-output-bus-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pin-output-bus-width { color: var(--ui-text-soft); font-size: 9px; font-weight: 600; white-space: nowrap; }
+.pin-output-port-name.pin-output-bus-bit { position: relative; display: block; padding-left: 24px; font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ui-text-muted); }
+.pin-output-bus-bit::before { content: ""; position: absolute; left: 6px; top: -7px; width: 10px; height: calc(50% + 7px); border-left: 1px solid var(--ui-border-control); border-bottom: 1px solid var(--ui-border-control); border-bottom-left-radius: 4px; }
+.pin-output-table tr.selected .pin-output-bus-bit { color: var(--ui-accent-text); }
+.pin-output-table tr.selected .pin-output-bus-bit::before { border-color: var(--ui-accent-text); }
 .pin-output-direction { color: var(--ui-text-muted); font-weight: 750; }
+.pin-output-assignment { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
+#root .pin-output-assignment-clear { flex: 0 0 auto; opacity: 0; pointer-events: none; }
+#root .pin-output-assignment:is(:hover, :focus-within) > .pin-output-assignment-clear { opacity: 1; pointer-events: auto; }
 .pin-output-assigned-pin { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .pin-output-assigned-pin strong { color: var(--ui-text); font-size: 11px; font-weight: 850; }
 .pin-output-assigned-pin span,
 .pin-output-unassigned { color: var(--ui-text-muted); font-size: 10px; overflow-wrap: anywhere; }
-.pin-output-status { display: inline-flex; padding: 4px 7px; border-radius: 999px; font-size: 9px; font-weight: 900; white-space: nowrap; }
-.pin-output-status.mapped { background: var(--ui-success-bg, rgba(34, 197, 94, .12)); color: var(--ui-success-text, #15803d); }
-.pin-output-status.unmapped { background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.pin-output-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.pin-output-status::before { content: ""; width: 4px; height: 4px; flex: 0 0 auto; border-radius: 50%; background: currentColor; }
+.pin-output-status.mapped { color: var(--ui-success-text); }
+.pin-output-status.unmapped { color: var(--ui-text-soft); }
 .pin-output-row-actions { display: flex; align-items: center; justify-content: flex-end; white-space: nowrap; }
 .pin-output-text-action,
 .pin-output-icon-action { color: var(--ui-text-muted); cursor: pointer; }
@@ -545,7 +577,15 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
   .pin-catalog-alias-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .pin-catalog-alias-detail { padding-left: 0; }
   .pin-board-identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pin-output-workspace { overflow-x: hidden; overflow-y: auto; }
+  .pin-output-workspace {
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* This is a scroll surface on compact layouts. Expand its transparent
+       scrollport around the unchanged content so focused fields keep their
+       outward glow visible. */
+    margin: -16px;
+    padding: 16px;
+  }
   .pin-output-create-form { align-items: stretch; }
   .pin-output-form-field { flex: 1 1 160px; }
   .pin-output-width-field { flex: 0 0 80px; }
@@ -557,7 +597,6 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
 }
 
 @container pin-workspace (max-width: 480px) {
-  #root .pin-detail-panel { padding: 12px; }
   #root .pin-browser-view-toggle { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
   #root .pin-browser-view-toggle > button { min-width: 0; flex-direction: column; padding-inline: 4px; font-size: 11px; white-space: normal; }
   .pin-detail-header > div:first-child { min-width: 0; overflow-wrap: anywhere; }
@@ -566,8 +605,11 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
   .pin-output-panel-heading { flex-wrap: wrap; }
   .pin-output-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .pin-output-table tbody { display: grid; }
-  .pin-output-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px; border-top: 1px solid var(--ui-border-subtle); scroll-margin-top: 0; }
+  .pin-output-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px; border: 0; border-radius: var(--ui-radius-sm); scroll-margin-top: 0; }
   .pin-output-table td { min-width: 0; padding: 4px; border: 0; overflow-wrap: anywhere; }
+  .pin-output-table td:is(:first-child, :last-child) { border-radius: 0; }
+  .pin-output-table .pin-output-group-start:not(:first-child) { border-top: 1px solid var(--ui-border-subtle); margin-top: 4px; padding-top: 12px; }
+  .pin-output-table .pin-output-group-start:not(:first-child) td { border: 0; padding-top: 4px; }
   .pin-output-table td:nth-child(-n + 3) { grid-column: 1; }
   .pin-output-table td:nth-child(4) { grid-column: 2; grid-row: 1; }
   .pin-output-table td:nth-child(5) { grid-column: 2; grid-row: 2 / span 2; align-self: end; }
@@ -577,5 +619,38 @@ html[data-reduce-motion="true"] #root .pin-variant-popup.glass-unfold {
 }
 
 @media (max-width: 600px) {
-  #root .welcome-page:has(.pin-browser-shell) .welcome-main { padding-inline: 12px; }
+  /* The 16px inset is matched by the scrollport's -16px margins below, so the
+     focus halos stay fully inside the viewport without shifting content. */
+  #root .welcome-page:has(.pin-browser-shell) .welcome-main { padding-inline: 16px; }
+  #root .pin-browser-sidebar > .pin-board-list.ui-button-group {
+    margin: -16px;
+    padding: 16px;
+  }
+  .pin-output-workspace {
+    margin: -16px;
+    padding: 16px;
+  }
 }
+
+.welcome-product-info.pin-output-import-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 16px;
+  transform-origin: top left;
+}
+.pin-output-import-popup h3 { margin: 0; font-size: 16px; }
+.pin-output-import-popup p { color: var(--ui-text-muted); font-size: 13px; }
+.pin-output-import-popup small { display: block; color: var(--ui-text-soft); margin-block: 8px; overflow-wrap: anywhere; }
+.pin-output-import-popup .pin-output-form-field { margin-block: 12px; }
+.pin-output-import-popup select { width: 100%; min-width: 0; }
+.pin-output-import-actions { display: flex; flex-wrap: wrap; align-items: center; margin-block: 12px; }
+.pin-output-import-actions label { position: relative; overflow: hidden; }
+.pin-output-import-actions input[type="file"] { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.pin-output-import-actions label:focus-within { outline: 2px solid var(--ui-accent-text); outline-offset: 2px; }
+.pin-output-import-list { list-style: none; padding: 0; max-height: 190px; overflow: auto; font-size: 13px; }
+.pin-output-import-list li { display: flex; justify-content: space-between; gap: 12px; padding-block: 5px; overflow-wrap: anywhere; }
+.pin-output-import-list span { color: var(--ui-text-muted); flex-shrink: 0; }
+.pin-output-import-popup .pin-output-import-error { color: var(--ui-error-text); }

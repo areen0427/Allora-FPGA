@@ -58,8 +58,7 @@ html[data-theme="black-ice"] .allora-chat {
   cursor: not-allowed;
   opacity: 0.55;
 }
-.allora-chat button:focus-visible,
-.allora-chat textarea:focus-visible {
+.allora-chat button:focus-visible {
   outline: 2px solid var(--chat-accent);
   outline-offset: 3px;
 }
@@ -610,6 +609,10 @@ html[data-theme="ice"] .chat-composer {
   color: var(--chat-muted);
 }
 .chat-composer-bottom {
+  /* Composer dropdowns use shared hover material, without chevrons. */
+  --ui-dropdown-chevron-start: none;
+  --ui-dropdown-chevron-end: none;
+  --ui-dropdown-padding-end: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -840,8 +843,8 @@ html[data-reduce-motion="true"] .chat-thinking i {
   background: var(--ui-primary-hover-bg);
   transform: var(--ui-lift-subtle);
 }
-.chat-composer:focus-within {
-  box-shadow: var(--ui-focus-ring), var(--chat-shadow);
+#root .allora-chat .chat-composer:focus-within {
+  box-shadow: var(--ui-accent-glow), var(--chat-shadow) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .allora-chat button {
@@ -863,6 +866,11 @@ html .allora-chat .chat-composer textarea {
   color: var(--chat-text) !important;
 }
 
+/* The composer is a single rounded field surface; keep its halo on the shell. */
+#root .allora-chat .chat-composer textarea:focus {
+  box-shadow: none !important;
+}
+
 .chat-composer-controls, .chat-model-controls {
   display: flex;
   align-items: center;
@@ -878,15 +886,10 @@ html .allora-chat .chat-composer textarea {
   min-height: 36px;
   max-width: 220px;
   padding: 8px 11px;
-  border: 1px solid var(--chat-border);
-  border-radius: var(--ui-radius-sm);
-  background: var(--chat-soft);
   font-size: 12px !important;
-  box-shadow: var(--chat-shadow);
 }
 .chat-model-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-model-trigger svg { flex-shrink: 0; color: var(--chat-muted); }
-.chat-model-trigger:hover:not(:disabled) { border-color: var(--chat-accent); }
 .chat-model-popup {
   position: fixed;
   margin: 0;
@@ -1032,6 +1035,10 @@ html[data-theme="black-ice"] .chat-vibecode { --chat-grid: rgba(148, 197, 255, .
   font: inherit;
   font-size: 12px;
 }
+.chat-history-rename input:focus {
+  outline: none;
+  box-shadow: var(--ui-accent-glow);
+}
 @media (hover: none) { .chat-history-menu-button { opacity: 1; } }
 
 .chat-provider-select { position: relative; }
@@ -1055,23 +1062,6 @@ html[data-theme="black-ice"] .chat-vibecode { --chat-grid: rgba(148, 197, 255, .
 .chat-provider-option small { font-size: 11px; line-height: 1.5; color: var(--chat-muted); }
 .chat-provider-option:hover, .chat-provider-option.selected { background: var(--chat-soft); border-color: var(--chat-border); }
 .chat-provider-option > svg { color: var(--chat-accent); flex-shrink: 0; }
-
-/* Composer options share one surface; glass edges appear on interaction. */
-.chat-composer-bottom .chat-model-trigger {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  animation: none;
-}
-.chat-composer-bottom .chat-model-trigger::before,
-.chat-composer-bottom .chat-model-trigger::after { opacity: 0; }
-.chat-composer-bottom .chat-model-trigger:is(:hover, :focus-visible):not(:disabled) {
-  background: var(--ui-control-hover-bg) !important;
-  box-shadow: var(--ui-hover-shadow) !important;
-}
-.chat-composer-bottom .chat-model-trigger:is(:hover, :focus-visible):not(:disabled)::before,
-.chat-composer-bottom .chat-model-trigger:is(:hover, :focus-visible):not(:disabled)::after { opacity: 1; }
-.chat-composer-bottom .chat-model-trigger:focus-visible::after { --allora-glass-angle: -115deg; }
 
 .chat-model-popup:popover-open,
 .chat-reasoning-popup {
@@ -1277,6 +1267,7 @@ html[data-reduce-motion="true"] .chat-ultra-wisps { display: none; }
 .chat-context-picker label { display: flex; align-items: center; gap: 8px; color: var(--chat-muted); font-size: 11px; }
 .chat-context-picker textarea { width: 100%; min-height: 84px; max-height: 180px; resize: vertical; padding: 10px; background: var(--chat-soft); border: 1px solid var(--chat-border); border-radius: 8px; color: var(--chat-text); font: 12px var(--font-code); }
 .chat-context-picker button, .chat-context-picker select { padding: 6px 10px; border: 1px solid var(--chat-border); border-radius: 7px; background: var(--chat-surface); color: var(--chat-text); font-size: 11px; }
+.chat-context-picker textarea:focus-visible { outline: none; box-shadow: var(--ui-accent-glow); }
 
 /* History sits above live task activity; five rows, ten recent entries. */
 .allora-chat .chat-sidebar {

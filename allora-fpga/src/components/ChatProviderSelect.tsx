@@ -91,7 +91,7 @@ export default function ChatProviderSelect(props: Props) {
 
   return (
     <div className="chat-provider-select" ref={root}>
-      <button ref={trigger} type="button" className="chat-model-trigger chat-provider-trigger"
+      <button ref={trigger} type="button" className="ui-dropdown ui-hover-button chat-model-trigger chat-provider-trigger"
         disabled={props.disabled} aria-label="Choose provider" aria-haspopup="dialog"
         aria-expanded={open && !props.disabled} aria-controls={popupId}
         onClick={() => setOpen((value) => !value)}>

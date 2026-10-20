@@ -2,6 +2,74 @@
 
 This is the living handoff for future development sessions. Update it after every codebase change so the next contributor can continue without reconstructing architectural decisions.
 
+## 2026-10-20 — Pill-field focus glow audit
+
+- Restricted the shared accent glow to focused pill-shaped editable fields (text/number inputs, textareas, selects, and search controls), for both pointer and keyboard focus. Composite search wrappers own one outward glow; nested fields remain borderless and shadowless while focused. Ice and Black Ice use the shared theme tokens.
+- Removed the accent glow from generic `ui-selection-group` and `ui-quiet-selection-group` buttons so tabs, toggles, and action buttons retain their existing glass selection treatment. The Pin Mapping Browser's selected board keeps a screen-specific glow as previously requested.
+- Audited Welcome/Pin Mapper, project workspace/Synthesis, Register Builder, setup, Settings, GitHub forms, Chat, Virtual FPGA, Memory Asset Studio, Peripheral Workbench, Serial Monitor, and the schematic viewer. Removed duplicate local field rings where the shared glow applies, kept independent button keyboard outlines, and added clearance where scroll or workspace clipping could cut off the glow.
+- Browser check switched between Ice and Black Ice, focused and filtered the board search, selected a board, and opened Map Outputs. No screenshots or videos were captured or sent, per the user's text-only preference; other workspace pages and responsive sizes were audited in code, not visually claimed as verified here.
+- Validation: `npm test` (229 passed, 0 failed, 0 skipped), `npm run lint`, `npm run build`, and `git diff --check` pass. The build reports the existing nonblocking IIFE-name and large-chunk advisories.
+
+## 2026-10-19 — Shared pill shape for editable controls
+
+- Added one shared `--ui-radius-pill` geometry to the central control group for editable text/number inputs, textareas, selects, and composite search wrappers. Button-like inputs, checkboxes, radios, sliders, files, and color pickers are excluded.
+- The rule changes corner radius only, preserving each control's border visibility, surface, hover/focus behavior, width, and height. Documented the shared pattern in the UI guide and current context.
+- Validation: not run; no tests or build were requested.
+
+## 2026-10-19 — Flush Pin Mapper content edges
+
+- Removed the detail panel’s second 20px inset (and its narrow-screen padding override). The shared shell still owns the 24px desktop/12px phone outer side margins; visible work content now reaches the shell’s right edge instead of stopping another 20px inside it.
+- The board search/list and work panel already occupy the same full-height grid row. Removing inner top/bottom padding increases usable work height by 40px, aligning the work header with the search top and the work content’s bottom with the board-list viewport’s bottom on side-by-side layouts. Narrow layouts keep their existing stacked flow.
+- Validation: production TypeScript/Vite build and whitespace checks pass. No native changes.
+
+## 2026-10-19 — Full-width Pin Mapper workspace
+
+- Removed Welcome Pin Mapper’s centered 1680px content cap and matched its outer side spacing to the regular project workspace’s 24px inset. Existing 12px phone spacing remains.
+- Made the board column fluid within 290–368px; the work canvas takes the remaining width, and its assignment/pad columns retain their shared fractional split. Headings, tabs, toolbars and the table-aligned Import control follow the expanded columns naturally. Existing stacked/container-query layouts remain active at narrow widths.
+- Validation: production TypeScript/Vite build, targeted ESLint and whitespace checks pass. No native changes.
+
+## 2026-10-19 — Import aligned with assignments
+
+- Added the Import design hover description: “Import Top Level Design File or Vivado Project”.
+- Moved Import design into the Output assignments heading and aligned its trailing edge with the assignment table, including when the heading wraps on narrow layouts. The import review remains anchored to its trigger.
+- Import supports top-level `.v`/`.sv`/`.vhd`/`.vhdl` files and desktop Vivado `.xpr` projects; it reads output declarations and bus ranges for manual assignment, not a conversion of the project into Allora.
+- Validation: production build, targeted ESLint and whitespace checks pass.
+
+## 2026-10-19 — Rounded assignment row highlights
+
+- Corrected the rounding restoration: the scroll container radius alone did not round interior row fills. The borderless assignment table now uses separate cell borders with zero spacing and rounded first/last cells, so hover/selection highlights and header ends have rounded edges. Narrow stacked records round the row itself.
+- Retained the open section, absent table border, bus branch styling and existing controls. Validation: production build and whitespace checks pass.
+
+## 2026-10-19 — Minimal assignment list and bus branches
+
+- Removed the remaining assignment-table frame. Restored the scroll container’s shared rounded corners at the user’s request, keeping the border absent. Rows now share an open canvas, with subtle separators only between distinct declarations instead of between every bus bit.
+- Bus parent labels include a quiet bit count. Children show compact `[index]` labels with curved branch guides and an accent on the selected bit; their full HDL port names remain available to assistive technology. Existing row navigation, assignment-hover Clear and first-row declaration Delete behavior are preserved.
+- Replaced filled status badges with small dots and text using shared semantic/theme tokens. The pad sidebar remains the framed supporting panel.
+- Validation: production TypeScript/Vite build, targeted ESLint and whitespace checks pass. ADE browser exercised the production Pin Mapper in the existing board-resource fixture with a three-bit bus, both themes and 1440/390px viewports. No pictures/videos were sent or filed; no native changes.
+
+## 2026-10-19 — Open Output assignments workspace
+
+- Removed the outer Output assignments frame, glass fill, shadow and inset padding. It now uses the shared open `ui-workspace-section` treatment, aligning its heading and assignment content with the work canvas.
+- Kept the rounded border around the assignment table and the framed available-pad sidebar. Assignment controls, bus hierarchy and responsive layout are unchanged.
+- Validation: production TypeScript/Vite build, targeted ESLint and whitespace checks passed. No visual capture or native changes.
+
+## 2026-10-19 — Assignment-local Clear action
+
+- Moved each mapped output bit's Clear action beside its assignment name. It is invisible until the assignment is hovered or a control inside it receives keyboard focus; the reserved space avoids layout shifts. Clear still removes only that bit's assignment and preserves row selection.
+- Bus names now appear as parent labels, with each bit indented in smaller, muted text below; scalar labels stay unchanged. Delete remains in the row's existing action column, once per declaration on its first bit. Deleting a bus removes all its bits and assignments; subsequent bit rows intentionally have no Delete control.
+- Recorded the user's preference for text-only chat responses in `AGENTS.md` (no pictures/videos).
+- Validation: production TypeScript/Vite build, targeted ESLint and whitespace checks passed. No new native behavior or visual capture.
+
+## 2026-10-19 — Pin Mapper HDL and Vivado import
+
+- Implemented the Pin Mapper follow-up in Welcome → Map Outputs. Import design accepts Verilog/SystemVerilog/VHDL files and desktop Vivado `.xpr` projects, offers an explicit top-level module/entity choice when needed, previews output declarations/ranges, and adds reviewed outputs to the existing mapper. Manual mapping and board-specific exports remain the workflow; no AI assignment or Board Migration Assistant was added.
+- The new bounded parser handles ANSI/non-ANSI Verilog, VHDL entities, grouped declarations and integer parameter/generic defaults with basic arithmetic. Explicit bus indices survive ascending, nonzero and one-bit vector ranges. Unsupported/unresolved output declarations fail the selected top rather than silently guessing widths or importing a partial interface. Existing declarations/assignments are preserved on duplicates; accepting new outputs invalidates prepared downloads.
+- Vivado XML import uses its design source set and TopModule, resolves project/source/generated directory variables and relative paths, excludes disabled/simulation-only sources, and reports IP/block-design limitations. A typed, asynchronous, read-only native command reads allowlisted UTF-8 files with 2 MiB/file, 16 MiB/request and 256-file limits. It runs no Tcl, project hooks or IP generators. Existing generated wrappers can be read; missing wrappers/files and unsupported path variables produce diagnostics. XDC assignments are not imported.
+- The review uses the shared Product Information glass/unfold treatment, trigger anchoring, viewport bounds, outside-click/Escape dismissal and shared reduced-motion policy. Closing/hiding it cancels pending UI results. The project workspace mapper and its existing parser are unchanged.
+- Validation: 229 frontend tests pass; full ESLint and production TypeScript/Vite build pass with existing nonblocking bundle advisories. Final native suite passes 97 tests with four ignored using `cargo test --locked --lib -- --test-threads=1`, including both new import tests. An earlier parallel run hit the existing diagnostics-bridge shutdown assertion; that test passed alone and in the final serial run. The browser XML fixture passes 15 checks (native responses there are explicitly in memory); native tests separately read actual `.xpr`/HDL fixture files and exercise file/total limits. ADE browser verified actual Welcome import/top selection, preserved `[9:8]` output indices, three manual assignments, prepared XDC download, duplicate preservation, Escape, tab retention, Ice/Black Ice and 1440/390px layouts. The earlier screenshot was removed after the subsequent assignment-action layout change.
+- Limits: declaration parsing, not full HDL elaboration. Preprocessed interfaces, complex constant functions/types, multidimensional/unpacked outputs and VHDL package-dependent types require a simplified top-level file. No packaged native file-picker UI, Vivado/vendor build or physical hardware test was performed. See `docs/PIN_MAPPER_IMPORT.md` for supported syntax, limits and repeatable checks.
+- Removed the completed Pin Mapper follow-up from the future-work block. Board Migration Assistant remains planned and unchanged below.
+
 ## 2026-10-19 — Fixed five Pin Mapper verification findings
 
 - Map Outputs is lazily mounted on its first visit and retained while hidden during Board Data/Pin Catalog visits. Draft declarations, assignments, selection, searches, unfinished fields and the prepared constraint download survive those tab changes. Changing boards still resets the board-specific mapper.
@@ -1637,3 +1705,34 @@ Next:
 ### 2026-10-14 — Remove composer attachment control
 - Removed the paperclip/context attachment button and its manual context picker from the chat text bar, plus unused picker state/helpers. Existing automatic project error memory and externally queued context handling remain. Updated the composer regression to assert no attachment control/picker. All 16 focused chat interaction tests and whitespace checks passed.
 - Build and repository lint passed; existing nonblocking bundle advisories remain.
+
+
+### 2026-10-20 — Shared dropdown control styling
+- Audited all 38 native select definitions and four custom chat dropdown triggers (provider, model, reasoning, usage). Every one now carries `ui-dropdown`; `controls.css` owns their shared pill geometry, surface, border, centered chevron, hover, disabled state, and outward focus/open glow. Native macOS appearance is disabled so WebKit renders the shared radius.
+- Existing heights, vertical padding, font metrics, widths, values, and event handlers stay with their owning screens. Dropdowns are excluded from automatic and authored compact action-button grouping and button-glass pseudo layers. Removed redundant project/synthesis arrows, Settings select overrides, and chat trigger surface overrides. Updated the shared UI rules.
+- Inspected the actual debug Tauri app on this lane's private Mac Desktop, including Settings/retention in Ice and Black Ice, project setup, Synthesis, Testbench, Simple/Advanced Pin Mapping, Register Builder, Peripheral Workbench, Virtual FPGA, Serial Monitor, and chat selectors. Verified the retention menu options and focus glow and the chat reasoning open glow. Asset-dependent Memory Studio/viewer/GitHub states were audited in source; no source imports, builds, programming, serial connection, or model messages were triggered through the UI. Restored Black Ice after the theme check.
+- All 229 frontend tests passed. After the final CSS cleanup and Usage trigger migration, the nine focused chat/control/theme tests, repository lint, production build, and whitespace check passed. Existing Vite IIFE-name and bundle-size advisories remain.
+- The audit app remains on the private screen, launched through an ignored wrapper under `.ade/cache/dropdown-audit` pointing at the existing debug binary and dev server. No images or videos were sent in chat.
+
+### 2026-10-20 — Automatic dropdown defaults
+- Native `select` elements and semantic `[role="combobox"]` controls now inherit the shared dropdown material and glow automatically, without requiring `ui-dropdown`. The class remains supported for other custom popup triggers. Existing screen-owned heights and widths remain intact.
+- Semantic combobox buttons are excluded from compact action grouping and decorative button layers. Updated CONTEXT and the shared UI guide to make automatic styling the rule for future controls.
+- Repository lint, production build, and whitespace checks passed; existing bundle advisories remain.
+
+### 2026-10-20 — Restore quiet composer dropdown borders
+- Shared dropdown defaults now expose idle-border, hover-border, and idle-shadow variables. The chat composer sets these to transparent/none, preserving its borderless resting and hover states while focus/open still gets the shared border and glow. All controls remain in the shared dropdown styling family with their existing heights.
+- Confirmed the idle composer controls and open reasoning selector visually in the native app on the lane's private Mac Desktop. No selection values or messages changed. Production build and whitespace checks passed; existing bundle advisories remain.
+
+### 2026-10-20 — Remove remaining composer pill silhouette
+- The previous transparent border still left an opaque gradient fill, which produced the edge the user reported. Composer dropdowns now also set the shared idle background/fill to transparent, keeping text and chevrons visible. Focus/open restores the shared dropdown fill, border, and glow. Other dropdown defaults and all heights stay intact.
+- Visually checked the idle native composer on the private Mac Desktop. Production build and whitespace checks passed; existing bundle advisories remain.
+
+### 2026-10-20 — Hide composer dropdown chevrons
+- Chat text bar dropdowns now hide both shared CSS chevron layers in every state and use symmetric horizontal padding. Other dropdowns keep their arrows; shared focus/open styling and control heights remain intact.
+
+### 2026-10-20 — Composer dropdown hover border
+- Restored the shared hover border for chat text bar dropdowns. Idle remains transparent; focus/open keeps the shared glow. Chevrons remain hidden and heights unchanged.
+
+### 2026-10-20 — Composer dropdowns join shared hover controls
+- Provider, model, reasoning, and usage triggers now combine `ui-dropdown ui-hover-button`. Removed composer-specific idle surface overrides so the existing hover control supplies transparent idle material and the glass hover edge. Shared dropdown rules retain pill geometry, existing heights, and focus/open glow; chevrons remain hidden.
+- Dropdowns using the hover variant may render its shared glass pseudo layers; ordinary dropdowns still suppress these layers. Production build and whitespace checks passed; existing bundle advisories remain. No new visual check this update.

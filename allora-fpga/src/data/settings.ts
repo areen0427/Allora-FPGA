@@ -1,12 +1,20 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 const LAST_PROJECT_PARENT_KEY = "allora-fpga-last-project-parent";
-const SETTINGS_VERSION = 6;
+const SETTINGS_VERSION = 7;
 
 export type AppSettings = {
   theme: "ice" | "black-ice";
   background: "molecules" | "ultramatte" | "trace";
   startupView: "home" | "last-project";
   restorePreviousSession: boolean;
+  chatHistoryRetention:
+    | "1-week"
+    | "2-weeks"
+    | "1-month"
+    | "3-months"
+    | "6-months"
+    | "1-year"
+    | "never-delete";
   reduceMotion: boolean;
   editorFontSize: number;
   editorTabSize: number;
@@ -31,6 +39,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   background: "trace",
   startupView: "home",
   restorePreviousSession: true,
+  chatHistoryRetention: "never-delete",
   reduceMotion: false,
   editorFontSize: 15,
   editorTabSize: 2,
@@ -66,10 +75,14 @@ export function getSettings(): AppSettings {
 }
 
 export function saveSettings(settings: AppSettings) {
-  window.localStorage.setItem(
-    SETTINGS_KEY,
-    JSON.stringify({ version: SETTINGS_VERSION, settings }),
-  );
+  try {
+    window.localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({ version: SETTINGS_VERSION, settings }),
+    );
+  } catch {
+    // Storage can be unavailable or full; keep the current app session usable.
+  }
 }
 
 function sanitizeSettings(value: unknown): AppSettings {
@@ -89,6 +102,17 @@ function sanitizeSettings(value: unknown): AppSettings {
       typeof value.restorePreviousSession === "boolean"
         ? value.restorePreviousSession
         : DEFAULT_SETTINGS.restorePreviousSession,
+    chatHistoryRetention: isOneOf(value.chatHistoryRetention, [
+      "1-week",
+      "2-weeks",
+      "1-month",
+      "3-months",
+      "6-months",
+      "1-year",
+      "never-delete",
+    ])
+      ? value.chatHistoryRetention
+      : DEFAULT_SETTINGS.chatHistoryRetention,
     reduceMotion:
       typeof value.reduceMotion === "boolean"
         ? value.reduceMotion

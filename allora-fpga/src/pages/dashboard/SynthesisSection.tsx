@@ -207,7 +207,7 @@ export default function SynthesisSection({
         minWidth: 0,
         height: "100%",
         minHeight: 0,
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       <InfoCard
@@ -219,7 +219,7 @@ export default function SynthesisSection({
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
 
@@ -229,7 +229,7 @@ export default function SynthesisSection({
           <label className="synthesis-top-level-field">
             <span>Top level</span>
             <select
-              className="synthesis-top-level-select"
+              className="ui-dropdown synthesis-top-level-select"
               value={topLevelFileName ?? ""}
               onChange={(event) =>
                 onTopLevelFileNameChange(event.target.value || null)

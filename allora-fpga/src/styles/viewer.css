@@ -652,7 +652,8 @@
 }
 .explorer-tools {
   flex: 1;
-  padding: 0;
+  /* Keep focused pill-control glows inside the clipped viewer top edge. */
+  padding: 4px 0 0;
   border: 0;
   background: transparent;
   gap: 8px 0;

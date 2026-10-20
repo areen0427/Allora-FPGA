@@ -482,7 +482,7 @@ function SimplePinMapper({
                 {port.direction}
               </div>
 
-              <select
+              <select className="ui-dropdown"
                 aria-label={`Board pin for ${port.name}`}
                 value={selectedPin}
                 onChange={(event) =>
@@ -635,7 +635,7 @@ function ResourcePinMapper({
               background: "var(--ui-surface)",
             }}
           >
-            <select
+            <select className="ui-dropdown"
               aria-label="Port to assign"
               value={selectedPort?.name ?? ""}
               onChange={(event) => setSelectedPortName(event.target.value)}
@@ -659,10 +659,8 @@ function ResourcePinMapper({
             </select>
 
             <label
-              style={{
-                minWidth: 0,
-                display: "block",
-              }}
+              className="ui-search-control"
+              style={{ minWidth: 0, display: "block" }}
             >
               <input
                 value={search}
@@ -673,7 +671,6 @@ function ResourcePinMapper({
                   width: "100%",
                   minWidth: 0,
                   border: "1px solid var(--ui-border-control)",
-                  borderRadius: "var(--ui-radius-sm)",
                   background: "var(--ui-control-bg)",
                   color: "var(--ui-text)",
                   padding: "10px 12px",
@@ -744,6 +741,7 @@ function ResourcePinMapper({
                 minHeight: 0,
                 overflow: "auto",
                 paddingRight: "4px",
+                paddingBottom: view === "assignments" ? "16px" : undefined,
               }}
             >
               {view === "assignments" ? (
@@ -1018,7 +1016,7 @@ function AdvancedAssignmentTable({
         width: "100%",
         border: "1px solid var(--ui-border-control)",
         borderRadius: "var(--ui-radius-lg)",
-        overflow: "hidden",
+        overflow: "visible",
         background: "var(--ui-panel)",
       }}
     >
@@ -1030,6 +1028,8 @@ function AdvancedAssignmentTable({
           padding: "11px 14px",
           background: "var(--ui-surface)",
           borderBottom: "1px solid var(--ui-border-subtle)",
+          borderTopLeftRadius: "calc(var(--ui-radius-lg) - 1px)",
+          borderTopRightRadius: "calc(var(--ui-radius-lg) - 1px)",
           color: "var(--ui-text-muted)",
           fontSize: "11px",
           fontWeight: 900,
@@ -1043,7 +1043,7 @@ function AdvancedAssignmentTable({
         <div>Status</div>
       </div>
 
-      {ports.map((port) => {
+      {ports.map((port, index) => {
         const selectedPin = getSelectedPin(port.name);
         const pin = selectedPin ? pinOptionMap.get(selectedPin) : null;
         const active = selectedPortName === port.name;
@@ -1067,6 +1067,14 @@ function AdvancedAssignmentTable({
               background: active
                 ? "var(--ui-control-active-bg)"
                 : "var(--ui-panel)",
+              borderBottomLeftRadius:
+                index === ports.length - 1
+                  ? "calc(var(--ui-radius-lg) - 1px)"
+                  : undefined,
+              borderBottomRightRadius:
+                index === ports.length - 1
+                  ? "calc(var(--ui-radius-lg) - 1px)"
+                  : undefined,
               display: "grid",
               gridTemplateColumns: "minmax(90px, 1fr) 80px minmax(0, 2fr) 84px",
               gap: "12px",
@@ -1097,7 +1105,7 @@ function AdvancedAssignmentTable({
             >
               {port.direction}
             </div>
-            <select
+            <select className="ui-dropdown"
               value={selectedPin}
               onClick={(event) => event.stopPropagation()}
               onChange={(event) =>

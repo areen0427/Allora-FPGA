@@ -1052,7 +1052,7 @@ export default function MemoryAssetStudio({
                 <>
                   <label>
                     Format
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as ImageOptions).mode}
                       onChange={(event) =>
                         updateOptions({
@@ -1080,7 +1080,7 @@ export default function MemoryAssetStudio({
                   </label>
                   <label>
                     Transparent pixels
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as ImageOptions).alpha}
                       onChange={(event) =>
                         updateOptions({
@@ -1132,7 +1132,7 @@ export default function MemoryAssetStudio({
                 <>
                   <label>
                     Word width
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as BinaryOptions).wordWidth}
                       onChange={(event) =>
                         updateOptions({
@@ -1149,7 +1149,7 @@ export default function MemoryAssetStudio({
                   </label>
                   <label>
                     Byte order
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as BinaryOptions).byteOrder}
                       onChange={(event) =>
                         updateOptions({
@@ -1175,7 +1175,7 @@ export default function MemoryAssetStudio({
                   </label>
                   <label>
                     Incomplete final word
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as BinaryOptions).padding}
                       onChange={(event) =>
                         updateOptions({
@@ -1251,7 +1251,7 @@ export default function MemoryAssetStudio({
                   </label>
                   <label>
                     Rounding
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as TableOptions).rounding}
                       onChange={(event) =>
                         updateOptions({
@@ -1267,7 +1267,7 @@ export default function MemoryAssetStudio({
                   </label>
                   <label>
                     Overflow
-                    <select
+                    <select className="ui-dropdown"
                       value={(settings as TableOptions).overflow}
                       onChange={(event) =>
                         updateOptions({

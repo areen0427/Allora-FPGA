@@ -158,7 +158,7 @@ export default function BoardSelect({
       onOpenProductInfo={activeView === "home" && homePath === null
         ? () => setShowProductInfo((visible) => !visible)
         : undefined}
-      maxWidth={activeView === "home" ? "1280px" : "1680px"}
+      maxWidth={activeView === "pin-mapping" ? "none" : activeView === "home" ? "1280px" : "1680px"}
       newProjectRef={newProjectRef}
       onViewChange={handleViewChange}
       onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}

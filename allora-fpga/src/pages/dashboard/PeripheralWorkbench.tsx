@@ -683,7 +683,7 @@ export default function PeripheralWorkbench({
               {device.kind !== "uart" && (
                 <label>
                   Polarity{" "}
-                  <select
+                  <select className="ui-dropdown"
                     value={String(device.activeHigh)}
                     disabled={!editable}
                     onChange={(e) =>
@@ -849,7 +849,7 @@ function Mapping({
 }) {
   const choices = options(ports, input);
   return (
-    <select
+    <select className="ui-dropdown"
       aria-label="RTL signal mapping"
       disabled={disabled}
       value={key(value)}
@@ -960,7 +960,7 @@ function Terminal({
           />{" "}
           Hex
         </label>
-        <select
+        <select className="ui-dropdown"
           aria-label="UART line ending"
           value={ending}
           onChange={(e) => onSettings({ lineEnding: e.target.value })}

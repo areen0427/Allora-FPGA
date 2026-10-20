@@ -177,7 +177,7 @@ export default function SynthesisInspector({
             <>
               <label>
                 Trace bus / bit
-                <select
+                <select className="ui-dropdown"
                   value={bit === undefined ? "" : String(net.bits.indexOf(bit))}
                   onChange={(event) =>
                     onBit(

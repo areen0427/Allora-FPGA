@@ -1,5 +1,69 @@
 /* Shared interaction and action variants. Screen CSS owns size and layout.
    Existing action classes remain aliases so their event handlers stay intact. */
+/* Editable text controls share one pill shape. This geometry-only rule
+   leaves each field's own border, surface, hover, and focus behavior intact. */
+#root :is(
+  input:not(
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"],
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="color"],
+    [type="hidden"]
+  ),
+  textarea,
+  .ui-search-control
+) {
+  border-radius: var(--ui-radius-pill) !important;
+}
+
+/* Search controls have one visual layer: no inset/input border, only a soft
+   outward glow around the complete control while it contains focus. */
+#root :is(input[type="search"], .ui-search-control) {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+#root .ui-search-control > :is(input, select, textarea) {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#root .ui-search-control:focus-within {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: var(--ui-accent-glow) !important;
+}
+
+/* Every pill-shaped editable field receives the shared focus glow on pointer
+   or keyboard focus. Buttons and other action controls are intentionally out
+   of scope. Composite search controls keep the glow on their outer wrapper. */
+#root :is(
+  input:not(
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"],
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="color"],
+    [type="hidden"]
+  ),
+  textarea
+):focus {
+  outline: none !important;
+  box-shadow: var(--ui-accent-glow) !important;
+}
+#root .ui-search-control > :is(input, select, textarea):focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 :where(#root button) {
   transition: var(--ui-control-transition);
   border-radius: var(--ui-radius-sm);
@@ -293,7 +357,7 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 
 /* Compact groups share text-only resting material. Transparent physical borders
    reserve hover geometry; short separators distinguish adjacent actions. */
-#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]) {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"]) {
   position: relative;
   overflow: visible;
   border: 1px solid transparent !important;
@@ -304,7 +368,7 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   transition: var(--ui-control-transition);
 }
 /* Explorer controls keep their authored density; ordinary actions share size. */
-#root :is(.ui-button-group, .ui-compact-button-group):not(.project-explorer-view-switch, .project-explorer-actions, .dashboard-target-switch) > :is(button, .ui-button) {
+#root :is(.ui-button-group, .ui-compact-button-group):not(.project-explorer-view-switch, .project-explorer-actions, .dashboard-target-switch) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])) {
   min-height: 38px;
   padding: 8px var(--ui-control-inline-padding);
   border-radius: var(--ui-radius-sm);
@@ -317,13 +381,13 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 #root .ui-button-group-flush-start {
   margin-inline-start: calc(-1 * (var(--ui-control-inline-padding) + 1px));
 }
-#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"]):is(.active, [aria-pressed="true"], [aria-selected="true"]) {
   color: var(--ui-accent-text) !important;
 }
-#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"])::before {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"])::before {
   content: none;
 }
-#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button) + :is(button, .ui-button)::before {
+#root :is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])) + :is(button, .ui-button)::before {
   content: "";
   position: absolute;
   inset: auto;
@@ -343,28 +407,29 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   z-index: 1;
   pointer-events: none;
 }
-#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"])::after {
+#root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"])::after {
   opacity: 0;
 }
 @media (hover: hover) and (pointer: fine) {
-  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"]) {
     /* The liquid-glass pseudo layer owns the visible edge. */
     border-color: transparent !important;
     background: var(--ui-control-hover-bg) !important;
     box-shadow: var(--ui-control-shadow) !important;
     transform: var(--ui-lift-subtle);
   }
-  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"])::after {
+  #root :is(:is(.ui-button-group, .ui-compact-button-group) > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])), [data-ui-compact="true"]):hover:not(:disabled, [aria-disabled="true"])::after {
     opacity: 1;
   }
 }
 
-/* Selection groups retain the theme-aware liquid-glass edge at rest. */
-#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]),
-#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+/* Selected controls keep the shared glass edge without adding a field-style
+   glow to segmented buttons. */
+#root .ui-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"]),
+#root .ui-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--ui-border-hover) !important;
 }
-#root .ui-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"])::after {
+#root .ui-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"])::after {
   opacity: 1;
 }
 
@@ -381,30 +446,30 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   pointer-events: none;
 }
 
-/* Quiet selection groups keep the shared glass edge and timing, without the
-   fill, lift, or accent text used by more prominent segmented controls. */
-#root .ui-quiet-selection-group > :is(button, .ui-button),
-#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]) {
+/* Quiet selection groups keep the shared glass edge without the fill, lift,
+   field-style glow, or accent text used by more prominent segmented controls. */
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])),
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):hover:not(:disabled, [aria-disabled="true"]) {
   color: var(--ui-text) !important;
   background: transparent !important;
   box-shadow: none !important;
   transform: none !important;
 }
-#root .ui-quiet-selection-group > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]),
-#root .ui-quiet-selection-group > :is(button, .ui-button):is(.active, [aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is(.active, [aria-pressed="true"], [aria-selected="true"]),
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is(.active, [aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
   color: var(--ui-text) !important;
 }
-#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"]):not([aria-pressed="true"], [aria-selected="true"]) {
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):hover:not(:disabled, [aria-disabled="true"]):not([aria-pressed="true"], [aria-selected="true"]) {
   border-color: transparent !important;
 }
-#root .ui-quiet-selection-group > :is(button, .ui-button):hover:not(:disabled, [aria-disabled="true"])::after {
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):hover:not(:disabled, [aria-disabled="true"])::after {
   opacity: 1;
 }
-#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]),
-#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"]),
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"]):hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--ui-border-hover) !important;
 }
-#root .ui-quiet-selection-group > :is(button, .ui-button):is([aria-pressed="true"], [aria-selected="true"])::after {
+#root .ui-quiet-selection-group > :is(button, .ui-button):where(:not(.ui-dropdown, [role="combobox"])):is([aria-pressed="true"], [aria-selected="true"])::after {
   opacity: 1;
 }
 
@@ -509,4 +574,75 @@ html[data-reduce-motion="true"] .ui-dock-icon {
   opacity: 1;
   z-index: 1;
   pointer-events: none;
+}
+
+/* Automatic dropdown defaults: native selects and semantic comboboxes inherit
+   this variant without a class. ui-dropdown opts other custom triggers in. Keep
+   height, vertical padding, font metrics and width with the owning screen.
+   Native macOS appearance must be removed for the pill radius to take effect.
+   These declarations also supersede legacy page and inline surface styles. */
+#root :is(select, [role="combobox"], .ui-dropdown) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: 1px solid var(--ui-dropdown-idle-border, var(--ui-border-control)) !important;
+  border-radius: var(--ui-radius-pill) !important;
+  outline: none !important;
+  color: var(--ui-text) !important;
+  background-color: var(--ui-dropdown-idle-bg, var(--ui-control-solid)) !important;
+  background-image:
+    var(--ui-dropdown-chevron-start, linear-gradient(45deg, transparent 50%, currentColor 50%)),
+    var(--ui-dropdown-chevron-end, linear-gradient(135deg, currentColor 50%, transparent 50%)),
+    var(--ui-dropdown-idle-fill, var(--ui-control-fill)) !important;
+  background-position:
+    calc(100% - 18px) calc(50% + 1px),
+    calc(100% - 13px) calc(50% + 1px),
+    0 0 !important;
+  background-size: 5px 5px, 5px 5px, 100% 100% !important;
+  background-repeat: no-repeat !important;
+  padding-inline: 12px var(--ui-dropdown-padding-end, 34px) !important;
+  box-shadow: var(--ui-dropdown-idle-shadow, var(--ui-control-shadow)) !important;
+  cursor: pointer;
+  transform: none !important;
+  transition: var(--ui-control-transition);
+}
+
+#root :is(select, [role="combobox"], .ui-dropdown):hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ui-dropdown-hover-border, var(--ui-border-hover)) !important;
+}
+
+#root :is(select, [role="combobox"], .ui-dropdown):is(:focus, :focus-visible, [aria-expanded="true"]):not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ui-border-hover) !important;
+  background-color: var(--ui-control-solid) !important;
+  background-image:
+    var(--ui-dropdown-chevron-start, linear-gradient(45deg, transparent 50%, currentColor 50%)),
+    var(--ui-dropdown-chevron-end, linear-gradient(135deg, currentColor 50%, transparent 50%)),
+    var(--ui-control-fill) !important;
+  outline: none !important;
+  box-shadow: var(--ui-accent-glow) !important;
+}
+
+/* Custom dropdown buttons use the same surface as selects rather than the
+   separate button-glass and compact-group pseudo-element layers. Hover-only
+   dropdowns opt into the shared hover glass edge; their pill radius is inherited. */
+#root button:is([role="combobox"], .ui-dropdown):not(.ui-hover-button)::before,
+#root button:is([role="combobox"], .ui-dropdown):not(.ui-hover-button)::after {
+  content: none !important;
+}
+
+#root :is(select, [role="combobox"], .ui-dropdown):is(:disabled, [aria-disabled="true"]) {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+#root select option {
+  background: var(--ui-panel);
+  color: var(--ui-text);
+}
+
+html[data-reduce-motion="true"] #root :is(select, [role="combobox"], .ui-dropdown) {
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #root :is(select, [role="combobox"], .ui-dropdown) { transition: none !important; }
 }

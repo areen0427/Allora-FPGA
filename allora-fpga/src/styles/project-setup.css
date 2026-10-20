@@ -304,32 +304,10 @@
   box-shadow: var(--ui-control-shadow);
 }
 
-.project-setup-field select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%),
-    var(--ui-control-fill);
-  background-position:
-    calc(100% - 20px) 20px,
-    calc(100% - 15px) 20px,
-    0 0;
-  background-size:
-    5px 5px,
-    5px 5px,
-    100% 100%;
-  background-repeat: no-repeat;
-  padding-right: 42px;
-}
-
-.project-setup-field input:focus,
-.project-setup-field select:focus {
+.project-setup-field input:focus {
   outline: none;
   border-color: var(--ui-border-hover);
-  box-shadow:
-    var(--ui-focus-ring),
-    var(--ui-inset-highlight);
+  box-shadow: var(--ui-accent-glow);
 }
 
 .project-location-card {

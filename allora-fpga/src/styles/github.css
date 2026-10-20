@@ -669,11 +669,11 @@ html[data-theme="black-ice"] .github-device-code {
   font-weight: 650;
 }
 
-.github-form-stack input:focus,
+.github-form-stack input:not([type="checkbox"], [type="radio"]):focus,
 .github-form-stack select:focus,
 .github-identity-grid input:focus {
   border-color: rgba(37, 99, 235, 0.62);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13);
+  box-shadow: var(--ui-accent-glow);
 }
 
 .github-privacy-row {

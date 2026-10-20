@@ -140,7 +140,7 @@ function PinMappingBoardList({
 }) {
   return (
     <div className="pin-browser-sidebar">
-      <label className="board-search-field pin-browser-search">
+      <label className="board-search-field pin-browser-search ui-search-control">
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
@@ -367,7 +367,7 @@ function PinCatalogView({
   return (
     <div className="pin-catalog-view">
       <div className="pin-catalog-toolbar">
-        <label className="pin-catalog-search">
+        <label className="pin-catalog-search ui-search-control">
           <Search size={15} />
           <input
             value={search}

@@ -97,7 +97,7 @@ export default function ChatModelControls(props: Props) {
 
   return (
     <div className="chat-model-controls" ref={root}>
-      <button ref={trigger} type="button" className="chat-model-trigger"
+      <button ref={trigger} type="button" className="ui-dropdown ui-hover-button chat-model-trigger"
         aria-haspopup="dialog" aria-expanded={open && !props.disabled} aria-controls={popupId}
         disabled={props.disabled} title={props.error || "Choose a model"}
         onClick={() => { setReasoningOpen(false); setOpen((value) => !value); }}>
@@ -133,7 +133,7 @@ export default function ChatModelControls(props: Props) {
         </div>
       )}
       <div className="chat-reasoning-anchor" ref={reasoningAnchor}>
-      <button ref={reasoningTrigger} type="button" className="chat-model-trigger chat-reasoning-control"
+      <button ref={reasoningTrigger} type="button" className="ui-dropdown ui-hover-button chat-model-trigger chat-reasoning-control"
         disabled={props.disabled || !choices.length} aria-haspopup="dialog" aria-expanded={reasoningOpen} aria-controls={`${popupId}-reasoning`}
         onClick={() => { setOpen(false); setSliderPosition(null); setReasoningOpen(true); }}>
         <span>{effort ? effortName(effort.reasoningEffort) : "Default"}</span>

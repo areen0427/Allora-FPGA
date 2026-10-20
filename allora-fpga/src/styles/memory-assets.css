@@ -76,7 +76,7 @@
   transform: var(--ui-lift-subtle);
 }
 :is(.mas, .mas-home-layout, .mas-project-card, .mas-dialog)
-  :is(button, input, select):focus-visible {
+  :is(button, input[type="checkbox"], input[type="radio"]):focus-visible {
   outline: 2px solid var(--mas-accent);
   outline-offset: 3px;
 }

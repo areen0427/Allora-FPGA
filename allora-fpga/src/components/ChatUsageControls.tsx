@@ -67,7 +67,7 @@ export default function ChatUsageControls({ usage, limits, available, hasMessage
   const fiveHour = windows.find((value) => value?.windowDurationMins === 300);
   const weekly = windows.find((value) => value?.windowDurationMins === 10080);
   return <div className="chat-usage-controls" ref={root}>
-    <button type="button" className="chat-model-trigger chat-usage-trigger" ref={trigger}
+    <button type="button" className="ui-dropdown ui-hover-button chat-model-trigger chat-usage-trigger" ref={trigger}
       aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>
       Usage
     </button>

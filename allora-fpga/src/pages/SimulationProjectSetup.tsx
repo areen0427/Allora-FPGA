@@ -141,7 +141,7 @@ export default function SimulationProjectSetup({
           </label>
           <label className="project-setup-field">
             <span>HDL language</span>
-            <select
+            <select className="ui-dropdown"
               value={language}
               onChange={(event) =>
                 setLanguage(event.target.value as "Verilog" | "SystemVerilog")

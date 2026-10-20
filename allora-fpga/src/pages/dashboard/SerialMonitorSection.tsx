@@ -170,7 +170,7 @@ export default function SerialMonitorSection({
       >
         <div className="serial-toolbar ui-compact-button-group">
           <select
-            className="serial-control"
+            className="ui-dropdown serial-control"
             value={selectedPort}
             onChange={(event) => setSelectedPort(event.target.value)}
             disabled={isConnected}
@@ -188,7 +188,7 @@ export default function SerialMonitorSection({
           </select>
 
           <select
-            className="serial-control"
+            className="ui-dropdown serial-control"
             value={baudRate}
             onChange={(event) => setBaudRate(Number(event.target.value))}
             disabled={isConnected}
@@ -260,7 +260,7 @@ export default function SerialMonitorSection({
             }}
           />
           <select
-            className="serial-control"
+            className="ui-dropdown serial-control"
             value={lineEnding}
             onChange={(event) =>
               setLineEnding(event.target.value as LineEnding)

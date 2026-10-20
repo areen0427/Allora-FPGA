@@ -390,7 +390,7 @@ export default function RegisterBuilder({
         </label>
         <label>
           Data bits
-          <select
+          <select className="ui-dropdown"
             value={map.dataWidth}
             onChange={(e) =>
               change({ ...map, dataWidth: Number(e.target.value) })
@@ -403,7 +403,7 @@ export default function RegisterBuilder({
         </label>
         <label>
           Reset
-          <select
+          <select className="ui-dropdown"
             value={String(map.resetActiveLow)}
             onChange={(e) =>
               change({ ...map, resetActiveLow: e.target.value === "true" })
@@ -539,7 +539,7 @@ export default function RegisterBuilder({
                 </label>
                 <label>
                   Access
-                  <select
+                  <select className="ui-dropdown"
                     value={register.access}
                     onChange={(e) =>
                       editRegister({ access: e.target.value as Access })
@@ -667,7 +667,7 @@ export default function RegisterBuilder({
                     </label>
                     <label>
                       Access
-                      <select
+                      <select className="ui-dropdown"
                         value={f.access}
                         onChange={(e) =>
                           editField(f, { access: e.target.value as Access })
@@ -813,7 +813,7 @@ export default function RegisterBuilder({
                   {key === "reset"
                     ? `Reset (must be active ${map.resetActiveLow ? "low" : "high"})`
                     : "Clock"}
-                  <select
+                  <select className="ui-dropdown"
                     value={integration[key]}
                     onChange={(e) =>
                       setIntegration({
@@ -850,7 +850,7 @@ export default function RegisterBuilder({
               .map((p) => (
                 <label key={p.name}>
                   Design input {p.name} [{p.width} bits]
-                  <select
+                  <select className="ui-dropdown"
                     value={integration.designInputs[p.name] ?? ""}
                     onChange={(e) => {
                       const next = { ...integration.designInputs };
@@ -890,7 +890,7 @@ export default function RegisterBuilder({
               .map((p) => (
                 <label key={p.name}>
                   Bank input {p.name} [{p.width} bits]
-                  <select
+                  <select className="ui-dropdown"
                     value={integration.bankInputs[p.name] ?? ""}
                     onChange={(e) => {
                       const next = { ...integration.bankInputs };

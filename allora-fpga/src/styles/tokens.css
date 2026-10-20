@@ -36,6 +36,7 @@
   --ui-radius-lg: 16px;
   --ui-radius-xl: 18px;
   --ui-radius-2xl: 20px;
+  --ui-radius-pill: 999px;
   --ui-dock-icon-size: 22px;
   --ui-compact-group-gap: 8px;
   --ui-control-inline-padding: 14px;
@@ -111,6 +112,8 @@
   --ui-hover-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
   --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  --ui-accent-glow:
+    0 0 12px 1px color-mix(in srgb, var(--ui-accent) 24%, transparent);
   --ui-motion-fast: 160ms ease;
   --ui-motion-base: var(--ui-motion-fast);
   --ui-lift-subtle: translateY(-1px);
@@ -162,6 +165,8 @@ html[data-theme="black-ice"] {
   --ui-hover-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --ui-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
+  --ui-accent-glow:
+    0 0 14px 2px color-mix(in srgb, var(--ui-accent) 38%, transparent);
 }
 
 /* Shared theme-aware material for floating surfaces. */

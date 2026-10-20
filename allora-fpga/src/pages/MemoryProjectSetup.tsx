@@ -90,7 +90,7 @@ export default function MemoryProjectSetup({
         </label>
         <label>
           HDL language
-          <select
+          <select className="ui-dropdown"
             disabled={busy || picking}
             value={language}
             onChange={(event) =>

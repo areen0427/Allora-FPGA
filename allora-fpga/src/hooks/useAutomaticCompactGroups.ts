@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { findCompactButtonRuns } from "../lib/compactButtonGroups";
 
 const controlSelector = "button, a.ui-button, label.ui-button";
-const exclusions = '[data-glass="off"], [role="switch"], .sidebarNavButton, .fileClose, .pin-tile, .board-card, .variant-card, .template-card, .execution-path-card, .vfpga-switch, .vfpga-button, .pw-switch, .open-project-button';
+const exclusions = '[data-glass="off"], [role="switch"], [role="combobox"], .ui-dropdown, .sidebarNavButton, .fileClose, .pin-tile, .board-card, .variant-card, .template-card, .execution-path-card, .vfpga-switch, .vfpga-button, .pw-switch, .open-project-button';
 const authoredGroups = '.ui-button-group, .ui-compact-button-group, [data-ui-compact="off"], .activity-rail-nav, .project-tree-scroll, .editor-tab-bar, .board-input-bank';
 
 /** Apply the existing shared variant to nearby rows, including dynamic buttons. */

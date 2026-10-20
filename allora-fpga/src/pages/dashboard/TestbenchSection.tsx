@@ -347,7 +347,7 @@ export default function TestbenchSection({
           <label className="synthesis-top-level-field">
             <span>Testbench</span>
             <select
-              className="synthesis-top-level-select"
+              className="ui-dropdown synthesis-top-level-select"
               value={selectedTestbench?.name ?? ""}
               onChange={(event) => setSelectedTestbenchName(event.target.value)}
             >

@@ -86,37 +86,9 @@
   min-width: 0;
   height: 42px;
   flex: 1;
-  border: 1px solid var(--ui-border-control);
-  border-radius: var(--ui-radius-md);
-  appearance: none;
-  -webkit-appearance: none;
-  background: var(--ui-control-bg);
-  color: var(--ui-text);
-  padding: 0 34px 0 13px;
+  padding-block: 0;
   font-size: 14px;
   font-weight: 750;
-  box-shadow: var(--ui-control-shadow);
-  cursor: pointer;
-  background-image:
-    linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%),
-    var(--ui-control-fill);
-  background-position:
-    calc(100% - 18px) 18px,
-    calc(100% - 13px) 18px,
-    0 0;
-  background-size:
-    5px 5px,
-    5px 5px,
-    100% 100%;
-  background-repeat: no-repeat;
-}
-
-.synthesis-top-level-select:focus {
-  outline: none;
-  border-color: var(--ui-border-hover);
-  box-shadow:
-    var(--ui-focus-ring), var(--ui-control-shadow);
 }
 
 .synthesis-generate-button,
@@ -739,7 +711,6 @@
   align-items: center;
   gap: 8px;
   border: 1px solid var(--ui-border-control);
-  border-radius: var(--ui-radius-md);
   background: var(--ui-control-bg);
   color: var(--ui-text-muted);
   padding: 0 12px;

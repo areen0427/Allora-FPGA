@@ -744,18 +744,13 @@ html .variant-modal.settings-modal {
   font-weight: 720;
 }
 
-select.settings-control {
-  padding-right: 28px;
-  cursor: pointer;
-}
-
 input.settings-control {
   width: 82px;
 }
 
-.settings-control:focus {
+input.settings-control:focus {
   border-color: var(--ui-border-hover);
-  box-shadow: var(--ui-control-shadow), var(--ui-focus-ring);
+  box-shadow: var(--ui-accent-glow);
 }
 
 .settings-number-control {
@@ -860,9 +855,7 @@ input.settings-control {
   border: 1px solid var(--ui-primary-border);
 }
 
-.settings-modal button:focus-visible,
-.settings-modal input:focus-visible,
-.settings-modal select:focus-visible {
+.settings-modal button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }

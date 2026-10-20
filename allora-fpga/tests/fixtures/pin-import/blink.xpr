@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project Version="7" Minor="61">
+  <FileSets Version="1">
+    <FileSet Name="sources_1" Type="DesignSrcs">
+      <File Path="$PPRDIR/top.sv"><FileInfo><Attr Name="UsedIn" Val="synthesis"/></FileInfo></File>
+      <Config><Option Name="TopModule" Val="top"/></Config>
+    </FileSet>
+  </FileSets>
+</Project>

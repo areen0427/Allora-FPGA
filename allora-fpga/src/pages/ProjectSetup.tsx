@@ -201,7 +201,7 @@ export default function ProjectSetup({
 
           <label className="project-setup-field">
             <span>Starter source type</span>
-            <select
+            <select className="ui-dropdown"
               value={language}
               onChange={(event) =>
                 changeLanguage(event.target.value as TemplateLanguage)
@@ -281,7 +281,7 @@ export default function ProjectSetup({
 
           <label className="project-setup-field project-template-select">
             <span>Starting point</span>
-            <select
+            <select className="ui-dropdown"
               value={templateId}
               onChange={(event) => setTemplateId(event.target.value)}
             >

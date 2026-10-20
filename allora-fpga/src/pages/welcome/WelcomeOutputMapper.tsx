@@ -7,8 +7,8 @@ import { getPinOptions } from "../dashboard/pinMappingUtils";
 import type { HdlPort } from "../dashboard/pinMappingUtils";
 import { getPinMappingElectricalIssues } from "../dashboard/pinMappingUtils";
 import { createWelcomeConstraintDownload } from "./welcomePinConstraints";
-
-type OutputDeclaration = { name: string; width: number };
+import { expandOutputDeclaration, type OutputDeclaration } from "../../lib/portImport";
+import { PinOutputImport } from "./PinOutputImport";
 type PinOption = ReturnType<typeof getPinOptions>[number];
 type PadGroup = {
   pin: string;
@@ -219,13 +219,31 @@ export function WelcomeOutputMapper({
       ) : null}
 
       <div className="pin-output-workspace-grid">
-        <section className="pin-output-assignment-panel ui-workspace-framed" aria-label="Output assignments">
+        <section className="pin-output-assignment-panel ui-workspace-section" aria-label="Output assignments">
           <div className="pin-output-panel-heading">
             <div>
               <h3>Output assignments</h3>
               <p>
                 Select an output and choose an available pad. Save reveals the {exportFormat} download.
               </p>
+            </div>
+            <div className="pin-output-import-control">
+              {!hidden && (
+                <PinOutputImport
+                  declarations={declarations}
+                  onImport={(outputs) => {
+                    const imported = outputs.flatMap(expandOutputDeclaration);
+                    setDeclarations((current) => [...current, ...outputs]);
+                    setMappings((current) => ({
+                      ...current,
+                      ...Object.fromEntries(imported.map((port) => [port.name, ""])),
+                    }));
+                    setSelectedPort(imported[0]?.name ?? selectedPort);
+                    setDownload(null);
+                    setPortError("");
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -246,13 +264,14 @@ export function WelcomeOutputMapper({
                     const selected = selectedPort === port.name;
                     const option = optionsByKey.get(mappings[port.name] ?? "");
                     const declarationName = port.baseName ?? port.name;
+                    const declarationWidth = declarations.find((item) => item.name === declarationName)?.width ?? 1;
                     const showRemove = !firstPortByDeclaration.has(declarationName);
                     firstPortByDeclaration.add(declarationName);
 
                     return (
                       <tr
                         key={port.name}
-                        className={`ui-selectable-row${selected ? " selected" : ""}`}
+                        className={`ui-selectable-row${showRemove ? " pin-output-group-start" : ""}${selected ? " selected" : ""}`}
                         aria-selected={selected}
                         tabIndex={selected || (!selectedPort && ports[0]?.name === port.name) ? 0 : -1}
                         onClick={() => setSelectedPort(port.name)}
@@ -286,14 +305,39 @@ export function WelcomeOutputMapper({
                         }}
                       >
                         <td>
-                          <span className="pin-output-port-name">{port.name}</span>
+                          {port.baseName && showRemove ? (
+                            <span className="pin-output-bus-heading">
+                              <span className="pin-output-port-name">{port.baseName}</span>
+                              <span className="pin-output-bus-width">
+                                {declarationWidth} bit{declarationWidth === 1 ? "" : "s"}
+                              </span>
+                            </span>
+                          ) : null}
+                          <span className={`pin-output-port-name${port.baseName ? " pin-output-bus-bit" : ""}`}>
+                            {port.baseName ? (
+                              <><span className="sr-only">{port.baseName}</span>[{port.index}]</>
+                            ) : port.name}
+                          </span>
                         </td>
                         <td><span className="pin-output-direction">Output</span></td>
                         <td>
                           {option ? (
-                            <span className="pin-output-assigned-pin">
-                              <strong>{option.pin}</strong>
-                              <span>{option.shortLabel}</span>
+                            <span className="pin-output-assignment">
+                              <span className="pin-output-assigned-pin">
+                                <strong>{option.pin}</strong>
+                                <span>{option.shortLabel}</span>
+                              </span>
+                              <button
+                                className="pin-output-assignment-clear pin-output-text-action ui-hover-button pin-output-danger-action"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  clearAssignment(port.name);
+                                }}
+                                aria-label={`Clear assignment for ${port.name}`}
+                              >
+                                Clear
+                              </button>
                             </span>
                           ) : (
                             <span className="pin-output-unassigned">Choose a pad</span>
@@ -310,19 +354,6 @@ export function WelcomeOutputMapper({
                             role="group"
                             aria-label={`Actions for ${port.name}`}
                           >
-                            {option ? (
-                              <button
-                                className="pin-output-text-action ui-hover-button pin-output-danger-action"
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  clearAssignment(port.name);
-                                }}
-                                aria-label={`Clear assignment for ${port.name}`}
-                              >
-                                Clear
-                              </button>
-                            ) : null}
                             {showRemove ? (
                               <button
                                 className="pin-output-icon-action ui-icon-button ui-icon-button-hover pin-output-danger-action"
@@ -346,7 +377,7 @@ export function WelcomeOutputMapper({
               </table>
             ) : (
               <div className="pin-output-empty-state">
-                Add an output port to start mapping package pads.
+                Add an output port or import a design to start mapping package pads.
               </div>
             )}
           </div>
@@ -386,7 +417,7 @@ export function WelcomeOutputMapper({
             </div>
             <span className="pin-output-pad-count">{padGroups.length}</span>
           </div>
-          <label className="pin-output-search">
+          <label className="pin-output-search ui-search-control">
             <Search size={15} />
             <input
               value={pinSearch}
@@ -439,21 +470,6 @@ export function WelcomeOutputMapper({
       </div>
     </div>
   );
-}
-
-function expandOutputDeclaration(declaration: OutputDeclaration): HdlPort[] {
-  if (declaration.width <= 1) {
-    return [{ name: declaration.name, direction: "output" }];
-  }
-  return Array.from({ length: declaration.width }, (_, offset) => {
-    const index = declaration.width - offset - 1;
-    return {
-      name: `${declaration.name}[${index}]`,
-      baseName: declaration.name,
-      index,
-      direction: "output" as const,
-    };
-  });
 }
 
 function groupAssignablePads(

@@ -22,6 +22,7 @@ mod chat_checkpoints;
 mod project_diagnostics;
 mod github;
 mod usage;
+mod pin_import;
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
 
@@ -4019,6 +4020,7 @@ pub fn run() {
             pick_project_parent_directory,
             pick_existing_project_directory,
             read_project_workspace,
+            pin_import::read_pin_import_files,
             write_project_file,
             rename_project_file,
             delete_project_file,
