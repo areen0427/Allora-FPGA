@@ -586,7 +586,7 @@ html[data-theme="black-ice"] .allora-chat {
 html[data-theme="ice"] .chat-composer {
   background: linear-gradient(135deg, rgba(239, 246, 255, .9), rgba(219, 234, 254, .68));
 }
-.chat-composer:is(:focus-within, :has([aria-expanded="true"])) {
+.chat-composer[data-engaged="true"] {
   border-color: var(--chat-accent);
 }
 .chat-composer textarea {
@@ -843,9 +843,9 @@ html[data-reduce-motion="true"] .chat-thinking i {
   background: var(--ui-primary-hover-bg);
   transform: var(--ui-lift-subtle);
 }
-/* Top-layer dropdown focus can leave :focus-within in native WebKit. Keep the
-   composite field active while its controls are open, including handoffs. */
-#root .allora-chat .chat-composer:is(:focus-within, :has([aria-expanded="true"])) {
+/* Native popup handoffs can briefly leave both focus and expanded state empty.
+   Preserve the composite field glow until interaction leaves the composer. */
+#root .allora-chat .chat-composer[data-engaged="true"] {
   box-shadow: var(--ui-accent-glow), var(--chat-shadow) !important;
 }
 @media (prefers-reduced-motion: reduce) {

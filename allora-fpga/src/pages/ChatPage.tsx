@@ -277,6 +277,41 @@ export default function ChatPage({
   const scrollRef = useRef<HTMLDivElement>(null);
   const followScroll = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLFormElement>(null);
+  const [composerEngaged, setComposerEngaged] = useState(false);
+
+  useEffect(() => {
+    const isInsideComposer = (target: EventTarget | null) => Boolean(target && composerRef.current?.contains(target as Node));
+    let tabFrame: number | undefined;
+    const pointer = (event: PointerEvent) => setComposerEngaged(isInsideComposer(event.target));
+    const focus = (event: FocusEvent) => {
+      // Removing a focused native popover can briefly focus the document body.
+      // Keep the whole composer active until focus or a pointer moves elsewhere.
+      if (event.target !== document.body && event.target !== document.documentElement) {
+        setComposerEngaged(isInsideComposer(event.target));
+      }
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      if (tabFrame !== undefined) window.cancelAnimationFrame(tabFrame);
+      tabFrame = window.requestAnimationFrame(() => {
+        tabFrame = undefined;
+        setComposerEngaged(isInsideComposer(document.activeElement));
+      });
+    };
+    const blur = () => setComposerEngaged(false);
+    document.addEventListener("pointerdown", pointer, true);
+    document.addEventListener("focusin", focus, true);
+    document.addEventListener("keydown", key, true);
+    window.addEventListener("blur", blur);
+    return () => {
+      document.removeEventListener("pointerdown", pointer, true);
+      document.removeEventListener("focusin", focus, true);
+      document.removeEventListener("keydown", key, true);
+      window.removeEventListener("blur", blur);
+      if (tabFrame !== undefined) window.cancelAnimationFrame(tabFrame);
+    };
+  }, []);
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeId,
   );
@@ -1402,6 +1437,8 @@ export default function ChatPage({
             inputRef.current?.focus();
           }} />
           <form
+            ref={composerRef}
+            data-engaged={composerEngaged}
             className={`chat-composer${busy ? " is-busy" : ""}`}
             onPointerDownCapture={event => {
               const control = (event.target as Element).closest<HTMLButtonElement>(".chat-composer-bottom button");
