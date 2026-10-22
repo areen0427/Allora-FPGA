@@ -46,7 +46,9 @@ async function frontendModule(file, replacements = {}) {
 const utilsUrl = await frontendModule("src/hooks/utils.ts");
 // These assertions exercise saved-file readers; runtime compilation is tested through MCP below.
 const tauriUrl = moduleUrl('export function invokeTauri() { throw new Error("Unexpected GUI invocation in saved-file reader"); }');
-const virtualUrl = await frontendModule("src/lib/virtualFpga.ts", { "./tauri": tauriUrl, "../hooks/utils": utilsUrl });
+const pinResourcesUrl = await frontendModule("src/data/pinResourceGroups.ts");
+const boardResourcesUrl = await frontendModule("src/lib/virtualBoardResources.ts", { "../data/pinResourceGroups": pinResourcesUrl });
+const virtualUrl = await frontendModule("src/lib/virtualFpga.ts", { "./tauri": tauriUrl, "../hooks/utils": utilsUrl, "./virtualBoardResources": boardResourcesUrl });
 const workbenchUrl = await frontendModule("src/lib/peripheralWorkbench.ts", { "./virtualFpga": virtualUrl });
 const { readVirtualFpgaConfig, getHdlSources } = await import(virtualUrl);
 const { readWorkbench, validate } = await import(workbenchUrl);

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
+import type { BoardDefinition } from "../../data/boardTypes";
+import { getVirtualBoardResources } from "../../lib/virtualBoardResources";
 import { saveSimulationSummary } from "../../data/projects";
 import SignalWaveformPanel, {
   type SignalWaveTrace,
@@ -25,7 +27,8 @@ import {
   getConfiguredTopModule,
   getHdlSources,
   getMappingOptions,
-  getPeripheralValue,
+  getPeripheralDriveValue,
+  isPeripheralActive,
   mappingKey,
   parseMappingKey,
   readVirtualFpgaConfig,
@@ -39,6 +42,7 @@ import {
 import "../../styles/virtual-fpga.css";
 
 type Props = {
+  board: BoardDefinition;
   files: ProjectFile[];
   projectPath?: string;
   projectId?: string;
@@ -67,6 +71,7 @@ const FREQUENCIES = [
 const RUN_CYCLES_PER_TICK = 1;
 
 export default function VirtualFpgaSection({
+  board,
   files,
   projectPath,
   projectId,
@@ -76,8 +81,10 @@ export default function VirtualFpgaSection({
   guidedTemplate,
 }: Props) {
   const inferredTop = getConfiguredTopModule(files, topLevelFileName);
+  const physicalBoard = board.id !== "allora-virtual";
+  const boardResources = useMemo(() => getVirtualBoardResources(board), [board]);
   const [config, setConfig] = useState(() =>
-    readVirtualFpgaConfig(files, inferredTop),
+    readVirtualFpgaConfig(files, inferredTop, board),
   );
   const [ports, setPorts] = useState<RtlPort[]>([]);
   const [tools, setTools] = useState<SimulationTools | null>(null);
@@ -106,9 +113,10 @@ export default function VirtualFpgaSection({
   );
   const clock = config.peripherals.find((item) => item.type === "clock");
   const reset = config.peripherals.find((item) => item.type === "reset");
-  const buttons = config.peripherals.filter((item) => item.type === "button");
+  const buttons = config.peripherals.filter((item) => item.type === "button" || item.type === "reset");
   const switches = config.peripherals.filter((item) => item.type === "switch");
   const leds = config.peripherals.filter((item) => item.type === "led");
+  const frequencies = [...new Set([...FREQUENCIES, config.clockFrequencyHz])].sort((a, b) => a - b);
 
   useEffect(() => {
     sessionRef.current = sessionId;
@@ -252,10 +260,17 @@ export default function VirtualFpgaSection({
       setWaveSamples([]);
       setSessionId(result.sessionId);
       setPorts(result.ports);
-      const initialState =
-        reset?.signal && reset.activeHigh === false
-          ? await virtualFpgaApi.setInput(result.sessionId, reset.signal, 1)
-          : result.state;
+      let initialState = result.state;
+      const initialInputs = new Map<string, bigint>();
+      for (const peripheral of config.peripherals) {
+        if (!peripheral.signal || !["button", "reset", "switch"].includes(peripheral.type)) continue;
+        const value = initialInputs.get(peripheral.signal) ?? BigInt(initialState.values[peripheral.signal] ?? "0");
+        const mask = 1n << BigInt(peripheral.bit ?? 0);
+        initialInputs.set(peripheral.signal, getPeripheralDriveValue(peripheral, false) ? value | mask : value & ~mask);
+      }
+      for (const [signal, value] of initialInputs) {
+        initialState = await virtualFpgaApi.setInput(result.sessionId, signal, value.toString());
+      }
       setSnapshot(initialState);
       setLogs(
         formatSimulatorLogs(result.logs, settings.simulatorLogLevel, {
@@ -360,7 +375,7 @@ export default function VirtualFpgaSection({
       const nextSnapshot = await virtualFpgaApi.setInput(
         sessionId,
         peripheral.signal,
-        Number(next),
+        next.toString(),
       );
       setWaveSamples((currentSamples) =>
         appendWaveSamples(currentSamples, [nextSnapshot]),
@@ -478,9 +493,9 @@ export default function VirtualFpgaSection({
                 })
               }
             >
-              {FREQUENCIES.map((frequency) => (
+              {frequencies.map((frequency) => (
                 <option key={frequency} value={frequency}>
-                  {frequency / 1_000_000} MHz
+                  {formatClockFrequency(frequency)}
                 </option>
               ))}
             </select>
@@ -534,39 +549,45 @@ export default function VirtualFpgaSection({
         <section className="vfpga-board-card ui-workspace-section">
           <div className="vfpga-board-heading">
             <div>
-              <span>ALLORA</span>
-              <strong>AF-VIRTUAL</strong>
+              <span>{physicalBoard ? board.vendor : "ALLORA"}</span>
+              <strong>{physicalBoard ? board.name : "AF-VIRTUAL"}</strong>
             </div>
             <small>{ports.length} top-level ports</small>
           </div>
           <VirtualPcbDiagram
-            ariaLabel={`${config.topModule} interactive virtual FPGA board`}
-            boardLabel="ALLORA LABS · LIVE VIRTUAL I/O"
-            chipLabel="VIRTUAL FPGA"
+            ariaLabel={`${board.name} interactive virtual FPGA board`}
+            boardLabel={physicalBoard ? board.name : "ALLORA LABS · LIVE VIRTUAL I/O"}
+            vendorLabel={physicalBoard ? board.family : "ALLORA"}
+            chipLabel={physicalBoard ? board.device : "VIRTUAL FPGA"}
             chipSublabel={config.topModule}
             clockHz={config.clockFrequencyHz}
+            showUsb={!physicalBoard}
+            showHeaders={!physicalBoard}
+            showClock={!physicalBoard || Boolean(boardResources.clock)}
             className="vfpga-live-pcb"
-          >
-            <div className="vfpga-led-bank">
+            io={{ outputs: leds.length ? <div className="vfpga-led-bank" aria-label="Board LEDs">
               {leds.map((led) => (
                 <VirtualLed
                   key={led.id}
                   peripheral={led}
-                  active={getPeripheralValue(led, snapshot) === 1}
+                  active={isPeripheralActive(led, snapshot)}
                 />
               ))}
-            </div>
-            <div className="vfpga-input-bank">
+            </div> : null,
+            inputs: <div className="vfpga-input-bank" data-ui-compact="off">
               <div className="vfpga-switches">
                 {switches.map((item) => (
                   <button
                     key={item.id}
-                    className={`vfpga-switch ${getPeripheralValue(item, snapshot) ? "on" : ""}`}
+                    className={`vfpga-switch ${isPeripheralActive(item, snapshot) ? "on" : ""}`}
+                    aria-label={`Toggle ${item.label}`}
+                    aria-pressed={isPeripheralActive(item, snapshot)}
+                    title={peripheralDescription(item)}
                     disabled={!canInteract || !item.signal}
                     onClick={() =>
                       void drivePeripheral(
                         item,
-                        getPeripheralValue(item, snapshot) ? 0 : 1,
+                        getPeripheralDriveValue(item, !isPeripheralActive(item, snapshot)),
                       )
                     }
                   >
@@ -576,49 +597,43 @@ export default function VirtualFpgaSection({
                 ))}
               </div>
               <div className="vfpga-buttons">
-                {reset ? (
-                  <button
-                    className="vfpga-button reset"
-                    disabled={!canInteract || !reset.signal}
-                    onPointerDown={() =>
-                      void drivePeripheral(
-                        reset,
-                        reset.activeHigh === false ? 0 : 1,
-                      )
-                    }
-                    onPointerUp={() =>
-                      void drivePeripheral(
-                        reset,
-                        reset.activeHigh === false ? 1 : 0,
-                      )
-                    }
-                    onPointerLeave={() =>
-                      void drivePeripheral(
-                        reset,
-                        reset.activeHigh === false ? 1 : 0,
-                      )
-                    }
-                  >
-                    <span />
-                    RESET
-                  </button>
-                ) : null}
                 {buttons.map((item) => (
                   <button
                     key={item.id}
-                    className="vfpga-button"
+                    className={`vfpga-button${item.type === "reset" ? " reset" : ""}`}
+                    aria-label={`Press ${item.label}`}
+                    title={peripheralDescription(item)}
                     disabled={!canInteract || !item.signal}
-                    onPointerDown={() => void drivePeripheral(item, 1)}
-                    onPointerUp={() => void drivePeripheral(item, 0)}
-                    onPointerLeave={() => void drivePeripheral(item, 0)}
+                    onPointerDown={event => {
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      void drivePeripheral(item, getPeripheralDriveValue(item, true));
+                    }}
+                    onPointerUp={() => void drivePeripheral(item, getPeripheralDriveValue(item, false))}
+                    onPointerCancel={() => void drivePeripheral(item, getPeripheralDriveValue(item, false))}
+                    onBlur={() => void drivePeripheral(item, getPeripheralDriveValue(item, false))}
+                    onKeyDown={event => {
+                      if (event.key !== " " && event.key !== "Enter") return;
+                      event.preventDefault();
+                      if (!event.repeat) void drivePeripheral(item, getPeripheralDriveValue(item, true));
+                    }}
+                    onKeyUp={event => {
+                      if (event.key !== " " && event.key !== "Enter") return;
+                      event.preventDefault();
+                      void drivePeripheral(item, getPeripheralDriveValue(item, false));
+                    }}
                   >
                     <span />
-                    {item.label}
+                    <small>{item.label}</small>
                   </button>
                 ))}
               </div>
-            </div>
-          </VirtualPcbDiagram>
+            </div>,
+            resources: physicalBoard && boardResources.resources.length ? <div className="vfpga-resource-bank" aria-label="Board resources">
+              {boardResources.resources.map(resource => <div className="vfpga-resource" key={resource.label} title={resource.detail}>
+                <span>{resource.label}</span><small>{resource.count} {resource.count === 1 ? "pad" : "pads"}</small>
+              </div>)}
+            </div> : null,
+          }} />
         </section>
 
         <section className="vfpga-panel vfpga-mapping ui-workspace-framed ui-workspace-support ui-workspace-aside ui-workspace-aside-contained">
@@ -634,11 +649,12 @@ export default function VirtualFpgaSection({
               <label key={peripheral.id}>
                 <span>
                   <i className={`kind-${peripheral.type}`} />
-                  <span className="vfpga-map-label">{peripheral.label}</span>
+                  <span className="vfpga-map-label" title={peripheralDescription(peripheral)}>{peripheral.label}</span>
                   <small>{peripheral.type}</small>
                 </span>
                 <div className="vfpga-map-control">
                   <select className="ui-dropdown"
+                    aria-label={`Map ${peripheral.label}`}
                     value={mappingKey(peripheral)}
                     disabled={sessionId !== null}
                     onChange={(event) =>
@@ -675,6 +691,7 @@ export default function VirtualFpgaSection({
                     </button>
                   ) : null}
                 </div>
+                {mappingKey(peripheral).length > 22 ? <div className="vfpga-map-selection">{mappingKey(peripheral)}</div> : null}
               </label>
             ))}
           </div>
@@ -871,12 +888,17 @@ function VirtualLed({
   active: boolean;
 }) {
   return (
-    <div className="vfpga-led-wrap">
-      <span className={`vfpga-led ${active ? "on" : ""}`} />
+    <div className="vfpga-led-wrap" title={peripheralDescription(peripheral)}>
+      <span className={`vfpga-led color-${peripheral.color ?? "green"} ${active ? "on" : ""}`} />
       <small>{peripheral.label}</small>
       <em>{mappingKey(peripheral) || "—"}</em>
     </div>
   );
+}
+
+function peripheralDescription(peripheral: VirtualPeripheral) {
+  return [peripheral.label, peripheral.group, peripheral.pad ? `Pad ${peripheral.pad}` : null,
+    peripheral.activeHigh === false ? "Active low" : null, mappingKey(peripheral)].filter(Boolean).join(" · ");
 }
 
 function formatSimTime(picoseconds: number) {

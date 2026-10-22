@@ -23,7 +23,11 @@ Physical-board project setup now has equal-width Details, Structure, and Toolcha
 - Generated testbenches are scaffolds. Resource Usage sampling is macOS-only. Embedded chat uses Codex; Claude Code support is for installation/authentication status.
 - Live GitHub sign-in and push have not been verified without the configured OAuth client ID.
 
-## Recent implementation state — 2026-10-20/21
+## Recent implementation state — 2026-10-20/22
+
+- Chat history now uses IndexedDB with legacy migration, a compact browser fallback and a lightweight project index. Pending turns save before native dispatch; interrupted replies remain accessible in Recent chats. Read/save failures offer Retry without discarding unread history. Recent/All chats share an anchored glass popup, and composer focus survives footer dropdown handoffs.
+- Virtual FPGA now uses the selected board's verified, pad-deduplicated controls, polarity and clock, with board-scoped mapping migration. The existing teal model expands across wide workspaces and wraps labels/resources. Its peripheral summaries are schematic, not external-device emulation or exact physical coordinates.
+
 
 - Board Migration Assistant V1 shipped with verified resource remapping, review/takeover, transactional project copies, and separate simulation/synthesis/build/timing validation.
 - Landing layout preference is saved per display; compact layouts still center on tall viewports.
@@ -31,6 +35,8 @@ Physical-board project setup now has equal-width Details, Structure, and Toolcha
 - Shared field/dropdown styling was standardized. Chat completion uses a gradient dock outline and an in-panel swipe; the Ultra reasoning control uses a reduced-motion-aware colored swipe.
 
 ## Verification and next work
+
+History/simulator follow-up: the production build and lint pass. The full working checkout passes 311/312 frontend tests; the isolated push passes 266/267. Both retain the previously reproduced notification-icon assertion failure in `chat-notifications.test.mjs`. New history tests cover migration, storage failure/retry, concurrent saves, interrupted turns, delayed hydration/unmounts and timestamp ties; board tests cover verified catalog controls, polarity and mapping migration. Browser checks cover Ice/Black Ice, 420px/1440px/2560px layouts, anchored history menus, interrupted-turn reload/recovery and mocked simulator compile/step. Browser transport is mocked; these checks do not establish live Codex or physical hardware operation.
 
 The latest full-suite results recorded for the app are 241 frontend tests and 104 native tests passed, with four unrelated native tests ignored; lint and production build passed. Migration tests exercised Icarus, Yosys, and NextPNR, including a passing 12 MHz timing case. Packaged folder-picker navigation and physical boards were not verified. These results were not rerun for this handoff edit. `git diff --check` passed for this edit; no app tests/build were run.
 

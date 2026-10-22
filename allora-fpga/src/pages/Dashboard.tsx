@@ -814,6 +814,8 @@ export default function Dashboard({
           visited={visitedSections.has("virtual-fpga")}
         >
           <VirtualFpgaSection
+            key={`${projectPath ?? project?.id ?? "memory"}:${board.id}`}
+            board={board}
             files={fileMgmt.files}
             projectPath={projectPath}
             projectId={project?.id}

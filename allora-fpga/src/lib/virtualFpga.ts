@@ -1,6 +1,8 @@
 import { invokeTauri } from "./tauri";
 import type { ProjectFile } from "../pages/dashboard/types";
 import { findTopModule, isTestbenchFile } from "../hooks/utils";
+import type { BoardDefinition } from "../data/boardTypes";
+import { getVirtualBoardResources } from "./virtualBoardResources";
 
 export type RtlPort = {
   name: string;
@@ -24,9 +26,14 @@ export type VirtualPeripheral = {
   signal: string | null;
   bit?: number;
   activeHigh?: boolean;
+  pad?: string;
+  group?: string;
+  frequencyHz?: number;
+  color?: string;
 };
 
 export type VirtualFpgaConfig = {
+  boardId?: string;
   topModule: string;
   engine: "verilator";
   clockFrequencyHz: number;
@@ -92,21 +99,25 @@ const DEFAULT_PERIPHERALS: VirtualPeripheral[] = [
   })),
 ];
 
-export function defaultVirtualFpgaConfig(topModule: string): VirtualFpgaConfig {
+export function defaultVirtualFpgaConfig(topModule: string, board?: BoardDefinition): VirtualFpgaConfig {
+  const physicalBoard = board && board.id !== "allora-virtual" ? board : undefined;
+  const resources = physicalBoard ? getVirtualBoardResources(physicalBoard) : null;
   return {
+    ...(physicalBoard ? { boardId: physicalBoard.id } : {}),
     topModule,
     engine: "verilator",
-    clockFrequencyHz: 50_000_000,
+    clockFrequencyHz: resources?.clock?.frequency ?? 50_000_000,
     enableVcd: true,
-    peripherals: DEFAULT_PERIPHERALS.map((peripheral) => ({ ...peripheral })),
+    peripherals: resources?.peripherals ?? DEFAULT_PERIPHERALS.map((peripheral) => ({ ...peripheral })),
   };
 }
 
 export function readVirtualFpgaConfig(
   files: ProjectFile[],
   fallbackTopModule: string,
+  board?: BoardDefinition,
 ): VirtualFpgaConfig {
-  const fallback = defaultVirtualFpgaConfig(fallbackTopModule);
+  let fallback = defaultVirtualFpgaConfig(fallbackTopModule, board);
   const metadata = files.find((file) => file.name === "allora-project.json");
   if (!metadata || metadata.isBinary) return fallback;
   try {
@@ -115,12 +126,22 @@ export function readVirtualFpgaConfig(
     };
     const simulation = parsed.simulation;
     if (!simulation || simulation.engine !== "verilator") return fallback;
+    // Headless readers can restore the saved resource snapshot. The workspace
+    // always supplies its board so the current catalog remains authoritative.
+    if (!board && simulation.boardId) {
+      fallback = { ...fallback, boardId: simulation.boardId,
+        peripherals: mergePeripherals(simulation.peripherals, []),
+      };
+    }
     return {
       ...fallback,
       ...simulation,
       topModule: simulation.topModule?.trim() || fallbackTopModule,
-      clockFrequencyHz: normalizeFrequency(simulation.clockFrequencyHz),
-      peripherals: mergePeripherals(simulation.peripherals),
+      boardId: fallback.boardId,
+      clockFrequencyHz: simulation.boardId && simulation.boardId !== fallback.boardId
+        ? fallback.clockFrequencyHz
+        : normalizeFrequency(simulation.clockFrequencyHz, fallback.clockFrequencyHz),
+      peripherals: mergePeripherals(simulation.peripherals, fallback.peripherals, Boolean(fallback.boardId), simulation.boardId !== undefined && simulation.boardId !== fallback.boardId),
     };
   } catch {
     return fallback;
@@ -220,6 +241,16 @@ export function getPeripheralValue(
   return Number((raw >> BigInt(peripheral.bit ?? 0)) & 1n);
 }
 
+/** Physical switches, buttons and LEDs keep the polarity declared by the board. */
+export function isPeripheralActive(peripheral: VirtualPeripheral, snapshot: SimulationSnapshot | null) {
+  if (!peripheral.signal || !snapshot) return false;
+  return getPeripheralValue(peripheral, snapshot) === (peripheral.activeHigh === false ? 0 : 1);
+}
+
+export function getPeripheralDriveValue(peripheral: VirtualPeripheral, active: boolean) {
+  return Number(peripheral.activeHigh === false ? !active : active);
+}
+
 export function formatSignalValue(raw: string | undefined, width: number) {
   const value = BigInt(raw ?? "0");
   const binary = value.toString(2).padStart(width, "0");
@@ -268,16 +299,17 @@ export const virtualFpgaApi = {
     }),
 };
 
-function normalizeFrequency(value: unknown) {
+function normalizeFrequency(value: unknown, fallback = 50_000_000) {
   const number = typeof value === "number" ? value : Number(value);
   return Number.isFinite(number) && number >= 1
     ? Math.round(number)
-    : 50_000_000;
+    : fallback;
 }
 
-function mergePeripherals(value: unknown): VirtualPeripheral[] {
+function mergePeripherals(value: unknown, defaults = DEFAULT_PERIPHERALS, physical = false, differentBoard = false): VirtualPeripheral[] {
+  if (differentBoard) return defaults.map(item => ({ ...item }));
   if (!Array.isArray(value)) {
-    return DEFAULT_PERIPHERALS.map((peripheral) => ({ ...peripheral }));
+    return defaults.map((peripheral) => ({ ...peripheral }));
   }
   const saved = new Map(
     value
@@ -286,13 +318,27 @@ function mergePeripherals(value: unknown): VirtualPeripheral[] {
       )
       .map((item) => [item.id, item]),
   );
-  const merged = DEFAULT_PERIPHERALS.map((peripheral) => ({
+  // Migrate the old generic simulator mappings by their matching control type.
+  // New board IDs include the pad, so future catalog changes preserve identity.
+  const typeIndices = new Map<string, number>();
+  if (physical) return defaults.map(peripheral => {
+    const index = typeIndices.get(peripheral.type) ?? 0;
+    typeIndices.set(peripheral.type, index + 1);
+    const previous = saved.get(peripheral.id) ?? saved.get(`${peripheral.type}-${index}`);
+    return {
+      ...peripheral,
+      signal: typeof previous?.signal === "string" ? previous.signal : null,
+      ...(Number.isInteger(previous?.bit) && Number(previous?.bit) >= 0 ? { bit: previous?.bit } : {}),
+      ...(peripheral.type === "reset" && previous?.activeHigh !== undefined ? { activeHigh: previous.activeHigh } : {}),
+    };
+  });
+  const merged = defaults.map((peripheral) => ({
     ...peripheral,
     ...saved.get(peripheral.id),
     type: peripheral.type,
   }));
-  const defaults = new Set(DEFAULT_PERIPHERALS.map((peripheral) => peripheral.id));
+  const defaultIds = new Set(defaults.map((peripheral) => peripheral.id));
   return [...merged, ...[...saved.values()].filter((peripheral) =>
-    !defaults.has(peripheral.id) && ["clock", "reset", "button", "switch", "led"].includes(peripheral.type),
+    !defaultIds.has(peripheral.id) && ["clock", "reset", "button", "switch", "led"].includes(peripheral.type),
   )];
 }

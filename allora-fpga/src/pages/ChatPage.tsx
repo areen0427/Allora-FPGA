@@ -22,7 +22,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { CHAT_HISTORY_KEY, chatHistoryDetails, latestProjectChat } from "../lib/chatHistory";
+import { chatHistoryDetails, latestProjectChat, loadChatHistory, readChatHistory, saveChatHistory, validChatHistory } from "../lib/chatHistory";
+import ChatHistoryPopup from "../components/ChatHistoryPopup";
 import { getSavedProjects } from "../data/projects";
 import { getBoardById } from "../data/boards";
 import { createChatTitle } from "../lib/chatTitles";
@@ -53,7 +54,6 @@ import { syncProjectDiagnosticMemory } from "../lib/projectDiagnosticMemory";
 import ChatErrorSuggestions from "../components/ChatErrorSuggestions";
 import "./ChatPage.css";
 
-const HISTORY_KEY = CHAT_HISTORY_KEY;
 type ToolActivity = {
   id: string;
   name: string;
@@ -121,29 +121,18 @@ function folderName(path: string) {
   return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 }
 
-function readHistory(): Conversation[] {
+function conversationActivityTime(conversation: Conversation) {
+  const timestamp = Date.parse(conversation.updatedAt);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function sortRecentConversations(items: Conversation[]) {
+  return [...items].sort((a, b) => conversationActivityTime(b) - conversationActivityTime(a));
+}
+
+function readHistory(value: unknown = readChatHistory()): Conversation[] {
   try {
-    const saved: unknown = JSON.parse(
-      window.localStorage.getItem(HISTORY_KEY) ?? "[]",
-    );
-    if (!Array.isArray(saved)) return [];
-    return saved
-      .filter(
-        (item): item is Conversation =>
-          item &&
-          typeof item.id === "string" &&
-          typeof item.title === "string" &&
-          typeof item.workspacePath === "string" &&
-          Array.isArray(item.messages) &&
-          item.messages.every(
-            (message: Message) =>
-              message &&
-              typeof message.id === "string" &&
-              ["user", "assistant"].includes(message.role) &&
-              typeof message.text === "string",
-          ),
-      )
-      .slice(0, 40)
+    return sortRecentConversations((validChatHistory(value) as Conversation[])
       .map((conversation) => ({
         ...conversation,
         title: !conversation.titleManuallyEdited && conversation.title === conversation.messages.find((message) => message.role === "user")?.text.slice(0, 65)
@@ -166,7 +155,7 @@ function readHistory(): Conversation[] {
               : tool,
           ),
         })),
-      }));
+      }))).slice(0, 40);
   } catch {
     return [];
   }
@@ -184,13 +173,22 @@ export default function ChatPage({
   onOpenProject,
 }: ChatPageProps) {
   const desktopAvailable = hasTauriInvoke();
-  const [conversations, setConversations] =
+  const [conversations, setConversationsState] =
     useState<Conversation[]>(readHistory);
+  const conversationsRef = useRef(conversations);
+  const historyReady = useRef(false);
+  const historyLoaded = useRef<Promise<void>>(Promise.resolve());
+  const removedConversationIds = useRef(new Set<string>());
+  const editedConversationIds = useRef(new Set<string>());
+  const historySaveVersion = useRef(0);
+  const [historyError, setHistoryError] = useState("");
   const [activeId, setActiveId] = useState<string | null>(() =>
     resumeLatest ? (initialProjectPath
       ? latestProjectChat(conversations, initialProjectPath)
       : [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))[0])?.id ?? null : null,
   );
+  const historyResume = useRef({ pending: resumeLatest && !activeId, projectPath: initialProjectPath });
+  const historyLoadVersion = useRef(0);
   const [workspacePath, setWorkspacePath] = useState(
     () => initialProjectPath ?? conversations.find((item) => item.id === activeId)?.workspacePath ?? getLastProjectParentDirectory() ?? "",
   );
@@ -236,35 +234,7 @@ export default function ChatPage({
   const newChatDialogDescriptionId = useId();
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const historyPanelId = useId();
-  const historyPanelRef = useRef<HTMLElement>(null);
   const historyToggleRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    function dismissOutside(event: PointerEvent) {
-      const target = event.target as Node;
-      if (!historyPanelRef.current?.contains(target) && !historyToggleRef.current?.contains(target)) {
-        setSidebarOpen(false);
-      }
-    }
-    function dismissOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      setSidebarOpen(false);
-      historyToggleRef.current?.focus();
-    }
-    document.addEventListener("pointerdown", dismissOutside);
-    document.addEventListener("keydown", dismissOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", dismissOutside);
-      document.removeEventListener("keydown", dismissOnEscape);
-    };
-  }, [sidebarOpen]);
-  useEffect(() => {
-    if (!sidebarOpen || !historyExpanded) return;
-    const dialog = historyPanelRef.current as HTMLDialogElement | null;
-    if (dialog && !dialog.open) dialog.showModal();
-    return () => { if (dialog?.open) dialog.close(); };
-  }, [sidebarOpen, historyExpanded]);
   useLayoutEffect(() => {
     if (!newChatChoiceOpen) return;
     const popup = newChatPopupRef.current;
@@ -421,15 +391,65 @@ export default function ChatPage({
     };
   }, [loadReadiness]);
 
-  useEffect(() => {
+  const persistConversations = useCallback(async (items = conversationsRef.current) => {
+    if (!historyReady.current) return;
+    const version = ++historySaveVersion.current;
     try {
-      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(conversations));
+      await saveChatHistory(items);
+      if (alive.current && version === historySaveVersion.current) setHistoryError("");
     } catch {
-      setNotice(
-        "Conversation history could not be saved on this device. The current chat is still available.",
-      );
+      if (alive.current && version === historySaveVersion.current)
+        setHistoryError("Chat history is not saved yet. Keep Allora open and retry after freeing device storage.");
     }
-  }, [conversations]);
+  }, []);
+
+  const hydrateHistory = useCallback(async () => {
+    const version = ++historyLoadVersion.current;
+    try {
+      await loadChatHistory();
+      if (version !== historyLoadVersion.current) return;
+      // Another scoped chat can finish saving while this database read is in
+      // flight. Read its authoritative memory snapshot, including deletions.
+      const merged = new Map(readHistory(readChatHistory()).filter(chat => !removedConversationIds.current.has(chat.id)).map(chat => [chat.id, chat]));
+      // A submit or rename can happen while IndexedDB opens. Prefer the live
+      // version, and retain any newly submitted turn instead of overwriting it.
+      conversationsRef.current.forEach(chat => {
+        const stored = merged.get(chat.id);
+        if (!stored || editedConversationIds.current.has(chat.id) || conversationActivityTime(chat) > conversationActivityTime(stored)) merged.set(chat.id, chat);
+      });
+      const next = sortRecentConversations([...merged.values()]).slice(0, 40);
+      conversationsRef.current = next;
+      if (alive.current) setConversationsState(next);
+      if (alive.current && historyResume.current.pending) {
+        historyResume.current.pending = false;
+        const selected = historyResume.current.projectPath ? latestProjectChat(next, historyResume.current.projectPath) : next[0];
+        if (selected) {
+          setActiveId(selected.id);
+          setWorkspacePath(selected.workspacePath);
+          setContextProjectPath(historyResume.current.projectPath
+            ?? [...selected.messages].reverse().find(message => message.projectPath)?.projectPath
+            ?? getSavedProjects().find(project => project.projectPath === selected.workspacePath)?.projectPath);
+        }
+      }
+      historyReady.current = true;
+      await persistConversations(next);
+    } catch {
+      if (alive.current && version === historyLoadVersion.current)
+        setHistoryError("Saved chats could not be opened. Your current chat is still here. Retry to reconnect device storage.");
+    }
+  }, [persistConversations]);
+
+  useEffect(() => {
+    historyLoaded.current = hydrateHistory();
+    const flush = () => { void historyLoaded.current.then(() => persistConversations()); };
+    const visibilityChanged = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", visibilityChanged);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", visibilityChanged);
+    };
+  }, [hydrateHistory, persistConversations]);
 
   useEffect(() => {
     if (followScroll.current)
@@ -460,18 +480,30 @@ export default function ChatPage({
     };
   }, [historyMenuId]);
 
+  function setConversations(update: (current: Conversation[]) => Conversation[]) {
+    const next = update(conversationsRef.current);
+    next.forEach(chat => {
+      if (conversationsRef.current.find(previous => previous.id === chat.id) !== chat) editedConversationIds.current.add(chat.id);
+    });
+    conversationsRef.current = next;
+    setConversationsState(next);
+    if (historyReady.current) void persistConversations(next);
+  }
+
   function updateConversation(
     id: string,
     update: (current: Conversation) => Conversation,
   ) {
     if (!alive.current) return;
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id === id
-          ? { ...update(conversation), updatedAt: new Date().toISOString() }
-          : conversation,
-      ),
-    );
+    const updatedAt = new Date().toISOString();
+    setConversations((current) => {
+      const conversation = current.find((item) => item.id === id);
+      if (!conversation) return current;
+      return [
+        { ...update(conversation), updatedAt },
+        ...current.filter((item) => item.id !== id),
+      ].slice(0, 40);
+    });
   }
 
   async function closeSession() {
@@ -482,6 +514,7 @@ export default function ChatPage({
 
   async function chooseWorkspace() {
     if (interactionLocked) return;
+    historyResume.current.pending = false;
     setNotice("");
     try {
       const path = await pickProjectParentDirectory();
@@ -508,6 +541,7 @@ export default function ChatPage({
   async function newChat(project: "current" | "new" = "current") {
     if (busyRef.current || changingConversationRef.current) return false;
     changingConversationRef.current = true;
+    historyResume.current.pending = false;
     setChangingConversation(true);
     try {
       await closeSession();
@@ -545,6 +579,7 @@ export default function ChatPage({
     )
       return;
     changingConversationRef.current = true;
+    historyResume.current.pending = false;
     setChangingConversation(true);
     try {
       await closeSession();
@@ -574,6 +609,7 @@ export default function ChatPage({
   async function removeConversation(id: string) {
     if (busyRef.current || changingConversationRef.current) return;
     if (id === activeId && !(await newChat())) return;
+    removedConversationIds.current.add(id);
     setConversations((current) =>
       current.filter((conversation) => conversation.id !== id),
     );
@@ -589,6 +625,7 @@ export default function ChatPage({
     )
       return;
     busyRef.current = true;
+    historyResume.current.pending = false;
     stopRequested.current = false;
     setBusy(true);
     setDraft("");
@@ -772,6 +809,11 @@ export default function ChatPage({
       }
     };
     try {
+      // Save the user request and pending reply before starting native work, so
+      // an interrupted connection still leaves an accessible recent chat.
+      await historyLoaded.current;
+      await persistConversations();
+      if (!alive.current || stopRequested.current) return;
       if (!effectiveModel) throw new Error("Load an available Codex model before sending a message.");
       const existingProject = contextProjectPath ?? getSavedProjects().find(project => project.projectPath === workspacePath)?.projectPath;
       if (existingProject) {
@@ -940,7 +982,6 @@ export default function ChatPage({
   const historyProjects = sidebarOpen ? getSavedProjects() : [];
   const orderedHistory = [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0));
   const visibleHistory = historyExpanded ? orderedHistory : orderedHistory.slice(0, 10);
-  const HistoryPanel = historyExpanded ? "dialog" : "aside";
 
   return (
     <section
@@ -948,15 +989,8 @@ export default function ChatPage({
       aria-label="AI Integration"
     >
       {sidebarOpen && (
-        <HistoryPanel id={historyPanelId} ref={(element: HTMLElement | null) => { historyPanelRef.current = element; }}
-          className={`chat-sidebar${historyExpanded ? " chat-history-modal" : ""}`} aria-label={historyExpanded ? "All chats" : "Recent chats"}
-          onCancel={event => { event.preventDefault(); setSidebarOpen(false); setHistoryExpanded(false); historyToggleRef.current?.focus(); }}
-          onClick={event => {
-            if (!historyExpanded || event.target !== event.currentTarget) return;
-            const bounds = event.currentTarget.getBoundingClientRect();
-            if (event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY >= bounds.top && event.clientY <= bounds.bottom) return;
-            setSidebarOpen(false); setHistoryExpanded(false); historyToggleRef.current?.focus();
-          }}>
+        <ChatHistoryPopup id={historyPanelId} anchorRef={historyToggleRef} expanded={historyExpanded}
+          onDismiss={() => { setSidebarOpen(false); setHistoryExpanded(false); }}>
           <div className="chat-sidebar-top">
             <strong>
               <History size={16} /> {historyExpanded ? "All chats" : "Recent chats"}
@@ -1038,7 +1072,7 @@ export default function ChatPage({
             )}
           </div>
           {!historyExpanded && <button type="button" data-glass="off" className="chat-history-more" aria-label="View all chats" onClick={() => { setHistoryMenuId(null); setHistoryExpanded(true); }}><MoreHorizontal size={20} /></button>}
-        </HistoryPanel>
+        </ChatHistoryPopup>
       )}
 
       {newChatChoiceOpen && (
@@ -1346,6 +1380,16 @@ export default function ChatPage({
               </button>
             </div>
           )}
+          {historyError && (
+            <div className="chat-notice" role="alert">
+              <AlertCircle size={14} />
+              <span>{historyError}</span>
+              <button type="button" onClick={() => {
+                if (historyReady.current) void persistConversations();
+                else historyLoaded.current = hydrateHistory();
+              }}>Retry save</button>
+            </div>
+          )}
           {changingConversation && (
             <div className="chat-active-status" role="status">
               <LoaderCircle size={12} className="spinning" />
@@ -1359,6 +1403,10 @@ export default function ChatPage({
           }} />
           <form
             className={`chat-composer${busy ? " is-busy" : ""}`}
+            onPointerDownCapture={event => {
+              const control = (event.target as Element).closest<HTMLButtonElement>(".chat-composer-bottom button");
+              if (control && !control.disabled) control.focus({ preventScroll: true });
+            }}
             onSubmit={(event) => {
               event.preventDefault();
               void send();

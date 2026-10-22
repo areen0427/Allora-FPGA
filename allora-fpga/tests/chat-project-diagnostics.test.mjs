@@ -43,11 +43,11 @@ function textContent(node) {
 async function harness(projectPath = "/projects/one", options = {}) {
   notifications.chatNotifications.reset();
   notifications.chatNotifications.setVisible(true);
-  const states = [], refs = [], requests = [], memoryUpdates = [], folderReplies = [], pickerCalls = [], starts = [], openedArtifacts = [];
+  const states = [], refs = [], requests = [], memoryUpdates = [], folderReplies = [], pickerCalls = [], starts = [], openedArtifacts = [], historySaves = [];
   const localValues = new Map();
   if (options.history) localValues.set("allora-codex-conversations-v1", JSON.stringify(options.history));
   const localStorage = { getItem: key => localValues.get(key) ?? null, setItem: (key, value) => localValues.set(key, value) };
-  let stateIndex = 0, refIndex = 0, timestamp = Date.now();
+  let stateIndex = 0, refIndex = 0, timestamp = Date.now(), historyEffect, lifecycleEffect, historyCleanup, lifecycleCleanup, historyMounted = false, deviceMemory;
   const store = diagnostics.createProjectDiagnostics(() => timestamp++);
   const jsx = (type, props, key) => ({ type, props, key });
   const readiness = {
@@ -64,14 +64,30 @@ async function harness(projectPath = "/projects/one", options = {}) {
       return [states[index], value => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
     },
     useRef(initial) { return refs[refIndex++] ??= { current: initial }; },
-    useEffect() {},
+    useEffect(effect) {
+      if (options.historyEffects && !historyMounted && effect.toString().includes("historyLoaded.current = hydrateHistory")) historyEffect = effect;
+      if (options.historyEffects && !historyMounted && effect.toString().includes("alive.current = true")) lifecycleEffect = effect;
+    },
     useCallback: callback => callback,
     useId: () => "chat-test-history",
     useSyncExternalStore: (_subscribe, snapshot) => snapshot(),
+    readChatHistory: () => deviceMemory ?? JSON.parse(localValues.get("allora-codex-conversations-v1") ?? "[]"),
+    loadChatHistory: async () => {
+      if (options.waitForHistory) await options.waitForHistory;
+      if (options.historyLoadFailure?.()) throw new Error("Database read failed");
+      deviceMemory ??= options.databaseHistory ?? JSON.parse(localValues.get("allora-codex-conversations-v1") ?? "[]");
+      return deviceMemory;
+    },
+    saveChatHistory: async items => {
+      historySaves.push(structuredClone(items));
+      deviceMemory = structuredClone(items);
+      if (options.historySaveFailure?.()) throw new Error("Device storage full");
+    },
     projectDiagnostics: store,
     syncProjectDiagnosticMemory: async entries => { memoryUpdates.push(entries); },
     hasTauriInvoke: () => true,
     readCodexReadiness: () => readiness,
+    prepareCodexReadiness: async () => readiness,
     getSavedProjects: () => options.projects ?? [],
     getLastProjectParentDirectory: () => undefined,
     createChatTitle: prompt => prompt.slice(0, 65),
@@ -92,7 +108,8 @@ async function harness(projectPath = "/projects/one", options = {}) {
       create: async path => ({ id: "test-checkpoint", projectPath: path }),
       review: async () => ({ id: "test-checkpoint", projectPath, files: [] }),
     },
-    window: { crypto: { randomUUID }, localStorage, innerWidth: 1200 },
+    window: { crypto: { randomUUID }, localStorage, innerWidth: 1200, addEventListener() {}, removeEventListener() {} },
+    document: { visibilityState: "visible", addEventListener() {}, removeEventListener() {} },
     localStorage,
   });
   globalThis.chatDiagnosticsHarness = bindings;
@@ -101,11 +118,18 @@ async function harness(projectPath = "/projects/one", options = {}) {
   delete globalThis.chatDiagnosticsHarness;
   const render = () => {
     stateIndex = refIndex = 0;
-    return ChatPage({ initialProjectPath: projectPath, resumeLatest: options.resumeLatest ?? Boolean(options.history), onActivateProject: options.activate, onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
+    const tree = ChatPage({ initialProjectPath: projectPath, resumeLatest: options.resumeLatest ?? Boolean(options.history), onActivateProject: options.activate, onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
+    if (historyEffect && !historyMounted) {
+      historyMounted = true;
+      lifecycleCleanup = lifecycleEffect?.();
+      historyCleanup = historyEffect();
+    }
+    return tree;
   };
   return {
-    store, notifications: notifications.chatNotifications, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, render,
+    store, notifications: notifications.chatNotifications, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, historySaves, render,
     conversations: () => states.find(value => Array.isArray(value) && typeof value[0]?.workspacePath === "string") ?? [],
+    unmount() { lifecycleCleanup?.(); historyCleanup?.(); },
     async submit(prompt) {
       const input = descendants(render()).find(node => node.type === "textarea" && node.props["aria-label"] === "Message Allora");
       assert.ok(input, "the composer is rendered");
@@ -381,7 +405,7 @@ test("New chat without a project starts immediately without a project choice", a
   assert.match(textContent(h.render()), /No project selected/);
 });
 
-test("recent history is newest-first, limited to ten, with full history in the larger dialog", async () => {
+test("recent history is newest-first, limited to ten, with full history in the anchored popup", async () => {
   const history = Array.from({ length: 16 }, (_, index) => ({ id: `chat-${index}`, title: `Chat ${index}`, workspacePath: "/parent", updatedAt: new Date(2026, 0, index + 1).toISOString(), messages: [] }));
   const h = await harness(undefined, { history, resumeLatest: false });
   descendants(h.render()).find(node => node.type === "button" && textContent(node).includes("Recent chats")).props.onClick();
@@ -389,13 +413,97 @@ test("recent history is newest-first, limited to ten, with full history in the l
   assert.deepEqual(items(h.render()), Array.from({ length: 10 }, (_, index) => `Chat ${15 - index}`));
   descendants(h.render()).find(node => node.props?.["aria-label"] === "View all chats").props.onClick();
   const expanded = h.render();
-  assert.ok(descendants(expanded).some(node => node.type === "dialog" && node.props["aria-label"] === "All chats"));
+  const popup = descendants(expanded).find(node => node.props?.expanded === true && node.props?.onDismiss);
+  assert.ok(popup, "the full history uses the shared anchored popup");
   assert.deepEqual(items(expanded), Array.from({ length: 16 }, (_, index) => `Chat ${15 - index}`));
   assert.ok(!descendants(expanded).some(node => node.props?.["aria-label"] === "Close chat history"), "large history has no close X");
-  const dialog = descendants(expanded).find(node => node.type === "dialog");
-  const element = { getBoundingClientRect: () => ({ left: 100, right: 880, top: 24, bottom: 644 }) };
-  dialog.props.onClick({ target: element, currentTarget: element, clientX: 110, clientY: 40 });
-  assert.ok(descendants(h.render()).some(node => node.type === "dialog"), "clicking dialog padding does not dismiss");
-  dialog.props.onClick({ target: element, currentTarget: element, clientX: 40, clientY: 40 });
-  assert.ok(!descendants(h.render()).some(node => node.type === "dialog"), "clicking the backdrop closes history");
+  popup.props.onDismiss();
+  assert.ok(!descendants(h.render()).some(node => node.props?.expanded === true), "outside/Escape dismissal closes history");
+});
+
+test("the submitted request and streaming reply are saved before an interrupted turn completes", async () => {
+  let finish;
+  const h = await harness("/projects/one", { historyEffects: true, waitForSend: new Promise(resolve => { finish = resolve; }) });
+  await h.submit("Build a counter that survives an interrupted connection");
+  assert.ok(h.historySaves.length > 0);
+  assert.equal(h.historySaves[0][0].messages[0].text, "Build a counter that survives an interrupted connection");
+  assert.equal(h.historySaves[0][0].messages[1].pending, true);
+  h.requests[0][4]({ type: "assistant_delta", delta: "I saved the first module." });
+  assert.equal(h.historySaves.at(-1)[0].messages[1].text, "I saved the first module.");
+  assert.equal(h.historySaves.at(-1)[0].messages[1].pending, true);
+  clickButton(h, "Recent chats");
+  assert.ok(descendants(h.render()).some(node => node.props?.className === "chat-history-title" && textContent(node).includes("Build a counter")));
+  finish();
+  await new Promise(resolve => setImmediate(resolve));
+});
+
+test("saved pending replies reopen as interrupted with their partial text and tool outcomes", async () => {
+  const interrupted = { ...projectChat, messages: [
+    { id: "request", role: "user", text: "Build a counter" },
+    { id: "reply", role: "assistant", text: "The counter module is ready.", pending: true,
+      tools: [{ id: "save", name: "write_file", status: "complete" }, { id: "sim", name: "simulate", status: "running" }] },
+  ] };
+  const h = await harness("/projects/counter", { databaseHistory: [interrupted], historyEffects: true, resumeLatest: true });
+  h.render();
+  await new Promise(resolve => setImmediate(resolve));
+  const reply = h.conversations()[0].messages[1];
+  assert.equal(reply.text, "The counter module is ready.");
+  assert.equal(reply.pending, false);
+  assert.equal(reply.interrupted, true);
+  assert.deepEqual(reply.tools.map(tool => tool.status), ["complete", "error"]);
+  assert.ok(descendants(h.render()).some(node => node.props?.text === reply.text), "async project resume selects its saved conversation");
+});
+
+test("late device history cannot replace a new submitted turn or its draft", async () => {
+  let loaded;
+  const h = await harness("/projects/one", { historyEffects: true, resumeLatest: true, databaseHistory: [projectChat], waitForHistory: new Promise(resolve => { loaded = resolve; }) });
+  h.render();
+  const submitting = h.submit("Keep this newly submitted chat");
+  loaded();
+  await submitting;
+  assert.equal(h.conversations().length, 2);
+  assert.ok(descendants(h.render()).some(node => node.props?.className === "chat-user-text" && textContent(node) === "Keep this newly submitted chat"));
+  assert.equal(h.requests.length, 1);
+});
+
+test("storage failures offer retry without blocking native sends and clear after a successful retry", async () => {
+  let full = true;
+  const h = await harness("/projects/one", { historyEffects: true, historySaveFailure: () => full });
+  await h.submit("Explain this counter");
+  assert.equal(h.requests.length, 1);
+  assert.match(textContent(h.render()), /Chat history is not saved yet/);
+  full = false;
+  clickButton(h, "Retry save");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.doesNotMatch(textContent(h.render()), /Chat history is not saved yet/);
+});
+
+test("failed history reads preserve stored conversations until retry can merge them", async () => {
+  let readFailed = true;
+  const h = await harness("/projects/one", { historyEffects: true, databaseHistory: [projectChat], historyLoadFailure: () => readFailed });
+  await h.submit("Keep this request while storage reconnects");
+  assert.equal(h.requests.length, 1, "a storage problem does not prevent a native turn");
+  assert.equal(h.historySaves.length, 0, "a failed read never writes an incomplete replacement");
+  assert.match(textContent(h.render()), /Saved chats could not be opened/);
+  readFailed = false;
+  clickButton(h, "Retry save");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.historySaves.at(-1).length, 2);
+  assert.doesNotMatch(textContent(h.render()), /Saved chats could not be opened/);
+});
+
+test("a submitted turn persists if its chat unmounts before the initial device history read finishes", async () => {
+  let loaded;
+  const h = await harness("/projects/one", { historyEffects: true, databaseHistory: [projectChat],
+    waitForHistory: new Promise(resolve => { loaded = resolve; }), waitForSend: new Promise(() => {}) });
+  const submission = h.submit("Keep this interrupted request");
+  await new Promise(resolve => setImmediate(resolve));
+  h.unmount();
+  loaded();
+  await submission;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.starts.length, 0, "an unmounted conversation never starts native work after awaiting storage");
+  const stored = h.historySaves.at(-1);
+  assert.equal(stored.length, 2, "existing disk chats are merged before the interrupted submission is saved");
+  assert.ok(stored.some(chat => chat.messages[0]?.text === "Keep this interrupted request"));
 });
