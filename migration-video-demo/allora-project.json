@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "IceBreaker Blink Demo",
+  "boardId": "icebreaker",
+  "projectKind": "hardware",
+  "language": "SystemVerilog",
+  "topModule": "top"
+}

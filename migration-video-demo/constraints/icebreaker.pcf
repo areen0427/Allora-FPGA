@@ -1,0 +1,3 @@
+# iCEBreaker clock and RGB LED pins
+set_io clk12 35
+set_io rgb_red 39

@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
-  Cpu,
+  Wrench,
   FileCode2,
   FolderOpen,
   Layers3,
@@ -12,7 +12,6 @@ import {
   Zap,
 } from "lucide-react";
 import type { BoardDefinition } from "../data/boards";
-import { getBoardCapabilities } from "../data/boardCapabilities";
 import type { AppSettings } from "../data/settings";
 import {
   PROJECT_TEMPLATES,
@@ -20,7 +19,7 @@ import {
   getTemplateUnavailableReason,
   type TemplateLanguage,
 } from "../data/templates";
-import BoardDiagram from "../components/BoardDiagram";
+import ToolchainWizard from "../components/ToolchainWizard";
 import BoardResourceSummary from "../components/BoardResourceSummary";
 import { useProjectLocation } from "../hooks/useProjectLocation";
 
@@ -70,7 +69,6 @@ export default function ProjectSetup({
   const [createTestbench, setCreateTestbench] = useState(false);
   const [initializeGit, setInitializeGit] = useState(false);
   const [creationError, setCreationError] = useState("");
-  const capabilities = useMemo(() => getBoardCapabilities(board), [board]);
   const selectedTemplate = getTemplateById(templateId) ?? PROJECT_TEMPLATES[0];
   const projectPlan = getProjectPlan(
     topModule,
@@ -201,7 +199,8 @@ export default function ProjectSetup({
 
           <label className="project-setup-field">
             <span>Starter source type</span>
-            <select className="ui-dropdown"
+            <select
+              className="ui-dropdown"
               value={language}
               onChange={(event) =>
                 changeLanguage(event.target.value as TemplateLanguage)
@@ -281,7 +280,8 @@ export default function ProjectSetup({
 
           <label className="project-setup-field project-template-select">
             <span>Starting point</span>
-            <select className="ui-dropdown"
+            <select
+              className="ui-dropdown"
               value={templateId}
               onChange={(event) => setTemplateId(event.target.value)}
             >
@@ -399,82 +399,40 @@ export default function ProjectSetup({
         </section>
 
         <aside className="project-setup-side">
-          <section className="liquid-home-card project-setup-card board-summary-panel">
+          <section className="liquid-home-card project-setup-card project-toolchain-panel">
             <div className="project-panel-title">
-              <Cpu size={18} />
-              Board Summary
+              <Wrench size={18} />
+              Toolchain Wizard
             </div>
 
-            <div className="project-board-preview">
-              <BoardDiagram board={board} compact />
-            </div>
+            <ToolchainWizard board={board} />
 
-            <div className="board-resource-strip">
-              <MiniFact
-                icon={<MemoryStick size={14} />}
-                label="Pin aliases"
-                value={String(board.pins.length)}
-              />
-              <MiniFact
-                icon={<Zap size={14} />}
-                label="Clocks"
-                value={String(board.clocks.length)}
-              />
-              <MiniFact
-                icon={<Lightbulb size={14} />}
-                label="LED pins"
-                value={String(board.leds.length)}
-              />
-              <MiniFact
-                icon={<ListChecks size={14} />}
-                label="Buttons"
-                value={String(board.buttons.length)}
-              />
-            </div>
-
-            <BoardResourceSummary board={board} />
-
-            <div className="capability-pill-list">
-              <CapabilityPill
-                label="Synthesis"
-                supported={capabilities.synthesisDiagram.supported}
-              />
-              <CapabilityPill
-                label="Bitstream"
-                supported={capabilities.bitstream.supported}
-              />
-              <CapabilityPill
-                label="Pin Mapping"
-                supported={capabilities.pinMapping.supported}
-              />
-              <CapabilityPill
-                label="Programming"
-                supported={capabilities.programming.supported}
-              />
-              <CapabilityPill
-                label="Diagram"
-                supported={capabilities.synthesisDiagram.supported}
-              />
-            </div>
-
-            <div className="project-summary-grid">
-              <SummaryItem label="Family" value={board.family} />
-              <SummaryItem label="Device" value={board.device} />
-              <SummaryItem label="Package" value={board.package} />
-              <SummaryItem label="Toolchain" value={capabilities.toolchain} />
-              <SummaryItem
-                label="Constraints"
-                value={board.constraintsFile.toUpperCase()}
-              />
-              <SummaryItem
-                label="Programmer"
-                value={
-                  board.programmer?.command ??
-                  board.toolchain.program ??
-                  "Not configured"
-                }
-              />
-            </div>
+            <details className="project-board-data">
+              <summary>Board specifications</summary>
+              <div className="board-resource-strip">
+                <MiniFact
+                  icon={<MemoryStick size={14} />}
+                  label="Pin aliases"
+                  value={String(board.pins.length)}
+                />
+                <MiniFact
+                  icon={<Zap size={14} />}
+                  label="Clocks"
+                  value={String(board.clocks.length)}
+                />
+                <MiniFact
+                  icon={<Lightbulb size={14} />}
+                  label="LED pins"
+                  value={String(board.leds.length)}
+                />
+                <MiniFact
+                  icon={<ListChecks size={14} />}
+                  label="Buttons"
+                  value={String(board.buttons.length)}
+                />
+              </div>
+              <BoardResourceSummary board={board} />
+            </details>
           </section>
         </aside>
       </main>
@@ -494,35 +452,6 @@ function MiniFact({
   return (
     <div className="project-mini-fact ui-metric">
       {icon}
-      <span>{label}</span>
-      <strong title={value}>{value}</strong>
-    </div>
-  );
-}
-
-function CapabilityPill({
-  label,
-  supported,
-}: {
-  label: string;
-  supported: boolean;
-}) {
-  return (
-    <span
-      className={
-        supported
-          ? "capability-pill ui-metric supported"
-          : "capability-pill ui-metric"
-      }
-    >
-      {label}
-    </span>
-  );
-}
-
-function SummaryItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="project-summary-item ui-metric">
       <span>{label}</span>
       <strong title={value}>{value}</strong>
     </div>

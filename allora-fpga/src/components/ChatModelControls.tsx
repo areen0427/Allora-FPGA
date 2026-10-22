@@ -2,6 +2,9 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import type { AiChatModel } from "../lib/aiChat";
 
+const FRONTIER_AUTO_DELEGATION_MODELS = new Set(["gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra"]);
+const SUBAGENT_DISABLED_MODELS = new Set(["gpt-5.6-terra", "gpt-5.6-luna"]);
+
 type Props = {
   models: AiChatModel[];
   selectedModel: string;
@@ -36,6 +39,10 @@ export default function ChatModelControls(props: Props) {
   const effort = choices[effortIndex];
   const position = sliderPosition ?? effortIndex;
   const preview = choices[Math.round(position)];
+  const modelDisablesSubagents = SUBAGENT_DISABLED_MODELS.has(model?.model ?? "");
+  const showDelegationDescription = modelDisablesSubagents || preview?.reasoningEffort === "ultra";
+  const previewAutoDelegates = !modelDisablesSubagents && preview?.reasoningEffort === "ultra"
+    && FRONTIER_AUTO_DELEGATION_MODELS.has(model?.model ?? "");
   function commitPosition(value: number) {
     const nearest = Math.max(0, Math.min(choices.length - 1, Math.round(value)));
     if (choices[nearest]) props.onReasoningChange(choices[nearest].reasoningEffort);
@@ -124,7 +131,13 @@ export default function ChatModelControls(props: Props) {
                 }}>
                 <span className="chat-model-option-title"><strong>{item.displayName}</strong>{item.model === "gpt-6.1-sol" && <small>Default</small>}{model?.model === item.model && <Check size={15} />}</span>
                 <span className="chat-model-description">{item.description || "A model available with your Codex account."}</span>
-                <span className="chat-model-specs"><span>Context <b>{item.contextWindow ? `${new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(item.contextWindow)} tokens` : "Not reported"}</b></span></span>
+                <span className="chat-model-specs">
+                  <span>Subagents <b>{SUBAGENT_DISABLED_MODELS.has(item.model)
+                    ? "Disabled for this model"
+                    : FRONTIER_AUTO_DELEGATION_MODELS.has(item.model)
+                      ? "Automatic at Ultra; available on request at every level"
+                      : "Available on request at every reasoning level"}</b></span>
+                </span>
               </button>
             ))}
             {!props.models.length && <p className="chat-model-empty">No available models.</p>}
@@ -140,14 +153,18 @@ export default function ChatModelControls(props: Props) {
       </button>
       {reasoningOpen && !props.disabled && <div id={`${popupId}-reasoning`} role="dialog" aria-label="Reasoning amount" className={`chat-reasoning-popup chat-reasoning-control${effort?.reasoningEffort === "ultra" ? " is-ultra" : ""}`}>
         <label htmlFor={`${popupId}-effort`}><span>Reasoning</span><strong>{preview ? effortName(preview.reasoningEffort) : "Default"}</strong></label>
-        {preview?.reasoningEffort === "ultra" && (
-          <p id={`${popupId}-ultra-description`} className="chat-reasoning-subtitle">
-            Delegates work across subagents. Will consume usage limits faster.
+        {showDelegationDescription && (
+          <p id={`${popupId}-delegation-description`} className="chat-reasoning-subtitle">
+            {modelDisablesSubagents
+              ? "Subagents are disabled for this model at every reasoning level."
+              : previewAutoDelegates
+              ? "Automatically delegates useful work across subagents. Uses more of your limits."
+              : "Ask this model to delegate useful work across subagents when needed. Uses more of your limits."}
           </p>
         )}
         <div ref={range} id={`${popupId}-effort`} role="slider" tabIndex={0}
           className={`chat-reasoning-slider${sliderPosition !== null ? " is-dragging" : ""}`}
-          aria-describedby={preview?.reasoningEffort === "ultra" ? `${popupId}-ultra-description` : undefined}
+          aria-describedby={showDelegationDescription ? `${popupId}-delegation-description` : undefined}
           aria-label="Reasoning amount" aria-valuemin={0} aria-valuemax={Math.max(0, choices.length - 1)} aria-valuenow={position}
           aria-disabled={choices.length < 2}
           aria-valuetext={preview ? effortName(preview.reasoningEffort) : "Model default"}

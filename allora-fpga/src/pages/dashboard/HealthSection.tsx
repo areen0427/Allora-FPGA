@@ -7,6 +7,7 @@ import {
   type BuildRecord,
 } from "../../lib/buildHistory";
 import InfoCard from "./InfoCard";
+import ToolchainWizard from "../../components/ToolchainWizard";
 import type { ProjectFile } from "./types";
 import { hasTauriInvoke } from "../../lib/tauri";
 import { useBuildPreflight } from "../../hooks/useBuildPreflight";
@@ -160,6 +161,10 @@ export default function HealthSection({
         </InfoCard>
       ) : null}
 
+      <InfoCard title="Toolchain Wizard">
+        <ToolchainWizard board={board} />
+      </InfoCard>
+
       <InfoCard title="Readiness">
         <div
           style={{
@@ -182,11 +187,6 @@ export default function HealthSection({
             label="Pin Mapping"
             value={capabilities.pinMapping.label}
             ready={capabilities.pinMapping.supported}
-          />
-          <ReadinessItem
-            label="Toolchain"
-            value={capabilities.toolchain}
-            ready={capabilities.bitstream.supported}
           />
           <ReadinessItem
             label="Verilator"

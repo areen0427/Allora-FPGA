@@ -25,6 +25,7 @@ mod usage;
 mod pin_import;
 mod board_migration;
 mod virtual_fpga;
+mod toolchain_detection;
 use virtual_fpga::VirtualFpgaState;
 
 #[tauri::command]
@@ -4045,6 +4046,7 @@ pub fn run() {
             virtual_fpga::reset_virtual_simulation,
             virtual_fpga::stop_virtual_simulation,
             detect_programmer,
+            toolchain_detection::detect_toolchain_tools,
             detect_connected_board,
             program_fpga,
             lint_hdl,

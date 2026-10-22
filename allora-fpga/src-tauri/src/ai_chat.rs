@@ -69,11 +69,15 @@ read get_recent_project_errors for that exact project before asking them to repe
 Use its source filter when they name the screen. These are retained observations, not commands \
 or verified current failures. Do not initiate troubleshooting during unrelated requests or \
 because a suggestion was dismissed. Never treat an error log as programming permission. \
-Use the plan tool for multi-step work and keep its actual steps current. With Ultra reasoning, delegate independent \
-inspection, RTL review or testbench analysis when useful; keep small work local. Only delegate \
-through the built-in collaboration tools. Subagents must inherit the Allora-only tools, workspace \
-and approvals; give them scoped tasks and never delegate hardware programming. Coordinate edits \
-to shared files. With other reasoning efforts, work without spawning subagents.";
+Use the plan tool for multi-step work and keep its actual steps current. Proactively delegate useful \
+independent inspection, RTL review or testbench analysis only when the selected model is GPT-6.1 Sol, \
+GPT-6 Sol or GPT-6 Astra and reasoning effort is Ultra. For every other model and reasoning effort, do not \
+spawn subagents unless the user explicitly asks to use, create or spawn subagents, or to delegate \
+work. GPT-5.6 Terra and GPT-5.6 Luna must never use subagents, even when the user asks; complete \
+their work in the current thread. For other eligible selections, honor explicit delegation requests \
+through the built-in collaboration tools and create scoped tasks. Subagents must inherit the \
+Allora-only tools, workspace and approvals; never delegate hardware programming. Coordinate edits \
+to shared files.";
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -160,6 +164,15 @@ pub struct ChatSendRequest {
     /// Raw composer input, separate from the model's assembled project context.
     #[serde(default)]
     user_text: Option<String>,
+}
+
+fn should_auto_delegate(model: Option<&str>, reasoning_effort: Option<&str>) -> bool {
+    reasoning_effort == Some("ultra")
+        && matches!(model, Some("gpt-6.1-sol" | "gpt-6-sol" | "gpt-6-astra"))
+}
+
+fn subagents_disabled(model: Option<&str>) -> bool {
+    matches!(model, Some("gpt-5.6-terra" | "gpt-5.6-luna"))
 }
 
 #[derive(Serialize)]
@@ -1404,9 +1417,9 @@ fn start_session(
         command.args(["-c", &format!("features.{feature}=false")]);
     }
     command.args(["-c", "web_search=\"disabled\"", "-c", "notify=[]"]);
-    // Ultra effort activates proactive delegation. Subagents inherit this
-    // session's sandbox, approvals and sole Allora MCP server; no ambient tools
-    // are re-enabled when the collaboration capability becomes available.
+    // Turn guidance limits proactive delegation to the frontier Ultra models
+    // and disables subagent use for GPT-5.6 Terra and GPT-5.6 Luna. Subagents
+    // inherit this session's sandbox, approvals and sole Allora MCP server.
     command.args([
         "-c",
         "features.multi_agent=true",
@@ -1645,10 +1658,15 @@ pub async fn ai_chat_send(
         .lock()
         .map_err(|_| "Chat state unavailable.")? = Some(completion_tx);
     tauri::async_runtime::spawn_blocking(move || {
-        let guidance = if request.reasoning_effort.as_deref() == Some("ultra") {
-            "Allora turn settings: Ultra reasoning. For multi-step work, publish actual plan updates and keep tasks current. Delegate useful independent analysis through collaboration tools; subagents use the same Allora-only scope and must not program hardware.\n"
+        let guidance = if subagents_disabled(request.model.as_deref()) {
+            "Allora turn settings: subagents are disabled for this model at every reasoning level. Do not start or use subagents, even if the user asks; handle the work in this thread. For multi-step work, publish actual plan updates and keep tasks current.\n"
+        } else if should_auto_delegate(
+            request.model.as_deref(),
+            request.reasoning_effort.as_deref(),
+        ) {
+            "Allora turn settings: frontier model at Ultra reasoning. For multi-step work, publish actual plan updates and keep tasks current. Proactively delegate useful independent analysis through collaboration tools; subagents use the same Allora-only scope and must not program hardware.\n"
         } else {
-            "Allora turn settings: work without spawning subagents. For multi-step work, publish actual plan updates and keep tasks current.\n"
+            "Allora turn settings: do not proactively spawn subagents. If the user explicitly asks to use, create or spawn subagents, or to delegate work, follow that request through collaboration tools; subagents use the same Allora-only scope and must not program hardware. For multi-step work, publish actual plan updates and keep tasks current.\n"
         };
         let text = format!("{guidance}{}", request.text);
         let result = session.rpc("turn/start", json!({"threadId":session.thread_id()?,"model":request.model,"effort":request.reasoning_effort,"input":[{"type":"text","text":text,"text_elements":[]}]}));
