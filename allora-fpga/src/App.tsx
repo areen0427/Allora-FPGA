@@ -476,6 +476,7 @@ function App() {
         }
         onHome={goHome}
         onRefreshChatProject={refreshChatProject}
+        onOpenMigrationProject={async (path, section) => { setStudioLaunch(false); setWorkspaceSection(section); await openProjectPath(path, "build"); }}
         onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, executionTarget); }}
       />
     );

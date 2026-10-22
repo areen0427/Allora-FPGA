@@ -1,14 +1,12 @@
-import { useId, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { chatNotifications } from "../lib/chatNotifications";
 
 // Geometry from the user-supplied SVG (SVG Repo).
 export default function AiDesignStudioIcon({ size = 24, unreadIndicator = true }: { size?: number; unreadIndicator?: boolean }) {
   const notification = useSyncExternalStore(chatNotifications.subscribe, chatNotifications.snapshot);
   const unread = unreadIndicator && notification.unread;
-  const gradient = `ai-unread-${useId().replace(/:/g, "")}`;
   return (
-    <svg className={`ai-design-studio-icon${unread ? " has-unread" : ""}`} width={size} height={size} viewBox="0 0 64 64" strokeWidth="3.8" stroke={unread ? `url(#${gradient})` : "currentColor"} strokeLinecap="round" strokeLinejoin="round" fill="none" aria-hidden="true">
-      {unread && <defs><linearGradient id={gradient} x1="0%" y1="0%" x2="100%" y2="100%"><stop className="ai-unread-blue" offset="0%" /><stop className="ai-unread-violet" offset="50%" /><stop className="ai-unread-cyan" offset="100%" /></linearGradient></defs>}
+    <svg className={`ai-design-studio-icon${unread ? " has-unread" : ""}`} width={size} height={size} viewBox="0 0 64 64" strokeWidth="3.8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" fill="none" aria-hidden="true">
       <circle cx="34.52" cy="11.43" r="5.82" />
       <circle cx="53.63" cy="31.6" r="5.82" />
       <circle cx="34.52" cy="50.57" r="5.82" />

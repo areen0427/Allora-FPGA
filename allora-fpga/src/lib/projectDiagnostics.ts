@@ -21,6 +21,7 @@ export type TroubleshootIntent = { projectKey: string; diagnosticId: string; pro
 export function diagnosticProjectKey(path: string) { return path.replaceAll("\\", "/").replace(/\/+$/, ""); }
 export const diagnosticSourceLabel = (source: DashboardSection) => ({
   programming: "Programming", "pin-mapping": "Pin Mapping", bitstream: "Bitstream", testbench: "Testbench", synthesis: "Synthesis",
+  "board-migration": "Board Migration",
   "virtual-fpga": "Virtual FPGA", "peripheral-workbench": "Peripheral Workbench", "memory-asset-studio": "Memory Asset Studio",
   "register-builder": "Register Builder", editor: "Editor", serial: "Serial Monitor", health: "Build Health", chat: "AI Design Studio",
 })[source];

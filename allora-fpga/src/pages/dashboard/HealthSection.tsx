@@ -18,7 +18,7 @@ type HealthSectionProps = {
   files: ProjectFile[];
   topLevelFileName: string | null;
   dirtyFileNames?: string[];
-  onNavigate?: (destination: "editor" | "pin-mapping") => void;
+  onNavigate?: (destination: "editor" | "pin-mapping" | "board-migration") => void;
   showBuildPreflight?: boolean;
   embedded?: boolean;
 };

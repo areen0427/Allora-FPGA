@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { chatHistoryDetails } from "../lib/chatHistory";
+import { CHAT_HISTORY_KEY, chatHistoryDetails, latestProjectChat } from "../lib/chatHistory";
 import { getSavedProjects } from "../data/projects";
 import { getBoardById } from "../data/boards";
 import { createChatTitle } from "../lib/chatTitles";
@@ -53,7 +53,7 @@ import { syncProjectDiagnosticMemory } from "../lib/projectDiagnosticMemory";
 import ChatErrorSuggestions from "../components/ChatErrorSuggestions";
 import "./ChatPage.css";
 
-const HISTORY_KEY = "allora-codex-conversations-v1";
+const HISTORY_KEY = CHAT_HISTORY_KEY;
 type ToolActivity = {
   id: string;
   name: string;
@@ -187,8 +187,9 @@ export default function ChatPage({
   const [conversations, setConversations] =
     useState<Conversation[]>(readHistory);
   const [activeId, setActiveId] = useState<string | null>(() =>
-    resumeLatest ? [...conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-      .find((conversation) => !initialProjectPath || conversation.workspacePath === initialProjectPath || conversation.messages.some((message) => message.projectPath === initialProjectPath))?.id ?? null : null,
+    resumeLatest ? (initialProjectPath
+      ? latestProjectChat(conversations, initialProjectPath)
+      : [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))[0])?.id ?? null : null,
   );
   const [workspacePath, setWorkspacePath] = useState(
     () => initialProjectPath ?? conversations.find((item) => item.id === activeId)?.workspacePath ?? getLastProjectParentDirectory() ?? "",
@@ -1357,17 +1358,12 @@ export default function ChatPage({
             inputRef.current?.focus();
           }} />
           <form
-            className={`chat-composer${busy ? " is-busy" : ""}${provider === "codex" && reasoningEffort === "ultra" ? " is-ultra" : ""}`}
+            className={`chat-composer${busy ? " is-busy" : ""}`}
             onSubmit={(event) => {
               event.preventDefault();
               void send();
             }}
           >
-            {provider === "codex" && reasoningEffort === "ultra" && (
-              <span className="chat-ultra-wisps" aria-hidden="true">
-                <i /><i /><i /><i /><i /><i />
-              </span>
-            )}
             {!!pins.length && <div className="chat-pin-list" aria-label="Pinned context">
               {pins.map(pin => <span className="chat-pin" key={pin.id}>
                 <span title={pin.text}>{pin.label}</span><button type="button" disabled={interactionLocked}

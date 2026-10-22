@@ -42,16 +42,16 @@ Shared styling is imported by `src/App.css`:
   explorer groups retain custom density. Selected text, keyboard focus, and
   reduced-motion preferences remain intact.
   Editable inputs, textareas, dropdowns, and search controls share the
-  `--ui-radius-pill` shape through the shared control rules. Focused pill
+  12px `--ui-radius-control` shape through the shared control rules. Focused
   fields use the theme-aware outward accent glow in Ice and Black Ice; this
   applies on pointer and keyboard focus, and excludes buttons and other action
   controls. Put `ui-search-control` on a composite search wrapper with an icon
   or clear action. Search controls keep a borderless inner field and show one
   glow around the whole control, with no inner focus border. Text fields retain
-  their own surfaces and dimensions; dropdown material belongs to the shared dropdown defaults
-  below. A screen may keep a
-  distinct treatment for a non-pill widget or a specifically requested
-  selection, such as the selected board in the Pin Mapping Browser.
+  their own surfaces and dimensions; dropdown material belongs to the shared
+  dropdown defaults below. A screen may keep a distinct treatment for a widget
+  outside this shared control style or a specifically requested selection, such
+  as the selected board in the Pin Mapping Browser.
   `useAutomaticCompactGroups` also applies this shared variant to three or more
   consecutive visible sibling controls in flex/grid rows, with gaps of at most
   `--ui-compact-auto-distance` (12px). `--ui-compact-auto-min-count` defaults to 3.
@@ -74,17 +74,19 @@ Shared styling is imported by `src/App.css`:
 - Every native `<select>` and custom `[role="combobox"]` automatically inherits
   the shared dropdown style, with no class required. Other custom dropdown
   triggers opt in with `ui-dropdown`; existing uses remain supported.
-  `controls.css` owns the pill shape, shared surface, border, centered chevron,
-  hover, disabled state, and outward accent focus/open glow in both themes.
+  `controls.css` owns the shared rounded control shape, surface, border,
+  centered chevron, hover, disabled state, and outward accent focus/open glow
+  in both themes.
   Native macOS appearance is disabled so it cannot replace the shared shape.
   Pages retain their existing heights, vertical padding, font metrics, and
   widths; avoid page-specific dropdown material. Dropdowns are excluded from
   compact action-button grouping and button-glass layers.
   Composer dropdowns combine `ui-dropdown ui-hover-button`: the shared hover
   control owns transparent idle material and the glass hover edge; dropdown
-  rules retain the pill radius and focus/open glow. Avoid separate page-level
-  idle surface overrides. Composer dropdowns hide both shared chevron layers
-  with `--ui-dropdown-chevron-start/end: none` and use symmetric padding.
+  rules retain the shared control radius and focus/open glow. Avoid separate
+  page-level idle surface overrides. Composer dropdowns hide both shared
+  chevron layers with `--ui-dropdown-chevron-start/end: none` and use
+  symmetric padding.
 - Neutral text and icons use `--ui-text`, `--ui-text-muted`, or
   `--ui-text-soft`; active navigation and accents use `--ui-accent-text`.
   Black Ice uses near-white text and a pale, low-saturation blue accent.
@@ -201,3 +203,18 @@ board-free projects. Virtual FPGA follows Register Builder; no execution-target
 switch gates navigation. Saved-project execution-target fields remain compatible.
 Welcome groups are Workspace (Build) and Design Tools, led by AI Design Studio.
 The supplied studio SVG is shared by its welcome entry, dock button, and title.
+
+`GradientOutline` supplies the animated gradient SVG border for the AI dock
+notification. It measures its rendered size with ResizeObserver so the outline
+retains rounded corners and a uniform non-scaling stroke. It is decorative,
+pointer-transparent, theme-aware, and honors both reduced-motion preferences.
+Owning surfaces choose radius, stroke width, and outline bounds.
+
+Ultra mode uses the existing reasoning control beside the model name: stronger
+accent text on a transparent idle surface. Both this control and the
+Ultra-selected reasoning popup show a blue/violet/cyan swipe fading in and out
+on a three-second loop. The highlight resets off screen while transparent;
+there is no persistent Ultra fill, separate label pulse, perimeter light,
+smoke, or transient confirmation. Both reduced-motion preferences disable the
+swipe. The popup retains its normal surface and unfold/dismissal behavior;
+the dock notification ring remains separate.

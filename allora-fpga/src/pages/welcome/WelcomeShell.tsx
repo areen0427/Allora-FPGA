@@ -9,6 +9,8 @@ export type WelcomeView = "home" | "pin-mapping" | "chat";
 
 type WelcomeShellProps = {
   activeView: WelcomeView;
+  wideLayout: boolean;
+  expandedLayout: boolean;
   brandRef: RefObject<HTMLButtonElement | null>;
   showProductInfo: boolean;
   onOpenProductInfo?: () => void;
@@ -25,6 +27,8 @@ type WelcomeShellProps = {
 
 export function WelcomeShell({
   activeView,
+  wideLayout,
+  expandedLayout,
   brandRef,
   showProductInfo,
   onOpenProductInfo,
@@ -40,7 +44,11 @@ export function WelcomeShell({
 }: WelcomeShellProps) {
   useBackSwipe(activeView === "chat" ? undefined : onBack);
   return (
-    <div className={`glass-page welcome-page welcome-view-${activeView}`}>
+    <div
+      className={`glass-page welcome-page welcome-view-${activeView}`}
+      data-wide-layout={String(wideLayout)}
+      data-expanded-layout={String(expandedLayout)}
+    >
       {activeView === "chat" ? (
         <aside className="dashboard-sidebar welcome-chat-workspace-dock">
           <WorkspaceDock activeSection="chat"

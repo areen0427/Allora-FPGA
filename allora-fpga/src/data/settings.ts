@@ -1,11 +1,14 @@
 const SETTINGS_KEY = "allora-fpga-settings";
 const LAST_PROJECT_PARENT_KEY = "allora-fpga-last-project-parent";
-const SETTINGS_VERSION = 7;
+const SETTINGS_VERSION = 8;
+
+export type LandingPageLayoutPreference = "auto" | "compact" | "expanded";
 
 export type AppSettings = {
   theme: "ice" | "black-ice";
   background: "molecules" | "ultramatte" | "trace";
   startupView: "home" | "last-project";
+  landingPageLayoutByDisplay: Record<string, LandingPageLayoutPreference>;
   restorePreviousSession: boolean;
   chatHistoryRetention:
     | "1-week"
@@ -38,6 +41,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "ice",
   background: "trace",
   startupView: "home",
+  landingPageLayoutByDisplay: {},
   restorePreviousSession: true,
   chatHistoryRetention: "never-delete",
   reduceMotion: false,
@@ -88,6 +92,26 @@ export function saveSettings(settings: AppSettings) {
 function sanitizeSettings(value: unknown): AppSettings {
   if (!isRecord(value)) return { ...DEFAULT_SETTINGS };
 
+  const landingPageLayoutByDisplay: Record<
+    string,
+    LandingPageLayoutPreference
+  > = {};
+  if (
+    isRecord(value.landingPageLayoutByDisplay) &&
+    !Array.isArray(value.landingPageLayoutByDisplay)
+  ) {
+    for (const [displayKey, preference] of Object.entries(
+      value.landingPageLayoutByDisplay,
+    )) {
+      if (
+        displayKey &&
+        isOneOf(preference, ["auto", "compact", "expanded"])
+      ) {
+        landingPageLayoutByDisplay[displayKey] = preference;
+      }
+    }
+  }
+
   return {
     theme: isOneOf(value.theme, ["ice", "black-ice"])
       ? value.theme
@@ -98,6 +122,7 @@ function sanitizeSettings(value: unknown): AppSettings {
     startupView: isOneOf(value.startupView, ["home", "last-project"])
       ? value.startupView
       : DEFAULT_SETTINGS.startupView,
+    landingPageLayoutByDisplay,
     restorePreviousSession:
       typeof value.restorePreviousSession === "boolean"
         ? value.restorePreviousSession
@@ -202,6 +227,13 @@ function sanitizeSettings(value: unknown): AppSettings {
       ? value.simulatorLogLevel
       : DEFAULT_SETTINGS.simulatorLogLevel,
   };
+}
+
+export function getLandingPageLayoutPreference(
+  settings: AppSettings,
+  displayKey: string,
+): LandingPageLayoutPreference {
+  return settings.landingPageLayoutByDisplay[displayKey] ?? "auto";
 }
 
 export function getLastProjectParentDirectory() {

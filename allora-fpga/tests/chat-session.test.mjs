@@ -99,12 +99,12 @@ test("explicit session reset clears the conversation and next welcome launch is 
   assert.equal(h.render().chat.props.resumeLatest, false);
 });
 
-test("each app launch starts fresh even when its host requests latest history", async () => {
+test("project entry resumes saved history even on the first chat after launch", async () => {
   for (let launch = 0; launch < 2; launch++) {
     const h = await harness();
     const { api } = h.render();
     api.attach(h.host(), { ...options("/projects/saved"), resumeLatest: true });
-    assert.equal(h.render().chat.props.resumeLatest, false);
+    assert.equal(h.render().chat.props.resumeLatest, true);
   }
 });
 test("in-app return preserves the active chat and later project visits can resume history", async () => {

@@ -1,4 +1,4 @@
-.explorer-github-publish {
+.explorer-project-action {
   width: 100%;
   min-height: 48px;
   flex: 0 0 auto;
@@ -24,32 +24,32 @@
   text-align: left;
 }
 
-.explorer-github-publish > svg:first-child {
+.explorer-project-action > svg:first-child {
   flex: 0 0 auto;
 }
 
-.explorer-github-publish > svg:last-child {
+.explorer-project-action > svg:last-child {
   flex: 0 0 auto;
   margin-left: auto;
   color: var(--explorer-muted);
 }
 
-.explorer-github-publish span {
+.explorer-project-action span {
   min-width: 0;
   flex: 1;
 }
 
-.explorer-github-publish strong,
-.explorer-github-publish small {
+.explorer-project-action strong,
+.explorer-project-action small {
   display: block;
 }
 
-.explorer-github-publish strong {
+.explorer-project-action strong {
   font-size: 11.5px;
   font-weight: 850;
 }
 
-.explorer-github-publish small {
+.explorer-project-action small {
   display: block;
   margin-top: 2px;
   overflow: hidden;
@@ -60,15 +60,15 @@
   white-space: nowrap;
 }
 
-.explorer-github-publish:hover,
-.explorer-github-publish:focus-visible {
+.explorer-project-action:hover,
+.explorer-project-action:focus-visible {
   color: var(--ui-accent-text);
   border-color: rgba(37, 99, 235, 0.4);
   transform: var(--ui-lift-subtle);
   outline: none;
 }
 
-html[data-theme="black-ice"] .explorer-github-publish {
+html[data-theme="black-ice"] .explorer-project-action {
   border-color: rgba(56, 189, 248, 0.24);
   color: var(--ui-accent-text);
   background:

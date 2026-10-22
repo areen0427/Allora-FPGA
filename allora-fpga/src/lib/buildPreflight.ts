@@ -2,6 +2,7 @@ import type { BoardDefinition } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
 import { findTopModule, isHdlFile } from "../hooks/utils";
 import type { ProjectFile } from "../pages/dashboard/types";
+import { hasPendingMigrationReview } from "./boardMigration";
 import {
   createSuggestedMappings,
   findPorts,
@@ -14,7 +15,7 @@ export type PreflightCheck = {
   label: string;
   detail: string;
   state: "ready" | "warning" | "blocked";
-  destination?: "editor" | "pin-mapping";
+  destination?: "editor" | "pin-mapping" | "board-migration";
 };
 
 export function getBuildPreflight({
@@ -69,6 +70,9 @@ export function getBuildPreflight({
     : 0;
 
   return [
+    ...(hasPendingMigrationReview(files.find(file => file.name === "allora-project.json")?.content) ? [{
+      id: "migration", label: "Migration review", detail: "Resolve the migrated project's issues and complete its review in the Board Migration Assistant before building.", state: "blocked" as const, destination: "board-migration" as const,
+    }] : []),
     {
       id: "board",
       label: "Board build support",

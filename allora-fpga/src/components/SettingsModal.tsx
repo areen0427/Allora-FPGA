@@ -16,11 +16,18 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AiIntegrationSettings } from "./AiIntegrationSettings";
-import { DEFAULT_SETTINGS } from "../data/settings";
-import type { AppSettings } from "../data/settings";
+import {
+  DEFAULT_SETTINGS,
+  getLandingPageLayoutPreference,
+} from "../data/settings";
+import type {
+  AppSettings,
+  LandingPageLayoutPreference,
+} from "../data/settings";
 import { hasTauriInvoke } from "../lib/tauri";
 import { virtualFpgaApi, type SimulationTools } from "../lib/virtualFpga";
 import { useModalFocus } from "../hooks/useModalFocus";
+import { useCurrentDisplayKey } from "../hooks/useCurrentDisplayKey";
 
 type SettingsModalProps = {
   settings: AppSettings;
@@ -64,6 +71,7 @@ export function SettingsModal({
   const contentRef = useRef<HTMLElement>(null);
   const firstTabRef = useRef<HTMLButtonElement>(null);
   const themeTransitionTimeoutRef = useRef<number | null>(null);
+  const { displayKey, resolved: displayResolved } = useCurrentDisplayKey();
   const titleId = useId();
   const descriptionId = useId();
 
@@ -195,6 +203,23 @@ export function SettingsModal({
                   options={[
                     { value: "home", label: "Home" },
                     { value: "last-project", label: "Last project" },
+                  ]}
+                />
+                <SettingSelect
+                  label="Landing Page Layout Preference"
+                  description="Auto adapts to available space; Compact and Expanded set this display's layout."
+                  value={getLandingPageLayoutPreference(settings, displayKey)}
+                  disabled={!displayResolved}
+                  onChange={(value) =>
+                    updateSetting("landingPageLayoutByDisplay", {
+                      ...settings.landingPageLayoutByDisplay,
+                      [displayKey]: value as LandingPageLayoutPreference,
+                    })
+                  }
+                  options={[
+                    { value: "auto", label: "Auto" },
+                    { value: "compact", label: "Compact" },
+                    { value: "expanded", label: "Expanded" },
                   ]}
                 />
                 <SettingToggle

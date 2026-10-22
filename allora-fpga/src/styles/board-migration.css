@@ -1,0 +1,251 @@
+.board-target-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--ui-accent-text);
+  font-size: 12px;
+  padding: 4px 6px;
+}
+.board-target-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.board-target-trigger > svg {
+  flex: 0 0 auto;
+}
+.board-target-compact {
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+.welcome-product-info.board-target-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+  max-height: calc(100dvh - 24px);
+  color: var(--ui-text);
+  background: var(--ui-popup-bg);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-popup-shadow);
+  transform-origin: top left;
+}
+.board-target-popup p {
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.board-target-popup button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.board-target-popup.glass-unfold {
+  animation: welcome-product-open 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.board-migration-section {
+  --ui-workspace-row-gap: 16px;
+  min-width: 0;
+  color: var(--ui-text);
+}
+.migration-layout {
+  display: grid;
+  gap: var(--ui-workspace-row-gap);
+}
+.migration-main,
+.migration-main > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-workspace-row-gap);
+  min-width: 0;
+}
+.board-migration-section h2 {
+  font-size: 16px;
+  margin: 0;
+}
+.board-migration-section h3 {
+  font-size: 14px;
+  margin: 0;
+}
+.board-migration-section p {
+  margin: 0;
+  color: var(--ui-text-muted);
+  line-height: 1.55;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.board-migration-section small {
+  display: block;
+  color: var(--ui-text-soft);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.migration-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(100px, 1fr);
+  gap: var(--ui-workspace-row-gap);
+}
+.migration-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+.migration-fields :is(select, input) {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 9px 14px;
+}
+.migration-fields input {
+  border: 1px solid var(--ui-border-control);
+  color: var(--ui-text);
+  background: var(--ui-control-bg);
+  font: inherit;
+}
+.migration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.migration-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.migration-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-workspace-row-gap);
+  padding: 16px;
+  align-self: start;
+  min-width: 0;
+}
+.migration-issues,
+.migration-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.migration-issues li,
+.migration-checks li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+.migration-issues li > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--ui-warning-text);
+}
+.migration-issues li[data-level="info"] > span {
+  color: var(--ui-text-soft);
+}
+.migration-issues li[data-level="blocked"] > span,
+.migration-checks li[data-state="failed"] strong {
+  color: var(--ui-error-text);
+}
+.migration-checks li[data-state="passed"] strong {
+  color: var(--ui-success-text);
+}
+.migration-checks strong {
+  font-size: 13px;
+}
+.migration-table-scroll {
+  overflow: auto;
+  padding: 4px;
+}
+.migration-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.migration-table :is(th, td) {
+  text-align: left;
+  vertical-align: top;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+.migration-table :is(th, td):first-child {
+  padding-left: 0;
+}
+.migration-table select {
+  width: 100%;
+  min-width: 150px;
+  max-width: 100%;
+  padding: 8px 13px;
+}
+.migration-table td:last-child {
+  width: 48%;
+}
+.migration-table small {
+  margin-top: 7px;
+}
+.migration-clock-choice,
+.migration-review-complete label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.migration-clock-choice input,
+.migration-review-complete input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+.migration-review-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.board-migration-section details {
+  color: var(--ui-text);
+  font-size: 13px;
+}
+.board-migration-section summary {
+  cursor: pointer;
+  padding-block: 8px;
+}
+.migration-file-diff {
+  padding-left: 12px;
+  min-width: 0;
+}
+.migration-file-diff pre {
+  padding: 12px;
+  max-height: 280px;
+  overflow: auto;
+  color: var(--ui-text);
+  background: var(--ui-panel);
+  white-space: pre;
+  border-radius: var(--ui-radius-md);
+}
+.board-migration-section .migration-error {
+  color: var(--ui-error-text);
+}
+@media (max-width: 600px) {
+  .migration-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .migration-table :is(th, td) {
+    padding: 10px 6px;
+  }
+}
+html[data-reduce-motion="true"] .board-target-popup.glass-unfold {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-target-popup.glass-unfold {
+    animation: none;
+  }
+}

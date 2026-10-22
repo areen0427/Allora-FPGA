@@ -652,7 +652,7 @@
 }
 .explorer-tools {
   flex: 1;
-  /* Keep focused pill-control glows inside the clipped viewer top edge. */
+  /* Keep field focus glows inside the clipped viewer top edge. */
   padding: 4px 0 0;
   border: 0;
   background: transparent;

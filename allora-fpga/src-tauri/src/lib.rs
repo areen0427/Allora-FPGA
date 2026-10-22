@@ -23,6 +23,7 @@ mod project_diagnostics;
 mod github;
 mod usage;
 mod pin_import;
+mod board_migration;
 mod virtual_fpga;
 use virtual_fpga::VirtualFpgaState;
 
@@ -1722,6 +1723,7 @@ fn generate_bitstream_service(
     request: GenerateBitstreamRequest,
     on_log: &LogSink,
 ) -> Result<GenerateBitstreamResponse, ErrorPayload> {
+    board_migration::require_completed_review(request.project_path.as_deref())?;
     if request.source_files.is_empty() {
         return Err(error("No HDL files were provided."));
     }
@@ -4017,6 +4019,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             usage::resource_usage,
             create_project_workspace,
+            board_migration::inspect_board_migration,
+            board_migration::create_board_migration_copy,
             pick_project_parent_directory,
             pick_existing_project_directory,
             read_project_workspace,

@@ -2055,3 +2055,77 @@ html[data-reduce-motion="true"] .welcome-view-chat .welcome-content { animation:
 @media (prefers-reduced-motion: reduce) {
   .welcome-view-chat .welcome-content { animation: none; }
 }
+
+.welcome-page[data-wide-layout="true"]:has(.execution-path-stage)
+  .welcome-action-stack {
+  width: min(1500px, 100%);
+}
+
+.welcome-page[data-wide-layout="true"]:has(.welcome-destination-stage)
+  .welcome-content {
+  max-width: 1500px !important;
+}
+
+@media (min-height: 760px) {
+  /* Vertical centering follows available height, independently of board density. */
+  .welcome-page:has(
+      .welcome-destination-stage:not(.build):not(.simulate)
+    )
+    .welcome-main {
+    padding-top: 32px;
+    padding-bottom: 16px;
+  }
+
+  .welcome-page .welcome-destination-stage:not(.simulate) {
+    min-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .welcome-page
+    .welcome-destination-stage:not(.simulate)
+    .welcome-destination-content {
+    width: 100%;
+    margin-block: auto;
+  }
+}
+
+/* On large Build landings, let four board rows fill the same grid track as
+   the complete project-actions column. The catalog button occupies the next row. */
+@media (min-width: 1280px) {
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .welcome-home-layout {
+    align-items: stretch;
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .welcome-home-sidebar {
+    grid-row: 3;
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .supported-board-grid:not(.is-searching):not(.is-expanded) {
+    grid-template-rows:
+      repeat(var(--welcome-board-row-count, 4), minmax(0, 1fr));
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .supported-board-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .supported-board-grid:is(.is-searching, .is-expanded) {
+    align-content: start;
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .welcome-board-card {
+    min-height: var(--welcome-board-card-min-height, 136px);
+  }
+
+  .welcome-page[data-expanded-layout="true"] .welcome-destination-stage.build
+    .board-show-more {
+    margin-top: 0;
+  }
+}

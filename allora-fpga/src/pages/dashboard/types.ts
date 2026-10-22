@@ -8,6 +8,7 @@ export type DashboardSection =
   | "synthesis"
   | "testbench"
   | "pin-mapping"
+  | "board-migration"
   | "health"
   | "bitstream"
   | "programming"

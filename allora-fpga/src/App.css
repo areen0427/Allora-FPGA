@@ -3,6 +3,7 @@
 @import "./styles/welcome.css";
 @import "./styles/pin-browser.css";
 @import "./styles/board-menu.css";
+@import "./styles/board-migration.css";
 @import "./styles/dashboard.css";
 @import "./styles/testbench-waveform.css";
 @import "./styles/viewer.css";

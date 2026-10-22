@@ -1,6 +1,7 @@
 import { useBackSwipe } from "../../hooks/useBackSwipe";
 import type { MouseEventHandler } from "react";
-import { Home, PanelLeftOpen, MapPinned, Binary, Zap, Gauge, Settings, ArrowLeft } from "lucide-react";
+import { Home, PanelLeftOpen, MapPinned, Binary, Zap, Gauge, Settings, ArrowLeft, ArrowRightLeft } from "lucide-react";
+import ChatUnreadRing from "../../components/ChatUnreadRing";
 import AiDesignStudioIcon from "../../components/AiDesignStudioIcon";
 import SidebarButton from "./SidebarButton";
 import { FloatingDockNav } from "../../components/ui/floating-dock-navigation";
@@ -25,14 +26,23 @@ type WorkspaceDockProps = {
   backLabel?: string;
   onSettings: () => void;
   onUsage: MouseEventHandler<HTMLButtonElement>;
+  onMigrateBoard?: () => void;
 };
 
-export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, backLabel = "Back to project setup", onSettings, onUsage }: WorkspaceDockProps) {
+export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSectionChange, onExpandExplorer, onHome, onChat, onBack, backLabel = "Back to project setup", onSettings, onUsage, onMigrateBoard }: WorkspaceDockProps) {
   useBackSwipe(saving ? undefined : onBack);
   return (
         <div className="dashboard-activity-rail-slot">
           <div className="dashboard-activity-rail">
             <div className="activity-rail-top">
+              {explorerCollapsed && onMigrateBoard ? (
+                <SidebarButton
+                  label="Migrate Board"
+                  icon={<ArrowRightLeft size={18} />}
+                  active={activeSection === "board-migration"}
+                  onClick={onMigrateBoard}
+                />
+              ) : null}
               <button
                 type="button"
                 aria-label="Go to home page"
@@ -101,7 +111,7 @@ export function WorkspaceDock({ activeSection, explorerCollapsed, saving, onSect
             <FloatingDockNav className="activity-rail-nav activity-rail-bottom" aria-label="Workspace actions">
               <SidebarButton
                 label="AI Design Studio"
-                icon={<AiDesignStudioIcon size={22} />}
+                icon={<><AiDesignStudioIcon size={22} /><ChatUnreadRing /></>}
                 active={activeSection === "chat"}
                 disabled={saving}
                 onClick={onChat}

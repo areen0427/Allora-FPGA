@@ -15,7 +15,7 @@ export function BuildPreflight({
   layout = "default",
 }: {
   checks: PreflightCheck[];
-  onNavigate?: (destination: "editor" | "pin-mapping") => void;
+  onNavigate?: (destination: "editor" | "pin-mapping" | "board-migration") => void;
   collapsible?: boolean;
   layout?: "default" | "sidebar";
 }) {

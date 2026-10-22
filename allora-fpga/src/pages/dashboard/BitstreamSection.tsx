@@ -39,7 +39,7 @@ type BitstreamSectionProps = {
   topLevelFileName: string | null;
   dirtyFileNames?: string[];
   initialTab?: "log" | "health" | "preview";
-  onNavigate?: (destination: "editor" | "pin-mapping") => void;
+  onNavigate?: (destination: "editor" | "pin-mapping" | "board-migration") => void;
   onAddArtifact?: (artifact: {
     fileName: string;
     path?: string;

@@ -44,11 +44,13 @@ type HomeViewProps = {
   reduceMotion: boolean;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
+  largeBoardLayout: { rows: number; cardMinHeight: number };
   showAllBoards: boolean;
   recentProjects: SavedProject[];
   isOpeningExistingProject: boolean;
   openExistingProjectError: string;
   newProjectRef: React.RefObject<HTMLElement | null>;
+  buildSidebarRef: React.RefObject<HTMLDivElement | null>;
   onToggleShowAllBoards: (showAll: boolean) => void;
   onSelectBoard: (board: BoardCatalogItem) => void;
   onOpenPinMapping: () => void;
@@ -76,11 +78,13 @@ export function HomeView({
   reduceMotion,
   boards,
   visibleBoards,
+  largeBoardLayout,
   showAllBoards,
   recentProjects,
   isOpeningExistingProject,
   openExistingProjectError,
   newProjectRef,
+  buildSidebarRef,
   onToggleShowAllBoards,
   onSelectBoard,
   onOpenPinMapping,
@@ -315,13 +319,17 @@ export function HomeView({
               reduceMotion={reduceMotion}
               boards={boards}
               visibleBoards={visibleBoards}
+              largeBoardLayout={largeBoardLayout}
               showAllBoards={showAllBoards}
               newProjectRef={newProjectRef}
               onToggleShowAllBoards={onToggleShowAllBoards}
               onSelectBoard={onSelectBoard}
             />
 
-            <div className="welcome-home-sidebar welcome-project-sidebar">
+            <div
+              ref={buildSidebarRef}
+              className="welcome-home-sidebar welcome-project-sidebar"
+            >
               <section className="liquid-home-card open-project-card">
                 <button type="button" className="open-project-button" onClick={onCreateSimulationProject} disabled={isOpeningExistingProject}>
                   <span className="open-project-icon"><Zap size={19} /></span>
@@ -511,6 +519,7 @@ function SupportedBoardGrid({
   reduceMotion,
   boards,
   visibleBoards,
+  largeBoardLayout,
   showAllBoards,
   newProjectRef,
   onToggleShowAllBoards,
@@ -519,6 +528,7 @@ function SupportedBoardGrid({
   reduceMotion: boolean;
   boards: BoardCatalogItem[];
   visibleBoards: BoardCatalogItem[];
+  largeBoardLayout: { rows: number; cardMinHeight: number };
   showAllBoards: boolean;
   newProjectRef: React.RefObject<HTMLElement | null>;
   onToggleShowAllBoards: (showAll: boolean) => void;
@@ -560,7 +570,15 @@ function SupportedBoardGrid({
           ) : null}
         </label>
       </div>
-      <div className="supported-board-grid">
+      <div
+        className={`supported-board-grid${
+          isSearching ? " is-searching" : showAllBoards ? " is-expanded" : ""
+        }`}
+        style={{
+          "--welcome-board-row-count": largeBoardLayout.rows,
+          "--welcome-board-card-min-height": `${largeBoardLayout.cardMinHeight}px`,
+        } as React.CSSProperties}
+      >
         {displayedBoards.map((board) => (
           <BoardCard
             key={board.id}

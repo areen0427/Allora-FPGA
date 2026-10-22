@@ -1,3 +1,4 @@
+import { hasSavedProjectChat } from "../lib/chatHistory";
 import { workspaceNavigationReducer, workspaceOwner } from "./dashboard/navigation";
 import { listenExplorer, publishExplorer } from "../lib/explorerBridge";
 import PeripheralWorkbench from "./dashboard/PeripheralWorkbench";
@@ -11,6 +12,7 @@ import EditorSection from "./dashboard/EditorSection";
 import SynthesisSection from "./dashboard/SynthesisSection";
 import TestbenchSection from "./dashboard/TestbenchSection";
 import PinMappingSection from "./dashboard/PinMappingSection";
+import BoardMigrationSection from "./dashboard/BoardMigrationSection";
 import BitstreamSection from "./dashboard/BitstreamSection";
 import ProgrammingSection from "./dashboard/ProgrammingSection";
 import VirtualFpgaSection from "./dashboard/VirtualFpgaSection";
@@ -36,6 +38,7 @@ import {
   FolderOpen,
   ChevronRight,
   GitFork,
+  ArrowRightLeft,
 } from "lucide-react";
 import type { SavedProject } from "../data/projects";
 import type { AppSettings } from "../data/settings";
@@ -104,6 +107,7 @@ type DashboardProps = {
   onHome: () => void;
   onOpenChatProject: (path: string) => Promise<void>;
   onRefreshChatProject: (path: string, files: ProjectFile[]) => void;
+  onOpenMigrationProject: (path: string, section: DashboardSection) => Promise<void>;
 };
 
 const DEFAULT_SIDEBAR_WIDTH = 368;
@@ -119,10 +123,12 @@ export default function Dashboard({
   onHome,
   onOpenChatProject,
   onRefreshChatProject,
+  onOpenMigrationProject,
 }: DashboardProps) {
-  const [navigation, dispatchNavigation] = useReducer(workspaceNavigationReducer, {
-    current: initialSection ?? "editor", history: [],
-  });
+  const [navigation, dispatchNavigation] = useReducer(workspaceNavigationReducer, null, () => ({
+    current: initialSection ?? (hasSavedProjectChat(project?.projectPath) ? "chat" : "editor"),
+    history: [],
+  }));
   const activeSection = navigation.current;
   const setActiveSection = useCallback((section: DashboardSection) => {
     dispatchNavigation({ type: "visit", section });
@@ -545,6 +551,7 @@ export default function Dashboard({
           }}
           onSettings={() => setShowSettings(true)}
           onUsage={(event) => setUsageAnchor(event.currentTarget)}
+          onMigrateBoard={() => setActiveSection("board-migration")}
         />
 
         {!explorerCollapsed ? (
@@ -554,9 +561,7 @@ export default function Dashboard({
                 <strong title={projectName}>
                   {projectName || "Untitled Project"}
                 </strong>
-                <span>
-                  FPGA workspace
-                </span>
+                <span title={board.name}>{board.name}</span>
               </div>
               <button
                 type="button"
@@ -571,13 +576,26 @@ export default function Dashboard({
 
             <button
               type="button"
-              className="explorer-github-publish"
+              className="explorer-project-action"
               onClick={() => setShowGitHubPublish(true)}
             >
               <GitFork size={16} />
               <span>
                 <strong>Publish to GitHub</strong>
                 <small>Commit, connect, and push</small>
+              </span>
+              <ChevronRight size={15} />
+            </button>
+
+            <button
+              type="button"
+              className="explorer-project-action"
+              onClick={() => setActiveSection("board-migration")}
+            >
+              <ArrowRightLeft size={16} />
+              <span>
+                <strong>Migrate Board</strong>
+                <small>Move this project to another board</small>
               </span>
               <ChevronRight size={15} />
             </button>
@@ -727,6 +745,21 @@ export default function Dashboard({
           </div>
         ) : null}
 
+        <KeepAliveSection active={activeSection === "board-migration"} visited={visitedSections.has("board-migration")}>
+          <BoardMigrationSection active={activeSection === "board-migration"} board={board} files={fileMgmt.files} projectPath={projectPath} topLevelFileName={activeTabs.topLevelFileName}
+            onSave={saveProject.saveCurrentProject} onReload={() => projectPath ? reloadChatFiles(projectPath) : Promise.resolve()}
+            onOpenCopy={async (path, section) => {
+              if (!(await saveProject.saveCurrentProject())) throw new Error("Save the source project before opening its migrated copy.");
+              await onOpenMigrationProject(path, section);
+            }}
+            onNavigate={(section, path, line) => {
+              if (path) {
+                const file = fileMgmt.files.find(item => item.path?.replaceAll("\\", "/").endsWith(`/${path}`) || item.name === path);
+                if (file) { handleOpenFile(file.name); setEditorNavigation({ fileName: file.name, line: line ?? 1, id: Date.now() }); }
+              }
+              setActiveSection(section);
+            }} />
+        </KeepAliveSection>
         <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
           <TroubleshootChatEntrance active={activeSection === "chat"} request={troubleshootChatRequest}>
           <ChatSessionHost hidden={activeSection !== "chat"} initialProjectPath={projectPath ?? undefined} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}

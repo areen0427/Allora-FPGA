@@ -1,4 +1,4 @@
-import { Activity, Binary, CircleDot, MapPinned, Usb, Zap } from "lucide-react";
+import { Activity, ArrowRightLeft, Binary, CircleDot, MapPinned, Usb, Zap } from "lucide-react";
 import AiDesignStudioIcon from "../AiDesignStudioIcon";
 import EditorIcon from "../EditorIcon";
 import TestbenchIcon from "../TestbenchIcon";
@@ -14,6 +14,7 @@ const pages = {
   testbench: { title: "Testbench", icon: TestbenchIcon },
   synthesis: { title: "Synthesis", icon: SynthesisIcon },
   "pin-mapping": { title: "Pin Mapping", icon: MapPinned },
+  "board-migration": { title: "Board Migration Assistant", icon: ArrowRightLeft },
   bitstream: { title: "Bitstream", icon: Binary },
   programming: { title: "FPGA Programming", icon: ProgramIcon },
   health: { title: "Build Health", icon: Activity },

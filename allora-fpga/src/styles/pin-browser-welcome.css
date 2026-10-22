@@ -18,6 +18,11 @@
   column-gap: var(--ui-workspace-inset, 20px);
 }
 
+#root .welcome-page.welcome-view-pin-mapping[data-wide-layout="true"]
+  .pin-browser-shell {
+  grid-template-columns: clamp(320px, 27%, 420px) minmax(0, 1fr);
+}
+
 #root .pin-browser-sidebar,
 #root .pin-browser-workspace { grid-row: 1; }
 

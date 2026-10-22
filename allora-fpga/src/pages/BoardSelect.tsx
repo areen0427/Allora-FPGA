@@ -1,6 +1,10 @@
 import { welcomeDestination } from "./dashboard/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
-import type { AppSettings } from "../data/settings";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  getLandingPageLayoutPreference,
+  type AppSettings,
+  type LandingPageLayoutPreference,
+} from "../data/settings";
 import { getSavedProjects, removeSavedProject } from "../data/projects";
 import {
   getBuildCatalogBoards,
@@ -19,6 +23,56 @@ import type { WelcomeView } from "./welcome/WelcomeShell";
 import { UsageDialog } from "../components/UsageDialog";
 import type { DashboardSection, ExecutionTarget } from "./dashboard/types";
 import { ChatSessionHost } from "../components/ChatSession";
+import { useCurrentDisplayKey } from "../hooks/useCurrentDisplayKey";
+
+const WIDE_WELCOME_VIEWPORT_QUERY = "(min-width: 1640px)";
+const LARGE_WELCOME_VIEWPORT_QUERY =
+  "(min-width: 1640px) and (min-height: 900px)";
+const MANUAL_EXPANDED_VIEWPORT_QUERY = "(min-width: 1280px)";
+
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(query).matches,
+  );
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(query);
+    const updateMatch = () => setMatches(mediaQuery.matches);
+    updateMatch();
+    mediaQuery.addEventListener("change", updateMatch);
+    return () => mediaQuery.removeEventListener("change", updateMatch);
+  }, [query]);
+
+  return matches;
+}
+
+function useWelcomeLayoutBreakpoints(preference: LandingPageLayoutPreference) {
+  const wideAuto = useMediaQuery(WIDE_WELCOME_VIEWPORT_QUERY);
+  const expandedAuto = useMediaQuery(LARGE_WELCOME_VIEWPORT_QUERY);
+  const expandedManual = useMediaQuery(MANUAL_EXPANDED_VIEWPORT_QUERY);
+
+  if (preference === "compact") {
+    return { wideLayout: false, expandedLayout: false };
+  }
+
+  if (preference === "expanded") {
+    return {
+      wideLayout: expandedManual,
+      expandedLayout: expandedManual,
+    };
+  }
+
+  return { wideLayout: wideAuto, expandedLayout: expandedAuto };
+}
 
 type BoardSelectProps = {
   initialView?: WelcomeView;
@@ -75,14 +129,74 @@ export default function BoardSelect({
   const closeProductInfo = useCallback(() => setShowProductInfo(false), []);
   const [homeViewKey, setHomeViewKey] = useState(0);
   const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
+  const { displayKey, resolved: displayResolved } = useCurrentDisplayKey();
+  const layoutPreference = displayResolved
+    ? getLandingPageLayoutPreference(settings, displayKey)
+    : "auto";
+  const { wideLayout, expandedLayout } =
+    useWelcomeLayoutBreakpoints(layoutPreference);
   const newProjectRef = useRef<HTMLElement | null>(null);
+  const buildSidebarRef = useRef<HTMLDivElement | null>(null);
+  const [largeBoardLayout, setLargeBoardLayout] = useState({
+    rows: 4,
+    cardMinHeight: 136,
+  });
 
   const supportedBoards = useMemo(() => getBuildCatalogBoards(), []);
   const pinMappingBoards = useMemo(() => getPinMappingOnlyBoards(), []);
   const recentProjects = savedProjects.slice(0, 5);
+  useEffect(() => {
+    const sidebar = buildSidebarRef.current;
+    if (
+      !expandedLayout ||
+      activeView !== "home" ||
+      homePath !== null ||
+      !sidebar ||
+      typeof ResizeObserver === "undefined"
+    ) {
+      return;
+    }
+
+    const updateLayout = (height: number) => {
+      const rowGap = 14;
+      const preferredCardHeight = 136;
+      const rows = Math.max(
+        1,
+        Math.min(
+          6,
+          Math.round((height + rowGap) / (preferredCardHeight + rowGap)),
+        ),
+      );
+      const availableCardHeight =
+        (height - rowGap * (rows - 1)) / rows;
+      const cardMinHeight = Math.max(
+        96,
+        Math.min(preferredCardHeight, Math.floor(availableCardHeight)),
+      );
+
+      setLargeBoardLayout((current) =>
+        current.rows === rows && current.cardMinHeight === cardMinHeight
+          ? current
+          : { rows, cardMinHeight },
+      );
+    };
+
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height;
+      if (height !== undefined) updateLayout(height);
+    });
+    observer.observe(sidebar);
+    updateLayout(sidebar.getBoundingClientRect().height);
+
+    return () => observer.disconnect();
+  }, [activeView, homePath, expandedLayout]);
+
+  const initialBoardCount = expandedLayout
+    ? largeBoardLayout.rows * 4
+    : 8;
   const visibleBoards = showAllBoards
     ? supportedBoards
-    : supportedBoards.slice(0, 8);
+    : supportedBoards.slice(0, initialBoardCount);
 
   function handleSelectBoard(board: BoardCatalogItem) {
     if ("variants" in board) {
@@ -132,6 +246,8 @@ export default function BoardSelect({
   return (
     <WelcomeShell
       activeView={activeView}
+      wideLayout={wideLayout}
+      expandedLayout={expandedLayout}
       onWorkspaceSection={(section) => {
         setReturnToConversation(true);
         onDesignToolChange(section);
@@ -183,11 +299,13 @@ export default function BoardSelect({
           reduceMotion={settings.reduceMotion}
           boards={supportedBoards}
           visibleBoards={visibleBoards}
+          largeBoardLayout={largeBoardLayout}
           showAllBoards={showAllBoards}
           recentProjects={recentProjects}
           isOpeningExistingProject={isOpeningExistingProject}
           openExistingProjectError={openExistingProjectError}
           newProjectRef={newProjectRef}
+          buildSidebarRef={buildSidebarRef}
           onToggleShowAllBoards={setShowAllBoards}
           onSelectBoard={handleSelectBoard}
           onOpenPinMapping={() => handleViewChange("pin-mapping")}

@@ -4,6 +4,7 @@ export type OutputDeclaration = {
   name: string;
   width: number;
   indices?: number[];
+  direction?: HdlPort["direction"];
 };
 export type ImportUnit = {
   name: string;
@@ -40,7 +41,9 @@ function integerExpression(
   constants: Map<string, number>,
   insensitive = false,
 ): number {
-  const normalized = source.trim();
+  const normalized = source
+    .trim()
+    .replace(/\b\d[\d_]*\b/g, (token) => token.replaceAll("_", ""));
   const tokens =
     normalized.match(/[A-Za-z_][A-Za-z0-9_$]*|\d+|[-+*/()]/g) ?? [];
   if (tokens.join("") !== normalized.replace(/\s/g, "") || tokens.length > 128)
@@ -144,7 +147,10 @@ function declaration(
   };
 }
 
-function verilogOutputs(body: string): OutputDeclaration[] {
+function verilogOutputs(
+  body: string,
+  includeInputs = false,
+): OutputDeclaration[] {
   if (/`|\\|\(\*/.test(body))
     throw new Error(
       "Preprocessor directives, escaped names and attributes require a flattened top-level HDL file.",
@@ -176,7 +182,12 @@ function verilogOutputs(body: string): OutputDeclaration[] {
         `Duplicate or case-conflicting output declaration: ${name}`,
       );
     seen.add(name.toLowerCase());
-    outputs.push(declaration(name, range, constants));
+    outputs.push({
+      ...declaration(name, range, constants),
+      ...(includeInputs
+        ? { direction: direction as HdlPort["direction"] }
+        : {}),
+    });
   };
   const ansi = /\b(?:input|output|inout)\b/.test(header.body);
   let direction = "";
@@ -189,7 +200,7 @@ function verilogOutputs(body: string): OutputDeclaration[] {
       range = undefined;
       part = part.slice(prefix[0].length).trim();
     }
-    if (direction !== "output") return;
+    if (direction !== "output" && !includeInputs) return;
     part = part.replace(/^(?:(?:wire|reg|logic|signed|unsigned)\b\s*)*/, "");
     const ranged = part.match(/^\[([^\]]+)\]\s*/);
     if (ranged) {
@@ -211,7 +222,10 @@ function verilogOutputs(body: string): OutputDeclaration[] {
     const implementation = rest
       .slice(header.end)
       .replace(/\b(function|task)\b[\s\S]*?\bend(?:function|task)\b/g, "");
-    for (const match of implementation.matchAll(/\b(output)\b([^;]*);/g)) {
+    const declarations = includeInputs
+      ? /\b(input|output|inout)\b([^;]*);/g
+      : /\b(output)\b([^;]*);/g;
+    for (const match of implementation.matchAll(declarations)) {
       direction = "";
       range = undefined;
       const parts = splitTopLevel(match[0].slice(0, -1), ",");
@@ -225,7 +239,7 @@ function verilogOutputs(body: string): OutputDeclaration[] {
   return outputs;
 }
 
-function vhdlOutputs(body: string): OutputDeclaration[] {
+function vhdlOutputs(body: string, includeInputs = false): OutputDeclaration[] {
   const constants = new Map<string, number>();
   const generic = /\bgeneric\s*\(/i.exec(body);
   if (generic) {
@@ -257,7 +271,11 @@ function vhdlOutputs(body: string): OutputDeclaration[] {
   for (const part of splitTopLevel(block.body, ";")) {
     const match = part
       .trim()
-      .match(/^([\w\s,]+):\s*(out|buffer)\b\s*([\s\S]+)$/i);
+      .match(
+        includeInputs
+          ? /^([\w\s,]+):\s*(out|buffer|inout|in)\b\s*([\s\S]+)$/i
+          : /^([\w\s,]+):\s*(out|buffer)\b\s*([\s\S]+)$/i,
+      );
     if (!match) {
       if (/:\s*(?:in|inout)\b/i.test(part)) continue;
       throw new Error(`Unsupported VHDL port declaration: ${part.trim()}`);
@@ -269,7 +287,18 @@ function vhdlOutputs(body: string): OutputDeclaration[] {
     if (!vector && !/^(?:std_logic|std_ulogic|bit)$/i.test(type))
       throw new Error(`Unsupported VHDL output type: ${type}`);
     for (const name of match[1].split(","))
-      outputs.push(declaration(name.trim(), vector?.[1], constants, true));
+      outputs.push({
+        ...declaration(name.trim(), vector?.[1], constants, true),
+        ...(includeInputs
+          ? {
+              direction: (match[2].toLowerCase() === "in"
+                ? "input"
+                : match[2].toLowerCase() === "inout"
+                  ? "inout"
+                  : "output") as HdlPort["direction"],
+            }
+          : {}),
+      });
   }
   if (
     new Set(outputs.map((port) => port.name.toLowerCase())).size !==
@@ -279,7 +308,10 @@ function vhdlOutputs(body: string): OutputDeclaration[] {
   return outputs;
 }
 
-export function parseImportSources(sources: ImportSource[]): ImportUnit[] {
+export function parseImportSources(
+  sources: ImportSource[],
+  includeInputs = false,
+): ImportUnit[] {
   if (sources.length > 256)
     throw new Error("Import supports at most 256 HDL files.");
   const units: ImportUnit[] = [];
@@ -303,7 +335,9 @@ export function parseImportSources(sources: ImportSource[]): ImportUnit[] {
           throw new Error(
             "Preprocessed HDL requires a flattened top-level file.",
           );
-        const outputs = vhdl ? vhdlOutputs(match[2]) : verilogOutputs(match[2]);
+        const outputs = vhdl
+          ? vhdlOutputs(match[2], includeInputs)
+          : verilogOutputs(match[2], includeInputs);
         if (outputs.reduce((sum, port) => sum + port.width, 0) > 16384)
           throw new Error(
             "The selected top exceeds the 16384-bit import limit.",

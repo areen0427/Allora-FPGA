@@ -1,7 +1,7 @@
 /* Shared interaction and action variants. Screen CSS owns size and layout.
    Existing action classes remain aliases so their event handlers stay intact. */
-/* Editable text controls share one pill shape. This geometry-only rule
-   leaves each field's own border, surface, hover, and focus behavior intact. */
+/* Editable text controls share the small radius. This geometry-only rule leaves
+   each field's own border, surface, hover, and focus behavior intact. */
 #root :is(
   input:not(
     [type="button"],
@@ -18,7 +18,7 @@
   textarea,
   .ui-search-control
 ) {
-  border-radius: var(--ui-radius-pill) !important;
+  border-radius: var(--ui-radius-control) !important;
 }
 
 /* Search controls have one visual layer: no inset/input border, only a soft
@@ -579,13 +579,13 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 /* Automatic dropdown defaults: native selects and semantic comboboxes inherit
    this variant without a class. ui-dropdown opts other custom triggers in. Keep
    height, vertical padding, font metrics and width with the owning screen.
-   Native macOS appearance must be removed for the pill radius to take effect.
+   Native macOS appearance must be removed for the shared radius to take effect.
    These declarations also supersede legacy page and inline surface styles. */
 #root :is(select, [role="combobox"], .ui-dropdown) {
   appearance: none !important;
   -webkit-appearance: none !important;
   border: 1px solid var(--ui-dropdown-idle-border, var(--ui-border-control)) !important;
-  border-radius: var(--ui-radius-pill) !important;
+  border-radius: var(--ui-radius-control) !important;
   outline: none !important;
   color: var(--ui-text) !important;
   background-color: var(--ui-dropdown-idle-bg, var(--ui-control-solid)) !important;
@@ -623,7 +623,7 @@ html[data-reduce-motion="true"] .ui-dock-icon {
 
 /* Custom dropdown buttons use the same surface as selects rather than the
    separate button-glass and compact-group pseudo-element layers. Hover-only
-   dropdowns opt into the shared hover glass edge; their pill radius is inherited. */
+   dropdowns opt into the shared hover glass edge and radius. */
 #root button:is([role="combobox"], .ui-dropdown):not(.ui-hover-button)::before,
 #root button:is([role="combobox"], .ui-dropdown):not(.ui-hover-button)::after {
   content: none !important;

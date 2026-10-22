@@ -41,8 +41,9 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       if (initialized.current && scope.current === nextScope) return;
       scope.current = nextScope;
       initialized.current = true;
-      // Launch starts fresh; later scope changes may resume saved conversations.
-      const sessionOptions = { ...options, resumeLatest: hasOpenedChat.current && options.resumeLatest === true };
+      // Project entry resumes saved history even on the first chat of this launch.
+      // A projectless welcome chat still starts fresh.
+      const sessionOptions = { ...options, resumeLatest: options.resumeLatest === true && (Boolean(options.initialProjectPath) || hasOpenedChat.current) };
       hasOpenedChat.current = true;
       setSession(current => ({ key: (current?.key ?? 0) + 1, options: sessionOptions }));
     },
