@@ -19,8 +19,8 @@ for (const file of ['package.json', 'package-lock.json', 'src-tauri/tauri.conf.j
   updates.push([target, JSON.stringify(json, null, 2) + '\n']);
 }
 for (const [file, pattern] of [
-  ['src-tauri/Cargo.toml', /^(\[package\][\s\S]*?\nversion = ")[^"]+("[^\n]*)/m],
-  ['src-tauri/Cargo.lock', /(\[\[package\]\]\nname = "app"\nversion = ")[^"]+("[^\n]*)/],
+  ['src-tauri/Cargo.toml', /^(\[package\][\s\S]*?\r?\nversion = ")[^"]+("[^\r\n]*)/m],
+  ['src-tauri/Cargo.lock', /(\[\[package\]\]\r?\nname = "app"\r?\nversion = ")[^"]+("[^\r\n]*)/],
 ]) {
   const target = path.join(root, file);
   const source = readFileSync(target, 'utf8');

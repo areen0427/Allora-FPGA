@@ -1,10 +1,15 @@
 # Windows preview release
 
-Windows work is isolated on `codex/windows-preview`. The macOS `v*` release
-workflow is unchanged. A push to this branch builds an NSIS installer as a
+Windows preview branch builds run on `codex/windows-preview`. A push to this
+branch builds an x64 NSIS installer as a
 GitHub Actions artifact. A `windows-v*` tag builds a **draft prerelease** with
 the installer and `allora-fpga-windows-requirements.zip` attached. Review and
 publish the draft manually after testing.
+
+Manual dispatch on a branch also produces a test artifact, without creating a
+release. Builds use Node.js 24, `npm ci`, and Cargo's locked dependency resolution.
+The explicit Rust target is `x86_64-pc-windows-msvc`; installer artifacts come
+from `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/`.
 
 This is an experimental build. The app has launched on Windows, but project
 creation and other native workflows have not yet been verified end to end. Do
@@ -40,3 +45,14 @@ After the branch build succeeds, tag the tested commit with a name such as
 `windows-v0.1.0-preview.1` and push that tag. This name does not match the
 macOS `v*` trigger. The Windows workflow creates a draft prerelease, so it
 will not be public until its assets and behavior have been reviewed.
+
+The tag is authoritative for the app and installer version. The shared version
+script updates npm, Tauri, and Cargo manifests in CI and supports both Windows
+CRLF and Unix LF checkouts. Its regression tests run before the build, including
+on branches where version synchronization is skipped.
+
+For release retries, follow [Git release workflow](git_release_workflow.md#retry-a-failed-release).
+A source fix needs a new tag containing that fix; rerunning the failed
+`windows-v0.1.0-preview.2` tag uses its old, LF-only version script and fails again.
+Check that both the NSIS installer and requirements ZIP are present, then smoke
+test launch and project creation on Windows before publishing the draft.
