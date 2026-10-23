@@ -1,0 +1,56 @@
+.chat-markdown-rich a,
+.chat-markdown-rich .chat-source-reference {
+  color: var(--ui-accent-text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ui-accent-text) 40%, transparent);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.chat-markdown-rich .chat-source-reference {
+  display: inline;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  border-radius: 3px;
+  cursor: pointer;
+  vertical-align: baseline;
+  box-shadow: none;
+}
+.chat-markdown-rich .chat-source-reference:disabled { cursor: default; opacity: .55; }
+.chat-markdown-rich :is(a, .chat-source-reference):focus-visible {
+  outline: 2px solid var(--ui-accent-text);
+  outline-offset: 3px;
+}
+.chat-markdown-rich :is(a, .chat-source-reference):hover { text-decoration-color: currentColor; }
+.chat-markdown-rich blockquote {
+  margin: 12px 0;
+  padding: 0 14px;
+  border-left: 2px solid var(--chat-border);
+  color: var(--chat-muted);
+}
+.chat-markdown-rich hr { border: 0; border-top: 1px solid var(--chat-border); margin: 18px 0; }
+.chat-markdown-table-scroll { max-width: 100%; overflow-x: auto; margin: 12px 0 18px; }
+.chat-markdown-table-scroll table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.6; }
+.chat-markdown-table-scroll :is(th, td) { border-bottom: 1px solid var(--chat-border); padding: 8px 12px; min-width: 80px; vertical-align: top; }
+.chat-markdown-table-scroll th { font-weight: 600; background: var(--chat-soft); }
+.chat-markdown-rich .chat-markdown-link-error { color: var(--ui-text-muted); font-size: 12px; }
+.chat-markdown-rich {
+  --chat-hdl-keyword: #6e42bd;
+  --chat-hdl-comment: #5f7550;
+  --chat-hdl-string: #9a3e25;
+  --chat-hdl-number: #126c7e;
+}
+html[data-theme="black-ice"] .chat-markdown-rich {
+  --chat-hdl-keyword: #c3a1ff;
+  --chat-hdl-comment: #97b58e;
+  --chat-hdl-string: #eeae90;
+  --chat-hdl-number: #83d1df;
+}
+.chat-hdl-keyword { color: var(--chat-hdl-keyword); }
+.chat-hdl-comment { color: var(--chat-hdl-comment); font-style: italic; }
+.chat-hdl-string { color: var(--chat-hdl-string); }
+.chat-hdl-number { color: var(--chat-hdl-number); }

@@ -1,0 +1,8 @@
+/* Black Ice artwork and spatial tints preserve lit edges and the horizon. Keep these
+   independent of the active theme so an outgoing layer never changes artwork. */
+:root {
+  --art-aether-black-image: url("/welcome_aether_black_ice.png");
+  --art-dawn-black-tint:
+    linear-gradient(180deg, rgba(1, 5, 17, .96), rgba(2, 8, 24, .88) 26%, transparent 57%),
+    linear-gradient(0deg, rgba(1, 4, 12, .94), transparent 38%);
+}

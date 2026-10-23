@@ -2757,3 +2757,44 @@ html:is([data-theme="dark"], [data-theme="black-ice"]) .floating-dock-tooltip {
   background: var(--ui-success-bg);
   color: var(--ui-success-text) !important;
 }
+
+/* Let the selected titlebar artwork echo through the active workspace tool,
+   while keeping the project label and editor canvas clear. */
+.dashboard-workspace {
+  --workspace-tool-accent: var(--ui-accent-text);
+}
+
+html[data-theme="ice"][data-background="molecules"] .dashboard-workspace {
+  --workspace-tool-accent: #168cca;
+}
+html[data-theme="ice"][data-background="trace"] .dashboard-workspace {
+  --workspace-tool-accent: #278fc7;
+}
+html[data-theme="ice"][data-background="ultramatte"] .dashboard-workspace {
+  --workspace-tool-accent: #6d61ce;
+}
+html[data-theme="black-ice"][data-background="molecules"] .dashboard-workspace {
+  --workspace-tool-accent: #62c9f6;
+}
+html[data-theme="black-ice"][data-background="trace"] .dashboard-workspace {
+  --workspace-tool-accent: #72d7f8;
+}
+html[data-theme="black-ice"][data-background="ultramatte"] .dashboard-workspace {
+  --workspace-tool-accent: #b4a1ff;
+}
+
+html[data-theme][data-background] .dashboard-workspace .activity-rail-nav .sidebarNavButton.active {
+  --dock-accent: var(--workspace-tool-accent);
+  color: var(--workspace-tool-accent) !important;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--workspace-tool-accent) 22%, transparent),
+      color-mix(in srgb, var(--workspace-tool-accent) 9%, transparent) 38%,
+      transparent 70%
+    ),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.10), transparent 58%) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--workspace-tool-accent) 24%, transparent),
+    0 0 10px color-mix(in srgb, var(--workspace-tool-accent) 12%, transparent);
+}

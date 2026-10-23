@@ -13,10 +13,10 @@ import {
   invokeTauri,
 } from "../../lib/tauri";
 import InfoCard, { InfoRow } from "./InfoCard";
-import { findPorts, type HdlPort } from "./pinMappingUtils";
 import type { ProjectFile } from "./types";
 import type { AppSettings } from "../../data/settings";
 import SignalWaveformPanel from "../../components/SignalWaveformPanel";
+import TestbenchCreationPopup from "../../components/TestbenchCreationPopup";
 import { openViewerWindow } from "../../lib/viewerWindow";
 import { findChatWaveform } from "../../lib/chatResults";
 import {
@@ -127,15 +127,6 @@ export default function TestbenchSection({
     () => findTopModule(selectedTestbench ? [selectedTestbench] : []),
     [selectedTestbench],
   );
-  const topLevelPorts = useMemo(
-    () =>
-      findPorts(
-        selectedTopLevel && !isVhdlFile(selectedTopLevel.name)
-          ? [selectedTopLevel]
-          : [],
-      ),
-    [selectedTopLevel],
-  );
   const waveform = useMemo(
     () => parseVcd(waveformText),
     [waveformText],
@@ -189,20 +180,6 @@ export default function TestbenchSection({
     setSelectedWaveSignalIds(recording?.signals.slice(0, 6).map(signal => signal.id) ?? []);
     setErrorMessage(recording?.signals.length ? "" : `No readable VCD signals were found in ${file.name}.`);
   }, [requestedWaveform, files, projectPath]);
-
-  function createTestbench() {
-    const moduleName = topModule ?? "top";
-    const extension = projectName.toLowerCase().endsWith("sv") ? "sv" : "sv";
-    const baseName = `${moduleName}_tb.${extension}`;
-    const fileName = uniqueFileName(baseName, files);
-    const content = createTestbenchTemplate(
-      moduleName,
-      board.name,
-      topLevelPorts,
-    );
-    onCreateTestbench(fileName, content);
-    setSelectedTestbenchName(fileName);
-  }
 
   async function openWaveformViewer(vcd: string, waveformName: string) {
     try {
@@ -362,13 +339,15 @@ export default function TestbenchSection({
             </select>
           </label>
 
-          <button
-            type="button"
-            className="synthesis-secondary-button"
-            onClick={createTestbench}
-          >
-            New Testbench
-          </button>
+          <TestbenchCreationPopup
+            source={files.find(file => file.name === topLevelFileName) ?? selectedTopLevel}
+            files={files}
+            boardName={board.name}
+            onCreate={(fileName, content) => {
+              onCreateTestbench(fileName, content);
+              setSelectedTestbenchName(fileName);
+            }}
+          />
 
           {waveformText ? (
             <button
@@ -518,104 +497,6 @@ function filterTestbenchLogs(
   return level === "errors"
     ? logs.filter((line) => /error|failed|warning/i.test(line))
     : logs;
-}
-
-function createTestbenchTemplate(
-  moduleName: string,
-  boardName: string,
-  ports: HdlPort[],
-) {
-  const signals = createTestbenchSignals(ports);
-  const declarations = signals.length
-    ? signals
-        .map((signal) =>
-          `  ${signal.direction === "input" ? "reg" : "wire"}${signal.range ? ` ${signal.range}` : ""} ${signal.name} = ${signal.direction === "input" ? `${signal.width}'d0` : ""};`.replace(
-            " = ;",
-            ";",
-          ),
-        )
-        .join("\n")
-    : "  reg clk = 0;\n  reg rst = 1;";
-  const connections = signals.length
-    ? signals.map((signal) => `    .${signal.name}(${signal.name})`).join(",\n")
-    : "    .clk(clk),\n    .rst(rst)";
-  const clockSignal = signals.find((signal) =>
-    /^(clk|clock|sysclk)$/i.test(signal.name),
-  );
-  const resetSignal = signals.find((signal) =>
-    /^(rst|reset|rst_n|reset_n)$/i.test(signal.name),
-  );
-  const resetAssert = resetSignal
-    ? `    #20 ${resetSignal.name} = ${resetSignal.name.endsWith("_n") ? "1" : "0"};`
-    : "    #20;";
-
-  return `\`timescale 1ns / 1ps
-
-module ${moduleName}_tb;
-${declarations}
-
-  ${moduleName} dut (
-${connections}
-  );
-
-${clockSignal ? `  always #5 ${clockSignal.name} = ~${clockSignal.name};` : "  // Add a clock generator here if your DUT needs one."}
-
-  initial begin
-    $dumpfile("waveform.vcd");
-    $dumpvars(0, ${moduleName}_tb);
-
-    // ${boardName} simulation stimulus
-${resetAssert}
-    #200;
-    $finish;
-  end
-endmodule
-`;
-}
-
-function createTestbenchSignals(ports: HdlPort[]) {
-  const grouped = new Map<
-    string,
-    { direction: HdlPort["direction"]; indexes: number[] }
-  >();
-
-  for (const port of ports) {
-    const name = port.baseName ?? port.name;
-    const current = grouped.get(name) ?? {
-      direction: port.direction,
-      indexes: [],
-    };
-    if (port.index !== undefined) {
-      current.indexes.push(port.index);
-    }
-    grouped.set(name, current);
-  }
-
-  return [...grouped.entries()].map(([name, info]) => {
-    const min = info.indexes.length ? Math.min(...info.indexes) : 0;
-    const max = info.indexes.length ? Math.max(...info.indexes) : 0;
-    const width = info.indexes.length ? Math.abs(max - min) + 1 : 1;
-    return {
-      name,
-      direction: info.direction,
-      width,
-      range: width > 1 ? `[${max}:${min}]` : "",
-    };
-  });
-}
-
-function uniqueFileName(fileName: string, files: ProjectFile[]) {
-  if (!files.some((file) => file.name === fileName)) return fileName;
-  const dotIndex = fileName.lastIndexOf(".");
-  const stem = dotIndex === -1 ? fileName : fileName.slice(0, dotIndex);
-  const extension = dotIndex === -1 ? "" : fileName.slice(dotIndex);
-  let index = 2;
-
-  while (files.some((file) => file.name === `${stem}-${index}${extension}`)) {
-    index++;
-  }
-
-  return `${stem}-${index}${extension}`;
 }
 
 function findTopModule(files: ProjectFile[]) {

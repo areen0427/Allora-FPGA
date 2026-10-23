@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <linearGradient id="galaxy" x1="166" y1="60" x2="1405" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A8D8FF" stop-opacity=".02" />
+      <stop offset=".42" stop-color="#B7C8FF" stop-opacity=".23" />
+      <stop offset=".68" stop-color="#E6CFFF" stop-opacity=".18" />
+      <stop offset="1" stop-color="#9BD9FF" stop-opacity=".02" />
+    </linearGradient>
+    <radialGradient id="moonlight" cx="0" cy="0" r="1" gradientTransform="matrix(0 65 -65 0 1315 175)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8EEFF" stop-opacity=".2" />
+      <stop offset="1" stop-color="#D8EEFF" stop-opacity="0" />
+    </radialGradient>
+    <mask id="crescent">
+      <rect width="1600" height="1000" fill="#000" />
+      <circle cx="1315" cy="175" r="39" fill="#fff" />
+      <circle cx="1337" cy="157" r="37" fill="#000" />
+    </mask>
+    <filter id="soft-glow" x="-20%" y="-30%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="28" />
+    </filter>
+  </defs>
+
+  <path
+    d="M-70 335C220 92 473 105 701 246c212 131 399 58 633-82 121-72 225-78 333-26v194c-191-44-296-3-434 76-253 145-448 181-682 24-192-129-360-129-621 87V335Z"
+    fill="url(#galaxy)"
+    filter="url(#soft-glow)"
+  />
+  <circle cx="1315" cy="175" r="68" fill="url(#moonlight)" />
+  <circle cx="1315" cy="175" r="39" fill="#E8F5FF" mask="url(#crescent)" />
+
+  <g fill="#E9F5FF">
+    <circle cx="128" cy="102" r="2.2" opacity=".8" />
+    <circle cx="238" cy="244" r="1.5" opacity=".72" />
+    <circle cx="347" cy="85" r="1.7" opacity=".66" />
+    <circle cx="451" cy="191" r="2.4" opacity=".82" />
+    <circle cx="552" cy="62" r="1.4" opacity=".7" />
+    <circle cx="632" cy="302" r="1.8" opacity=".78" />
+    <circle cx="742" cy="148" r="1.4" opacity=".72" />
+    <circle cx="825" cy="64" r="2.3" opacity=".75" />
+    <circle cx="908" cy="252" r="1.6" opacity=".82" />
+    <circle cx="1010" cy="107" r="1.7" opacity=".7" />
+    <circle cx="1115" cy="309" r="2" opacity=".72" />
+    <circle cx="1190" cy="72" r="1.4" opacity=".72" />
+    <circle cx="1430" cy="83" r="2" opacity=".78" />
+    <circle cx="1510" cy="269" r="1.5" opacity=".7" />
+    <circle cx="185" cy="370" r="1.4" opacity=".6" />
+    <circle cx="392" cy="405" r="1.7" opacity=".64" />
+    <circle cx="558" cy="366" r="1.3" opacity=".58" />
+    <circle cx="775" cy="433" r="1.5" opacity=".6" />
+    <circle cx="1000" cy="391" r="1.4" opacity=".62" />
+    <circle cx="1452" cy="402" r="1.6" opacity=".58" />
+  </g>
+  <g fill="#F2F8FF" opacity=".72">
+    <path d="M289 150h2v8h-2z" /><path d="M286 153h8v2h-8z" />
+    <path d="M1058 198h2v8h-2z" /><path d="M1055 201h8v2h-8z" />
+    <path d="M1480 169h2v7h-2z" /><path d="M1477 171h8v2h-8z" />
+  </g>
+</svg>

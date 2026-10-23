@@ -1,14 +1,12 @@
 import { chatNotifications } from "../lib/chatNotifications";
 import { WorkspaceTitle } from "../components/ui/WorkspaceTitle";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { ReactNode } from "react";
 import {
   AlertCircle,
   ArrowUp,
   Check,
   CheckCircle2,
   ChevronRight,
-  Copy,
   FolderOpen,
   History,
   LoaderCircle,
@@ -28,7 +26,8 @@ import { getSavedProjects } from "../data/projects";
 import { getBoardById } from "../data/boards";
 import { createChatTitle } from "../lib/chatTitles";
 import { aiChatApi } from "../lib/aiChat";
-import type { AiChatEvent, AiChatSession, AiChatModel } from "../lib/aiChat";
+import type { AiChatEvent, AiChatSession, AiChatModel, ChatMode } from "../lib/aiChat";
+import type { ChatHdlLanguage } from "../data/settings";
 import { prepareCodexReadiness, readCodexReadiness } from "../lib/codexReadiness";
 import type { AiProvider, AiProviderStatus } from "../lib/aiIntegration";
 import { hasTauriInvoke } from "../lib/tauri";
@@ -41,6 +40,8 @@ import ChatUsageControls from "../components/ChatUsageControls";
 import type { ContextUsage, RateLimits } from "../lib/aiChat";
 import ChatProviderSelect from "../components/ChatProviderSelect";
 import ChatModelControls from "../components/ChatModelControls";
+import ChatPreferenceControls from "../components/ChatPreferenceControls";
+import ChatMarkdown from "../components/ChatMarkdown";
 import { reasoningFor } from "../lib/chatModels";
 import ChatTaskPanel, { type Activity } from "../components/ChatTaskPanel";
 import ChatTurnDetails, { type ChatArtifact } from "../components/ChatTurnDetails";
@@ -83,6 +84,7 @@ type Message = {
   creationReviewIds?: string[];
 };
 type Conversation = {
+  mode?: ChatMode;
   contextUsage?: ContextUsage;
   id: string;
   title: string;
@@ -95,11 +97,15 @@ type Conversation = {
 type Approval = Extract<AiChatEvent, { type: "approval_required" }>;
 type ChatPageProps = {
   onActivateProject?: (path: string) => Promise<void>;
+  onProjectlessConversationSelected?: () => Promise<boolean>;
   onOpenArtifact?: (artifact: ChatArtifact) => void | Promise<void>;
   onWorkspaceChanged?: (path: string) => Promise<void>;
   onProjectCreated?: (path: string) => Promise<void>;
   resumeLatest?: boolean;
   initialProjectPath?: string;
+  defaultProjectDirectory?: string | null;
+  language?: ChatHdlLanguage;
+  onLanguageChange?: (language: ChatHdlLanguage) => void;
   diagnosticsProjectKey?: string;
   onOpenSettings: () => void;
   onOpenProject: (path: string) => Promise<void>;
@@ -163,11 +169,15 @@ function readHistory(value: unknown = readChatHistory()): Conversation[] {
 
 export default function ChatPage({
   onActivateProject,
+  onProjectlessConversationSelected,
   onOpenArtifact,
   onWorkspaceChanged,
   onProjectCreated,
   resumeLatest = false,
   initialProjectPath,
+  defaultProjectDirectory,
+  language = "verilog",
+  onLanguageChange,
   diagnosticsProjectKey,
   onOpenSettings,
   onOpenProject,
@@ -185,22 +195,37 @@ export default function ChatPage({
   const [activeId, setActiveId] = useState<string | null>(() =>
     resumeLatest ? (initialProjectPath
       ? latestProjectChat(conversations, initialProjectPath)
-      : [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))[0])?.id ?? null : null,
+      : sortRecentConversations(conversations)[0])?.id ?? null : null,
   );
   const historyResume = useRef({ pending: resumeLatest && !activeId, projectPath: initialProjectPath });
   const historyLoadVersion = useRef(0);
   const [workspacePath, setWorkspacePath] = useState(
-    () => initialProjectPath ?? conversations.find((item) => item.id === activeId)?.workspacePath ?? getLastProjectParentDirectory() ?? "",
+    () => {
+      if (initialProjectPath) return initialProjectPath;
+      const conversation = conversations.find((item) => item.id === activeId);
+      return conversation?.workspacePath
+        || [...(conversation?.messages ?? [])].reverse().find(message => message.projectPath)?.projectPath
+        || defaultProjectDirectory
+        || getLastProjectParentDirectory()
+        || "";
+    },
   );
   const [saveDirectory, setSaveDirectory] = useState<string | undefined>();
+  const workspaceChosenExplicitly = useRef(false);
   const [contextProjectPath, setContextProjectPath] = useState(() => initialProjectPath
     ?? [...(conversations.find(item => item.id === activeId)?.messages ?? [])].reverse().find(message => message.projectPath)?.projectPath
     ?? getSavedProjects().find(project => project.projectPath === workspacePath)?.projectPath);
+  const activatedProjectPath = useRef(initialProjectPath);
+  const activateProject = useRef(onActivateProject);
+  activateProject.current = onActivateProject;
   const [historyMenuId, setHistoryMenuId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const historyMenuRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState("");
+  const [draftMode, setDraftMode] = useState<ChatMode>("edit");
+  const [localLanguage, setLocalLanguage] = useState<ChatHdlLanguage>(language);
+  const selectedLanguage = onLanguageChange ? language : localLanguage;
   const [pins, setPins] = useState<ContextPin[]>([]);
   const creationReviews = useRef(new Map<string, ChatChangeReview>());
   const [activityTick, setActivityTick] = useState(0);
@@ -266,10 +291,23 @@ export default function ChatPage({
     };
   }, [newChatChoiceOpen]);
   const [openingProject, setOpeningProject] = useState(false);
-  const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string }) | null>(
+  const session = useRef<(AiChatSession & { conversationId: string; workspacePath: string; mode: ChatMode }) | null>(
     null,
   );
   const alive = useRef(true);
+  // History can restore a project without an explicit Recent chats click.
+  // Populate the workspace through the same portal-preserving handoff.
+  useEffect(() => {
+    if (!contextProjectPath) {
+      activatedProjectPath.current = undefined;
+      return;
+    }
+    if (activatedProjectPath.current === contextProjectPath || !activateProject.current) return;
+    activatedProjectPath.current = contextProjectPath;
+    void activateProject.current(contextProjectPath).catch(error => {
+      if (alive.current) setNotice(errorText(error));
+    });
+  }, [contextProjectPath]);
   const busyRef = useRef(false);
   const changingConversationRef = useRef(false);
   const stopRequested = useRef(false);
@@ -315,6 +353,9 @@ export default function ChatPage({
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeId,
   );
+  const mode: ChatMode = activeConversation ? activeConversation.mode === "discuss" ? "discuss" : "edit" : draftMode;
+  const currentWorkspacePath = workspacePath || contextProjectPath || defaultProjectDirectory || "";
+  const needsWorkspaceSetup = !currentWorkspacePath;
   const messages = activeConversation?.messages ?? [];
   const approval = approvals[0];
   const ready = provider === "codex" && desktopAvailable && status?.state === "ready";
@@ -547,6 +588,24 @@ export default function ChatPage({
     if (previous) await aiChatApi.close(previous.sessionId);
   }
 
+  async function changeMode(nextMode: ChatMode) {
+    if (busyRef.current || changingConversationRef.current || mode === nextMode) return;
+    changingConversationRef.current = true;
+    setChangingConversation(true);
+    setNotice("");
+    try {
+      // Closing also cancels old jobs; the next send resumes this thread with a new scoped tool server.
+      await closeSession();
+      if (activeId) updateConversation(activeId, current => ({ ...current, mode: nextMode }));
+      else setDraftMode(nextMode);
+    } catch (error) {
+      if (alive.current) setNotice(`Could not change chat mode: ${errorText(error)}`);
+    } finally {
+      changingConversationRef.current = false;
+      if (alive.current) setChangingConversation(false);
+    }
+  }
+
   async function chooseWorkspace() {
     if (interactionLocked) return;
     historyResume.current.pending = false;
@@ -555,6 +614,7 @@ export default function ChatPage({
       const path = await pickProjectParentDirectory();
       if (path) {
         await closeSession();
+        workspaceChosenExplicitly.current = true;
         setContextProjectPath(undefined);
         setSaveDirectory(path);
         if (activeId) updateConversation(activeId, (current) => ({ ...current, workspacePath: path, threadId: undefined }));
@@ -582,11 +642,21 @@ export default function ChatPage({
       await closeSession();
       if (!alive.current) return false;
       if (project === "new") {
+        const switched = await onProjectlessConversationSelected?.();
+        if (switched === false) {
+          setNotice("Save the current project before starting a new project chat.");
+          return false;
+        }
+        if (!alive.current) return false;
         setContextProjectPath(undefined);
-        setWorkspacePath("");
+      }
+      if (project === "new" || !contextProjectPath) {
+        workspaceChosenExplicitly.current = false;
+        setWorkspacePath(defaultProjectDirectory ?? "");
         setSaveDirectory(undefined);
       }
       setActiveId(null);
+      setDraftMode("edit");
       setDraft("");
       setPins([]);
       setNotice("");
@@ -619,12 +689,22 @@ export default function ChatPage({
     try {
       await closeSession();
       if (!alive.current) return;
-      setActiveId(conversation.id);
-      setPins([]);
-      setWorkspacePath(conversation.workspacePath);
-      setSaveDirectory(undefined);
       const projectPath = [...conversation.messages].reverse().find((message) => message.projectPath)?.projectPath
         ?? getSavedProjects().find(project => project.projectPath === conversation.workspacePath)?.projectPath;
+      if (!projectPath && onProjectlessConversationSelected) {
+        const switched = await onProjectlessConversationSelected();
+        if (!switched) {
+          setNotice("Save the current project before opening this projectless chat.");
+          return;
+        }
+      }
+      if (!alive.current) return;
+      setActiveId(conversation.id);
+      workspaceChosenExplicitly.current = false;
+      setPins([]);
+      setWorkspacePath(conversation.workspacePath || projectPath || defaultProjectDirectory || getLastProjectParentDirectory() || "");
+      setSaveDirectory(undefined);
+      activatedProjectPath.current = projectPath;
       setContextProjectPath(projectPath);
       setDraft("");
       setNotice("");
@@ -656,7 +736,8 @@ export default function ChatPage({
       !prompt ||
       busyRef.current ||
       changingConversationRef.current ||
-      !ready
+      !ready ||
+      needsWorkspaceSetup
     )
       return;
     busyRef.current = true;
@@ -673,6 +754,7 @@ export default function ChatPage({
     const startedAt = Date.now();
     const turnPins = pins;
     const turnSaveDirectory = saveDirectory;
+    const explicitWorkspace = workspaceChosenExplicitly.current;
     setSaveDirectory(undefined);
     setPins([]);
     const additions: Message[] = [
@@ -684,6 +766,7 @@ export default function ChatPage({
         tools: [],
         activities: [],
         pending: true,
+        projectScope: contextProjectPath ?? getSavedProjects().find(project => project.projectPath === currentWorkspacePath)?.projectPath,
       },
     ];
     if (!activeConversation) {
@@ -693,11 +776,12 @@ export default function ChatPage({
           {
             id: conversationId,
             title: createChatTitle(prompt),
-            workspacePath,
+            workspacePath: currentWorkspacePath,
+            mode,
             messages: additions,
             updatedAt: new Date().toISOString(),
           },
-          ...current,
+          ...current.filter((item) => item.id !== conversationId),
         ].slice(0, 40),
       );
     } else
@@ -790,13 +874,22 @@ export default function ChatPage({
         case "project_directory_required": {
           const activeSession = session.current;
           if (!activeSession || stopRequested.current) break;
-          setActivity("Choose where to save your project…");
+          const preferredDirectory = turnSaveDirectory
+            || (explicitWorkspace && !contextProjectPath ? currentWorkspacePath : "")
+            || defaultProjectDirectory
+            || (!contextProjectPath ? currentWorkspacePath : "")
+            || "";
+          setActivity(preferredDirectory
+            ? `Saving projects to ${folderName(preferredDirectory)}…`
+            : "Choose where to save your project…");
           void (async () => {
-            let path: string | null = null;
-            try {
-              path = await pickProjectParentDirectory();
-            } catch (error) {
-              setNotice(errorText(error));
+            let path: string | null = preferredDirectory || null;
+            if (!path) {
+              try {
+                path = await pickProjectParentDirectory();
+              } catch (error) {
+                setNotice(errorText(error));
+              }
             }
             if (stopRequested.current || session.current !== activeSession) return;
             try {
@@ -817,6 +910,7 @@ export default function ChatPage({
             projectName: event.projectName,
           }));
           setWorkspacePath(event.projectPath);
+          activatedProjectPath.current = event.projectPath;
           setContextProjectPath(event.projectPath);
           updateConversation(conversationId, (current) => ({ ...current, workspacePath: event.projectPath }));
           void onProjectCreated?.(event.projectPath).catch(error => {
@@ -833,6 +927,8 @@ export default function ChatPage({
           break;
         case "turn_completed":
           if (event.sessionClosed) session.current = null;
+          if (event.interrupted)
+            updateMessage((current) => ({ ...current, interrupted: true }));
           if (turnProjectPath) void onWorkspaceChanged?.(turnProjectPath).catch(error => setNotice(errorText(error)));
           if (event.threadId)
             updateConversation(conversationId, (current) => ({
@@ -850,8 +946,8 @@ export default function ChatPage({
       await persistConversations();
       if (!alive.current || stopRequested.current) return;
       if (!effectiveModel) throw new Error("Load an available Codex model before sending a message.");
-      const existingProject = contextProjectPath ?? getSavedProjects().find(project => project.projectPath === workspacePath)?.projectPath;
-      if (existingProject) {
+      const existingProject = contextProjectPath ?? getSavedProjects().find(project => project.projectPath === currentWorkspacePath)?.projectPath;
+      if (existingProject && mode === "edit") {
         try {
           const checkpoint = await chatCheckpoints.create(existingProject);
           checkpointId = checkpoint.id;
@@ -862,20 +958,25 @@ export default function ChatPage({
       }
       if (
         !session.current ||
-        session.current.conversationId !== conversationId || session.current.workspacePath !== workspacePath
+        session.current.conversationId !== conversationId || session.current.workspacePath !== currentWorkspacePath || session.current.mode !== mode
       ) {
         await closeSession();
         const started = await aiChatApi.start(
-          workspacePath,
-          activeConversation?.workspacePath === workspacePath ? activeConversation?.threadId : undefined,
+          currentWorkspacePath,
+          activeConversation?.workspacePath === currentWorkspacePath ? activeConversation?.threadId : undefined,
           effectiveModel.model,
           onEvent,
+          mode,
         );
         if (!alive.current) {
           await aiChatApi.close(started.sessionId);
           return;
         }
-        session.current = { ...started, conversationId, workspacePath };
+        if (started.mode !== mode) {
+          await aiChatApi.close(started.sessionId);
+          throw new Error("These chat controls require the updated desktop runtime. Rebuild and restart Allora before continuing.");
+        }
+        session.current = { ...started, conversationId, workspacePath: currentWorkspacePath, mode };
         updateConversation(conversationId, (current) => ({
           ...current,
           threadId: started.threadId,
@@ -887,7 +988,7 @@ export default function ChatPage({
       if (stopRequested.current) return;
       setActivity("Thinking…");
       requestDispatched = true;
-      await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${turnSaveDirectory ? `The user selected this save parent directory for this request: ${JSON.stringify(turnSaveDirectory)}.\n` : ""}${buildContextPrompt(prompt, turnPins)}`, effectiveModel?.model, reasoningEffort, onEvent, prompt);
+      await aiChatApi.send(session.current.sessionId, `${contextProjectPath ? `Current project: ${JSON.stringify(contextProjectPath)}. Inspect it with get_project_context before making changes.\n` : ""}${turnSaveDirectory ? `The user selected this save parent directory for this request: ${JSON.stringify(turnSaveDirectory)}.\n` : ""}${buildContextPrompt(prompt, turnPins)}`, effectiveModel?.model, reasoningEffort, onEvent, prompt, mode, selectedLanguage);
     } catch (error) {
       if (!stopRequested.current)
         updateMessage((current) => ({ ...current, error: errorText(error) }));
@@ -1014,8 +1115,14 @@ export default function ChatPage({
         ? "Sign in to Codex in AI Integration settings to start chatting."
         : (status?.error ?? "Checking your local Codex connection…");
 
+  useEffect(() => {
+    if (!activeId && !contextProjectPath && !workspaceChosenExplicitly.current && defaultProjectDirectory) {
+      setWorkspacePath(defaultProjectDirectory);
+    }
+  }, [activeId, contextProjectPath, defaultProjectDirectory]);
+
   const historyProjects = sidebarOpen ? getSavedProjects() : [];
-  const orderedHistory = [...conversations].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0));
+  const orderedHistory = sortRecentConversations(conversations);
   const visibleHistory = historyExpanded ? orderedHistory : orderedHistory.slice(0, 10);
 
   return (
@@ -1027,9 +1134,20 @@ export default function ChatPage({
         <ChatHistoryPopup id={historyPanelId} anchorRef={historyToggleRef} expanded={historyExpanded}
           onDismiss={() => { setSidebarOpen(false); setHistoryExpanded(false); }}>
           <div className="chat-sidebar-top">
-            <strong>
-              <History size={16} /> {historyExpanded ? "All chats" : "Recent chats"}
-            </strong>
+            <div className="chat-history-heading">
+              <strong>
+                <History size={16} /> {historyExpanded ? "All chats" : "Recent chats"}
+              </strong>
+              <span className="chat-history-summary">
+                {historyExpanded
+                  ? conversations.length
+                    ? `Showing all ${conversations.length} saved chats, newest activity first (up to 40).`
+                    : "No saved chats yet."
+                  : conversations.length
+                    ? `Showing ${visibleHistory.length} of ${conversations.length} saved chats, newest activity first.`
+                    : "No saved chats yet."}
+              </span>
+            </div>
           </div>
           <div className="chat-history-list">
             {conversations.length ? (
@@ -1185,13 +1303,13 @@ export default function ChatPage({
           <span>Workspace</span>
           <button
             type="button"
-            title={workspacePath || "Choose a folder for Codex to work in"}
+            title={currentWorkspacePath || "Choose a folder for Codex to work in"}
             disabled={
               !desktopAvailable || interactionLocked
             }
             onClick={() => void chooseWorkspace()}
           >
-            {workspacePath ? folderName(workspacePath) : "Choose folder"}
+            {currentWorkspacePath ? folderName(currentWorkspacePath) : "Choose folder"}
             <ChevronRight size={13} />
           </button>
           <small>
@@ -1213,9 +1331,20 @@ export default function ChatPage({
           }}
         >
           {messages.length === 0 ? (
-            <div className="chat-vibecode">
-              <pre className="chat-vibecode-code"><code><span className="chat-vibecode-line"><span className="chat-vibecode-keyword">always</span> @(posedge clock) <span className="chat-vibecode-keyword">begin</span></span>{"\n"}<span className="chat-vibecode-statement">{"     "}<strong><em>VIBECODE;</em></strong></span>{"\n"}<span className="chat-vibecode-line chat-vibecode-keyword">end</span></code></pre>
-            </div>
+            needsWorkspaceSetup ? (
+              <section className="chat-workspace-setup" aria-labelledby="chat-workspace-setup-title">
+                <FolderOpen size={30} aria-hidden="true" />
+                <h2 id="chat-workspace-setup-title">Set up your AI workspace</h2>
+                <p>Choose a folder before sending your first message. Allora will use it as the chat workspace. AI-created projects use the Default Folder from Chat settings, or your chosen workspace folder when no default is set.</p>
+                <button type="button" className="ui-button ui-button-primary ui-action-button" disabled={!desktopAvailable || interactionLocked} onClick={() => void chooseWorkspace()}>
+                  <FolderOpen size={15} /> Choose workspace folder
+                </button>
+              </section>
+            ) : (
+              <div className="chat-vibecode">
+                <pre className="chat-vibecode-code"><code><span className="chat-vibecode-line"><span className="chat-vibecode-keyword">always</span> @(posedge clock) <span className="chat-vibecode-keyword">begin</span></span>{"\n"}<span className="chat-vibecode-statement">{"     "}<strong><em>VIBECODE;</em></strong></span>{"\n"}<span className="chat-vibecode-line chat-vibecode-keyword">end</span></code></pre>
+              </div>
+            )
           ) : (
             <div className="chat-messages">
               {messages.map((message, index) => (
@@ -1281,7 +1410,8 @@ export default function ChatPage({
                       (message.role === "user" ? (
                         <p className="chat-user-text">{message.text}</p>
                       ) : (
-                        <ChatMarkdown text={message.text} />
+                        <ChatMarkdown text={message.text} projectPath={message.projectPath ?? message.projectScope}
+                          onOpenSource={openResult} disabled={interactionLocked} />
                       ))}
                     {!!message.pins?.length && <div className="chat-pin-list" aria-label="Attached context">
                       {message.pins.map(pin => <span className="chat-pin" key={pin.id} title={pin.text}>{pin.label}</span>)}
@@ -1387,6 +1517,16 @@ export default function ChatPage({
 
         <div className="chat-composer-area">
 
+          {needsWorkspaceSetup && messages.length > 0 && (
+            <div className="chat-workspace-required" role="status">
+              <AlertCircle size={15} />
+              <span>Choose a workspace folder before continuing this chat.</span>
+              <button type="button" disabled={!desktopAvailable || interactionLocked} onClick={() => void chooseWorkspace()}>
+                Choose folder <ChevronRight size={13} />
+              </button>
+            </div>
+          )}
+
           {!ready && (
             <div className="chat-setup-notice">
               <AlertCircle size={17} />
@@ -1428,10 +1568,10 @@ export default function ChatPage({
           {changingConversation && (
             <div className="chat-active-status" role="status">
               <LoaderCircle size={12} className="spinning" />
-              Switching conversations…
+              Updating chat…
             </div>
           )}
-          <ChatErrorSuggestions entries={currentDiagnostics} disabled={interactionLocked} onChoose={(_entry, prompt) => {
+          <ChatErrorSuggestions entries={currentDiagnostics} disabled={interactionLocked || needsWorkspaceSetup} onChoose={(_entry, prompt) => {
             setDraft(current => current.trim() ? `${current}\n\n${prompt}` : prompt);
             setNotice("");
             inputRef.current?.focus();
@@ -1459,9 +1599,9 @@ export default function ChatPage({
               ref={inputRef}
               rows={1}
               aria-label="Message Allora"
-              placeholder="Build Anything you Dream..."
+              placeholder={needsWorkspaceSetup ? "Choose a workspace folder to start chatting…" : "Build Anything you Dream..."}
               value={draft}
-              disabled={interactionLocked}
+              disabled={interactionLocked || needsWorkspaceSetup}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (
@@ -1476,48 +1616,62 @@ export default function ChatPage({
             />
             <div className="chat-composer-bottom">
               <div className="chat-composer-controls">
-                <ChatProviderSelect selected={provider} disabled={interactionLocked} desktopAvailable={desktopAvailable}
-                  codexStatus={status} onChange={setProvider} />
-                {provider === "codex" && <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
-                  loading={loadingModels} error={modelError} disabled={interactionLocked || loadingModels || !ready || !models.length}
-                  onModelChange={(model) => {
-                    setSelectedModel(model);
-                    const effort = reasoningFor(models.find((item) => item.model === model), preferredReasoning) ?? "medium";
-                    setPreferredReasoning(effort);
-                    try { localStorage.setItem("allora-codex-model", model); localStorage.setItem("allora-codex-reasoning", effort); } catch { /* Selection remains usable. */ }
-                  }}
-                  onReasoningChange={(effort) => {
-                    setPreferredReasoning(effort);
-                    try { localStorage.setItem("allora-codex-reasoning", effort); } catch { /* Selection remains usable. */ }
-                  }} />}
+                <div className="chat-composer-control-group">
+                  <ChatPreferenceControls mode={mode} language={selectedLanguage} disabled={interactionLocked}
+                    onModeChange={nextMode => void changeMode(nextMode)}
+                    onLanguageChange={nextLanguage => { setLocalLanguage(nextLanguage); onLanguageChange?.(nextLanguage); }} />
+                </div>
+                <div className="chat-composer-control-group">
+                  <ChatProviderSelect selected={provider} disabled={interactionLocked} desktopAvailable={desktopAvailable}
+                    codexStatus={status} onChange={setProvider} />
+                  {provider === "codex" && <ChatModelControls models={models} selectedModel={selectedModel} reasoningEffort={reasoningEffort}
+                    loading={loadingModels} error={modelError} disabled={interactionLocked || loadingModels || !ready || !models.length}
+                    onModelChange={(model) => {
+                      setSelectedModel(model);
+                      const effort = reasoningFor(models.find((item) => item.model === model), preferredReasoning) ?? "medium";
+                      setPreferredReasoning(effort);
+                      try { localStorage.setItem("allora-codex-model", model); localStorage.setItem("allora-codex-reasoning", effort); } catch { /* Selection remains usable. */ }
+                    }}
+                    onReasoningChange={(effort) => {
+                      setPreferredReasoning(effort);
+                      try { localStorage.setItem("allora-codex-reasoning", effort); } catch { /* Selection remains usable. */ }
+                    }} />}
+                </div>
+                {provider === "codex" && <div className="chat-composer-control-group">
+                  <ChatUsageControls slot="usage" usage={activeConversation?.contextUsage} limits={rateLimits}
+                    available={ready} hasMessages={messages.length > 0} />
+                </div>}
               </div>
-              {provider === "codex" && <ChatUsageControls usage={activeConversation?.contextUsage} limits={rateLimits}
-                available={ready} hasMessages={messages.length > 0} />}
-              {busy ? (
-                <button
-                  type="button"
-                  className="chat-send-button stop"
-                  aria-label="Stop response"
-                  title="Stop response"
-                  onClick={() => void stop()}
-                >
-                  <Square size={14} fill="currentColor" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="chat-send-button"
-                  aria-label="Send message"
-                  title="Send message"
-                  disabled={
-                    interactionLocked ||
-                    !draft.trim() ||
-                    !ready
-                  }
-                >
-                  <ArrowUp size={20} />
-                </button>
-              )}
+              <div className="chat-composer-end-controls">
+                {provider === "codex" && <ChatUsageControls slot="context" usage={activeConversation?.contextUsage} limits={rateLimits}
+                  available={ready} hasMessages={messages.length > 0} />}
+                {busy ? (
+                  <button
+                    type="button"
+                    className="chat-send-button stop"
+                    aria-label="Stop response"
+                    title="Stop response"
+                    onClick={() => void stop()}
+                  >
+                    <Square size={14} fill="currentColor" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="chat-send-button"
+                    aria-label="Send message"
+                    title="Send message"
+                    disabled={
+                      interactionLocked ||
+                      !draft.trim() ||
+                      !ready ||
+                      needsWorkspaceSetup
+                    }
+                  >
+                    <ArrowUp size={20} />
+                  </button>
+                )}
+              </div>
             </div>
           </form>
 
@@ -1533,96 +1687,4 @@ function toolLabel(name: string) {
     .replace(/^mcp__allora__|^allora[._]/, "")
     .replace(/_/g, " ")
     .replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function inlineText(text: string): ReactNode[] {
-  return text
-    .split(/(`[^`]+`|\*\*[^*]+\*\*)/g)
-    .map((part, index) =>
-      part.startsWith("`") ? (
-        <code key={index}>{part.slice(1, -1)}</code>
-      ) : part.startsWith("**") ? (
-        <strong key={index}>{part.slice(2, -2)}</strong>
-      ) : (
-        part
-      ),
-    );
-}
-
-function ChatMarkdown({ text }: { text: string }) {
-  const blocks = text.split(/```/);
-  return (
-    <div className="chat-markdown">
-      {blocks.map((block, index) => {
-        if (index % 2 === 1) {
-          const newline = block.indexOf("\n");
-          const language = newline >= 0 ? block.slice(0, newline).trim() : "";
-          const code =
-            newline >= 0 ? block.slice(newline + 1).replace(/\n$/, "") : block;
-          return <CodeBlock key={index} language={language} code={code} />;
-        }
-        return block
-          .split(/\n\s*\n/)
-          .filter(Boolean)
-          .map((paragraph, paragraphIndex) => {
-            if (/^#{1,4} /.test(paragraph))
-              return (
-                <h3 key={`${index}-${paragraphIndex}`}>
-                  {inlineText(paragraph.replace(/^#{1,4} /, ""))}
-                </h3>
-              );
-            const lines = paragraph.split("\n");
-            if (lines.every((line) => /^\s*[-*] /.test(line)))
-              return (
-                <ul key={`${index}-${paragraphIndex}`}>
-                  {lines.map((line, lineIndex) => (
-                    <li key={lineIndex}>
-                      {inlineText(line.replace(/^\s*[-*] /, ""))}
-                    </li>
-                  ))}
-                </ul>
-              );
-            if (lines.every((line) => /^\s*\d+[.)] /.test(line)))
-              return (
-                <ol key={`${index}-${paragraphIndex}`}>
-                  {lines.map((line, lineIndex) => (
-                    <li key={lineIndex}>
-                      {inlineText(line.replace(/^\s*\d+[.)] /, ""))}
-                    </li>
-                  ))}
-                </ol>
-              );
-            return (
-              <p key={`${index}-${paragraphIndex}`}>{inlineText(paragraph)}</p>
-            );
-          });
-      })}
-    </div>
-  );
-}
-
-function CodeBlock({ language, code }: { language: string; code: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="chat-code-block">
-      <header>
-        <span>{language || "Code"}</span>
-        <button
-          type="button"
-          onClick={() => {
-            void navigator.clipboard
-              .writeText(code)
-              .then(() => setCopied(true))
-              .catch(() => setCopied(false));
-          }}
-        >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </header>
-      <pre>
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
 }

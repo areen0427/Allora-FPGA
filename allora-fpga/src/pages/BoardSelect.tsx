@@ -1,10 +1,6 @@
 import { welcomeDestination } from "./dashboard/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  getLandingPageLayoutPreference,
-  type AppSettings,
-  type LandingPageLayoutPreference,
-} from "../data/settings";
+import type { AppSettings } from "../data/settings";
 import { getSavedProjects, removeSavedProject } from "../data/projects";
 import {
   getBuildCatalogBoards,
@@ -23,12 +19,10 @@ import type { WelcomeView } from "./welcome/WelcomeShell";
 import { UsageDialog } from "../components/UsageDialog";
 import type { DashboardSection, ExecutionTarget } from "./dashboard/types";
 import { ChatSessionHost } from "../components/ChatSession";
-import { useCurrentDisplayKey } from "../hooks/useCurrentDisplayKey";
 
 const WIDE_WELCOME_VIEWPORT_QUERY = "(min-width: 1640px)";
 const LARGE_WELCOME_VIEWPORT_QUERY =
   "(min-width: 1640px) and (min-height: 900px)";
-const MANUAL_EXPANDED_VIEWPORT_QUERY = "(min-width: 1280px)";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -55,21 +49,9 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
-function useWelcomeLayoutBreakpoints(preference: LandingPageLayoutPreference) {
+function useWelcomeLayoutBreakpoints() {
   const wideAuto = useMediaQuery(WIDE_WELCOME_VIEWPORT_QUERY);
   const expandedAuto = useMediaQuery(LARGE_WELCOME_VIEWPORT_QUERY);
-  const expandedManual = useMediaQuery(MANUAL_EXPANDED_VIEWPORT_QUERY);
-
-  if (preference === "compact") {
-    return { wideLayout: false, expandedLayout: false };
-  }
-
-  if (preference === "expanded") {
-    return {
-      wideLayout: expandedManual,
-      expandedLayout: expandedManual,
-    };
-  }
 
   return { wideLayout: wideAuto, expandedLayout: expandedAuto };
 }
@@ -129,12 +111,7 @@ export default function BoardSelect({
   const closeProductInfo = useCallback(() => setShowProductInfo(false), []);
   const [homeViewKey, setHomeViewKey] = useState(0);
   const [selectedPinBoard, setSelectedPinBoard] = useState<string | null>(null);
-  const { displayKey, resolved: displayResolved } = useCurrentDisplayKey();
-  const layoutPreference = displayResolved
-    ? getLandingPageLayoutPreference(settings, displayKey)
-    : "auto";
-  const { wideLayout, expandedLayout } =
-    useWelcomeLayoutBreakpoints(layoutPreference);
+  const { wideLayout, expandedLayout } = useWelcomeLayoutBreakpoints();
   const newProjectRef = useRef<HTMLElement | null>(null);
   const buildSidebarRef = useRef<HTMLDivElement | null>(null);
   const [largeBoardLayout, setLargeBoardLayout] = useState({
@@ -279,7 +256,8 @@ export default function BoardSelect({
       onViewChange={handleViewChange}
       onOpenSettings={() => { setSettingsCategory("general"); setShowSettings(true); }}
     >
-      {chatVisited && <ChatSessionHost hidden={activeView !== "chat"} initialProjectPath={chatProjectPath} resumeLatest
+      {chatVisited && <ChatSessionHost hidden={activeView !== "chat"} initialProjectPath={chatProjectPath} defaultProjectDirectory={settings.chatDefaultProjectDirectory} resumeLatest
+        language={settings.chatDefaultLanguage} onLanguageChange={language => onSettingsChange({ ...settings, chatDefaultLanguage: language })}
         onOpenSettings={() => { setSettingsCategory("ai"); setShowSettings(true); }}
         onOpenProject={onOpenChatProject} onProjectCreated={onOpenChatProject} />}
       {activeView === "home" ? (

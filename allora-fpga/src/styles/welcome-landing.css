@@ -119,13 +119,18 @@ html[data-theme="black-ice"]
   background-size: cover;
 }
 
+/* Filters on the light pseudo-element can promote it above the dark layer
+   in WebKit. Keep artwork layers unfiltered and give them explicit paint order. */
 .welcome-environment::before {
+  z-index: 0;
   background-image: url("/welcome_ice_molecular.png");
 }
 
 .welcome-environment::after {
+  z-index: 1;
   background-image: url("/welcome_black_ice_molecular.png");
   opacity: 0;
+  transition: opacity 1s ease-in-out;
 }
 
 html[data-background="trace"] .welcome-environment::before {
@@ -142,6 +147,29 @@ html[data-background="ultramatte"] .welcome-environment::before {
 
 html[data-background="ultramatte"] .welcome-environment::after {
   background-image: url("/welcome_black_ice_ultramatte.png");
+}
+
+/* Aether uses matching artwork; Dawn uses a spatial sky/foreground tint. */
+html:is([data-background="aether"], [data-background="dawn"])
+  .welcome-page:has(.execution-path-stage, .welcome-destination-stage) {
+  --landing-environment-filter: none;
+}
+
+html[data-background="aether"] .welcome-environment::before {
+  background-image: url("/welcome_aether.jpg");
+}
+
+/* Both layers stay tied to the selected background during the entire fade. */
+html[data-background="aether"] .welcome-environment::after {
+  background-image: var(--art-aether-black-image);
+}
+
+html[data-background="dawn"] .welcome-environment::before {
+  background-image: url("/welcome_dawn.jpg");
+}
+
+html[data-background="dawn"] .welcome-environment::after {
+  background-image: var(--art-dawn-black-tint), url("/welcome_dawn.jpg");
 }
 
 html[data-theme="black-ice"] .welcome-environment::after {

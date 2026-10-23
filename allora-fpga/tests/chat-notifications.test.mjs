@@ -43,7 +43,7 @@ test("toast waits six seconds, animates dismissal, then disappears without clear
   const render = () => { stateIndex = effectIndex = 0; pending = []; const tree = component(); pending.forEach(fn => fn()); return tree; };
   store.setVisible(false); store.complete();
   let tree = render(); assert.equal(tree.props.className, "chat-completion-popup");
-  assert.equal(tree.props.children[1].props.unreadIndicator, false, "the icon inside the notification stays plain");
+  assert.equal(tree.props.children[0].props.unreadIndicator, false, "the icon inside the notification stays plain");
   const timeout = [...timers.values()].find(timer => timer.ms === 6000); assert.ok(timeout); timeout.fn();
   tree = render(); assert.match(tree.props.className, /is-leaving/);
   const exit = [...timers.values()].find(timer => timer.ms === 420); assert.ok(exit); exit.fn();

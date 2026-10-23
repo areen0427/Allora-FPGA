@@ -2,9 +2,13 @@ import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
+import { hasTauriInvoke } from "./lib/tauri";
 
 const isViewerWindow = new URLSearchParams(window.location.search).has(
   "viewer",
+);
+document.documentElement.dataset.nativeTitlebar = String(
+  !isViewerWindow && hasTauriInvoke() && /Mac/.test(navigator.platform),
 );
 export const ViewerApp = lazy(() => import("./ViewerApp.tsx"));
 

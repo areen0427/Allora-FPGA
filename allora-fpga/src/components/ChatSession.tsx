@@ -5,14 +5,19 @@ import { chatNotifications } from "../lib/chatNotifications";
 import ChatPage from "../pages/ChatPage";
 import type { ChatArtifact } from "./ChatTurnDetails";
 import { queueChatArtifact } from "../lib/chatArtifactsBridge";
+import type { ChatHdlLanguage } from "../data/settings";
 
 type Options = {
   hidden?: boolean;
   initialProjectPath?: string;
+  defaultProjectDirectory?: string | null;
+  language?: ChatHdlLanguage;
+  onLanguageChange?: (language: ChatHdlLanguage) => void;
   diagnosticsProjectKey?: string;
   resumeLatest?: boolean;
   onOpenSettings: () => void;
   onOpenProject: (path: string) => Promise<void>;
+  onProjectlessConversationSelected?: () => Promise<boolean>;
   onWorkspaceChanged?: (path: string) => Promise<void>;
   onProjectCreated?: (path: string) => Promise<void>;
   onOpenArtifact?: (artifact: ChatArtifact) => void | Promise<void>;
@@ -48,7 +53,17 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       setSession(current => ({ key: (current?.key ?? 0) + 1, options: sessionOptions }));
     },
     detach(host) { if (container.parentNode === host) { container.remove(); chatNotifications.setVisible(false); } },
-    update(options) { optionsRef.current = options; chatNotifications.setVisible(container.isConnected && !options.hidden); },
+    update(options) {
+      optionsRef.current = options;
+      chatNotifications.setVisible(container.isConnected && !options.hidden);
+      setSession(current => current && (
+        current.options.defaultProjectDirectory !== options.defaultProjectDirectory ||
+        current.options.language !== options.language ||
+        Boolean(current.options.onLanguageChange) !== Boolean(options.onLanguageChange)
+      )
+        ? { ...current, options: { ...current.options, defaultProjectDirectory: options.defaultProjectDirectory, language: options.language, onLanguageChange: options.onLanguageChange } }
+        : current);
+    },
     reset() { chatNotifications.reset(); initialized.current = false; scope.current = undefined; setSession(null); },
   }));
   return <Context.Provider value={api}>
@@ -56,6 +71,9 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     <ChatCompletionNotification />
     {session && createPortal(<ChatPage key={session.key}
       initialProjectPath={session.options.initialProjectPath}
+      defaultProjectDirectory={session.options.defaultProjectDirectory}
+      language={session.options.language}
+      onLanguageChange={session.options.onLanguageChange ? language => optionsRef.current?.onLanguageChange?.(language) : undefined}
       diagnosticsProjectKey={session.options.diagnosticsProjectKey}
       resumeLatest={session.options.resumeLatest}
       onActivateProject={async path => {
@@ -64,6 +82,27 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
         scope.current = path;
         try { await optionsRef.current?.onOpenProject(path); }
         catch (error) { scope.current = previousScope; throw error; }
+      }}
+      onProjectlessConversationSelected={async () => {
+        const previousScope = scope.current;
+        scope.current = undefined;
+        try {
+          const switched = await optionsRef.current?.onProjectlessConversationSelected?.();
+          if (switched === false) {
+            scope.current = previousScope;
+            return false;
+          }
+          setSession(current => current ? { ...current, options: {
+            ...current.options,
+            initialProjectPath: undefined,
+            diagnosticsProjectKey: undefined,
+            resumeLatest: false,
+          } } : current);
+          return true;
+        } catch (error) {
+          scope.current = previousScope;
+          throw error;
+        }
       }}
       onOpenSettings={() => optionsRef.current?.onOpenSettings()}
       onOpenProject={path => optionsRef.current!.onOpenProject(path)}

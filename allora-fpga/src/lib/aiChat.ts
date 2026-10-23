@@ -1,5 +1,6 @@
 import { REAL_BOARDS, VIRTUAL_BOARD } from "../data/boards";
 import { getBoardCapabilities } from "../data/boardCapabilities";
+import type { ChatHdlLanguage } from "../data/settings";
 import { createTauriChannel, invokeTauri } from "./tauri";
 
 export type ContextUsage = { last: { totalTokens: number }; modelContextWindow: number | null };
@@ -30,7 +31,7 @@ export type AiChatEvent =
       description?: string;
       details?: unknown;
     }
-  | { type: "turn_completed"; threadId?: string; sessionClosed?: boolean }
+  | { type: "turn_completed"; threadId?: string; sessionClosed?: boolean; interrupted?: boolean }
   | { type: "error"; message: string }
   | { type: "project_created"; projectPath: string; projectName?: string }
   | { type: "status"; message: string };
@@ -45,7 +46,8 @@ export type AiChatModel = {
   supportedReasoningEfforts: { reasoningEffort: string; description: string }[];
 };
 
-export type AiChatSession = { sessionId: string; threadId: string };
+export type ChatMode = "edit" | "discuss";
+export type AiChatSession = { sessionId: string; threadId: string; mode?: ChatMode };
 
 function eventChannel(onEvent: (event: AiChatEvent) => void) {
   const channel = createTauriChannel(onEvent);
@@ -62,12 +64,14 @@ export const aiChatApi = {
     threadId: string | undefined,
     model: string,
     onEvent: (event: AiChatEvent) => void,
+    mode: ChatMode = "edit",
   ) =>
     invokeTauri<AiChatSession>("ai_chat_start", {
       request: {
         workspacePath,
         threadId,
         model,
+        mode,
         boards: [...REAL_BOARDS, VIRTUAL_BOARD].map((board) => ({
           ...board,
           capabilities: getBoardCapabilities(board),
@@ -82,9 +86,11 @@ export const aiChatApi = {
     reasoningEffort: string | undefined,
     onEvent: (event: AiChatEvent) => void,
     userText?: string,
+    mode: ChatMode = "edit",
+    language: ChatHdlLanguage = "verilog",
   ) =>
     invokeTauri<void>("ai_chat_send", {
-      request: { sessionId, text, model, reasoningEffort, userText },
+      request: { sessionId, text, model, reasoningEffort, userText, mode, language },
       onEvent: eventChannel(onEvent),
     }),
   cancel: (sessionId: string) =>

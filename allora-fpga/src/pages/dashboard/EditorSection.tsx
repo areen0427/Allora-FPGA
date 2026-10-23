@@ -542,16 +542,20 @@ function registerHdlLanguages(monaco: Monaco) {
 }
 
 function revealNavigation(editor: MonacoEditor.IStandaloneCodeEditor, navigation: NonNullable<EditorSectionProps['navigation']>) {
-  editor.revealLineInCenter(navigation.line);
+  const model = editor.getModel();
+  const line = Math.max(1, Math.min(navigation.line, model?.getLineCount() ?? navigation.line));
+  const column = Math.max(1, Math.min(navigation.column ?? 1, model?.getLineMaxColumn(line) ?? navigation.column ?? 1));
+  editor.revealLineInCenter(line);
   if (navigation.endLine !== undefined) {
+    const endLine = Math.max(line, Math.min(navigation.endLine, model?.getLineCount() ?? navigation.endLine));
     editor.setSelection({
-      startLineNumber: navigation.line,
-      startColumn: Math.max(1, navigation.column ?? 1),
-      endLineNumber: navigation.endLine,
-      endColumn: Math.max(1, navigation.endColumn ?? editor.getModel()?.getLineMaxColumn(navigation.endLine) ?? 1),
+      startLineNumber: line,
+      startColumn: column,
+      endLineNumber: endLine,
+      endColumn: Math.max(1, Math.min(navigation.endColumn ?? model?.getLineMaxColumn(endLine) ?? 1, model?.getLineMaxColumn(endLine) ?? navigation.endColumn ?? 1)),
     });
   } else {
-    editor.setPosition({ lineNumber: navigation.line, column: 1 });
+    editor.setPosition({ lineNumber: line, column });
   }
   editor.focus();
 }

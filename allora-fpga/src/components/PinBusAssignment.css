@@ -1,0 +1,31 @@
+.welcome-product-info.pin-bus-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 18px;
+  overflow: auto;
+  color: var(--ui-text);
+  background: var(--ui-popup-bg);
+  border: 1px solid var(--ui-border-control);
+  box-shadow: var(--ui-popup-shadow);
+  transform-origin: top right;
+}
+.pin-bus-popup h3 { margin: 0; font-size: 16px; }
+.pin-bus-popup p { margin: 10px 0; font-size: 12px; line-height: 1.5; color: var(--ui-text-muted); }
+.pin-bus-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.pin-bus-choices label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 12px; font-weight: 700; }
+.pin-bus-choices select { width: 100%; min-width: 0; padding: 9px 28px 9px 10px; font: inherit; }
+.pin-bus-choices .pin-bus-reverse { flex-direction: row; align-items: center; align-self: end; padding: 9px 0; }
+.pin-bus-preview { max-height: 220px; overflow: auto; border-block: 1px solid var(--ui-border-subtle); }
+.pin-bus-preview table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.pin-bus-preview th, .pin-bus-preview td { padding: 9px 6px; text-align: left; overflow-wrap: anywhere; vertical-align: top; }
+.pin-bus-preview thead th { position: sticky; top: 0; background: var(--ui-control-solid); color: var(--ui-text-muted); font-weight: 600; }
+.pin-bus-preview tbody tr + tr { border-top: 1px solid var(--ui-border-subtle); }
+.pin-bus-preview td small { display: block; margin-top: 4px; }
+.pin-bus-preview .has-conflict, .pin-bus-errors { color: var(--ui-error-text); }
+.pin-bus-errors { padding-left: 18px; font-size: 12px; line-height: 1.5; }
+.pin-bus-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 14px; }
+html[data-reduce-motion="true"] .pin-bus-popup.glass-unfold { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pin-bus-popup.glass-unfold { animation: none; } }
+@media (max-width: 480px) { .pin-bus-choices { grid-template-columns: minmax(0, 1fr); } }

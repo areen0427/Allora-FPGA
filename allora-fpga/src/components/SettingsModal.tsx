@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Code2,
   Folder,
+  FolderOpen,
   Gauge,
   MessageSquare,
   Palette,
@@ -16,18 +17,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AiIntegrationSettings } from "./AiIntegrationSettings";
-import {
-  DEFAULT_SETTINGS,
-  getLandingPageLayoutPreference,
-} from "../data/settings";
-import type {
-  AppSettings,
-  LandingPageLayoutPreference,
-} from "../data/settings";
+import { DEFAULT_SETTINGS } from "../data/settings";
+import type { AppSettings } from "../data/settings";
 import { hasTauriInvoke } from "../lib/tauri";
+import { pickProjectParentDirectory } from "../lib/projectWorkspace";
 import { virtualFpgaApi, type SimulationTools } from "../lib/virtualFpga";
 import { useModalFocus } from "../hooks/useModalFocus";
-import { useCurrentDisplayKey } from "../hooks/useCurrentDisplayKey";
 
 type SettingsModalProps = {
   settings: AppSettings;
@@ -71,7 +66,6 @@ export function SettingsModal({
   const contentRef = useRef<HTMLElement>(null);
   const firstTabRef = useRef<HTMLButtonElement>(null);
   const themeTransitionTimeoutRef = useRef<number | null>(null);
-  const { displayKey, resolved: displayResolved } = useCurrentDisplayKey();
   const titleId = useId();
   const descriptionId = useId();
 
@@ -205,23 +199,6 @@ export function SettingsModal({
                     { value: "last-project", label: "Last project" },
                   ]}
                 />
-                <SettingSelect
-                  label="Landing Page Layout Preference"
-                  description="Auto adapts to available space; Compact and Expanded set this display's layout."
-                  value={getLandingPageLayoutPreference(settings, displayKey)}
-                  disabled={!displayResolved}
-                  onChange={(value) =>
-                    updateSetting("landingPageLayoutByDisplay", {
-                      ...settings.landingPageLayoutByDisplay,
-                      [displayKey]: value as LandingPageLayoutPreference,
-                    })
-                  }
-                  options={[
-                    { value: "auto", label: "Auto" },
-                    { value: "compact", label: "Compact" },
-                    { value: "expanded", label: "Expanded" },
-                  ]}
-                />
                 <SettingToggle
                   label="Restore previous session"
                   description="Reopen the last active file when returning to a project."
@@ -240,11 +217,31 @@ export function SettingsModal({
           ) : null}
 
           {activeCategory === "chat" ? (
-            <SettingsSection
-              title="Chat"
-              description="Choose how long conversation history should be kept."
-            >
+            <SettingsSection title="Chat">
               <SettingsGroup>
+                <SettingSelect
+                  label="Default HDL language"
+                  description="Used for new code and examples in AI Design Studio. Changing the chat language updates this preference too."
+                  value={settings.chatDefaultLanguage}
+                  onChange={(value) =>
+                    updateSetting(
+                      "chatDefaultLanguage",
+                      value as AppSettings["chatDefaultLanguage"],
+                    )
+                  }
+                  options={[
+                    { value: "verilog", label: "Verilog" },
+                    { value: "systemverilog", label: "SystemVerilog" },
+                    { value: "vhdl", label: "VHDL" },
+                  ]}
+                />
+                <SettingFolder
+                  label="Default Folder"
+                  description="Save AI-created projects here. You can still change the workspace from AI Design Studio."
+                  value={settings.chatDefaultProjectDirectory}
+                  disabled={!hasTauriInvoke()}
+                  onChange={(value) => updateSetting("chatDefaultProjectDirectory", value)}
+                />
                 <SettingSelect
                   label="Chat history retention"
                   description="Your choice is saved, but automatic deletion is not active yet."
@@ -294,6 +291,20 @@ export function SettingsModal({
                   theme={settings.theme}
                   selected={settings.background === "molecules"}
                   onSelect={() => updateSetting("background", "molecules")}
+                />
+                <BackgroundChoice
+                  name="Aether"
+                  background="aether"
+                  theme={settings.theme}
+                  selected={settings.background === "aether"}
+                  onSelect={() => updateSetting("background", "aether")}
+                />
+                <BackgroundChoice
+                  name="Dawn"
+                  background="dawn"
+                  theme={settings.theme}
+                  selected={settings.background === "dawn"}
+                  onSelect={() => updateSetting("background", "dawn")}
                 />
               </div>
             </SettingsSection>
@@ -531,10 +542,15 @@ export function SettingsModal({
         </main>
 
         <footer className="settings-footer">
-          <span className="settings-save-status">
-            <Check size={14} aria-hidden="true" />
-            Auto Save: 3 seconds
-          </span>
+          <div className="settings-footer-statuses">
+            <span className="settings-save-status">
+              <Check size={14} aria-hidden="true" />
+              Auto Save: 3 seconds
+            </span>
+            <span className="settings-page-scaling-status">
+              Page Scaling: Auto
+            </span>
+          </div>
           <div className="settings-footer-actions ui-compact-button-group">
             <button
               className="ui-button ui-button-secondary settings-reset-button"
@@ -729,6 +745,7 @@ function BackgroundChoice({
         aria-hidden="true"
       >
         <span className="settings-theme-glass">
+          <span className="settings-background-artwork" />
           <span className="settings-theme-refraction" />
         </span>
       </span>
@@ -758,6 +775,53 @@ function SettingRow({
         {description ? <small>{description}</small> : null}
       </span>
       {children}
+    </div>
+  );
+}
+
+function SettingFolder({
+  label,
+  description,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string | null;
+  disabled: boolean;
+  onChange: (value: string | null) => void;
+}) {
+  const [choosing, setChoosing] = useState(false);
+  const [error, setError] = useState("");
+
+  async function chooseFolder() {
+    if (disabled || choosing) return;
+    setChoosing(true);
+    setError("");
+    try {
+      const path = await pickProjectParentDirectory();
+      if (path) onChange(path);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setChoosing(false);
+    }
+  }
+
+  return (
+    <div className={`settings-row settings-folder-row${disabled ? " disabled" : ""}`}>
+      <span className="settings-row-copy">
+        <strong>{label}</strong>
+        <small>{error || description}</small>
+      </span>
+      <div className="settings-folder-control">
+        {value ? <span title={value}>{value}</span> : null}
+        <button type="button" disabled={disabled || choosing} onClick={() => void chooseFolder()}>
+          <FolderOpen size={14} aria-hidden="true" />
+          {choosing ? "Choosing…" : value ? "Switch" : "Choose"}
+        </button>
+      </div>
     </div>
   );
 }

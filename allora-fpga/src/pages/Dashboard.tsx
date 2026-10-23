@@ -20,6 +20,7 @@ import { WorkspaceDock } from "./dashboard/WorkspaceDock";
 import { ChatSessionHost } from "../components/ChatSession";
 import type { ChatArtifact } from "../components/ChatTurnDetails";
 import { queueChatArtifact, takeChatArtifact } from "../lib/chatArtifactsBridge";
+import { findChatSourceFile, parseChatSourceReference } from "../lib/chatSourceReferences";
 import { ProjectDiagnosticsProvider, ProjectDiagnostic, TroubleshootButton } from "../components/ProjectDiagnostics";
 import { projectDiagnostics, diagnosticSourceLabel } from "../lib/projectDiagnostics";
 import type {
@@ -56,6 +57,7 @@ import {
 } from "../lib/virtualFpga";
 import { GitHubPublishDialog } from "../components/GitHubPublishDialog";
 import { RtlHierarchy } from "../components/RtlHierarchy";
+import { hasTauriInvoke } from "../lib/tauri";
 
 // Keeps a section's component mounted (and therefore its state — generated
 // diagrams, bitstreams, testbench results, logs — alive) once it has been
@@ -106,6 +108,7 @@ type DashboardProps = {
   onBack: () => void;
   onHome: () => void;
   onOpenChatProject: (path: string) => Promise<void>;
+  onReturnToProjectlessChat: () => void;
   onRefreshChatProject: (path: string, files: ProjectFile[]) => void;
   onOpenMigrationProject: (path: string, section: DashboardSection) => Promise<void>;
 };
@@ -122,9 +125,12 @@ export default function Dashboard({
   onBack,
   onHome,
   onOpenChatProject,
+  onReturnToProjectlessChat,
   onRefreshChatProject,
   onOpenMigrationProject,
 }: DashboardProps) {
+  const hasMacOverlayTitlebar = hasTauriInvoke() && /Mac/.test(navigator.platform);
+  const workspaceTopInset = hasMacOverlayTitlebar ? 46 : 12;
   const [navigation, dispatchNavigation] = useReducer(workspaceNavigationReducer, null, () => ({
     current: initialSection ?? (hasSavedProjectChat(project?.projectPath) ? "chat" : "editor"),
     history: [],
@@ -232,6 +238,19 @@ export default function Dashboard({
       return;
     }
     if (artifact.kind === "file" && !artifact.path) {
+      setActiveSection("editor");
+      return;
+    }
+    if (artifact.kind === "file" && artifact.sourceLocation) {
+      if (!projectPath || !artifact.path || artifact.projectPath !== projectPath) throw new Error("This source reference has no available project.");
+      const location = artifact.sourceLocation;
+      const source = parseChatSourceReference(`${artifact.path}#L${location.line}${location.column ? `C${location.column}` : ""}${location.endLine ? `-L${location.endLine}` : ""}`, projectPath);
+      const target = source && findChatSourceFile(fileMgmt.files, source, projectPath);
+      if (!source || !target) throw new Error("This source file is no longer available in its original project.");
+      if (fileMgmt.files.filter(file => file.name === target.name).length !== 1) throw new Error("This source filename is ambiguous in the editor.");
+      // Navigate the current buffers: reloading here could replace unsaved editor content.
+      setEditorNavigation(current => ({ fileName: target.name, line: source.line, column: source.column, endLine: source.endLine, id: (current?.id ?? 0) + 1 }));
+      activeTabs.openFile(target.name);
       setActiveSection("editor");
       return;
     }
@@ -502,7 +521,7 @@ export default function Dashboard({
           height: "100vh",
           overflow: "hidden",
           background: "var(--ui-page-bg)",
-          padding: "12px 24px",
+          padding: `${workspaceTopInset}px 24px 12px`,
           gap: "14px",
           color: "var(--ui-text)",
           fontFamily:
@@ -516,14 +535,14 @@ export default function Dashboard({
         className={`dashboard-sidebar${explorerCollapsed ? " explorer-collapsed" : ""}`}
         style={{
           width: explorerCollapsed ? "72px" : `${sidebarWidth}px`,
-          height: "calc(100vh - 24px)",
+          height: `calc(100vh - ${workspaceTopInset + 12}px)`,
           overflow: "visible",
           gap: explorerCollapsed ? 0 : "14px",
           minWidth: explorerCollapsed ? "72px" : "300px",
           maxWidth: explorerCollapsed ? "72px" : "480px",
           padding: 0,
           position: "sticky",
-          top: "12px",
+          top: `${workspaceTopInset}px`,
           display: "flex",
           flexDirection: "row",
         }}
@@ -724,7 +743,7 @@ export default function Dashboard({
             activeSection === "synthesis"
               ? "hidden"
               : "auto",
-          height: "calc(100vh - 24px)",
+          height: `calc(100vh - ${workspaceTopInset + 12}px)`,
           minHeight: 0,
         }}
       >
@@ -762,8 +781,13 @@ export default function Dashboard({
         </KeepAliveSection>
         <KeepAliveSection active={activeSection === "chat"} visited={visitedSections.has("chat")}>
           <TroubleshootChatEntrance active={activeSection === "chat"} request={troubleshootChatRequest}>
-          <ChatSessionHost hidden={activeSection !== "chat"} initialProjectPath={projectPath ?? undefined} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}
+          <ChatSessionHost hidden={activeSection !== "chat"} initialProjectPath={projectPath ?? undefined} defaultProjectDirectory={settings.chatDefaultProjectDirectory} language={settings.chatDefaultLanguage} onLanguageChange={language => onSettingsChange({ ...settings, chatDefaultLanguage: language })} diagnosticsProjectKey={diagnosticsProjectKey} resumeLatest onWorkspaceChanged={async path => { await reloadChatFiles(path); }}
             onOpenArtifact={openChatArtifact}
+            onProjectlessConversationSelected={async () => {
+              if (saveProject.saveStatus !== "saved" && !(await saveProject.saveCurrentProject())) return false;
+              onReturnToProjectlessChat();
+              return true;
+            }}
             onProjectCreated={onOpenChatProject} onOpenSettings={() => setShowSettings(true)} onOpenProject={onOpenChatProject} />
           </TroubleshootChatEntrance>
         </KeepAliveSection>

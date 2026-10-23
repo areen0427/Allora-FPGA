@@ -13,6 +13,7 @@ export type ChatArtifact = {
   path?: string;
   projectPath?: string;
   data?: unknown;
+  sourceLocation?: { line: number; column?: number; endLine?: number };
 };
 export type ChangeReviewData = {
   id: string;

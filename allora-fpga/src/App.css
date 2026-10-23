@@ -1,4 +1,5 @@
 @import "./styles/tokens.css";
+@import "./styles/background-art.css";
 @import "./styles/core.css";
 @import "./styles/welcome.css";
 @import "./styles/pin-browser.css";
@@ -21,6 +22,7 @@
 @import "./styles/controls.css";
 @import "./styles/workspace.css";
 @import "./styles/accessibility.css";
+@import "./styles/titlebar.css";
 
 html.theme-transitioning,
 html.theme-transitioning *,

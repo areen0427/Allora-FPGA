@@ -1,0 +1,52 @@
+<!doctype html>
+<html data-theme="black-ice" data-background="aether">
+<head><meta charset="utf-8"><title>Background transition regression</title>
+<link rel="stylesheet" href="/src/App.css">
+<style>output { position:fixed; z-index:200; padding:16px; background:white; color:black; white-space:pre-wrap } .execution-path-stage { height:100vh }</style>
+</head>
+<body><output>Running transition checks…</output><div id="root"><div class="welcome-page"><div class="execution-path-stage"><div class="welcome-environment"></div></div></div></div>
+<script type="module">
+const root = document.documentElement;
+const environment = document.querySelector('.welcome-environment');
+const output = document.querySelector('output');
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const failures = [];
+let samples = 0;
+const aether = new Image();
+aether.src = '/welcome_aether_black_ice.png';
+try {
+  await aether.decode();
+  if (aether.naturalWidth < 1500) failures.push('Aether dark artwork is too small');
+} catch {
+  failures.push('Aether dark artwork failed to load');
+}
+for (const reduced of [false, true]) {
+  root.dataset.reduceMotion = String(reduced);
+  for (const background of ['molecules', 'trace', 'ultramatte', 'aether', 'dawn']) {
+    root.dataset.background = background;
+    for (const theme of ['ice', 'black-ice']) {
+      root.dataset.theme = theme === 'ice' ? 'black-ice' : 'ice';
+      root.classList.remove('theme-transitioning');
+      await wait(30);
+      const lightStyle = getComputedStyle(environment, '::before');
+      const darkStyle = getComputedStyle(environment, '::after');
+      if (Number(darkStyle.zIndex) <= Number(lightStyle.zIndex)) failures.push('Dark artwork must paint above light artwork');
+      if (['aether', 'dawn'].includes(background) && lightStyle.filter !== 'none') failures.push('Light layer must not create a WebKit filter compositing layer');
+      const artwork = darkStyle.backgroundImage;
+      root.classList.add('theme-transitioning');
+      void environment.offsetWidth;
+      root.dataset.theme = theme;
+      for (let frame = 0; frame < 12; frame++) {
+        await wait(90);
+        const style = getComputedStyle(environment, '::after');
+        if (style.backgroundImage !== artwork) failures.push(`${background}/${theme}: artwork changed during fade`);
+        if (['aether', 'dawn'].includes(background) && style.filter !== 'none') failures.push(`${background}: global filter applied`);
+        samples++;
+      }
+      if (reduced && parseFloat(getComputedStyle(environment, '::after').opacity) !== (theme === 'ice' ? 0 : 1)) failures.push('Reduced motion did not settle');
+    }
+  }
+}
+root.classList.remove('theme-transitioning');
+output.textContent = failures.length ? `FAIL\n${[...new Set(failures)].join('\n')}` : `PASS: ${samples} transition samples; five backgrounds, both directions, normal and reduced motion. Artwork stayed stable; Aether/Dawn have no whole-image filter.`;
+</script></body></html>

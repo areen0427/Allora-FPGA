@@ -357,6 +357,40 @@ html .variant-modal.settings-modal {
     0 5px 14px rgba(0, 7, 20, 0.34);
 }
 
+.settings-background-artwork {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: none;
+  background-image:
+    var(--background-tint, none),
+    var(--background-preview);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: var(--background-filter, none);
+}
+
+.settings-background-preview:is(.aether, .dawn) .settings-background-artwork {
+  display: block;
+}
+
+.settings-background-preview:is(.aether, .dawn) .settings-theme-glass {
+  background: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+}
+
+.settings-background-preview.black-ice:is(.aether, .dawn) .settings-theme-glass {
+  background: linear-gradient(rgba(4, 13, 27, 0.12), rgba(4, 13, 27, 0.18));
+}
+
+.settings-background-preview .settings-theme-glass::before {
+  z-index: 1;
+}
+
+.settings-background-preview .settings-theme-glass::after {
+  z-index: 2;
+}
+
 .settings-background-preview.ice .settings-theme-refraction {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
 }
@@ -388,6 +422,27 @@ html .variant-modal.settings-modal {
 .settings-background-preview.black-ice.molecules {
   --background-preview: url("/welcome_black_ice_molecular.png");
   --background-average: #2e567a;
+}
+.settings-background-preview.ice.aether {
+  --background-preview: url("/welcome_aether.jpg");
+  --background-average: #70419a;
+  --background-filter: saturate(1.06) contrast(1.04);
+}
+.settings-background-preview.black-ice.aether {
+  --background-preview: var(--art-aether-black-image);
+  --background-average: #080d18;
+  --background-filter: none;
+}
+.settings-background-preview.ice.dawn {
+  --background-preview: url("/welcome_dawn.jpg");
+  --background-average: #d7a96d;
+  --background-filter: saturate(1.04) contrast(1.03);
+}
+.settings-background-preview.black-ice.dawn {
+  --background-preview: url("/welcome_dawn.jpg");
+  --background-average: #142b50;
+  --background-filter: none;
+  --background-tint: var(--art-dawn-black-tint);
 }
 
 .settings-theme-preview {
@@ -709,6 +764,62 @@ html .variant-modal.settings-modal {
   opacity: 0.48;
 }
 
+.settings-folder-row {
+  align-items: flex-start;
+}
+
+.settings-folder-control {
+  width: min(100%, 330px);
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: 0 1 330px;
+}
+
+.settings-folder-control > span {
+  min-width: 0;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text-muted);
+  background: var(--ui-control-bg);
+  box-shadow: var(--ui-control-shadow);
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-folder-control > button {
+  min-height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  background: var(--ui-control-bg);
+  box-shadow: var(--ui-control-shadow);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.settings-folder-control > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .settings-row-copy {
   min-width: 0;
   display: grid;
@@ -815,6 +926,20 @@ input.settings-control:focus {
   color: var(--ui-text-muted);
   font-size: 11.5px;
   font-weight: 680;
+}
+
+.settings-footer-statuses {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.settings-page-scaling-status {
+  color: var(--ui-text-muted);
+  font-size: 11.5px;
+  font-weight: 680;
+  white-space: nowrap;
 }
 
 .settings-save-status svg {
@@ -1061,6 +1186,7 @@ html[data-theme="black-ice"] .settings-row {
 @media (max-width: 500px) {
   .settings-heading p,
   .settings-save-status,
+  .settings-page-scaling-status,
   .settings-navigation-item svg {
     display: none;
   }
@@ -1072,6 +1198,15 @@ html[data-theme="black-ice"] .settings-row {
   .settings-row {
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .settings-folder-row {
+    flex-direction: column;
+  }
+
+  .settings-folder-control {
+    width: 100%;
+    flex: 0 0 auto;
   }
 
   .settings-row-copy small {

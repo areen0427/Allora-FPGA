@@ -1,0 +1,77 @@
+.chat-preference-control { display: flex; flex: 0 0 auto; min-width: max-content; }
+.chat-preference-control > .chat-preference-trigger { flex: 0 0 auto; min-width: max-content; max-width: none; }
+.chat-preference-trigger > span:not(.chat-preference-icon):not(.chat-language-mark) {
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.chat-preference-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+  color: var(--ui-accent-text);
+}
+.chat-language-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 19px;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent-text) 42%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ui-accent-text) 8%, transparent);
+  color: var(--ui-accent-text);
+  font: 750 9px/1 var(--font-mono);
+  letter-spacing: -.045em;
+  white-space: nowrap;
+}
+#root .chat-preference-popup {
+  position: fixed;
+  inset: auto;
+  height: max-content;
+  min-height: 0;
+  margin: 0;
+  padding: 8px;
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border-control);
+  background: var(--ui-popup-bg);
+  box-shadow: var(--ui-popup-shadow);
+  transform-origin: bottom center;
+}
+.chat-preference-popup::backdrop { background: transparent; }
+#root .chat-preference-popup.glass-unfold {
+  animation: chat-popup-unfold-up 400ms cubic-bezier(.22, 1, .36, 1) backwards;
+}
+#root .chat-preference-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ui-text);
+}
+.chat-preference-option-copy { display: grid; flex: 1; gap: 4px; }
+.chat-preference-option strong { font-size: 12px; font-weight: 600; }
+.chat-preference-option small { font-size: 11px; line-height: 1.5; color: var(--ui-text-muted); }
+#root .chat-preference-option:is(:hover, :focus-visible, [aria-selected="true"]) {
+  background: var(--ui-control-hover-bg);
+  border-color: var(--ui-border-control);
+}
+.chat-preference-option > svg { flex-shrink: 0; color: var(--ui-accent-text); }
+html[data-reduce-motion="true"] #root .chat-preference-popup.glass-unfold { animation: none; }
+@media (prefers-reduced-motion: reduce) { #root .chat-preference-popup.glass-unfold { animation: none; } }

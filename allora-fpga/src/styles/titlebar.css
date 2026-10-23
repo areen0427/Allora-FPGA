@@ -1,0 +1,77 @@
+.app-titlebar-band {
+  --titlebar-artwork: url("/welcome_ice_molecular.png");
+  --titlebar-art-filter: none;
+  --titlebar-art-tint: none;
+  position: fixed;
+  z-index: 100;
+  inset: 0 0 auto;
+  height: 34px;
+  overflow: hidden;
+}
+
+/* Sample the full-window composition, rather than resizing it to a thin strip. */
+.app-titlebar-band::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100vh;
+  background-image:
+    var(--titlebar-art-tint),
+    var(--titlebar-artwork);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: var(--titlebar-art-filter);
+  pointer-events: none;
+}
+
+html[data-background="trace"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_ice_trace.png");
+}
+html[data-background="ultramatte"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_ice_ultramatte.png");
+}
+html[data-theme="black-ice"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_black_ice_molecular.png");
+}
+html[data-theme="black-ice"][data-background="trace"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_black_ice_trace.png");
+}
+html[data-theme="black-ice"][data-background="ultramatte"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_black_ice_ultramatte.png");
+}
+html[data-background="aether"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_aether.jpg");
+  --titlebar-art-filter: saturate(1.06) contrast(1.04);
+}
+html[data-theme="black-ice"][data-background="aether"] .app-titlebar-band {
+  --titlebar-art-filter: none;
+  --titlebar-artwork: var(--art-aether-black-image);
+}
+html[data-background="dawn"] .app-titlebar-band {
+  --titlebar-artwork: url("/welcome_dawn.jpg");
+  --titlebar-art-filter: saturate(1.04) contrast(1.03);
+}
+html[data-theme="black-ice"][data-background="dawn"] .app-titlebar-band {
+  --titlebar-art-filter: none;
+  --titlebar-art-tint: var(--art-dawn-black-tint);
+}
+
+/* Welcome already paints the artwork beneath the native titlebar. Let that
+   original layer continue through, including its exact crop and filters. */
+body:has(.execution-path-stage, .welcome-destination-stage) .app-titlebar-band::before {
+  content: none;
+}
+
+/* The native controls overlay this strip; page controls begin below it. */
+html[data-native-titlebar="true"] .welcome-rail { padding-top: 52px; }
+html[data-native-titlebar="true"] .project-setup-page { padding-top: 56px; }
+html[data-native-titlebar="true"] .simulation-setup-page { padding-top: 58px; }
+html[data-native-titlebar="true"] .mas-project-page { padding-top: 62px; }
+html[data-native-titlebar="true"] .welcome-page.welcome-view-chat {
+  padding-top: 34px;
+  box-sizing: border-box;
+}
+html[data-native-titlebar="true"] .welcome-chat-workspace-dock { height: calc(100dvh - 58px); }
+html[data-native-titlebar="true"] #root .welcome-page:has(.pin-browser-shell) .welcome-main { padding-top: 56px; }
+html[data-native-titlebar="true"] #root .pin-browser-shell { height: calc(100dvh - 80px); }

@@ -40,7 +40,11 @@ function findVerilogPorts(content: string) {
     const declaration = match[2]
       .replace(/\b(?:wire|reg|logic|signed|unsigned)\b/g, " ")
       .trim();
-    const rangeMatch = declaration.match(/\[(\d+)\s*:\s*(\d+)\]/);
+    const ranges = declaration.match(/\[[^\]]*\]/g) ?? [];
+    const rangeMatch = ranges[0]?.match(/^\[\s*(-?\d+)\s*:\s*(-?\d+)\s*\]$/);
+    // Unresolved or multidimensional ranges must not become invented scalar
+    // ports. Bulk assignment only accepts exact, bounded literal indices.
+    if (ranges.length && (ranges.length !== 1 || !rangeMatch || declaration.slice(0, declaration.indexOf(ranges[0])).trim())) continue;
     const declarationWithoutRanges = declaration.replace(/\[[^\]]+\]/g, " ");
 
     for (const rawName of declarationWithoutRanges.split(",")) {
@@ -71,20 +75,27 @@ function stripVerilogComments(content: string) {
 
 function findVhdlPorts(content: string) {
   const ports: HdlPort[] = [];
-  const portBlock = content.match(/port\s*\(([\s\S]*?)\)\s*;/i)?.[1] ?? "";
-  const portPattern =
-    /([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(in|out|inout)\b[^;]*(?:\((\d+)\s+downto\s+(\d+)\))?/gi;
-
-  for (const match of portBlock.matchAll(portPattern)) {
-    const direction = match[2].toLowerCase() as HdlPort["direction"];
-    ports.push(
-      ...expandPort({
-        name: match[1],
-        direction,
-        msb: match[3],
-        lsb: match[4],
-      }),
-    );
+  const source = content.replace(/--[^\n]*/g, "");
+  const start = /\bport\s*\(/i.exec(source);
+  if (!start) return ports;
+  const opening = start.index + start[0].length - 1;
+  let depth = 1;
+  let closing = opening + 1;
+  for (; closing < source.length && depth; closing++) {
+    if (source[closing] === "(") depth++;
+    else if (source[closing] === ")") depth--;
+  }
+  if (depth) return ports;
+  for (const declaration of source.slice(opening + 1, closing - 1).split(";")) {
+    const match = declaration.trim().match(/^([a-zA-Z_][a-zA-Z0-9_]*(?:\s*,\s*[a-zA-Z_][a-zA-Z0-9_]*)*)\s*:\s*(inout|in|out)\b([\s\S]*)$/i);
+    if (!match) continue;
+    const direction: HdlPort["direction"] = match[2].toLowerCase() === "in" ? "input" : match[2].toLowerCase() === "out" ? "output" : "inout";
+    const range = match[3].match(/\(\s*(-?\d+)\s+(downto|to)\s+(-?\d+)\s*\)/i);
+    if (!range && (/\(/.test(match[3]) || /\b(std_(?:u)?logic_vector|signed|unsigned)\b/i.test(match[3]))) continue;
+    if (range && (range[2].toLowerCase() === "to" ? Number(range[1]) > Number(range[3]) : Number(range[1]) < Number(range[3]))) continue;
+    for (const name of match[1].split(",").map((value) => value.trim())) {
+      ports.push(...expandPort({ name, direction, msb: range?.[1], lsb: range?.[3] }));
+    }
   }
 
   return ports;
@@ -105,6 +116,7 @@ function expandPort({
 
   const start = Number(msb);
   const end = Number(lsb);
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || Math.abs(start - end) >= 4096) return [];
   const step = start >= end ? -1 : 1;
   const ports: HdlPort[] = [];
 

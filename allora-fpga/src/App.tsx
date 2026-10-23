@@ -1,6 +1,7 @@
 import { useBackSwipe } from "./hooks/useBackSwipe";
 import { ChatSessionProvider } from "./components/ChatSession";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import BoardSelect from "./pages/BoardSelect";
 import ProjectSetup from "./pages/ProjectSetup";
 import SimulationProjectSetup from "./pages/SimulationProjectSetup";
@@ -75,6 +76,7 @@ function App() {
     if (stage === "dashboard") setReturnToChat(false);
   }, [stage]);
 
+
   useEffect(() => {
     if (hasTauriInvoke()) void prepareCodexReadiness().catch(() => {});
   }, []);
@@ -104,6 +106,17 @@ function App() {
 
   function goHome() {
     setReturnToChat(false);
+    setWorkspaceSection(undefined);
+    setChatProjectPath(undefined);
+    setStage("board-select");
+    setSelectedBoardId(null);
+    setProject(null);
+    setProjectWarning("");
+    setStudioLaunch(false);
+  }
+
+  function returnToProjectlessChat() {
+    setReturnToChat(true);
     setWorkspaceSection(undefined);
     setChatProjectPath(undefined);
     setStage("board-select");
@@ -475,6 +488,7 @@ function App() {
           )
         }
         onHome={goHome}
+        onReturnToProjectlessChat={returnToProjectlessChat}
         onRefreshChatProject={refreshChatProject}
         onOpenMigrationProject={async (path, section) => { setStudioLaunch(false); setWorkspaceSection(section); await openProjectPath(path, "build"); }}
         onOpenChatProject={async (path) => { setStudioLaunch(false); setWorkspaceSection("chat"); await openProjectPath(path, executionTarget); }}
@@ -506,7 +520,14 @@ function App() {
 }
 
 export default function AppWithChatSession() {
-  return <ChatSessionProvider><App /></ChatSessionProvider>;
+  return (
+    <ChatSessionProvider>
+      <App />
+      {hasTauriInvoke() && /Mac/.test(navigator.platform)
+        ? createPortal(<div className="app-titlebar-band" data-tauri-drag-region aria-hidden="true" />, document.body)
+        : null}
+    </ChatSessionProvider>
+  );
 }
 
 function folderNameFromPath(path: string) {

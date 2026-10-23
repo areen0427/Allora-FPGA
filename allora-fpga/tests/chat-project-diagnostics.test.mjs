@@ -43,11 +43,11 @@ function textContent(node) {
 async function harness(projectPath = "/projects/one", options = {}) {
   notifications.chatNotifications.reset();
   notifications.chatNotifications.setVisible(true);
-  const states = [], refs = [], requests = [], memoryUpdates = [], folderReplies = [], pickerCalls = [], starts = [], openedArtifacts = [], historySaves = [];
+  const states = [], refs = [], requests = [], memoryUpdates = [], folderReplies = [], pickerCalls = [], starts = [], openedArtifacts = [], closes = [], checkpointCalls = [], historySaves = [];
   const localValues = new Map();
   if (options.history) localValues.set("allora-codex-conversations-v1", JSON.stringify(options.history));
   const localStorage = { getItem: key => localValues.get(key) ?? null, setItem: (key, value) => localValues.set(key, value) };
-  let stateIndex = 0, refIndex = 0, timestamp = Date.now(), historyEffect, lifecycleEffect, historyCleanup, lifecycleCleanup, historyMounted = false, deviceMemory;
+  let stateIndex = 0, refIndex = 0, timestamp = Date.now(), historyEffect, lifecycleEffect, activationEffect, defaultWorkspaceEffect, historyCleanup, lifecycleCleanup, historyMounted = false, deviceMemory;
   const store = diagnostics.createProjectDiagnostics(() => timestamp++);
   const jsx = (type, props, key) => ({ type, props, key });
   const readiness = {
@@ -65,6 +65,8 @@ async function harness(projectPath = "/projects/one", options = {}) {
     },
     useRef(initial) { return refs[refIndex++] ??= { current: initial }; },
     useEffect(effect) {
+      if (effect.toString().includes("setWorkspacePath(defaultProjectDirectory)")) defaultWorkspaceEffect = effect;
+      if (effect.toString().includes("activatedProjectPath.current")) activationEffect = effect;
       if (options.historyEffects && !historyMounted && effect.toString().includes("historyLoaded.current = hydrateHistory")) historyEffect = effect;
       if (options.historyEffects && !historyMounted && effect.toString().includes("alive.current = true")) lifecycleEffect = effect;
     },
@@ -95,17 +97,17 @@ async function harness(projectPath = "/projects/one", options = {}) {
     pickProjectParentDirectory: async () => { pickerCalls.push(true); return options.pick ? options.pick() : "/chosen/projects"; },
     saveLastProjectParentDirectory: () => {},
     aiChatApi: {
-      start: async (...args) => { starts.push(args); return { sessionId: "test-session", threadId: "test-thread" }; },
+      start: async (...args) => { starts.push(args); return { sessionId: "test-session", threadId: "test-thread", mode: options.legacyNative ? undefined : args[4] }; },
       send: async (...args) => {
         requests.push(args);
         if (options.requestDirectory) args[4]({ type: "project_directory_required", requestId: "folder-1" });
         if (options.waitForSend) await options.waitForSend;
       },
       projectDirectory: async (...args) => { folderReplies.push(args); },
-      close: async () => {},
+      close: async id => { closes.push(id); },
     },
     chatCheckpoints: {
-      create: async path => ({ id: "test-checkpoint", projectPath: path }),
+      create: async path => { checkpointCalls.push(path); return { id: "test-checkpoint", projectPath: path }; },
       review: async () => ({ id: "test-checkpoint", projectPath, files: [] }),
     },
     window: { crypto: { randomUUID }, localStorage, innerWidth: 1200, addEventListener() {}, removeEventListener() {} },
@@ -118,16 +120,18 @@ async function harness(projectPath = "/projects/one", options = {}) {
   delete globalThis.chatDiagnosticsHarness;
   const render = () => {
     stateIndex = refIndex = 0;
-    const tree = ChatPage({ initialProjectPath: projectPath, resumeLatest: options.resumeLatest ?? Boolean(options.history), onActivateProject: options.activate, onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
+    const tree = ChatPage({ initialProjectPath: projectPath || undefined, defaultProjectDirectory: options.defaultProjectDirectory, language: options.language, onLanguageChange: options.onLanguageChange, resumeLatest: options.resumeLatest ?? Boolean(options.history), onActivateProject: options.activate, onProjectlessConversationSelected: options.leaveProject, onOpenSettings() {}, onOpenProject: async () => {}, onOpenArtifact: async artifact => { openedArtifacts.push(artifact); } });
     if (historyEffect && !historyMounted) {
       historyMounted = true;
       lifecycleCleanup = lifecycleEffect?.();
       historyCleanup = historyEffect();
     }
+    activationEffect?.();
+    defaultWorkspaceEffect?.();
     return tree;
   };
   return {
-    store, notifications: notifications.chatNotifications, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, historySaves, render,
+    store, notifications: notifications.chatNotifications, requests, memoryUpdates, folderReplies, pickerCalls, starts, openedArtifacts, closes, checkpointCalls, historySaves, render,
     conversations: () => states.find(value => Array.isArray(value) && typeof value[0]?.workspacePath === "string") ?? [],
     unmount() { lifecycleCleanup?.(); historyCleanup?.(); },
     async submit(prompt) {
@@ -216,20 +220,46 @@ test("error suggestions prepare an editable request and preserve the existing dr
   assert.equal(h.memoryUpdates.at(-1)[0].message, entry.message);
 });
 
-test("a new chat can submit without a workspace and native save requests open the folder picker", async () => {
+test("a new chat requires workspace setup before sending, then uses the chosen folder for creation", async () => {
   const h = await harness("", { requestDirectory: true });
+  let nodes = descendants(h.render());
+  const input = nodes.find(node => node.type === "textarea");
+  assert.equal(input.props.disabled, true);
+  assert.equal(nodes.find(node => node.props?.["aria-label"] === "Send message").props.disabled, true);
+  assert.match(textContent(h.render()), /Set up your AI workspace/);
+  input.props.onChange({ target: { value: "Create a project" } });
+  nodes = descendants(h.render());
+  nodes.find(node => node.type === "form" && node.props.className.includes("chat-composer"))
+    .props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.starts.length, 0, "the submit handler also guards a missing workspace");
+  assert.equal(h.requests.length, 0);
+
+  clickButton(h, "Choose workspace folder");
+  await new Promise(resolve => setImmediate(resolve));
   const prompt = "Create a simulation-only Verilog example";
   const request = await h.submit(prompt);
-  assert.equal(h.starts[0][0], "", "native startup supplies a transport scope, not a save destination");
-  assert.equal(h.pickerCalls.length, 1);
+  assert.equal(h.starts[0][0], "/chosen/projects");
+  assert.equal(h.pickerCalls.length, 1, "the one explicit workspace choice avoids another creation picker");
   assert.deepEqual(h.folderReplies, [["test-session", "folder-1", "/chosen/projects"]]);
   assert.equal(request[5], prompt);
-  assert.doesNotMatch(request[1], /selected this save parent directory/);
+  assert.match(request[1], /selected this save parent directory for this request: "\/chosen\/projects"/);
+});
+
+test("Default Folder answers a project creation directory request without opening the native picker", async () => {
+  for (const projectPath of ["", "/projects/current"]) {
+    const h = await harness(projectPath, { defaultProjectDirectory: "/default/projects", requestDirectory: true });
+    const request = await h.submit("Create a traffic light project");
+    assert.equal(h.starts[0][0], projectPath || "/default/projects", "Default Folder also supplies the initial projectless workspace");
+    assert.equal(h.pickerCalls.length, 0);
+    assert.deepEqual(h.folderReplies, [["test-session", "folder-1", "/default/projects"]]);
+    assert.equal(request[5], "Create a traffic light project");
+  }
 });
 
 test("cancelling or failing the native folder picker cancels creation without selecting a default", async () => {
   for (const pick of [async () => null, async () => { throw new Error("Native picker failed"); }]) {
-    const h = await harness("", { requestDirectory: true, pick });
+    const h = await harness("/projects/one", { requestDirectory: true, pick });
     await h.submit("Write an example project");
     assert.equal(h.pickerCalls.length, 1);
     assert.deepEqual(h.folderReplies, [["test-session", "folder-1", null]]);
@@ -237,14 +267,19 @@ test("cancelling or failing the native folder picker cancels creation without se
   }
 });
 
-test("an explicitly selected workspace destination applies only to the next request", async () => {
-  const h = await harness();
-  const workspaceButton = descendants(h.render()).find(node => node.type === "button" && node.props.title === "/projects/one");
+test("a manual Workspace overrides Default Folder for the current and subsequent projectless turns", async () => {
+  const h = await harness("", { defaultProjectDirectory: "/default/projects", requestDirectory: true });
+  const workspaceButton = descendants(h.render()).find(node => node.type === "button" && node.props.title === "/default/projects");
   workspaceButton.props.onClick();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.pickerCalls.length, 1);
   assert.match((await h.submit("Create an example"))[1], /selected this save parent directory for this request: "\/chosen\/projects"/);
   assert.doesNotMatch((await h.submit("Create another example"))[1], /selected this save parent directory/);
+  assert.deepEqual(h.folderReplies, [
+    ["test-session", "folder-1", "/chosen/projects"],
+    ["test-session", "folder-1", "/chosen/projects"],
+  ], "clearing the per-turn selection must not restore the configured default over the chosen workspace");
+  assert.equal(h.pickerCalls.length, 1, "subsequent creation requests reuse the selected workspace");
 });
 
 test("View Project routes the whole project tile to the editor destination", async () => {
@@ -338,6 +373,43 @@ const projectChat = {
   updatedAt: new Date().toISOString(),
   messages: [{ id: "created", role: "assistant", text: "Created the counter.", projectPath: "/projects/counter" }],
 };
+test("automatically resumed welcome history populates its project without a card click", async () => {
+  const activated = [];
+  const h = await harness("", { history: [projectChat], activate: async path => { activated.push(path); } });
+  h.render();
+  h.render();
+  assert.deepEqual(activated, ["/projects/counter"]);
+  assert.ok(descendants(h.render()).some(node => node.props?.text === "Created the counter."));
+});
+
+test("device history hydration activates the restored project once", async () => {
+  const activated = [];
+  const h = await harness("", { databaseHistory: [projectChat], historyEffects: true, resumeLatest: true,
+    activate: async path => { activated.push(path); } });
+  h.render();
+  assert.deepEqual(activated, []);
+  await new Promise(resolve => setImmediate(resolve));
+  h.render();
+  h.render();
+  assert.deepEqual(activated, ["/projects/counter"]);
+});
+
+test("restored chat activation leaves current projects and projectless save parents alone", async () => {
+  const activated = [];
+  const activate = async path => { activated.push(path); };
+  (await harness("/projects/counter", { history: [projectChat], activate })).render();
+  (await harness("", { history: [{ ...projectChat, workspacePath: "/save/parent", messages: [] }], activate })).render();
+  assert.deepEqual(activated, []);
+});
+
+test("failed automatic project opening preserves the transcript and reports the error", async () => {
+  const h = await harness("", { history: [projectChat], activate: async () => { throw new Error("Project folder unavailable"); } });
+  h.render();
+  await new Promise(resolve => setImmediate(resolve));
+  const nodes = descendants(h.render());
+  assert.ok(nodes.some(node => textContent(node).includes("Project folder unavailable")));
+  assert.ok(nodes.some(node => node.props?.text === "Created the counter."));
+});
 function clickButton(h, label) {
   const button = descendants(h.render()).find(node => node.type === "button" && textContent(node).trim() === label);
   assert.ok(button, `button ${label} is available`);
@@ -366,20 +438,38 @@ test("New chat from recent history offers a choice and can keep the project with
 });
 
 test("Start a new project clears the recent chat's workspace, context and save destination", async () => {
-  const h = await harness("", { history: [projectChat], resumeLatest: false, projects: [{ projectPath: "/projects/counter" }], requestDirectory: true });
+  let departures = 0;
+  const h = await harness("", { leaveProject: async () => { departures++; return true; }, history: [projectChat], resumeLatest: false, projects: [{ projectPath: "/projects/counter" }], requestDirectory: true });
   await selectProjectChat(h);
   clickButton(h, "New chat");
   clickButton(h, "Start a new project");
   await new Promise(resolve => setImmediate(resolve));
+  assert.equal(departures, 1, "starting a new project leaves the previous project workspace");
   assert.match(textContent(h.render()), /No project selected/);
   assert.ok(!descendants(h.render()).some(node => node.props?.text === "Created the counter."));
+  assert.equal(descendants(h.render()).find(node => node.type === "textarea").props.disabled, true);
+  clickButton(h, "Choose workspace folder");
+  await new Promise(resolve => setImmediate(resolve));
   const request = await h.submit("Create a traffic light project");
-  assert.equal(h.starts[0][0], "");
+  assert.equal(h.starts[0][0], "/chosen/projects");
   assert.equal(h.starts[0][1], undefined);
-  assert.doesNotMatch(request[1], /Current project:|\/projects\/counter|selected this save parent directory/);
-  assert.equal(h.pickerCalls.length, 1, "creation asks for a destination instead of using the old project");
+  assert.doesNotMatch(request[1], /Current project:|\/projects\/counter/);
+  assert.match(request[1], /selected this save parent directory for this request: "\/chosen\/projects"/);
+  assert.equal(h.pickerCalls.length, 1, "workspace setup chooses a destination instead of using the old project");
   assert.deepEqual(h.folderReplies, [["test-session", "folder-1", "/chosen/projects"]]);
   assert.equal(h.conversations().find(item => item.id === projectChat.id).messages.length, 1);
+});
+
+test("starting a new project preserves the current chat when its workspace cannot be left", async () => {
+  const h = await harness("/projects/counter", { history: [projectChat], leaveProject: async () => false });
+  descendants(h.render()).find(node => node.type === "textarea").props.onChange({ target: { value: "Keep this draft" } });
+  clickButton(h, "New chat");
+  clickButton(h, "Start a new project");
+  await new Promise(resolve => setImmediate(resolve));
+  const nodes = descendants(h.render());
+  assert.ok(nodes.some(node => node.props?.text === "Created the counter."));
+  assert.equal(nodes.find(node => node.type === "textarea").props.value, "Keep this draft");
+  assert.match(textContent(h.render()), /Save the current project before starting/);
 });
 
 test("native popup dismissal preserves the recent conversation and draft", async () => {
@@ -396,7 +486,7 @@ test("native popup dismissal preserves the recent conversation and draft", async
 });
 
 test("New chat without a project starts immediately without a project choice", async () => {
-  const h = await harness("");
+  const h = await harness("", { defaultProjectDirectory: "/default/projects" });
   await h.submit("Explain Verilog");
   clickButton(h, "New chat");
   await new Promise(resolve => setImmediate(resolve));
@@ -419,6 +509,107 @@ test("recent history is newest-first, limited to ten, with full history in the a
   assert.ok(!descendants(expanded).some(node => node.props?.["aria-label"] === "Close chat history"), "large history has no close X");
   popup.props.onDismiss();
   assert.ok(!descendants(h.render()).some(node => node.props?.expanded === true), "outside/Escape dismissal closes history");
+});
+
+function preferences(h) {
+  return descendants(h.render()).find(node => node.props?.onModeChange && node.props?.onLanguageChange);
+}
+
+test("new chats start in Edit and Verilog, and Discuss skips edit checkpoints while keeping source scope", async () => {
+  const h = await harness();
+  assert.equal(preferences(h).props.mode, "edit");
+  assert.equal(preferences(h).props.language, "verilog");
+  preferences(h).props.onModeChange("discuss");
+  await new Promise(resolve => setImmediate(resolve));
+  await h.submit("Explain this module without changing it");
+  assert.equal(h.starts[0][4], "discuss");
+  assert.equal(h.requests[0][6], "discuss");
+  assert.equal(h.requests[0][7], "verilog");
+  assert.deepEqual(h.checkpointCalls, []);
+  assert.equal(h.conversations()[0].mode, "discuss");
+  assert.equal(h.conversations()[0].messages.at(-1).projectScope, "/projects/one");
+});
+
+test("mode changes close the old session and resume the same thread with matching permissions", async () => {
+  const h = await harness();
+  await h.submit("Make the counter");
+  assert.equal(h.starts[0][4], "edit");
+  const conversationId = h.conversations()[0].id;
+  preferences(h).props.onModeChange("discuss");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(h.closes, ["test-session"]);
+  await h.submit("Explain the counter");
+  assert.equal(h.conversations()[0].id, conversationId);
+  assert.equal(h.starts[1][1], "test-thread");
+  assert.equal(h.starts[1][4], "discuss");
+  assert.equal(h.requests[1][6], "discuss");
+  assert.equal(h.checkpointCalls.length, 1, "only Edit creates a checkpoint");
+});
+
+test("running turns cannot switch mode and use their captured language", async () => {
+  let finish;
+  const options = { language: "vhdl", waitForSend: new Promise(resolve => { finish = resolve; }) };
+  const h = await harness("/projects/one", options);
+  await h.submit("Explain the entity");
+  assert.equal(preferences(h).props.disabled, true);
+  preferences(h).props.onModeChange("discuss");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(preferences(h).props.mode, "edit");
+  assert.equal(h.requests[0][7], "vhdl");
+  finish();
+  await new Promise(resolve => setImmediate(resolve));
+});
+
+test("language preferences synchronize through the host without clearing the draft or reopening the thread", async () => {
+  const options = { language: "verilog", onLanguageChange(value) { options.language = value; } };
+  const h = await harness("/projects/one", options);
+  await h.submit("Explain the module");
+  descendants(h.render()).find(node => node.type === "textarea").props.onChange({ target: { value: "Keep this draft" } });
+  preferences(h).props.onLanguageChange("systemverilog");
+  assert.equal(options.language, "systemverilog");
+  options.language = "vhdl"; // Settings uses the same host prop.
+  assert.equal(preferences(h).props.language, "vhdl");
+  assert.equal(descendants(h.render()).find(node => node.type === "textarea").props.value, "Keep this draft");
+  await h.submit("Show another example");
+  assert.equal(h.starts.length, 1, "language guidance changes per turn without losing the session");
+  assert.equal(h.requests[1][7], "vhdl");
+});
+
+test("saved conversations restore Discuss mode, while legacy conversations restore Edit", async () => {
+  for (const mode of ["discuss", undefined]) {
+    const h = await harness("/projects/one", { history: [{ id: "saved", title: "Saved", workspacePath: "/projects/one", mode, messages: [], threadId: "saved-thread", updatedAt: new Date().toISOString() }] });
+    assert.equal(preferences(h).props.mode, mode ?? "edit");
+    await h.submit("Explain the interface");
+    assert.equal(h.starts[0][4], mode ?? "edit");
+    assert.equal(h.starts[0][1], "saved-thread");
+  }
+});
+
+test("a reply creating another project resolves its source references within that new project", async () => {
+  const h = await harness();
+  await h.submit("Create another project");
+  const onEvent = h.requests[0][4];
+  onEvent({ type: "project_created", projectPath: "/projects/new", projectName: "New" });
+  onEvent({ type: "assistant_delta", delta: "See src/top.v:12" });
+  const renderer = descendants(h.render()).find(node => node.props?.text === "See src/top.v:12" && node.props?.onOpenSource);
+  assert.equal(renderer.props.projectPath, "/projects/new");
+});
+
+test("Discuss fails closed when an older desktop runtime cannot acknowledge its restrictions", async () => {
+  const h = await harness("/projects/one", { legacyNative: true });
+  preferences(h).props.onModeChange("discuss");
+  await new Promise(resolve => setImmediate(resolve));
+  await h.submit("Review this module");
+  assert.equal(h.requests.length, 0, "no prompt reaches an unacknowledged native mode");
+  assert.deepEqual(h.closes, ["test-session"]);
+  assert.match(h.conversations()[0].messages.at(-1).error, /Rebuild and restart Allora/);
+});
+
+test("Edit also requires a current runtime so HDL language preferences cannot be silently ignored", async () => {
+  const h = await harness("/projects/one", { legacyNative: true, language: "vhdl" });
+  await h.submit("Create a VHDL example");
+  assert.equal(h.requests.length, 0);
+  assert.match(h.conversations()[0].messages.at(-1).error, /updated desktop runtime/);
 });
 
 test("the submitted request and streaming reply are saved before an interrupted turn completes", async () => {
@@ -506,4 +697,60 @@ test("a submitted turn persists if its chat unmounts before the initial device h
   const stored = h.historySaves.at(-1);
   assert.equal(stored.length, 2, "existing disk chats are merged before the interrupted submission is saved");
   assert.ok(stored.some(chat => chat.messages[0]?.text === "Keep this interrupted request"));
+});
+
+
+test("live Default Folder enables an already mounted projectless composer without setup", async () => {
+  const options = { defaultProjectDirectory: null, requestDirectory: true };
+  const h = await harness("", options);
+  assert.equal(descendants(h.render()).find(node => node.type === "textarea").props.disabled, true);
+  options.defaultProjectDirectory = "/saved/projects with spaces";
+  await h.submit("Create my design");
+  assert.equal(h.starts[0][0], options.defaultProjectDirectory);
+  assert.equal(h.pickerCalls.length, 0);
+  assert.equal(h.folderReplies[0][2], options.defaultProjectDirectory);
+});
+
+test("all new-project chat paths take the latest saved default without folder prompts", async () => {
+  for (const entry of ["welcome", "projectless-new", "project-new", "recent-project-new"]) {
+    const options = { defaultProjectDirectory: "/old/default", requestDirectory: true, leaveProject: async () => true,
+      ...(entry === "recent-project-new" ? { history: [projectChat], resumeLatest: false } : {}) };
+    const h = await harness(entry === "project-new" ? "/projects/counter" : "", options);
+    if (entry === "projectless-new") await h.submit("Explain a module");
+    if (entry === "recent-project-new") await selectProjectChat(h);
+    options.defaultProjectDirectory = "/latest/default";
+    h.render();
+    if (entry !== "welcome") {
+      clickButton(h, "New chat");
+      if (entry !== "projectless-new") clickButton(h, "Start a new project");
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    await h.submit("Create a new project");
+    assert.equal(h.starts.at(-1)[0], "/latest/default", entry);
+    assert.equal(h.folderReplies.at(-1)[2], "/latest/default", entry);
+    assert.equal(h.pickerCalls.length, 0, entry);
+    assert.equal(descendants(h.render()).find(node => node.type === "textarea").props.disabled, false, entry);
+  }
+});
+
+test("new projectless chats reset a manual workspace to the saved default", async () => {
+  const h = await harness("", { defaultProjectDirectory: "/saved/default", requestDirectory: true });
+  descendants(h.render()).find(node => node.type === "button" && node.props.title === "/saved/default").props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  await h.submit("Create in the manually chosen folder");
+  assert.equal(h.folderReplies.at(-1)[2], "/chosen/projects");
+  clickButton(h, "New chat");
+  await new Promise(resolve => setImmediate(resolve));
+  await h.submit("Create in the saved default");
+  assert.equal(h.starts.at(-1)[0], "/saved/default");
+  assert.equal(h.folderReplies.at(-1)[2], "/saved/default");
+  assert.equal(h.pickerCalls.length, 1);
+});
+
+test("projectless history uses the saved default for creation instead of a stale fallback", async () => {
+  const history = [{ ...projectChat, workspacePath: "/stale/parent", messages: [{ id: "old", role: "user", text: "Explain HDL" }] }];
+  const h = await harness("", { history, defaultProjectDirectory: "/saved/default", requestDirectory: true });
+  await h.submit("Create my project");
+  assert.equal(h.folderReplies.at(-1)[2], "/saved/default");
+  assert.equal(h.pickerCalls.length, 0);
 });

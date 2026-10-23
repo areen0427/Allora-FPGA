@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import type { BoardDefinition } from "../../data/boards";
 import {
   getPinTypeColor,
@@ -9,6 +9,8 @@ import DashboardSurfaceCard from "./DashboardSurfaceCard";
 import InfoCard from "./InfoCard";
 import VirtualBoard from "../../components/VirtualBoard";
 import BoardResourceSummary from "../../components/BoardResourceSummary";
+import PinBusAssignment from "../../components/PinBusAssignment";
+import { createPinAssignmentHistory, pinAssignmentReducer, type PinAssignments } from "../../lib/pinAssignment";
 import type { ProjectFile } from "./types";
 import {
   useProjectDiagnostic,
@@ -75,9 +77,11 @@ export default function PinMappingSection({
         : null,
     [board, constraintFile, ports],
   );
-  const [overrides, setOverrides] = useState<Record<string, string>>(
-    () => savedMappings ?? {},
-  );
+  const baselineMappings = Object.fromEntries(ports.map((port) => [
+    port.name, (savedMappings ?? suggestedMappings)[port.name] ?? "",
+  ]));
+  const mappingSource = JSON.stringify({ boardId: board.id, topLevelFileName, ports, mappings: baselineMappings });
+  const [history, dispatchMappings] = useReducer(pinAssignmentReducer, baselineMappings, createPinAssignmentHistory);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -85,27 +89,40 @@ export default function PinMappingSection({
   const [mappingEdited, setMappingEdited] = useState(false);
 
   useEffect(() => {
-    setOverrides(savedMappings ?? {});
+    // A serialized source identity avoids erasing drafts/history on unrelated
+    // file edits that recreate the parsed ports or saved mapping objects.
+    const source = JSON.parse(mappingSource) as { mappings: PinAssignments };
+    dispatchMappings({ type: "reset", mappings: source.mappings });
     setMappingEdited(false);
     setSaveState("idle");
-  }, [board.id, savedMappings]);
+    setSaveError("");
+  }, [mappingSource]);
 
   const mappedCount = ports.filter(
-    (port) => overrides[port.name] ?? suggestedMappings[port.name],
+    (port) => history.present[port.name],
   ).length;
 
   function getSelectedPin(portName: string) {
-    return overrides[portName] ?? suggestedMappings[portName] ?? "";
+    return history.present[portName] ?? "";
   }
 
-  function setPortMapping(portName: string, pinKey: string) {
+  function commitMappings(mappings: PinAssignments) {
+    if (saveState === "saving") return;
     setSaveState("idle");
     setSaveError("");
     setMappingEdited(true);
-    setOverrides((current) => ({
-      ...current,
-      [portName]: pinKey,
-    }));
+    dispatchMappings({ type: "commit", mappings });
+  }
+
+  function setPortMapping(portName: string, pinKey: string) {
+    commitMappings({ ...history.present, [portName]: pinKey });
+  }
+
+  function stepHistory(type: "undo" | "redo") {
+    setSaveState("idle");
+    setSaveError("");
+    setMappingEdited(true);
+    dispatchMappings({ type });
   }
 
   const currentMappings = Object.fromEntries(
@@ -178,6 +195,15 @@ export default function PinMappingSection({
 
   return (
     <div
+      onKeyDown={(event) => {
+        const target = event.target as HTMLElement;
+        if (saveState === "saving" || target.closest("input, textarea, select, [contenteditable=true]") || !(event.metaKey || event.ctrlKey) || event.altKey) return;
+        const key = event.key.toLowerCase();
+        const action = key === "z" ? (event.shiftKey ? "redo" : "undo") : key === "y" && !event.shiftKey ? "redo" : null;
+        if (!action) return;
+        event.preventDefault();
+        if (action === "undo" ? history.past.length : history.future.length) stepHistory(action);
+      }}
       style={{
         display: "block",
         height: "calc(100vh - 24px)",
@@ -256,7 +282,7 @@ export default function PinMappingSection({
 
           <div
             className="ui-compact-button-group"
-            style={{ display: "flex", alignItems: "center" }}
+            style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}
           >
             {saveState === "error" ? (
               <>
@@ -283,16 +309,22 @@ export default function PinMappingSection({
                 Saved
               </span>
             ) : null}
+            <PinBusAssignment key={mappingSource} board={board} ports={ports}
+              mappings={currentMappings} selectedPortName={selectedPortName}
+              disabled={saveState === "saving"} onApply={commitMappings} />
+            <button type="button" className="ui-button ui-button-secondary"
+              disabled={!history.past.length || saveState === "saving"}
+              title="Undo pin assignment (⌘Z / Ctrl+Z)" onClick={() => stepHistory("undo")}>Undo</button>
+            <button type="button" className="ui-button ui-button-secondary"
+              disabled={!history.future.length || saveState === "saving"}
+              title="Redo pin assignment (⇧⌘Z / Ctrl+Y)" onClick={() => stepHistory("redo")}>Redo</button>
             <button
               type="button"
               className="ui-button ui-button-secondary"
               onClick={() => {
-                setOverrides(savedMappings ?? {});
-                setSaveState("idle");
-                setSaveError("");
-                setMappingEdited(false);
+                commitMappings(baselineMappings);
               }}
-              disabled={!canRevert}
+              disabled={!canRevert || saveState === "saving"}
             >
               Revert
             </button>
@@ -324,6 +356,7 @@ export default function PinMappingSection({
         {mode === "simple" ? (
           <SimplePinMapper
             board={board}
+            disabled={saveState === "saving"}
             ports={ports}
             suggestedMappings={suggestedMappings}
             getSelectedPin={getSelectedPin}
@@ -332,6 +365,7 @@ export default function PinMappingSection({
         ) : (
           <ResourcePinMapper
             board={board}
+            disabled={saveState === "saving"}
             ports={ports}
             selectedPortName={selectedPortName}
             setSelectedPortName={setSelectedPortName}
@@ -378,12 +412,14 @@ function SummaryPill({ label, value }: { label: string; value: string }) {
 
 function SimplePinMapper({
   board,
+  disabled,
   ports,
   suggestedMappings,
   getSelectedPin,
   setPortMapping,
 }: {
   board: BoardDefinition;
+  disabled: boolean;
   ports: HdlPort[];
   suggestedMappings: Record<string, string>;
   getSelectedPin: (portName: string) => string;
@@ -484,6 +520,7 @@ function SimplePinMapper({
 
               <select className="ui-dropdown"
                 aria-label={`Board pin for ${port.name}`}
+                disabled={disabled}
                 value={selectedPin}
                 onChange={(event) =>
                   setPortMapping(port.name, event.target.value)
@@ -523,6 +560,7 @@ function SimplePinMapper({
 
 function ResourcePinMapper({
   board,
+  disabled,
   ports,
   selectedPortName,
   setSelectedPortName,
@@ -530,6 +568,7 @@ function ResourcePinMapper({
   setPortMapping,
 }: {
   board: BoardDefinition;
+  disabled: boolean;
   ports: HdlPort[];
   selectedPortName: string | null;
   setSelectedPortName: (portName: string | null) => void;
@@ -595,7 +634,7 @@ function ResourcePinMapper({
   );
 
   function assignPin(pinKey: string) {
-    if (!selectedPort) return;
+    if (disabled || !selectedPort) return;
     const physicalPin = pinOptionMap.get(pinKey)?.pin;
     if (!physicalPin || (physicalPin !== selectedPinOption?.pin && mappedPhysicalPins.has(physicalPin))) return;
     setSelectedPortName(selectedPort.name);
@@ -746,6 +785,7 @@ function ResourcePinMapper({
             >
               {view === "assignments" ? (
                 <AdvancedAssignmentTable
+                  disabled={disabled}
                   ports={filteredPorts}
                   pinOptions={pinOptions}
                   pinOptionMap={pinOptionMap}
@@ -766,6 +806,7 @@ function ResourcePinMapper({
                 >
                   {filteredResourceGroups.map((group) => (
                     <ResourceGroupCard
+                      disabled={disabled}
                       key={group.title}
                       group={group}
                       selectedPin={selectedPin}
@@ -779,7 +820,7 @@ function ResourcePinMapper({
                 <div>
                   <VirtualBoard
                     board={board}
-                    selectable
+                    selectable={!disabled}
                     selectedPinKey={selectedPin || null}
                     mappedPinKeys={mappedPinKeys}
                     onSelectPin={assignPin}
@@ -973,6 +1014,7 @@ function ResourcePinMapper({
 type PinOption = ReturnType<typeof getPinOptions>[number];
 
 function AdvancedAssignmentTable({
+  disabled,
   ports,
   pinOptions,
   pinOptionMap,
@@ -982,6 +1024,7 @@ function AdvancedAssignmentTable({
   setPortMapping,
   setSelectedPortName,
 }: {
+  disabled: boolean;
   ports: HdlPort[];
   pinOptions: PinOption[];
   pinOptionMap: Map<string, PinOption>;
@@ -1106,6 +1149,7 @@ function AdvancedAssignmentTable({
               {port.direction}
             </div>
             <select className="ui-dropdown"
+              disabled={disabled}
               value={selectedPin}
               onClick={(event) => event.stopPropagation()}
               onChange={(event) =>
@@ -1300,12 +1344,14 @@ function createPinMappingValidation(
 type ResourceGroup = PinBrowserResourceGroup;
 
 function ResourceGroupCard({
+  disabled,
   group,
   selectedPin,
   selectedPort,
   mappedPhysicalPins,
   onAssignPin,
 }: {
+  disabled: boolean;
   group: ResourceGroup;
   selectedPin: string;
   selectedPort: HdlPort | null;
@@ -1378,6 +1424,7 @@ function ResourceGroupCard({
               className={clickable ? "pin-map-resource-button ui-button ui-button-secondary" : "pin-map-resource-entry"}
               key={pin.key}
               type={clickable ? "button" : undefined}
+              disabled={clickable ? disabled : undefined}
               aria-pressed={clickable ? active : undefined}
               onClick={clickable ? () => onAssignPin(pin.key) : undefined}
               title={`${pin.name} (${pin.pin})${pin.assignable === false ? " — not an assignable package pin" : ""}`}

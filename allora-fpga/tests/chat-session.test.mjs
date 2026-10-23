@@ -140,3 +140,74 @@ test("recent chat project activation populates the workspace without remounting 
   await h.render().chat.props.onActivateProject("/projects/latest");
   assert.equal(opened.length, 1, "current project's editor state is not reloaded");
 });
+
+test("language settings update the live conversation without remounting and use the current host callback", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  const changed = [];
+  api.attach(h.host(), {
+    ...options(), language: "verilog", onLanguageChange: language => changed.push(["first", language]),
+  });
+  const initial = h.render().chat;
+  assert.equal(initial.props.language, "verilog");
+  api.update({
+    ...options(), language: "vhdl", onLanguageChange: language => changed.push(["latest", language]),
+  });
+  const updated = h.render().chat;
+  assert.equal(updated.key, initial.key, "language changes must preserve the conversation and draft");
+  assert.equal(updated.props.language, "vhdl");
+  initial.props.onLanguageChange("systemverilog");
+  assert.deepEqual(changed, [["latest", "systemverilog"]]);
+});
+
+test("standalone chat hosts retain ChatPage's local language fallback", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  api.attach(h.host(), options());
+  assert.equal(h.render().chat.props.onLanguageChange, undefined);
+  api.update({ ...options(), onLanguageChange() {} });
+  assert.equal(typeof h.render().chat.props.onLanguageChange, "function");
+  api.update(options());
+  assert.equal(h.render().chat.props.onLanguageChange, undefined);
+});
+
+test("starting a projectless chat detaches the old workspace without remounting the conversation", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  const projectHost = h.host();
+  const welcomeHost = h.host();
+  let departures = 0;
+  api.attach(projectHost, {
+    ...options("/projects/old"),
+    onProjectlessConversationSelected: async () => {
+      departures++;
+      api.detach(projectHost);
+      api.attach(welcomeHost, options());
+      return true;
+    },
+  });
+  const before = h.render().chat;
+  assert.equal(await before.props.onProjectlessConversationSelected(), true);
+  const after = h.render().chat;
+  assert.equal(departures, 1);
+  assert.equal(h.container.parentNode, welcomeHost);
+  assert.equal(after.key, before.key);
+  assert.equal(after.props.initialProjectPath, undefined);
+  assert.equal(after.props.diagnosticsProjectKey, undefined);
+  assert.equal(after.props.resumeLatest, false);
+});
+
+test("saved default folder updates reach a mounted chat and survive a host handoff", async () => {
+  const h = await harness();
+  const { api } = h.render();
+  const host = h.host();
+  api.attach(host, { ...options(), defaultProjectDirectory: "/saved/first" });
+  const before = h.render().chat;
+  api.update({ ...options(), defaultProjectDirectory: "/saved/latest" });
+  assert.equal(h.render().chat.props.defaultProjectDirectory, "/saved/latest");
+  assert.equal(h.render().chat.key, before.key);
+  api.detach(host);
+  api.attach(h.host(), { ...options(), defaultProjectDirectory: "/saved/latest" });
+  assert.equal(h.render().chat.props.defaultProjectDirectory, "/saved/latest");
+  assert.equal(h.render().chat.key, before.key);
+});

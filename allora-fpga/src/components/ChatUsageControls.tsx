@@ -11,9 +11,12 @@ function WindowUsage({ label, window: quota }: { label: string; window?: RateWin
     <small>{quota?.resetsAt ? `Resets ${new Date(quota.resetsAt * 1000).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}` : "Reset time unavailable"}</small>
   </section>;
 }
-export default function ChatUsageControls({ usage, limits, available, hasMessages }: {
+export default function ChatUsageControls({ usage, limits, available, hasMessages, slot = "combined" }: {
   usage?: ContextUsage; limits: RateLimits | null; available: boolean; hasMessages: boolean;
+  slot?: "combined" | "usage" | "context";
 }) {
+  const showUsage = slot !== "context";
+  const showContext = slot !== "usage";
   const percent = contextPercent(usage) ?? (hasMessages ? null : 0);
   const [open, setOpen] = useState(false);
   const [contextHovered, setContextHovered] = useState(false);
@@ -46,7 +49,7 @@ export default function ChatUsageControls({ usage, limits, available, hasMessage
       const anchor = trigger.current!.getBoundingClientRect();
       const width = Math.min(320, window.innerWidth - 24);
       element.style.width = `${width}px`;
-      element.style.left = `${Math.max(12, Math.min(anchor.right - width, window.innerWidth - width - 12))}px`;
+      element.style.left = `${Math.max(12, Math.min(anchor.left, window.innerWidth - width - 12))}px`;
       element.style.bottom = `${window.innerHeight - anchor.top + 12}px`;
       element.style.maxHeight = `${Math.max(0, anchor.top - 24)}px`;
     }
@@ -66,12 +69,12 @@ export default function ChatUsageControls({ usage, limits, available, hasMessage
   const windows = [snapshot?.primary, snapshot?.secondary];
   const fiveHour = windows.find((value) => value?.windowDurationMins === 300);
   const weekly = windows.find((value) => value?.windowDurationMins === 10080);
-  return <div className="chat-usage-controls" ref={root}>
-    <button type="button" className="ui-dropdown ui-hover-button chat-model-trigger chat-usage-trigger" ref={trigger}
+  return <div className={`chat-usage-controls chat-usage-controls-${slot}`} ref={root}>
+    {showUsage && <button type="button" className="ui-dropdown ui-hover-button chat-model-trigger chat-usage-trigger" ref={trigger}
       aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>
       Usage
-    </button>
-    <div className="chat-context-counter" tabIndex={0} aria-label="Context usage" aria-describedby={contextHovered ? contextTooltipId : undefined}
+    </button>}
+    {showContext && <div className="chat-context-counter" tabIndex={0} aria-label="Context usage" aria-describedby={contextHovered ? contextTooltipId : undefined}
       onMouseEnter={() => setContextHovered(true)} onMouseLeave={() => setContextHovered(false)}
       onFocus={() => setContextHovered(true)} onBlur={() => setContextHovered(false)}
       onKeyDown={(event) => { if (event.key === "Escape") setContextHovered(false); }}>
@@ -83,8 +86,8 @@ export default function ChatUsageControls({ usage, limits, available, hasMessage
       <div className="chat-usage-track" role="progressbar" aria-label="Context window used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined} aria-valuetext={percent === null ? "Unavailable" : `${Math.round(percent)}% used`}>
         <span style={{ width: `${percent ?? 0}%`, background: contextColor(percent ?? 0) }} />
       </div>
-    </div>
-    {open && <div ref={popup} id={id} popover="manual" tabIndex={-1} role="dialog" aria-label="Codex account usage" className="chat-model-popup chat-usage-popup">
+    </div>}
+    {showUsage && open && <div ref={popup} id={id} popover="manual" tabIndex={-1} role="dialog" aria-label="Codex account usage" className="chat-model-popup chat-usage-popup">
       <header><strong>Codex usage</strong></header>
       {!available ? <p>Connect your Codex account to see usage.</p> : loading ? <p role="status">Refreshing usage…</p> : <>
         {error && <p role="status">{error}{snapshot && " Showing the last received values."}</p>}
